@@ -1,14 +1,2 @@
-pub fn add(left: usize, right: usize) -> usize {
-  left + right
-}
-
-#[cfg(test)]
-mod tests {
-  use super::*;
-
-  #[test]
-  fn it_works() {
-    let result = add(2, 2);
-    assert_eq!(result, 4);
-  }
-}
+//! A lazy evaluator for jsonnet.
+#![deny(clippy::pedantic, missing_debug_implementations, missing_docs, rust_2018_idioms)]
