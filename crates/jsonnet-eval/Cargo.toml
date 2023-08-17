@@ -8,3 +8,7 @@ publish.workspace = true
 [lib]
 test = false
 doctest = false
+
+[dependencies]
+la-arena = "0.3.1"
+rustc-hash = "1.1.0"
