@@ -1,3 +1,3 @@
-# jsonnet-lsp
+# rjsonnet
 
-an LSP for Jsonnet
+a Rust implementation of Jsonnet
