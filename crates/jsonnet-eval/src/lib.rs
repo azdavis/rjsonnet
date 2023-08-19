@@ -6,6 +6,15 @@
 use la_arena::{Arena, Idx};
 use rustc_hash::FxHashSet;
 
+#[derive(Debug)]
+enum Prim {
+  Null,
+  True,
+  False,
+  String(Str),
+  Number(f64),
+}
+
 type Expr = Idx<ExprD>;
 type ExprArena = Arena<ExprD>;
 
@@ -14,13 +23,9 @@ type ExprArena = Arena<ExprD>;
 /// The D stands for "Data".
 #[derive(Debug)]
 enum ExprD {
-  Null,
-  True,
-  False,
+  Prim(Prim),
   Self_,
   Super,
-  String(Str),
-  Number(f64),
   Object { asserts: Vec<Expr>, fields: Vec<(Expr, Hidden, Expr)> },
   ObjectComp { key: Expr, val: Expr, id: Id, iter: Expr },
   Array(Vec<Expr>),
@@ -126,7 +131,7 @@ struct Arenas {
 
 fn check(st: &mut St, cx: &Cx, ars: &Arenas, expr: Expr) {
   match &ars.expr[expr] {
-    ExprD::Null | ExprD::True | ExprD::False | ExprD::String(_) | ExprD::Number(_) => {}
+    ExprD::Prim(_) => {}
     ExprD::Self_ => {
       if !cx.contains(Id::SELF) {
         st.err(expr, "`self` not in scope");
@@ -148,7 +153,7 @@ fn check(st: &mut St, cx: &Cx, ars: &Arenas, expr: Expr) {
       for &(key, _, val) in fields {
         check(st, cx, ars, key);
         check(st, &cx_big, ars, val);
-        if let ExprD::String(s) = ars.expr[key] {
+        if let ExprD::Prim(Prim::String(s)) = ars.expr[key] {
           if !string_fields.insert(s) {
             st.err(key, "duplicate field");
           }
