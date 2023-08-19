@@ -6,7 +6,7 @@
 use la_arena::{Arena, Idx};
 use rustc_hash::FxHashSet;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 enum Prim {
   Null,
   True,
@@ -15,14 +15,11 @@ enum Prim {
   Number(f64),
 }
 
-type Expr = Idx<ExprD>;
-type ExprArena = Arena<ExprD>;
+type Expr = Idx<ExprData>;
+type ExprArena = Arena<ExprData>;
 
-/// An expression in the core language.
-///
-/// The D stands for "Data".
 #[derive(Debug)]
-enum ExprD {
+enum ExprData {
   Prim(Prim),
   Self_,
   Super,
@@ -115,12 +112,12 @@ struct Cx {
 }
 
 impl Cx {
-  fn contains(&self, id: Id) -> bool {
-    self.store.contains(&id)
-  }
-
   fn insert(&mut self, id: Id) {
     self.store.insert(id);
+  }
+
+  fn contains(&self, id: Id) -> bool {
+    self.store.contains(&id)
   }
 }
 
@@ -131,18 +128,18 @@ struct Arenas {
 
 fn check(st: &mut St, cx: &Cx, ars: &Arenas, expr: Expr) {
   match &ars.expr[expr] {
-    ExprD::Prim(_) => {}
-    ExprD::Self_ => {
+    ExprData::Prim(_) => {}
+    ExprData::Self_ => {
       if !cx.contains(Id::SELF) {
         st.err(expr, "`self` not in scope");
       }
     }
-    ExprD::Super => {
+    ExprData::Super => {
       if !cx.contains(Id::SUPER) {
         st.err(expr, "`super` not in scope");
       }
     }
-    ExprD::Object { asserts, fields } => {
+    ExprData::Object { asserts, fields } => {
       let cx_big = {
         let mut cx = cx.clone();
         cx.insert(Id::SELF);
@@ -153,7 +150,7 @@ fn check(st: &mut St, cx: &Cx, ars: &Arenas, expr: Expr) {
       for &(key, _, val) in fields {
         check(st, cx, ars, key);
         check(st, &cx_big, ars, val);
-        if let ExprD::Prim(Prim::String(s)) = ars.expr[key] {
+        if let ExprData::Prim(Prim::String(s)) = ars.expr[key] {
           if !string_fields.insert(s) {
             st.err(key, "duplicate field");
           }
@@ -163,7 +160,7 @@ fn check(st: &mut St, cx: &Cx, ars: &Arenas, expr: Expr) {
         check(st, &cx_big, ars, cond);
       }
     }
-    ExprD::ObjectComp { key, val, id, iter } => {
+    ExprData::ObjectComp { key, val, id, iter } => {
       check(st, cx, ars, *iter);
       let mut cx = cx.clone();
       cx.insert(*id);
@@ -172,16 +169,16 @@ fn check(st: &mut St, cx: &Cx, ars: &Arenas, expr: Expr) {
       cx.insert(Id::SUPER);
       check(st, &cx, ars, *val);
     }
-    ExprD::Array(exprs) => {
+    ExprData::Array(exprs) => {
       for &arg in exprs {
         check(st, cx, ars, arg);
       }
     }
-    ExprD::Subscript(ary, idx) => {
+    ExprData::Subscript(ary, idx) => {
       check(st, cx, ars, *ary);
       check(st, cx, ars, *idx);
     }
-    ExprD::Call { func, positional, named } => {
+    ExprData::Call { func, positional, named } => {
       check(st, cx, ars, *func);
       for &arg in positional {
         check(st, cx, ars, arg);
@@ -195,13 +192,13 @@ fn check(st: &mut St, cx: &Cx, ars: &Arenas, expr: Expr) {
         }
       }
     }
-    ExprD::Id(id) => {
+    ExprData::Id(id) => {
       if !cx.contains(*id) {
         st.err(expr, "identifier not in scope");
       }
     }
     // turns out these are exactly the same
-    ExprD::Local(binds, body) | ExprD::Function(binds, body) => {
+    ExprData::Local(binds, body) | ExprData::Function(binds, body) => {
       let mut cx = cx.clone();
       let mut bound_ids = FxHashSet::<Id>::default();
       for &(id, rhs) in binds {
@@ -216,19 +213,19 @@ fn check(st: &mut St, cx: &Cx, ars: &Arenas, expr: Expr) {
       }
       check(st, &cx, ars, *body);
     }
-    ExprD::If(cond, yes, no) => {
+    ExprData::If(cond, yes, no) => {
       check(st, cx, ars, *cond);
       check(st, cx, ars, *yes);
       check(st, cx, ars, *no);
     }
-    ExprD::BinaryOp(lhs, _, rhs) => {
+    ExprData::BinaryOp(lhs, _, rhs) => {
       check(st, cx, ars, *lhs);
       check(st, cx, ars, *rhs);
     }
-    ExprD::UnaryOp(_, inner) => {
+    ExprData::UnaryOp(_, inner) => {
       check(st, cx, ars, *inner);
     }
-    ExprD::Error(inner) => {
+    ExprData::Error(inner) => {
       check(st, cx, ars, *inner);
     }
   }
