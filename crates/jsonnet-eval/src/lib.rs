@@ -21,8 +21,6 @@ type ExprArena = Arena<ExprData>;
 #[derive(Debug)]
 enum ExprData {
   Prim(Prim),
-  Self_,
-  Super,
   Object { asserts: Vec<Expr>, fields: Vec<(Expr, Hidden, Expr)> },
   ObjectComp { key: Expr, val: Expr, id: Id, iter: Expr },
   Array(Vec<Expr>),
@@ -129,16 +127,6 @@ struct Arenas {
 fn check(st: &mut St, cx: &Cx, ars: &Arenas, expr: Expr) {
   match &ars.expr[expr] {
     ExprData::Prim(_) => {}
-    ExprData::Self_ => {
-      if !cx.contains(Id::SELF) {
-        st.err(expr, "`self` not in scope");
-      }
-    }
-    ExprData::Super => {
-      if !cx.contains(Id::SUPER) {
-        st.err(expr, "`super` not in scope");
-      }
-    }
     ExprData::Object { asserts, fields } => {
       let cx_big = {
         let mut cx = cx.clone();
