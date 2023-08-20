@@ -230,3 +230,45 @@ fn check(st: &mut St, cx: &Cx, ars: &Arenas, expr: Expr) {
     }
   }
 }
+
+#[derive(Debug, Clone)]
+struct Env {}
+
+impl Env {
+  fn insert(&mut self, _: Id, _: Value) {
+    todo!()
+  }
+
+  fn get(&self, _: Id) -> &Value {
+    todo!()
+  }
+}
+
+/// The spec uses eager substitution but I suspect this is prohibitively non-performant. So we
+/// separate values into primitives and recursive values. Recursive values contain expressions,
+/// because Jsonnet itself has lazy semantics.
+///
+/// Because of this, and also because we choose to implement substitution lazily (as opposed to the
+/// spec which expresses the semantics with eager substitution), we must therefore also carry with
+/// recursive values an environment in which to do lazy substitutions.
+///
+/// Note that implementing substitution lazily is not meant to break with the spec. The execution
+/// should be semantically equivalent.
+#[derive(Debug, Clone)]
+enum Value {
+  Prim(Prim),
+  RecVal(RecVal),
+}
+
+#[derive(Debug, Clone)]
+struct RecVal {
+  env: Env,
+  kind: RecValKind,
+}
+
+#[derive(Debug, Clone)]
+enum RecValKind {
+  Object { asserts: Vec<Expr>, fields: Vec<(Str, Hidden, Expr)> },
+  Function(Vec<(Id, Expr)>, Expr),
+  Array(Vec<Expr>),
+}
