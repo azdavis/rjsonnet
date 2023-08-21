@@ -74,12 +74,12 @@ enum UnaryOp {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-struct Id(u32);
+struct Id {}
 
 impl Id {
-  const STD: Self = Id(0);
-  const SELF: Self = Id(1);
-  const SUPER: Self = Id(2);
+  const STD: Self = Self {};
+  const SELF: Self = Self {};
+  const SUPER: Self = Self {};
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
