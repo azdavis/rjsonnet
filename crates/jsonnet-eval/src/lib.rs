@@ -98,10 +98,14 @@ impl StrArena {
   }
 }
 
-struct St {}
+struct St {
+  errors: Vec<(Expr, &'static str)>,
+}
 
 impl St {
-  fn err(&mut self, _: Expr, _: &str) {}
+  fn err(&mut self, e: Expr, s: &'static str) {
+    self.errors.push((e, s));
+  }
 }
 
 #[derive(Debug, Clone)]
