@@ -22,7 +22,7 @@ type ExprArena = Arena<ExprData>;
 enum ExprData {
   Prim(Prim),
   Object { asserts: Vec<Expr>, fields: Vec<(Expr, Hidden, Expr)> },
-  ObjectComp { key: Expr, val: Expr, id: Id, iter: Expr },
+  ObjectComp { key: Expr, val: Expr, id: Id, ary: Expr },
   Array(Vec<Expr>),
   Subscript { on: Expr, idx: Expr },
   Call { func: Expr, positional: Vec<Expr>, named: Vec<(Id, Expr)> },
@@ -152,8 +152,8 @@ fn check(st: &mut St, cx: &Cx, ars: &Arenas, expr: Expr) {
         check(st, &cx_big, ars, cond);
       }
     }
-    ExprData::ObjectComp { key, val, id, iter } => {
-      check(st, cx, ars, *iter);
+    ExprData::ObjectComp { key, val, id, ary } => {
+      check(st, cx, ars, *ary);
       let mut cx = cx.clone();
       cx.insert(*id);
       check(st, &cx, ars, *key);
