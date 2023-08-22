@@ -214,10 +214,7 @@ fn check(st: &mut St, cx: &Cx, ars: &Arenas, expr: Expr) {
       check(st, cx, ars, *lhs);
       check(st, cx, ars, *rhs);
     }
-    ExprData::UnaryOp(_, inner) => {
-      check(st, cx, ars, *inner);
-    }
-    ExprData::Error(inner) => {
+    ExprData::UnaryOp(_, inner) | ExprData::Error(inner) => {
       check(st, cx, ars, *inner);
     }
   }
