@@ -1,7 +1,10 @@
 //! A lazy evaluator for jsonnet.
+//!
+//! From the [spec](https://jsonnet.org/ref/spec.html).
 
 #![deny(clippy::pedantic, missing_debug_implementations, missing_docs, rust_2018_idioms)]
-#![allow(dead_code)]
+// TODO clean up allows
+#![allow(dead_code, clippy::manual_let_else, clippy::too_many_lines)]
 
 use la_arena::{Arena, Idx};
 use rustc_hash::{FxHashMap, FxHashSet};
@@ -9,8 +12,7 @@ use rustc_hash::{FxHashMap, FxHashSet};
 #[derive(Debug, Clone, Copy)]
 enum Prim {
   Null,
-  True,
-  False,
+  Bool(bool),
   String(Str),
   Number(f64),
 }
@@ -21,25 +23,25 @@ type ExprArena = Arena<ExprData>;
 #[derive(Debug)]
 enum ExprData {
   Prim(Prim),
-  Object { asserts: Vec<Expr>, fields: Vec<(Expr, Hidden, Expr)> },
-  ObjectComp { key: Expr, val: Expr, id: Id, ary: Expr },
+  Object { asserts: Vec<Expr>, fields: Vec<(Expr, Visibility, Expr)> },
+  ObjectComp { name: Expr, body: Expr, id: Id, ary: Expr },
   Array(Vec<Expr>),
   Subscript { on: Expr, idx: Expr },
   Call { func: Expr, positional: Vec<Expr>, named: Vec<(Id, Expr)> },
   Id(Id),
   Local { binds: Vec<(Id, Expr)>, body: Expr },
-  If(Expr, Expr, Expr),
-  BinaryOp(Expr, BinaryOp, Expr),
-  UnaryOp(UnaryOp, Expr),
+  If { cond: Expr, yes: Expr, no: Expr },
+  BinaryOp { lhs: Expr, op: BinaryOp, rhs: Expr },
+  UnaryOp { op: UnaryOp, inner: Expr },
   Function { params: Vec<(Id, Expr)>, body: Expr },
   Error(Expr),
 }
 
 #[derive(Debug, Clone, Copy)]
-enum Hidden {
-  One,
-  Two,
-  Three,
+enum Visibility {
+  Default,
+  Hidden,
+  Visible,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -139,12 +141,12 @@ fn check(st: &mut St, cx: &Cx, ars: &Arenas, expr: Expr) {
         cx
       };
       let mut field_names = FxHashSet::<Str>::default();
-      for &(key, _, val) in fields {
-        check(st, cx, ars, key);
-        check(st, &cx_big, ars, val);
-        if let ExprData::Prim(Prim::String(s)) = ars.expr[key] {
+      for &(name, _, body) in fields {
+        check(st, cx, ars, name);
+        check(st, &cx_big, ars, body);
+        if let ExprData::Prim(Prim::String(s)) = ars.expr[name] {
           if !field_names.insert(s) {
-            st.err(key, "duplicate field");
+            st.err(name, "duplicate field name");
           }
         }
       }
@@ -152,14 +154,14 @@ fn check(st: &mut St, cx: &Cx, ars: &Arenas, expr: Expr) {
         check(st, &cx_big, ars, cond);
       }
     }
-    ExprData::ObjectComp { key, val, id, ary } => {
+    ExprData::ObjectComp { name, body, id, ary } => {
       check(st, cx, ars, *ary);
       let mut cx = cx.clone();
       cx.insert(*id);
-      check(st, &cx, ars, *key);
+      check(st, &cx, ars, *name);
       cx.insert(Id::SELF);
       cx.insert(Id::SUPER);
-      check(st, &cx, ars, *val);
+      check(st, &cx, ars, *body);
     }
     ExprData::Array(exprs) => {
       for &arg in exprs {
@@ -205,16 +207,16 @@ fn check(st: &mut St, cx: &Cx, ars: &Arenas, expr: Expr) {
       }
       check(st, &cx, ars, *body);
     }
-    ExprData::If(cond, yes, no) => {
+    ExprData::If { cond, yes, no } => {
       check(st, cx, ars, *cond);
       check(st, cx, ars, *yes);
       check(st, cx, ars, *no);
     }
-    ExprData::BinaryOp(lhs, _, rhs) => {
+    ExprData::BinaryOp { lhs, rhs, .. } => {
       check(st, cx, ars, *lhs);
       check(st, cx, ars, *rhs);
     }
-    ExprData::UnaryOp(_, inner) | ExprData::Error(inner) => {
+    ExprData::UnaryOp { inner, .. } | ExprData::Error(inner) => {
       check(st, cx, ars, *inner);
     }
   }
@@ -252,9 +254,27 @@ enum Val {
   Error(Str),
 }
 
+impl Val {
+  fn empty_object() -> Self {
+    Self::Rec {
+      env: Env::default(),
+      kind: RecValKind::Object { asserts: Vec::new(), fields: FxHashMap::default() },
+    }
+  }
+}
+
 #[derive(Debug, Clone)]
 enum RecValKind {
-  Object { asserts: Vec<Expr>, fields: FxHashMap<Str, (Hidden, Expr)> },
-  Function { params: FxHashMap<Id, Expr>, body: Expr },
+  Object {
+    asserts: Vec<Expr>,
+    fields: FxHashMap<Str, (Visibility, Expr)>,
+  },
+  Function {
+    /// we'd like to get good performance for lookup by both index for positional arguments and name
+    /// for keyword arguments, but to do that we'd need to something like double the memory and
+    /// store both a vec and a map. which we could do but we choose to not right now.
+    params: Vec<(Id, Expr)>,
+    body: Expr,
+  },
   Array(Vec<Expr>),
 }
