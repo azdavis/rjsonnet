@@ -478,15 +478,10 @@ fn eval(env: &Env, ars: &Arenas, expr: Expr) -> Eval {
 }
 
 fn float_pair(env: &Env, ars: &Arenas, a: Expr, b: Expr) -> Eval<[f64; 2]> {
-  let a = match eval(env, ars, a)? {
-    Val::Prim(Prim::Number(x)) => x,
-    Val::Prim(_) | Val::Rec { .. } => return Err(EvalError::IncompatibleTypes),
-  };
-  let b = match eval(env, ars, b)? {
-    Val::Prim(Prim::Number(x)) => x,
-    Val::Prim(_) | Val::Rec { .. } => return Err(EvalError::IncompatibleTypes),
-  };
-  Ok([a, b])
+  match (eval(env, ars, a)?, eval(env, ars, b)?) {
+    (Val::Prim(Prim::Number(a)), Val::Prim(Prim::Number(b))) => Ok([a, b]),
+    _ => Err(EvalError::IncompatibleTypes),
+  }
 }
 
 fn float_op<F>(env: &Env, ars: &Arenas, lhs: Expr, rhs: Expr, f: F) -> Eval
