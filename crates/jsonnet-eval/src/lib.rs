@@ -48,7 +48,6 @@ enum Visibility {
 enum BinaryOp {
   Star,
   Slash,
-  Percent,
   Plus,
   Minus,
   LtLt,
@@ -57,9 +56,6 @@ enum BinaryOp {
   LtEq,
   Gt,
   GtEq,
-  EqEq,
-  BangEq,
-  In,
   And,
   Carat,
   Bar,
