@@ -222,17 +222,22 @@ fn check(st: &mut St, cx: &Cx, ars: &Arenas, expr: Expr) {
   }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Default, Clone)]
 struct Env {}
 
 impl Env {
-  fn insert(&mut self, _: Id, _: Val) {
+  fn insert(&mut self, _: Id, _: Subst) {
     todo!()
   }
 
-  fn get(&self, _: Id) -> &Val {
+  fn get(&self, _: Id) -> &Subst {
     todo!()
   }
+}
+
+enum Subst {
+  Val(Val),
+  Expr(Env, Expr),
 }
 
 /// The spec uses eager substitution but I suspect this is prohibitively non-performant. So we
