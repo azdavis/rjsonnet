@@ -437,9 +437,22 @@ fn eval(env: &Env, ars: &Arenas, expr: Expr) -> Eval {
     }
     ExprData::BinaryOp { lhs, op, rhs } => match op {
       // plus
-      BinaryOp::Plus => todo!(),
+      BinaryOp::Plus => match (eval(env, ars, *lhs)?, eval(env, ars, *rhs)?) {
+        (Val::Prim(Prim::String(lhs)), rhs) => {
+          let rhs = str_conv(rhs);
+          Ok(Val::Prim(Prim::String(str_concat(lhs, rhs))))
+        }
+        (lhs, Val::Prim(Prim::String(rhs))) => {
+          let lhs = str_conv(lhs);
+          Ok(Val::Prim(Prim::String(str_concat(lhs, rhs))))
+        }
+        (Val::Prim(Prim::Number(lhs)), Val::Prim(Prim::Number(rhs))) => {
+          Ok(Val::Prim(Prim::Number(lhs + rhs)))
+        }
+        _ => todo!(),
+      },
       // arithmetic
-      BinaryOp::Star => float_op(env, ars, *lhs, *rhs, std::ops::Add::add),
+      BinaryOp::Star => float_op(env, ars, *lhs, *rhs, std::ops::Mul::mul),
       BinaryOp::Slash => float_op(env, ars, *lhs, *rhs, std::ops::Div::div),
       BinaryOp::Minus => float_op(env, ars, *lhs, *rhs, std::ops::Sub::sub),
       // bitwise
@@ -470,10 +483,10 @@ fn eval(env: &Env, ars: &Arenas, expr: Expr) -> Eval {
       let kind = RecValKind::Function { params: params.clone(), body: *body };
       Ok(Val::Rec { env: env.clone(), kind })
     }
-    ExprData::Error(inner) => match eval(env, ars, *inner)? {
-      Val::Prim(Prim::String(s)) => Err(EvalError::User(s)),
-      Val::Prim(_) | Val::Rec { .. } => todo!(),
-    },
+    ExprData::Error(inner) => {
+      let val = eval(env, ars, *inner)?;
+      Err(EvalError::User(str_conv(val)))
+    }
   }
 }
 
@@ -562,5 +575,17 @@ fn subst(_: Expr, _: Id, _: &Arenas, _: Expr) -> Expr {
 }
 
 fn eval_local(_: &Env, _: &[(Id, Expr)], _: &Arenas, _: Expr) -> Eval {
+  todo!()
+}
+
+#[allow(clippy::needless_pass_by_value)]
+fn str_conv(val: Val) -> Str {
+  match val {
+    Val::Prim(Prim::String(s)) => s,
+    _ => todo!(),
+  }
+}
+
+fn str_concat(_: Str, _: Str) -> Str {
   todo!()
 }
