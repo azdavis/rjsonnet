@@ -3,7 +3,7 @@
 version = 3
 
 [[package]]
-name = "jsonnet-eval"
+name = "jsonnet-dynamics"
 version = "0.1.0"
 dependencies = [
  "jsonnet-hir",
