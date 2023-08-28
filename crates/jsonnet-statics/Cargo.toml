@@ -10,7 +10,6 @@ test = false
 doctest = false
 
 [dependencies]
-la-arena.workspace = true
 rustc-hash.workspace = true
 
 jsonnet-hir = { path = "../jsonnet-hir" }
