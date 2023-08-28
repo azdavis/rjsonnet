@@ -134,3 +134,9 @@ impl StrArena {
     &self.id_to_contents[s.to_usize()]
   }
 }
+
+#[derive(Debug, Default)]
+pub struct Arenas {
+  pub str: StrArena,
+  pub expr: ExprArena,
+}

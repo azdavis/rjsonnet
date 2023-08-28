@@ -20,6 +20,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "jsonnet-statics"
+version = "0.1.0"
+dependencies = [
+ "jsonnet-hir",
+ "la-arena",
+ "rustc-hash",
+]
+
+[[package]]
 name = "la-arena"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"

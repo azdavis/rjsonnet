@@ -1,0 +1,16 @@
+[package]
+name = "jsonnet-statics"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lib]
+test = false
+doctest = false
+
+[dependencies]
+la-arena.workspace = true
+rustc-hash.workspace = true
+
+jsonnet-hir = { path = "../jsonnet-hir" }
