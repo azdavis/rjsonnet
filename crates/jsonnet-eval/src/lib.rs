@@ -2,15 +2,15 @@
 //!
 //! From the [spec](https://jsonnet.org/ref/spec.html).
 
-#![deny(clippy::pedantic, missing_debug_implementations, missing_docs, rust_2018_idioms)]
-#![allow(dead_code, clippy::too_many_lines)]
+#![deny(clippy::pedantic, missing_debug_implementations, rust_2018_idioms)]
+#![allow(clippy::too_many_lines)]
 
 use jsonnet_hir::{Arenas, BinaryOp, Expr, ExprData, Id, Prim, Str, Visibility};
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::cmp::Ordering;
 
 #[derive(Debug, Default, Clone)]
-struct Env {
+pub struct Env {
   store: FxHashMap<Id, Subst>,
 }
 
@@ -43,7 +43,7 @@ enum Subst {
 ///
 /// We also consider errors values.
 #[derive(Debug, Clone)]
-enum Val {
+pub enum Val {
   Prim(Prim),
   Rec { env: Env, kind: RecValKind },
 }
@@ -58,7 +58,7 @@ impl Val {
 }
 
 #[derive(Debug, Clone)]
-enum RecValKind {
+pub enum RecValKind {
   Object {
     asserts: Vec<Expr>,
     fields: FxHashMap<Str, (Visibility, Expr)>,
@@ -73,7 +73,8 @@ enum RecValKind {
   Array(Vec<Expr>),
 }
 
-enum EvalError {
+#[derive(Debug)]
+pub enum EvalError {
   Todo,
   ArrayIdxNotInteger,
   ArrayIdxOutOfRange,
@@ -92,9 +93,16 @@ type Eval<T = Val> = Result<T, EvalError>;
 
 const EPSILON: f64 = 0.0001;
 
-/// TODO implement a cache on expr to avoid re-computing lazy exprs? but we would also need to
-/// consider the env in which the expr is evaluated
-fn eval(env: &Env, ars: &Arenas, expr: Expr) -> Eval {
+/// # Errors
+///
+/// If evaluation failed.
+///
+/// # Panics
+///
+/// If the expr wasn't checked.
+pub fn eval(env: &Env, ars: &Arenas, expr: Expr) -> Eval {
+  // TODO implement a cache on expr to avoid re-computing lazy exprs? but we would also need to
+  // consider the env in which the expr is evaluated
   match &ars.expr[expr] {
     ExprData::Prim(p) => Ok(Val::Prim(*p)),
     ExprData::Object { asserts, fields } => {
