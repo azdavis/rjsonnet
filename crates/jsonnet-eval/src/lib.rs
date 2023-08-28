@@ -90,6 +90,9 @@ impl Str {
   const SUPER: Self = Self(2);
   const TODO: Self = Self(3);
 
+  const PRESET: [(Self, &'static str); 4] =
+    [(Self::STD, "std"), (Self::SELF, "self"), (Self::SUPER, "super"), (Self::TODO, "TODO")];
+
   /// Panics on failure.
   fn from_usize(u: usize) -> Self {
     Self(u.try_into().unwrap())
@@ -105,6 +108,16 @@ impl Str {
 struct StrArena {
   id_to_contents: Vec<Box<str>>,
   contents_to_id: FxHashMap<Box<str>, Str>,
+}
+
+impl Default for StrArena {
+  fn default() -> Self {
+    let mut ret = Self { id_to_contents: Vec::new(), contents_to_id: FxHashMap::default() };
+    for (a, b) in Str::PRESET {
+      assert_eq!(a, ret.insert(b.to_owned().into_boxed_str()));
+    }
+    ret
+  }
 }
 
 impl StrArena {
@@ -125,6 +138,7 @@ impl StrArena {
   }
 }
 
+#[derive(Debug, Default)]
 struct St {
   errors: Vec<(Expr, &'static str)>,
 }
