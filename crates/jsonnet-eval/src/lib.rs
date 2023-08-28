@@ -3,8 +3,7 @@
 //! From the [spec](https://jsonnet.org/ref/spec.html).
 
 #![deny(clippy::pedantic, missing_debug_implementations, missing_docs, rust_2018_idioms)]
-// TODO clean up allows
-#![allow(dead_code, clippy::manual_let_else, clippy::too_many_lines)]
+#![allow(dead_code, clippy::too_many_lines)]
 
 use jsonnet_hir::{Arenas, BinaryOp, Expr, ExprData, Id, Prim, Str, Visibility};
 use rustc_hash::{FxHashMap, FxHashSet};
@@ -151,10 +150,7 @@ fn eval(env: &Env, ars: &Arenas, expr: Expr) -> Eval {
           Val::Prim(Prim::String(x)) => x,
           Val::Prim(_) | Val::Rec { .. } => return Err(EvalError::IncompatibleTypes),
         };
-        let &(_, body) = match fields.get(&name) {
-          Some(x) => x,
-          None => return Err(EvalError::NoSuchFieldName),
-        };
+        let Some(&(_, body)) = fields.get(&name) else { return Err(EvalError::NoSuchFieldName) };
         let kind = RecValKind::Object { asserts: asserts.clone(), fields: fields.clone() };
         let this = Val::Rec { env: obj_env.clone(), kind };
         obj_env.insert(Id::SELF, Subst::Val(this));
@@ -179,10 +175,7 @@ fn eval(env: &Env, ars: &Arenas, expr: Expr) -> Eval {
         }
         #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
         let idx = idx_floor as u32;
-        let idx = match usize::try_from(idx) {
-          Ok(x) => x,
-          Err(_) => return Err(EvalError::ArrayIdxOutOfRange),
-        };
+        let Ok(idx) = usize::try_from(idx) else { return Err(EvalError::ArrayIdxOutOfRange) };
         match elems.get(idx) {
           Some(&elem) => eval(&ary_env, ars, elem),
           None => Err(EvalError::ArrayIdxOutOfRange),
