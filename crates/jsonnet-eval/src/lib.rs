@@ -8,7 +8,7 @@
 
 use la_arena::{Arena, Idx};
 use rustc_hash::{FxHashMap, FxHashSet};
-use std::cmp::Ordering;
+use std::{cmp::Ordering, collections::hash_map::Entry};
 
 #[derive(Debug, Clone, Copy)]
 enum Prim {
@@ -73,27 +73,55 @@ enum UnaryOp {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-struct Id {}
+struct Id(Str);
 
 impl Id {
-  const STD: Self = Self {};
-  const SELF: Self = Self {};
-  const SUPER: Self = Self {};
+  const STD: Self = Self(Str::STD);
+  const SELF: Self = Self(Str::SELF);
+  const SUPER: Self = Self(Str::SUPER);
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-struct Str {}
+struct Str(u32);
 
-#[derive(Debug)]
-struct StrArena {}
+impl Str {
+  const STD: Self = Self(0);
+  const SELF: Self = Self(1);
+  const SUPER: Self = Self(2);
+  const TODO: Self = Self(3);
 
-impl StrArena {
-  fn insert(&mut self, _: String) -> Str {
-    todo!()
+  /// Panics on failure.
+  fn from_usize(u: usize) -> Self {
+    Self(u.try_into().unwrap())
   }
 
-  fn get(&self, _: Str) -> &str {
-    todo!()
+  /// Panics on failure.
+  fn to_usize(self) -> usize {
+    self.0.try_into().unwrap()
+  }
+}
+
+#[derive(Debug)]
+struct StrArena {
+  id_to_contents: Vec<Box<str>>,
+  contents_to_id: FxHashMap<Box<str>, Str>,
+}
+
+impl StrArena {
+  fn insert(&mut self, contents: Box<str>) -> Str {
+    match self.contents_to_id.entry(contents) {
+      Entry::Occupied(entry) => *entry.get(),
+      Entry::Vacant(entry) => {
+        let ret = Str::from_usize(self.id_to_contents.len());
+        self.id_to_contents.push(entry.key().clone());
+        entry.insert(ret);
+        ret
+      }
+    }
+  }
+
+  fn get(&self, s: Str) -> &str {
+    &self.id_to_contents[s.to_usize()]
   }
 }
 
@@ -220,18 +248,21 @@ fn check(st: &mut St, cx: &Cx, ars: &Arenas, expr: Expr) {
 }
 
 #[derive(Debug, Default, Clone)]
-struct Env {}
+struct Env {
+  store: FxHashMap<Id, Subst>,
+}
 
 impl Env {
-  fn insert(&mut self, _: Id, _: Subst) {
-    todo!()
+  fn insert(&mut self, id: Id, subst: Subst) {
+    self.store.insert(id, subst);
   }
 
-  fn get(&self, _: Id) -> &Subst {
-    todo!()
+  fn get(&self, id: Id) -> &Subst {
+    &self.store[&id]
   }
 }
 
+#[derive(Debug, Clone)]
 enum Subst {
   Val(Val),
   Expr(Env, Expr),
@@ -281,6 +312,7 @@ enum RecValKind {
 }
 
 enum EvalError {
+  Todo,
   ArrayIdxNotInteger,
   ArrayIdxOutOfRange,
   DuplicateArgument,
@@ -330,7 +362,11 @@ fn eval(env: &Env, ars: &Arenas, expr: Expr) -> Eval {
         env.insert(*id, Subst::Expr(elem_env.clone(), elem));
         match eval(&env, ars, *name)? {
           Val::Prim(Prim::String(s)) => {
-            let body = subst(elem, *id, ars, *body);
+            // we want to do `[e/x]body` here?
+            let body = match ars.expr[*body] {
+              ExprData::Prim(_) => *body,
+              _ => return Err(EvalError::Todo),
+            };
             if fields.insert(s, (Visibility::Default, body)).is_some() {
               return Err(EvalError::DuplicateField);
             }
@@ -449,7 +485,7 @@ fn eval(env: &Env, ars: &Arenas, expr: Expr) -> Eval {
         (Val::Prim(Prim::Number(lhs)), Val::Prim(Prim::Number(rhs))) => {
           Ok(Val::Prim(Prim::Number(lhs + rhs)))
         }
-        _ => todo!(),
+        _ => Err(EvalError::Todo),
       },
       // arithmetic
       BinaryOp::Star => float_op(env, ars, *lhs, *rhs, std::ops::Mul::mul),
@@ -478,7 +514,7 @@ fn eval(env: &Env, ars: &Arenas, expr: Expr) -> Eval {
         Val::Prim(_) | Val::Rec { .. } => Err(EvalError::IncompatibleTypes),
       },
     },
-    ExprData::UnaryOp { .. } => todo!(),
+    ExprData::UnaryOp { .. } => Err(EvalError::Todo),
     ExprData::Function { params, body } => {
       let kind = RecValKind::Function { params: params.clone(), body: *body };
       Ok(Val::Rec { env: env.clone(), kind })
@@ -569,23 +605,18 @@ fn cmp_val(ars: &Arenas, lhs: &Val, rhs: &Val) -> Eval<Ordering> {
   }
 }
 
-/// subst(e,x,ars,body) = [e/x]body
-fn subst(_: Expr, _: Id, _: &Arenas, _: Expr) -> Expr {
-  todo!("subst: might need to rethink this approach")
-}
-
 fn eval_local(_: &Env, _: &[(Id, Expr)], _: &Arenas, _: Expr) -> Eval {
-  todo!()
+  Err(EvalError::Todo)
 }
 
 #[allow(clippy::needless_pass_by_value)]
 fn str_conv(val: Val) -> Str {
   match val {
     Val::Prim(Prim::String(s)) => s,
-    _ => todo!(),
+    _ => Str::TODO,
   }
 }
 
 fn str_concat(_: Str, _: Str) -> Str {
-  todo!()
+  Str::TODO
 }
