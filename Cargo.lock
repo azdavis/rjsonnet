@@ -6,6 +6,15 @@ version = 3
 name = "jsonnet-eval"
 version = "0.1.0"
 dependencies = [
+ "jsonnet-hir",
+ "la-arena",
+ "rustc-hash",
+]
+
+[[package]]
+name = "jsonnet-hir"
+version = "0.1.0"
+dependencies = [
  "la-arena",
  "rustc-hash",
 ]
