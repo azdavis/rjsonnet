@@ -1,0 +1,103 @@
+Root = Expr
+
+Expr =
+  ExprNull
+| ExprTrue
+| ExprFalse
+| ExprSelf
+| ExprSuper
+| ExprDollar
+| ExprString
+| ExprNumber
+| ExprObject
+| ExprArray
+| ExprArrayComp
+| ExprDotField
+| ExprSubscript
+| ExprCall
+| ExprLocal
+| ExprIf
+| ExprBinaryOp
+| ExprUnaryOp
+| ExprImplicitObjectPlus
+| ExprFunction
+| ExprAssert
+| ExprImport
+| ExprError
+
+ExprNull = 'null'
+ExprTrue = 'true'
+ExprFalse = 'false'
+ExprSelf = 'self'
+// `super` is only allowed to occur with a field access
+ExprSuper = 'super'
+ExprDollar = '$'
+ExprString = 'String'
+ExprNumber = 'Number'
+ExprObject = '{' ObjectInside '}'
+ExprArray = '[' ExprComma* ']'
+ExprArrayComp = '[' ExprComma ForSpec CompSpec* ']'
+ExprDotField = Expr '.' 'Id'
+ExprSubscript = Expr '[' idx:Expr? from:ColonExpr? to:ColonExpr? ']'
+ExprCall = Expr '(' Arg* ')'
+ExprLocal = 'local' Bind* ';' Expr
+ExprIf = 'if' cond:Expr 'then' yes:Expr ElseExpr?
+ExprBinaryOp = lhs:Expr BinaryOp rhs:Expr
+ExprUnaryOp = UnaryOp Expr
+ExprImplicitObjectPlus = Expr '{' ObjectInside '}'
+ExprFunction = 'function' ParenParams Expr
+ExprAssert = 'assert' ';' Expr
+ExprImport = Import 'String'
+ExprError = 'error' Expr
+
+// TODO object comprehension
+ObjectInside = Member*
+Member = MemberKind ','?
+
+MemberKind = ObjectLocal | Assert | Field
+
+// slightly rearranged from the spec
+Field = FieldName FieldOpts? Visibility Expr
+FieldOpts = FieldPlus | ParenParams
+FieldPlus = '+'
+
+// called 'hidden' in the spec
+Visibility = ':' | '::' | ':::'
+
+ObjectLocal = 'local' Bind
+
+// in the spec, the * is built-in to this itself. in the ungrammar, we simply add the * for every
+// usage.
+CompSpec = ForSpec | IfSpec
+
+ForSpec = 'for' 'Id' 'in' Expr
+
+IfSpec = 'if' Expr
+
+FieldName = FieldNameId | FieldNameString | FieldNameExpr
+FieldNameId = 'Id'
+FieldNameString = 'String'
+FieldNameExpr = '[' Expr ']'
+
+Assert = 'assert' Expr ColonExpr?
+
+Bind = 'Id' ParenParams? EqExpr ','?
+
+Arg = IdEq? Expr ','?
+
+ParenParams = '(' Param* ')'
+Param = 'Id' EqExpr? ','?
+
+BinaryOp =
+  '*' | '/' | '%' | '+' | '-' | '<<' | '>>' | '<' | '<='
+| '>' | '>=' | '==' | '!=' | 'in' | '&' | '^' | '|' | '&&' | '||'
+
+UnaryOp = '-' | '+' | '!' | '~'
+
+// helpers
+IdEq = 'Id' '='
+EqExpr = '=' Expr
+ExprComma = Expr ','?
+ColonExpr = ':' Expr
+ElseExpr = 'else' Expr
+Import = 'import' | 'importstr' | 'importbin'

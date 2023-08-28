@@ -1,0 +1,18 @@
+[package]
+name = "jsonnet-syntax"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lib]
+test = false
+doctest = false
+
+[dependencies]
+rowan.workspace = true
+token.workspace = true
+
+[build-dependencies]
+rustc-hash.workspace = true
+syntax-gen.workspace = true
