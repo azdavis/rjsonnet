@@ -1,3 +1,5 @@
+//! Concrete syntax for Jsonnet.
+
 pub mod ast {
   include!(concat!(env!("OUT_DIR"), "/ast.rs"));
 }
