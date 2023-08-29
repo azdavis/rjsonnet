@@ -23,7 +23,8 @@ pub fn get(s: &str) -> Lex<'_> {
   while let Some(b) = st.cur() {
     let start = st.mark();
     let kind = go(&mut st, b);
-    let text = std::str::from_utf8(st.since_mark(start)).expect("each token should be a str");
+    let bs = st.non_empty_since(start);
+    let text = std::str::from_utf8(bs).expect("each token should be a str");
     ret.tokens.push(token::Token { kind, text });
   }
   ret.errors = st.finish();
@@ -81,7 +82,7 @@ fn go(st: &mut St<'_>, b: u8) -> SK {
     st.bump();
     st.advance_while(|b| b.is_ascii_alphanumeric() || b == b'_');
     // TODO reject `tailstrict`
-    return SK::keyword(st.since_mark(start)).unwrap_or(SK::Id);
+    return SK::keyword(st.non_empty_since(start)).unwrap_or(SK::Id);
   }
   if b.is_ascii_digit() {
     st.bump();

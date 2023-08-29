@@ -44,7 +44,7 @@ impl<'a> St<'a> {
     Marker { bomb: DebugDropBomb::new("must be passed to `since_mark`"), idx: self.idx }
   }
 
-  pub(crate) fn since_mark(&self, mut m: Marker) -> &'a [u8] {
+  pub(crate) fn non_empty_since(&self, mut m: Marker) -> &'a [u8] {
     m.bomb.defuse();
     assert!(self.idx > m.idx, "failed to advance since marker");
     &self.s.as_bytes()[m.idx..self.idx]
