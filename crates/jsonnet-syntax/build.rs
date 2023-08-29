@@ -1,7 +1,7 @@
 use rustc_hash::FxHashMap;
 
 fn main() {
-  let trivia = ["SlashSlashComment", "HashComment", "BlockComment"];
+  let trivia = ["Whitespace", "SlashSlashComment", "HashComment", "BlockComment", "Invalid"];
   let grammar = include_str!("syntax.ungram");
   let mut special = FxHashMap::<&str, &str>::default();
   special.insert("Id", "an identifier");
