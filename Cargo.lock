@@ -20,6 +20,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7704b5fdd17b18ae31c4c1da5a2e0305a2bf17b5249300a9ee9ed7b72114c636"
 
 [[package]]
+name = "drop_bomb"
+version = "0.1.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9bda8e21c04aca2ae33ffc2fd8c23134f3cac46db123ba97bd9d3f3b8a4a85e1"
+
+[[package]]
 name = "fast-hash"
 version = "0.1.0"
 source = "git+https://github.com/azdavis/language-util.git#efbac6bf360fe58f6c10ab9a3e2d608336d46c40"
@@ -52,6 +58,15 @@ version = "0.1.0"
 dependencies = [
  "la-arena",
  "rustc-hash",
+]
+
+[[package]]
+name = "jsonnet-lex"
+version = "0.1.0"
+dependencies = [
+ "drop_bomb",
+ "jsonnet-syntax",
+ "token",
 ]
 
 [[package]]

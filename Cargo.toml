@@ -10,6 +10,7 @@ publish = false
 
 [workspace.dependencies]
 # third party
+drop_bomb = "0.1.5"
 la-arena = "0.3.1"
 rowan = "0.15.11"
 rustc-hash = "1.1.0"
