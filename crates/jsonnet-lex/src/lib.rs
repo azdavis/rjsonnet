@@ -31,10 +31,6 @@ pub fn get(s: &str) -> Lex<'_> {
   ret
 }
 
-fn is_ws(b: u8) -> bool {
-  matches!(b, b' ' | b'\t' | b'\n' | b'\r')
-}
-
 fn go(st: &mut St<'_>, b: u8) -> SK {
   if is_ws(b) {
     st.bump();
@@ -127,4 +123,8 @@ fn digits(st: &mut St<'_>) {
   if !st.did_advance_since(m) {
     st.err("need at least 1 digit");
   }
+}
+
+fn is_ws(b: u8) -> bool {
+  matches!(b, b' ' | b'\t' | b'\n' | b'\r')
 }
