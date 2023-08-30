@@ -25,7 +25,7 @@ fn expr_prec_must(p: &mut Parser<'_>, min_prec: Prec) {
 #[must_use]
 #[allow(clippy::too_many_lines)]
 fn expr_prec(p: &mut Parser<'_>, min_prec: Prec) -> Option<Exited> {
-  let Some(cur) = p.peek() else { return None };
+  let cur = p.peek()?;
   let en = p.enter();
   let kind = match cur.kind {
     // all of these expressions are atomic. this means they never require parentheses to resolve
@@ -295,7 +295,7 @@ fn member(p: &mut Parser<'_>) -> Option<Exited> {
 
 #[must_use]
 fn member_kind(p: &mut Parser<'_>) -> Option<Exited> {
-  let Some(cur) = p.peek() else { return None };
+  let cur = p.peek()?;
   let en = p.enter();
   let kind = match cur.kind {
     SK::LocalKw => {
@@ -342,7 +342,7 @@ fn field(p: &mut Parser<'_>) -> bool {
 
 #[must_use]
 fn field_name(p: &mut Parser<'_>) -> Option<Exited> {
-  let Some(cur) = p.peek() else { return None };
+  let cur = p.peek()?;
   let en = p.enter();
   let kind = match cur.kind {
     SK::Id => {
