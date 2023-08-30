@@ -13,4 +13,4 @@ doctest = false
 drop_bomb.workspace = true
 token.workspace = true
 
-jsonnet-syntax = { path = "../jsonnet-syntax" }
+jsonnet-syntax.path = "../jsonnet-syntax"
