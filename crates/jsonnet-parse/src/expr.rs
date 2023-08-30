@@ -195,7 +195,7 @@ fn expr_prec(p: &mut Parser<'_>, min_prec: Prec) -> Option<Exited> {
           }
           let en = p.precede(ex);
           p.bump();
-          expr_prec_must(p, min_prec);
+          expr_prec_must(p, op_prec);
           p.exit(en, SK::ExprBinaryOp)
         }
         None => break,
