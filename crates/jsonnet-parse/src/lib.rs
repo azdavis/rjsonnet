@@ -13,9 +13,7 @@ use jsonnet_syntax::{ast::AstNode as _, kind::SyntaxKind as SK};
 pub fn get(tokens: &[token::Token<'_, SK>]) -> Parse {
   let mut p = Parser::new(tokens);
   let en = p.enter();
-  if expr::get(&mut p).is_none() {
-    p.error(ErrorKind::Expected(Expected::Expr));
-  }
+  expr::expr_must(&mut p);
   while p.peek().is_some() {
     p.error(ErrorKind::Trailing);
   }
@@ -23,7 +21,7 @@ pub fn get(tokens: &[token::Token<'_, SK>]) -> Parse {
   let mut sink = event_parse::rowan_sink::RowanSink::default();
   p.finish(&mut sink);
   let (node, errors) = sink.finish::<jsonnet_syntax::kind::Jsonnet>();
-  let root = jsonnet_syntax::ast::Root::cast(node).expect("everything should be wrapped in a Root");
+  let root = jsonnet_syntax::ast::Root::cast(node).expect("root should be Root");
   Parse { root, errors: errors.into_iter().map(Error).collect() }
 }
 
@@ -47,4 +45,12 @@ pub enum ErrorKind {
 #[derive(Debug)]
 pub enum Expected {
   Expr,
+  Kind(SK),
+  Visibility,
+}
+
+impl event_parse::Expected<SK> for ErrorKind {
+  fn expected(kind: SK) -> Self {
+    ErrorKind::Expected(Expected::Kind(kind))
+  }
 }

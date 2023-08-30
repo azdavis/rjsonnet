@@ -11,7 +11,6 @@ Expr =
 | ExprNumber
 | ExprObject
 | ExprArray
-| ExprArrayComp
 | ExprDotField
 | ExprSubscript
 | ExprCall
@@ -35,8 +34,8 @@ ExprDollar = '$'
 ExprString = 'String'
 ExprNumber = 'Number'
 ExprObject = '{' ObjectInside '}'
-ExprArray = '[' ExprComma* ']'
-ExprArrayComp = '[' ExprComma ForSpec CompSpec* ']'
+// array comprehension is rearranged, TODO sort out in lowering
+ExprArray = '[' ExprComma* ForSpec? CompSpec* ']'
 ExprDotField = Expr '.' 'Id'
 ExprSubscript = Expr '[' idx:Expr? from:ColonExpr? to:ColonExpr? ']'
 ExprCall = Expr '(' Arg* ')'
@@ -46,12 +45,12 @@ ExprBinaryOp = lhs:Expr BinaryOp rhs:Expr
 ExprUnaryOp = UnaryOp Expr
 ExprImplicitObjectPlus = Expr '{' ObjectInside '}'
 ExprFunction = 'function' ParenParams Expr
-ExprAssert = 'assert' ';' Expr
+ExprAssert = Assert ';' Expr
 ExprImport = Import 'String'
 ExprError = 'error' Expr
 
-// TODO object comprehension
-ObjectInside = Member*
+// object comprehension is rearranged, TODO sort out in lowering
+ObjectInside = Member* ForSpec? CompSpec*
 Member = MemberKind ','?
 
 MemberKind = ObjectLocal | Assert | Field
@@ -81,7 +80,7 @@ FieldNameExpr = '[' Expr ']'
 
 Assert = 'assert' Expr ColonExpr?
 
-Bind = 'Id' ParenParams? EqExpr ','?
+Bind = 'Id' ParenParams? '=' Expr ','?
 
 Arg = IdEq? Expr ','?
 
