@@ -416,10 +416,11 @@ fn eq_expr(p: &mut Parser<'_>) -> Option<Exited> {
   Some(p.exit(en, SK::EqExpr))
 }
 
-/// does NOT produce an Exited
+/// requires we are at `AssertKw`. does NOT produce an `Exited`.
 #[must_use]
 fn assert_(p: &mut Parser<'_>) -> SK {
-  p.eat(SK::AssertKw);
+  assert!(p.at(SK::AssertKw));
+  p.bump();
   expr_must(p);
   if p.at(SK::Colon) {
     let en = p.enter();
