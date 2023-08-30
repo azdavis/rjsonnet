@@ -156,6 +156,7 @@ fn expr_prec(p: &mut Parser<'_>, min_prec: Prec) -> Option<Exited> {
       return None;
     }
   };
+  // pratt parser for operator precedence
   let mut ex = p.exit(en, kind);
   while let Some(cur) = p.peek() {
     ex = match cur.kind {
