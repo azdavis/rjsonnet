@@ -41,7 +41,7 @@ ExprObject = '{' ObjectInside '}'
 // array comprehension is rearranged, TODO sort out in lowering
 ExprArray = '[' ExprComma* ForSpec? CompSpec* ']'
 ExprFieldGet = Expr '.' 'Id'
-ExprSubscript = Expr '[' idx:Expr? from:ColonExpr? to:ColonExpr? ']'
+ExprSubscript = Expr '[' expr_a:Expr? colon_a:':'? expr_b:Expr? colon_b:':'? expr_c:Expr? ']'
 ExprCall = Expr '(' Arg* ')'
 ExprLocal = 'local' Bind* ';' Expr
 ExprIf = 'if' cond:Expr 'then' yes:Expr ElseExpr?
