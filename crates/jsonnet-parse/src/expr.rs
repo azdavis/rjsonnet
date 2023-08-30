@@ -37,7 +37,7 @@ fn expr(p: &mut Parser<'_>) -> Option<Exited> {
     // TODO forbid super in many contexts
     SK::SuperKw => {
       p.bump();
-      SK::SuperKw
+      SK::ExprSuper
     }
     SK::Dollar => {
       p.bump();
