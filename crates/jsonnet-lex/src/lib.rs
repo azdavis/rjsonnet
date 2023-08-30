@@ -86,20 +86,21 @@ fn go(st: &mut St<'_>, b: u8) -> SK {
   }
   if b.is_ascii_digit() {
     st.bump();
-    // TODO reject 0 followed by non-digit
+    let m = st.mark();
     st.advance_while(|b| b.is_ascii_digit());
+    if st.did_advance_since(m) {
+      st.err("cannot have a leading 0");
+    }
     if let Some(b'.') = st.cur() {
       st.bump();
-      st.advance_while(|b| b.is_ascii_digit());
-      // TODO reject if not advanced at all since bump (need at least one digit)
+      digits(st);
     }
     if let Some(b'e' | b'E') = st.cur() {
       st.bump();
       if let Some(b'-' | b'+') = st.cur() {
         st.bump();
       }
-      st.advance_while(|b| b.is_ascii_digit());
-      // TODO reject if not advanced at all since bump (need at least one digit)
+      digits(st);
     }
     return SK::Number;
   }
@@ -118,4 +119,12 @@ fn go(st: &mut St<'_>, b: u8) -> SK {
   // TODO handle more strings
   st.next_str();
   SK::Invalid
+}
+
+fn digits(st: &mut St<'_>) {
+  let m = st.mark();
+  st.advance_while(|b| b.is_ascii_digit());
+  if !st.did_advance_since(m) {
+    st.err("need at least 1 digit");
+  }
 }
