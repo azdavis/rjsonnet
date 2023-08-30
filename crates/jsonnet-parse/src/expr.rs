@@ -18,6 +18,10 @@ fn expr(p: &mut Parser<'_>) -> Option<Exited> {
   let Some(cur) = p.peek() else { return None };
   let en = p.enter();
   let kind = match cur.kind {
+    // all of these expressions are atomic. this means they never require parentheses to resolve
+    // precedence issues. clearly, expressions like `null` and `false` are this way, but
+    // interestingly so are object literals and imports. note that objects and arrays may contain
+    // subexpressions that are not atomic, but the overall expression is atomic.
     SK::NullKw => {
       p.bump();
       SK::ExprNull
@@ -78,6 +82,10 @@ fn expr(p: &mut Parser<'_>) -> Option<Exited> {
       p.eat(SK::String);
       SK::ExprImport
     }
+    // these expressions are not atomic, but they do begin with some single identifying token that
+    // immediately distinguishes them from all other expressions, like `assert` or `function`. in
+    // addition, their sub-expressions extend to the right as far as possible (as defined in the
+    // spec), so we may simply recur with `expr_must` which will handle the precedence.
     SK::LocalKw => {
       p.bump();
       bind(p);
@@ -119,6 +127,9 @@ fn expr(p: &mut Parser<'_>) -> Option<Exited> {
       expr_must(p);
       SK::ExprError
     }
+    // the unary operator expressions are not atomic, and they do begin with an identifying token,
+    // but we cannot recur with simply `expr_must`, because we must care a bit more about precedence
+    // here.
     SK::Minus | SK::Plus | SK::Bang | SK::Tilde => {
       p.bump();
       expr_must(p);
