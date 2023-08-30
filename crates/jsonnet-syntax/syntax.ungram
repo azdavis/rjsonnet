@@ -9,6 +9,7 @@ Expr =
 | ExprDollar
 | ExprString
 | ExprNumber
+| ExprId
 | ExprParen
 | ExprObject
 | ExprArray
@@ -34,6 +35,7 @@ ExprSuper = 'super'
 ExprDollar = '$'
 ExprString = 'String'
 ExprNumber = 'Number'
+ExprId = 'Id'
 ExprParen = '(' Expr ')'
 ExprObject = '{' ObjectInside '}'
 // array comprehension is rearranged, TODO sort out in lowering

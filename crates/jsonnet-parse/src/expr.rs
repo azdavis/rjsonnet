@@ -55,6 +55,10 @@ fn expr(p: &mut Parser<'_>) -> Option<Exited> {
       p.bump();
       SK::ExprNumber
     }
+    SK::Id => {
+      p.bump();
+      SK::ExprId
+    }
     SK::LRound => {
       p.bump();
       expr_must(p);
