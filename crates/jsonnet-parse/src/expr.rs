@@ -73,6 +73,11 @@ fn expr(p: &mut Parser<'_>) -> Option<Exited> {
       p.eat(SK::RSquare);
       SK::ExprArray
     }
+    SK::ImportKw | SK::ImportbinKw | SK::ImportstrKw => {
+      p.bump();
+      p.eat(SK::String);
+      SK::ExprImport
+    }
     SK::LocalKw => {
       p.bump();
       bind(p);
@@ -93,11 +98,6 @@ fn expr(p: &mut Parser<'_>) -> Option<Exited> {
       }
       SK::ExprIf
     }
-    SK::Minus | SK::Plus | SK::Bang | SK::Tilde => {
-      p.bump();
-      expr_must(p);
-      SK::ExprUnaryOp
-    }
     SK::FunctionKw => {
       p.bump();
       if paren_params(p).is_none() {
@@ -114,15 +114,15 @@ fn expr(p: &mut Parser<'_>) -> Option<Exited> {
       expr_must(p);
       SK::ExprAssert
     }
-    SK::ImportKw | SK::ImportbinKw | SK::ImportstrKw => {
-      p.bump();
-      p.eat(SK::String);
-      SK::ExprImport
-    }
     SK::ErrorKw => {
       p.bump();
       expr_must(p);
       SK::ExprError
+    }
+    SK::Minus | SK::Plus | SK::Bang | SK::Tilde => {
+      p.bump();
+      expr_must(p);
+      SK::ExprUnaryOp
     }
     _ => {
       p.abandon(en);
