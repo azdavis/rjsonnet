@@ -14,6 +14,14 @@ version = "0.1.0"
 source = "git+https://github.com/azdavis/language-util.git#efbac6bf360fe58f6c10ab9a3e2d608336d46c40"
 
 [[package]]
+name = "code-h2-md-map"
+version = "0.1.0"
+source = "git+https://github.com/azdavis/language-util.git#efbac6bf360fe58f6c10ab9a3e2d608336d46c40"
+dependencies = [
+ "fast-hash",
+]
+
+[[package]]
 name = "countme"
 version = "3.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -100,6 +108,7 @@ dependencies = [
 name = "jsonnet-syntax"
 version = "0.1.0"
 dependencies = [
+ "code-h2-md-map",
  "rowan",
  "rustc-hash",
  "syntax-gen",
