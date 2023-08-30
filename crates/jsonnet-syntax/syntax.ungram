@@ -12,7 +12,7 @@ Expr =
 | ExprParen
 | ExprObject
 | ExprArray
-| ExprDotField
+| ExprFieldGet
 | ExprSubscript
 | ExprCall
 | ExprLocal
@@ -38,7 +38,7 @@ ExprParen = '(' Expr ')'
 ExprObject = '{' ObjectInside '}'
 // array comprehension is rearranged, TODO sort out in lowering
 ExprArray = '[' ExprComma* ForSpec? CompSpec* ']'
-ExprDotField = Expr '.' 'Id'
+ExprFieldGet = Expr '.' 'Id'
 ExprSubscript = Expr '[' idx:Expr? from:ColonExpr? to:ColonExpr? ']'
 ExprCall = Expr '(' Arg* ')'
 ExprLocal = 'local' Bind* ';' Expr
