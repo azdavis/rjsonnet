@@ -18,3 +18,4 @@ rustc-hash = "1.1.0"
 # language util
 syntax-gen.git = "https://github.com/azdavis/language-util.git"
 token.git = "https://github.com/azdavis/language-util.git"
+event-parse.git = "https://github.com/azdavis/language-util.git"

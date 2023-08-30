@@ -26,6 +26,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9bda8e21c04aca2ae33ffc2fd8c23134f3cac46db123ba97bd9d3f3b8a4a85e1"
 
 [[package]]
+name = "event-parse"
+version = "0.1.0"
+source = "git+https://github.com/azdavis/language-util.git#efbac6bf360fe58f6c10ab9a3e2d608336d46c40"
+dependencies = [
+ "drop_bomb",
+ "rowan",
+ "token",
+]
+
+[[package]]
 name = "fast-hash"
 version = "0.1.0"
 source = "git+https://github.com/azdavis/language-util.git#efbac6bf360fe58f6c10ab9a3e2d608336d46c40"
@@ -65,6 +75,15 @@ name = "jsonnet-lex"
 version = "0.1.0"
 dependencies = [
  "drop_bomb",
+ "jsonnet-syntax",
+ "token",
+]
+
+[[package]]
+name = "jsonnet-parse"
+version = "0.1.0"
+dependencies = [
+ "event-parse",
  "jsonnet-syntax",
  "token",
 ]
