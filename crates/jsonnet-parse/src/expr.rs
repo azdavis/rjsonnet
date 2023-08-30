@@ -13,8 +13,20 @@ pub(crate) fn expr_must(p: &mut Parser<'_>) {
 
 /// returns `Some(_)` iff this consumed something because we could started parsing an expression.
 #[must_use]
-#[allow(clippy::too_many_lines)]
 fn expr(p: &mut Parser<'_>) -> Option<Exited> {
+  expr_prec(p, Prec::Min)
+}
+
+fn expr_prec_must(p: &mut Parser<'_>, min_prec: Prec) {
+  if expr_prec(p, min_prec).is_none() {
+    p.error(ErrorKind::Expected(Expected::Expr));
+  }
+}
+
+/// handles precedence.
+#[must_use]
+#[allow(clippy::too_many_lines)]
+fn expr_prec(p: &mut Parser<'_>, min_prec: Prec) -> Option<Exited> {
   let Some(cur) = p.peek() else { return None };
   let en = p.enter();
   let kind = match cur.kind {
@@ -136,7 +148,7 @@ fn expr(p: &mut Parser<'_>) -> Option<Exited> {
     // here.
     SK::Minus | SK::Plus | SK::Bang | SK::Tilde => {
       p.bump();
-      expr_must(p);
+      expr_prec_must(p, Prec::Unary);
       SK::ExprUnaryOp
     }
     _ => {
@@ -144,7 +156,107 @@ fn expr(p: &mut Parser<'_>) -> Option<Exited> {
       return None;
     }
   };
-  Some(p.exit(en, kind))
+  let mut ex = p.exit(en, kind);
+  while let Some(cur) = p.peek() {
+    ex = match cur.kind {
+      SK::LRound => {
+        let en = p.precede(ex);
+        p.bump();
+        while arg(p).is_some() {}
+        p.eat(SK::RRound);
+        p.exit(en, SK::ExprCall)
+      }
+      SK::LSquare => {
+        let en = p.precede(ex);
+        p.bump();
+        _ = expr(p)?;
+        if p.at(SK::Colon) {
+          p.bump();
+        }
+        _ = expr(p)?;
+        if p.at(SK::Colon) {
+          p.bump();
+        }
+        _ = expr(p)?;
+        p.eat(SK::RSquare);
+        p.exit(en, SK::ExprSubscript)
+      }
+      SK::Dot => {
+        let en = p.precede(ex);
+        p.bump();
+        p.eat(SK::Id);
+        p.exit(en, SK::ExprFieldGet)
+      }
+      op => match bin_op_prec(op) {
+        Some(op_prec) => {
+          if op_prec <= min_prec {
+            break;
+          }
+          let en = p.enter();
+          p.bump();
+          expr_prec_must(p, min_prec);
+          p.exit(en, SK::ExprBinaryOp)
+        }
+        None => break,
+      },
+    };
+  }
+  Some(ex)
+}
+
+fn arg(p: &mut Parser<'_>) -> Option<Exited> {
+  let outer = p.enter();
+  if p.at(SK::Id) {
+    let inner = p.enter();
+    p.bump();
+    if p.at(SK::Eq) {
+      p.eat(SK::Eq);
+      p.exit(inner, SK::IdEq);
+      expr_must(p);
+    } else {
+      p.exit(inner, SK::ExprId);
+    }
+  } else if expr(p).is_none() {
+    p.abandon(outer);
+    return None;
+  }
+  if p.at(SK::Comma) {
+    p.bump();
+  }
+  Some(p.exit(outer, SK::Arg))
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+enum Prec {
+  Min,
+  LogicalOr,
+  LogicalAnd,
+  BitOr,
+  BitXor,
+  BitAnd,
+  Eq,
+  Cmp,
+  Shift,
+  Add,
+  Mul,
+  Unary,
+}
+
+fn bin_op_prec(op: SK) -> Option<Prec> {
+  let ret = match op {
+    SK::Star | SK::Slash | SK::Percent => Prec::Mul,
+    SK::Plus | SK::Minus => Prec::Add,
+    SK::LtLt | SK::GtGt => Prec::Shift,
+    SK::Lt | SK::Gt | SK::LtEq | SK::GtEq | SK::InKw => Prec::Cmp,
+    SK::Eq | SK::BangEq => Prec::Eq,
+    SK::And => Prec::BitAnd,
+    SK::Carat => Prec::BitXor,
+    SK::Bar => Prec::BitOr,
+    SK::AndAnd => Prec::LogicalAnd,
+    SK::BarBar => Prec::LogicalOr,
+    _ => return None,
+  };
+  Some(ret)
 }
 
 #[must_use]
