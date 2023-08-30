@@ -113,6 +113,7 @@ fn go(st: &mut St<'_>, b: u8) -> SK {
     return SK::String;
   }
   // TODO handle more strings
+  st.err("invalid text");
   st.next_str();
   SK::Invalid
 }
