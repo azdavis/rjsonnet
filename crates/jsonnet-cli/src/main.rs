@@ -10,7 +10,7 @@ fn main() {
   stdin.read_to_string(&mut buf).expect("io err");
   let lex = jsonnet_lex::get(&buf);
   let parse = jsonnet_parse::get(&lex.tokens);
-  eprintln!("{:#?}", parse.root);
+  eprint!("{:#?}", parse.root);
   for e in &lex.errors {
     eprintln!("{e}");
   }
