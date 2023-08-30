@@ -14,7 +14,8 @@ pub enum Prim {
   Number(f64),
 }
 
-pub type Expr = Idx<ExprData>;
+pub type ExprMust = Idx<ExprData>;
+pub type Expr = Option<ExprMust>;
 pub type ExprArena = Arena<ExprData>;
 
 #[derive(Debug)]

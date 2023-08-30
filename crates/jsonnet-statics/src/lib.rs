@@ -2,16 +2,16 @@
 
 #![deny(clippy::pedantic, missing_debug_implementations, rust_2018_idioms)]
 
-use jsonnet_hir::{Arenas, Expr, ExprData, Id, Prim, Str};
+use jsonnet_hir::{Arenas, Expr, ExprData, ExprMust, Id, Prim, Str};
 use rustc_hash::FxHashSet;
 
 #[derive(Debug, Default)]
 pub struct St {
-  errors: Vec<(Expr, &'static str)>,
+  errors: Vec<(ExprMust, &'static str)>,
 }
 
 impl St {
-  fn err(&mut self, e: Expr, s: &'static str) {
+  fn err(&mut self, e: ExprMust, s: &'static str) {
     self.errors.push((e, s));
   }
 }
@@ -32,6 +32,7 @@ impl Cx {
 }
 
 pub fn check(st: &mut St, cx: &Cx, ars: &Arenas, expr: Expr) {
+  let Some(expr) = expr else { return };
   match &ars.expr[expr] {
     ExprData::Prim(_) => {}
     ExprData::Object { asserts, fields } => {
@@ -45,6 +46,7 @@ pub fn check(st: &mut St, cx: &Cx, ars: &Arenas, expr: Expr) {
       for &(name, _, body) in fields {
         check(st, cx, ars, name);
         check(st, &cx_big, ars, body);
+        let Some(name) = name else { continue };
         if let ExprData::Prim(Prim::String(s)) = ars.expr[name] {
           if !field_names.insert(s) {
             st.err(name, "duplicate field name");
@@ -82,8 +84,10 @@ pub fn check(st: &mut St, cx: &Cx, ars: &Arenas, expr: Expr) {
       for &(id, arg) in named {
         check(st, cx, ars, arg);
         if !arg_names.insert(id) {
-          // TODO move err to the id, not the arg
-          st.err(arg, "duplicate named argument");
+          if let Some(arg) = arg {
+            // TODO move err to the id, not the arg
+            st.err(arg, "duplicate named argument");
+          }
         }
       }
     }
@@ -100,7 +104,9 @@ pub fn check(st: &mut St, cx: &Cx, ars: &Arenas, expr: Expr) {
         cx.insert(id);
         if !bound_names.insert(id) {
           // TODO move err to the id, not the rhs
-          st.err(rhs, "duplicate binding");
+          if let Some(rhs) = rhs {
+            st.err(rhs, "duplicate binding");
+          }
         }
       }
       for &(_, rhs) in binds {

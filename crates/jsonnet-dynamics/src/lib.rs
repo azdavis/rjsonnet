@@ -87,6 +87,7 @@ pub enum EvalError {
   CmpNan,
   CmpInf,
   User(Str),
+  NoExpr,
 }
 
 type Eval<T = Val> = Result<T, EvalError>;
@@ -103,6 +104,7 @@ const EPSILON: f64 = 0.0001;
 pub fn eval(env: &Env, ars: &Arenas, expr: Expr) -> Eval {
   // TODO implement a cache on expr to avoid re-computing lazy exprs? but we would also need to
   // consider the env in which the expr is evaluated
+  let Some(expr) = expr else { return Err(EvalError::NoExpr) };
   match &ars.expr[expr] {
     ExprData::Prim(p) => Ok(Val::Prim(*p)),
     ExprData::Object { asserts, fields } => {
@@ -132,12 +134,14 @@ pub fn eval(env: &Env, ars: &Arenas, expr: Expr) -> Eval {
         env.insert(*id, Subst::Expr(elem_env.clone(), elem));
         match eval(&env, ars, *name)? {
           Val::Prim(Prim::String(s)) => {
+            // TODO should we continue here?
+            let Some(body) = *body else { continue };
             // we want to do `[e/x]body` here?
-            let body = match ars.expr[*body] {
-              ExprData::Prim(_) => *body,
+            let body = match ars.expr[body] {
+              ExprData::Prim(_) => body,
               _ => return Err(EvalError::Todo),
             };
-            if fields.insert(s, (Visibility::Default, body)).is_some() {
+            if fields.insert(s, (Visibility::Default, Some(body))).is_some() {
               return Err(EvalError::DuplicateField);
             }
           }
