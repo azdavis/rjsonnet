@@ -168,15 +168,15 @@ fn expr_prec(p: &mut Parser<'_>, min_prec: Prec) -> Option<Exited> {
       SK::LSquare => {
         let en = p.precede(ex);
         p.bump();
-        _ = expr(p)?;
+        _ = expr(p);
         if p.at(SK::Colon) {
           p.bump();
         }
-        _ = expr(p)?;
+        _ = expr(p);
         if p.at(SK::Colon) {
           p.bump();
         }
-        _ = expr(p)?;
+        _ = expr(p);
         p.eat(SK::RSquare);
         p.exit(en, SK::ExprSubscript)
       }
