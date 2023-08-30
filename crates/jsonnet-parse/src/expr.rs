@@ -132,8 +132,8 @@ fn expr_prec(p: &mut Parser<'_>, min_prec: Prec) -> Option<Exited> {
     }
     SK::AssertKw => {
       let en = p.enter();
-      assert_(p);
-      p.exit(en, SK::Assert);
+      let k = assert_(p);
+      p.exit(en, k);
       p.eat(SK::Semicolon);
       expr_must(p);
       SK::ExprAssert
@@ -305,10 +305,7 @@ fn member_kind(p: &mut Parser<'_>) -> Option<Exited> {
       bind(p);
       SK::ObjectLocal
     }
-    SK::AssertKw => {
-      assert_(p);
-      SK::Assert
-    }
+    SK::AssertKw => assert_(p),
     _ => {
       if field(p) {
         SK::Field
@@ -421,8 +418,9 @@ fn eq_expr(p: &mut Parser<'_>) -> Option<Exited> {
   Some(p.exit(en, SK::EqExpr))
 }
 
-/// does NOT produce an Exited for Assert
-fn assert_(p: &mut Parser<'_>) {
+/// does NOT produce an Exited
+#[must_use]
+fn assert_(p: &mut Parser<'_>) -> SK {
   p.eat(SK::Assert);
   expr_must(p);
   if p.at(SK::Colon) {
@@ -431,6 +429,7 @@ fn assert_(p: &mut Parser<'_>) {
     expr_must(p);
     p.exit(en, SK::ColonExpr);
   }
+  SK::Assert
 }
 
 #[must_use]
