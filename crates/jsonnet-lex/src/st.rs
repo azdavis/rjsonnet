@@ -41,13 +41,18 @@ impl<'a> St<'a> {
   }
 
   pub(crate) fn mark(&self) -> Marker {
-    Marker { bomb: DebugDropBomb::new("must be passed to `since_mark`"), idx: self.idx }
+    Marker { bomb: DebugDropBomb::new("must be passed to a `St` method"), idx: self.idx }
   }
 
-  pub(crate) fn non_empty_since(&self, mut m: Marker) -> &'a [u8] {
+  pub(crate) fn non_empty_since(&self, m: Marker) -> &'a [u8] {
+    let start = m.idx;
+    assert!(self.did_advance_since(m));
+    &self.s.as_bytes()[start..self.idx]
+  }
+
+  pub(crate) fn did_advance_since(&self, mut m: Marker) -> bool {
     m.bomb.defuse();
-    assert!(self.idx > m.idx, "failed to advance since marker");
-    &self.s.as_bytes()[m.idx..self.idx]
+    self.idx > m.idx
   }
 
   pub(crate) fn eat_prefix(&mut self, prefix: &[u8]) -> bool {
