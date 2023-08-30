@@ -51,6 +51,12 @@ fn expr(p: &mut Parser<'_>) -> Option<Exited> {
       p.bump();
       SK::ExprNumber
     }
+    SK::LRound => {
+      p.bump();
+      expr_must(p);
+      p.eat(SK::RRound);
+      SK::ExprParen
+    }
     SK::LCurly => {
       p.bump();
       while member(p).is_some() {}

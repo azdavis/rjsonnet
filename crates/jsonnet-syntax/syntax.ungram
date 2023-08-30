@@ -9,6 +9,7 @@ Expr =
 | ExprDollar
 | ExprString
 | ExprNumber
+| ExprParen
 | ExprObject
 | ExprArray
 | ExprDotField
@@ -33,6 +34,7 @@ ExprSuper = 'super'
 ExprDollar = '$'
 ExprString = 'String'
 ExprNumber = 'Number'
+ExprParen = '(' Expr ')'
 ExprObject = '{' ObjectInside '}'
 // array comprehension is rearranged, TODO sort out in lowering
 ExprArray = '[' ExprComma* ForSpec? CompSpec* ']'
