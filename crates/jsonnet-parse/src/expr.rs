@@ -211,7 +211,7 @@ fn arg(p: &mut Parser<'_>) -> Option<Exited> {
     let inner = p.enter();
     p.bump();
     if p.at(SK::Eq) {
-      p.eat(SK::Eq);
+      p.bump();
       p.exit(inner, SK::IdEq);
       expr_must(p);
     } else {
@@ -421,7 +421,7 @@ fn eq_expr(p: &mut Parser<'_>) -> Option<Exited> {
 /// does NOT produce an Exited
 #[must_use]
 fn assert_(p: &mut Parser<'_>) -> SK {
-  p.eat(SK::Assert);
+  p.eat(SK::AssertKw);
   expr_must(p);
   if p.at(SK::Colon) {
     let en = p.enter();
