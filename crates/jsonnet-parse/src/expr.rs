@@ -6,9 +6,7 @@ use jsonnet_syntax::kind::SyntaxKind as SK;
 
 /// errors but does not advance iff no expr
 pub(crate) fn expr_must(p: &mut Parser<'_>) {
-  if expr(p).is_none() {
-    p.error(ErrorKind::Expected(Expected::Expr));
-  }
+  expr_prec_must(p, Prec::Min);
 }
 
 /// returns `Some(_)` iff this consumed something because we could started parsing an expression.
