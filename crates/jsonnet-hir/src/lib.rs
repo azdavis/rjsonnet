@@ -77,6 +77,11 @@ impl Id {
   pub const SELF: Self = Self(Str::SELF);
   pub const SUPER: Self = Self(Str::SUPER);
   pub const DOLLAR: Self = Self(Str::DOLLAR);
+
+  #[must_use]
+  pub fn new(s: Str) -> Self {
+    Self(s)
+  }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
