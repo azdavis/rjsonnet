@@ -76,6 +76,7 @@ impl Id {
   pub const STD: Self = Self(Str::STD);
   pub const SELF: Self = Self(Str::SELF);
   pub const SUPER: Self = Self(Str::SUPER);
+  pub const DOLLAR: Self = Self(Str::DOLLAR);
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -85,10 +86,16 @@ impl Str {
   pub const STD: Self = Self(0);
   pub const SELF: Self = Self(1);
   pub const SUPER: Self = Self(2);
-  pub const TODO: Self = Self(3);
+  pub const DOLLAR: Self = Self(3);
+  pub const TODO: Self = Self(4);
 
-  const PRESET: [(Self, &'static str); 4] =
-    [(Self::STD, "std"), (Self::SELF, "self"), (Self::SUPER, "super"), (Self::TODO, "TODO")];
+  const PRESET: [(Self, &'static str); 5] = [
+    (Self::STD, "std"),
+    (Self::SELF, "self"),
+    (Self::SUPER, "super"),
+    (Self::DOLLAR, "$"),
+    (Self::TODO, "TODO"),
+  ];
 
   /// Panics on failure.
   fn from_usize(u: usize) -> Self {
