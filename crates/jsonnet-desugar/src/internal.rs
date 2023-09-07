@@ -1,3 +1,5 @@
+//! The internal impl.
+
 use crate::st::St;
 use jsonnet_hir::{ExprData, Id, Prim, Str};
 use jsonnet_syntax::ast;

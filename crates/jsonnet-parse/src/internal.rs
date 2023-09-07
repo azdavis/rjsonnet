@@ -1,3 +1,5 @@
+//! The internal impl.
+//!
 //! TODO forbid no comma between members, expr commas, params, etc. maybe do it in lowering?
 
 use crate::{ErrorKind, Expected, Parser};

@@ -2,7 +2,7 @@
 
 #![deny(clippy::pedantic, missing_debug_implementations, rust_2018_idioms)]
 
-mod expr;
+mod internal;
 
 use jsonnet_syntax::{ast::AstNode as _, kind::SyntaxKind as SK};
 
@@ -13,7 +13,7 @@ use jsonnet_syntax::{ast::AstNode as _, kind::SyntaxKind as SK};
 pub fn get(tokens: &[token::Token<'_, SK>]) -> Parse {
   let mut p = Parser::new(tokens);
   let en = p.enter();
-  expr::expr_must(&mut p);
+  internal::expr_must(&mut p);
   while p.peek().is_some() {
     p.error(ErrorKind::Trailing);
   }
