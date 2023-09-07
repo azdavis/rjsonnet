@@ -6,8 +6,6 @@
 mod expr;
 mod st;
 
-use jsonnet_hir::Arenas;
-
 #[must_use]
 pub fn get(root: jsonnet_syntax::ast::Root) -> Desugar {
   let mut st = st::St::default();
@@ -17,6 +15,6 @@ pub fn get(root: jsonnet_syntax::ast::Root) -> Desugar {
 
 #[derive(Debug)]
 pub struct Desugar {
-  pub arenas: Arenas,
+  pub arenas: jsonnet_hir::Arenas,
   pub top: jsonnet_hir::Expr,
 }
