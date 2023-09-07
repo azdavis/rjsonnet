@@ -4,7 +4,11 @@ use crate::st::St;
 use jsonnet_hir::{ExprData, Id, Prim, Str};
 use jsonnet_syntax::ast;
 
-pub(crate) fn expr(st: &mut St, e: Option<ast::Expr>) -> jsonnet_hir::Expr {
+pub(crate) fn root(st: &mut St, r: ast::Root) -> jsonnet_hir::Expr {
+  expr(st, r.expr(), false)
+}
+
+fn expr(st: &mut St, e: Option<ast::Expr>, in_obj: bool) -> jsonnet_hir::Expr {
   let data = match e? {
     ast::Expr::ExprNull(_) => ExprData::Prim(Prim::Null),
     ast::Expr::ExprTrue(_) => ExprData::Prim(Prim::Bool(true)),
@@ -20,7 +24,7 @@ pub(crate) fn expr(st: &mut St, e: Option<ast::Expr>) -> jsonnet_hir::Expr {
       let str = st.str(tok.text());
       ExprData::Id(Id::new(str))
     }
-    ast::Expr::ExprParen(e) => return expr(st, e.expr()),
+    ast::Expr::ExprParen(e) => return expr(st, e.expr(), in_obj),
     ast::Expr::ExprObject(_) => todo!(),
     ast::Expr::ExprArray(_) => todo!(),
     ast::Expr::ExprFieldGet(_) => todo!(),
