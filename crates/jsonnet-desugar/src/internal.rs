@@ -26,12 +26,25 @@ fn expr(st: &mut St, e: Option<ast::Expr>, in_obj: bool) -> jsonnet_hir::Expr {
     ast::Expr::ExprFieldGet(_) => todo!(),
     ast::Expr::ExprSubscript(_) => todo!(),
     ast::Expr::ExprCall(_) => todo!(),
-    ast::Expr::ExprLocal(_) => todo!(),
+    ast::Expr::ExprLocal(e) => {
+      let mut binds = Vec::<(Id, jsonnet_hir::Expr)>::new();
+      for bind in e.binds() {
+        let lhs = id(st, bind.id()?);
+        let rhs = bind.expr();
+        let rhs = match bind.paren_params() {
+          None => expr(st, rhs, in_obj),
+          Some(params) => function(st, params, rhs, in_obj),
+        };
+        binds.push((lhs, rhs));
+      }
+      let body = expr(st, e.expr(), in_obj);
+      ExprData::Local { binds, body }
+    }
     ast::Expr::ExprIf(_) => todo!(),
     ast::Expr::ExprBinaryOp(_) => todo!(),
     ast::Expr::ExprUnaryOp(_) => todo!(),
     ast::Expr::ExprImplicitObjectPlus(_) => todo!(),
-    ast::Expr::ExprFunction(_) => todo!(),
+    ast::Expr::ExprFunction(e) => return function(st, e.paren_params()?, e.expr(), in_obj),
     ast::Expr::ExprAssert(_) => todo!(),
     ast::Expr::ExprImport(_) => todo!(),
     ast::Expr::ExprError(_) => todo!(),
@@ -41,4 +54,27 @@ fn expr(st: &mut St, e: Option<ast::Expr>, in_obj: bool) -> jsonnet_hir::Expr {
 
 fn id(st: &mut St, id: SyntaxToken) -> Id {
   Id::new(st.str(id.text()))
+}
+
+fn function(
+  st: &mut St,
+  paren_params: ast::ParenParams,
+  body: Option<ast::Expr>,
+  in_obj: bool,
+) -> jsonnet_hir::Expr {
+  let mut params = Vec::<(Id, jsonnet_hir::Expr)>::new();
+  for param in paren_params.params() {
+    let lhs = id(st, param.id()?);
+    let rhs = match param.eq_expr() {
+      Some(rhs) => expr(st, rhs.expr(), in_obj),
+      None => {
+        let msg = ExprData::Prim(Prim::String(Str::PARAMETER_NOT_BOUND));
+        let msg = Some(st.expr(msg));
+        Some(st.expr(ExprData::Error(msg)))
+      }
+    };
+    params.push((lhs, rhs));
+  }
+  let body = expr(st, body, in_obj);
+  Some(st.expr(ExprData::Function { params, body }))
 }

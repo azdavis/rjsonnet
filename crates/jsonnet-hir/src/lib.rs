@@ -92,13 +92,15 @@ impl Str {
   pub const SELF: Self = Self(1);
   pub const SUPER: Self = Self(2);
   pub const DOLLAR: Self = Self(3);
-  pub const TODO: Self = Self(4);
+  pub const PARAMETER_NOT_BOUND: Self = Self(4);
+  pub const TODO: Self = Self(5);
 
-  const PRESET: [(Self, &'static str); 5] = [
+  const PRESET: [(Self, &'static str); 6] = [
     (Self::STD, "std"),
     (Self::SELF, "self"),
     (Self::SUPER, "super"),
     (Self::DOLLAR, "$"),
+    (Self::PARAMETER_NOT_BOUND, "Parameter not bound"),
     (Self::TODO, "TODO"),
   ];
 
