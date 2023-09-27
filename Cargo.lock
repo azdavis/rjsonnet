@@ -76,6 +76,7 @@ version = "0.1.0"
 dependencies = [
  "jsonnet-hir",
  "jsonnet-syntax",
+ "text-size",
 ]
 
 [[package]]
