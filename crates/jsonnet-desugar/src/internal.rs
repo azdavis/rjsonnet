@@ -2,7 +2,7 @@
 
 use crate::st::St;
 use jsonnet_hir::{ExprData, Id, Prim, Str};
-use jsonnet_syntax::ast;
+use jsonnet_syntax::{ast, kind::SyntaxToken};
 
 pub(crate) fn root(st: &mut St, r: ast::Root) -> jsonnet_hir::Expr {
   expr(st, r.expr(), false)
@@ -19,11 +19,7 @@ fn expr(st: &mut St, e: Option<ast::Expr>, in_obj: bool) -> jsonnet_hir::Expr {
     ast::Expr::ExprString(_) => ExprData::Prim(Prim::String(Str::TODO)),
     // TODO
     ast::Expr::ExprNumber(_) => ExprData::Prim(Prim::Number(0.0)),
-    ast::Expr::ExprId(e) => {
-      let tok = e.id()?;
-      let str = st.str(tok.text());
-      ExprData::Id(Id::new(str))
-    }
+    ast::Expr::ExprId(e) => ExprData::Id(id(st, e.id()?)),
     ast::Expr::ExprParen(e) => return expr(st, e.expr(), in_obj),
     ast::Expr::ExprObject(_) => todo!(),
     ast::Expr::ExprArray(_) => todo!(),
@@ -41,4 +37,8 @@ fn expr(st: &mut St, e: Option<ast::Expr>, in_obj: bool) -> jsonnet_hir::Expr {
     ast::Expr::ExprError(_) => todo!(),
   };
   Some(st.expr(data))
+}
+
+fn id(st: &mut St, id: SyntaxToken) -> Id {
+  Id::new(st.str(id.text()))
 }
