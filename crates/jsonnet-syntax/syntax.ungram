@@ -39,7 +39,7 @@ ExprId = 'Id'
 ExprParen = '(' Expr ')'
 ExprObject = '{' ObjectInside '}'
 // array comprehension is rearranged, TODO sort out in lowering
-ExprArray = '[' ExprComma* ForSpec? CompSpec* ']'
+ExprArray = '[' ExprComma* CompSpec* ']'
 ExprFieldGet = Expr '.' 'Id'
 ExprSubscript = Expr '[' expr_a:Expr? colon_a:':'? expr_b:Expr? colon_b:':'? expr_c:Expr? ']'
 ExprCall = Expr '(' Arg* ')'
@@ -54,14 +54,14 @@ ExprImport = Import 'String'
 ExprError = 'error' Expr
 
 // object comprehension is rearranged, TODO sort out in lowering
-ObjectInside = Member* ForSpec? CompSpec*
+ObjectInside = Member* CompSpec*
 Member = MemberKind ','?
 
 MemberKind = ObjectLocal | Assert | Field
 
 // slightly rearranged from the spec
-Field = FieldName FieldOpts? Visibility Expr
-FieldOpts = FieldPlus | ParenParams
+Field = FieldName FieldExtra? Visibility Expr
+FieldExtra = FieldPlus | ParenParams
 FieldPlus = '+'
 
 // called 'hidden' in the spec
