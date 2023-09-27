@@ -9,7 +9,7 @@ mod st;
 #[must_use]
 pub fn get(root: jsonnet_syntax::ast::Root) -> Desugar {
   let mut st = st::St::default();
-  let top = internal::root(&mut st, root);
+  let top = internal::get_root(&mut st, root);
   Desugar { arenas: st.finish(), top }
 }
 
