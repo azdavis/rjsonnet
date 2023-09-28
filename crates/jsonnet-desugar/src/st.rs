@@ -35,4 +35,9 @@ impl St {
   pub(crate) fn finish(self) -> Arenas {
     self.arenas
   }
+
+  /// Returns a fresh identifier.
+  pub(crate) fn fresh(&mut self) -> jsonnet_hir::Id {
+    todo!()
+  }
 }
