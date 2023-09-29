@@ -132,7 +132,7 @@ fn get_object_inside(
                 lowered_field = Some((name, body));
               }
               Some(_) => {
-                st.err(&field, "object comprehension must not contain more than 1 field");
+                st.err(&field, "object comprehension must not contain more than one field");
               }
             },
             non_expr_name => {
