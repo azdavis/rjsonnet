@@ -3,14 +3,14 @@
 //! TODO how to construct arbitrary expressions not from the source code that we can then desugar?
 
 use crate::st::St;
-use jsonnet_hir::{ExprData, Id, Prim, Str};
+use jsonnet_hir::{Expr, ExprData, Id, Prim, Str};
 use jsonnet_syntax::{ast, kind::SyntaxToken};
 
-pub(crate) fn get_root(st: &mut St, r: ast::Root) -> jsonnet_hir::Expr {
+pub(crate) fn get_root(st: &mut St, r: ast::Root) -> Expr {
   get_expr(st, r.expr(), false)
 }
 
-fn get_expr(st: &mut St, e: Option<ast::Expr>, in_obj: bool) -> jsonnet_hir::Expr {
+fn get_expr(st: &mut St, e: Option<ast::Expr>, in_obj: bool) -> Expr {
   let data = match e? {
     ast::Expr::ExprNull(_) => ExprData::Prim(Prim::Null),
     ast::Expr::ExprTrue(_) => ExprData::Prim(Prim::Bool(true)),
@@ -49,7 +49,7 @@ fn get_id(st: &mut St, id: SyntaxToken) -> Id {
   Id::new(st.str(id.text()))
 }
 
-fn get_bind(st: &mut St, bind: ast::Bind, in_obj: bool) -> Option<(Id, jsonnet_hir::Expr)> {
+fn get_bind(st: &mut St, bind: ast::Bind, in_obj: bool) -> Option<(Id, Expr)> {
   let lhs = get_id(st, bind.id()?);
   let rhs = bind.expr();
   let rhs = match bind.paren_params() {
@@ -64,8 +64,8 @@ fn get_fn(
   paren_params: ast::ParenParams,
   body: Option<ast::Expr>,
   in_obj: bool,
-) -> jsonnet_hir::Expr {
-  let mut params = Vec::<(Id, jsonnet_hir::Expr)>::new();
+) -> Expr {
+  let mut params = Vec::<(Id, Expr)>::new();
   for param in paren_params.params() {
     let lhs = get_id(st, param.id()?);
     let rhs = match param.eq_expr() {
@@ -95,16 +95,12 @@ where
   }
 }
 
-fn get_object_inside(
-  st: &mut St,
-  inside: ast::ObjectInside,
-  in_obj: bool,
-) -> Option<jsonnet_hir::ExprData> {
+fn get_object_inside(st: &mut St, inside: ast::ObjectInside, in_obj: bool) -> Option<ExprData> {
   match get_comp_specs(st, inside.comp_specs()) {
     None => todo!(),
     Some((for_spec, comp_specs)) => {
-      let mut binds = Vec::<(Id, jsonnet_hir::Expr)>::new();
-      let mut lowered_field = None::<(jsonnet_hir::Expr, jsonnet_hir::Expr)>;
+      let mut binds = Vec::<(Id, Expr)>::new();
+      let mut lowered_field = None::<(Expr, Expr)>;
       for member in inside.members() {
         match member.member_kind()? {
           ast::MemberKind::ObjectLocal(local) => {
