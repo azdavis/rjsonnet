@@ -82,21 +82,27 @@ fn get_fn(
   Some(st.expr(ExprData::Function { params, body }))
 }
 
+fn get_comp_specs<I>(st: &mut St, mut iter: I) -> Option<(ast::ForSpec, I)>
+where
+  I: Iterator<Item = ast::CompSpec>,
+{
+  match iter.next()? {
+    ast::CompSpec::ForSpec(for_spec) => Some((for_spec, iter)),
+    ast::CompSpec::IfSpec(if_spec) => {
+      st.err(&if_spec, "the first comprehension specification must not be `if`");
+      None
+    }
+  }
+}
+
 fn get_object_inside(
   st: &mut St,
   inside: ast::ObjectInside,
   in_obj: bool,
 ) -> Option<jsonnet_hir::ExprData> {
-  let mut comp_specs = inside.comp_specs();
-  match comp_specs.next() {
+  match get_comp_specs(st, inside.comp_specs()) {
     None => todo!(),
-    Some(comp_spec) => {
-      match comp_spec {
-        ast::CompSpec::ForSpec(for_spec) => {}
-        ast::CompSpec::IfSpec(if_spec) => {
-          st.err(&if_spec, "the first comprehension specification must not be `if`");
-        }
-      }
+    Some((for_spec, comp_specs)) => {
       let mut binds = Vec::<(Id, jsonnet_hir::Expr)>::new();
       let mut lowered_field = None::<(jsonnet_hir::Expr, jsonnet_hir::Expr)>;
       for member in inside.members() {
