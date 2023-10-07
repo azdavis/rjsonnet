@@ -24,7 +24,21 @@ fn get_expr(st: &mut St, e: Option<ast::Expr>, in_obj: bool) -> Expr {
     ast::Expr::ExprId(e) => ExprData::Id(get_id(st, e.id()?)),
     ast::Expr::ExprParen(e) => return get_expr(st, e.expr(), in_obj),
     ast::Expr::ExprObject(e) => get_object_inside(st, e.object_inside()?, in_obj)?,
-    ast::Expr::ExprArray(_) => todo!(),
+    ast::Expr::ExprArray(e) => match get_comp_specs(st, e.comp_specs()) {
+      Some(_) => {
+        let mut expr_commas = e.expr_commas();
+        let Some(elem) = expr_commas.next().and_then(|x| x.expr()) else {
+          st.err(&e, "array comprehension must contain an element");
+          return None;
+        };
+        let elem = get_expr(st, Some(elem), in_obj);
+        for elem in expr_commas {
+          st.err(&elem, "array comprehension must not contain more more than 1 element");
+        }
+        get_array_comp(st, e.comp_specs(), elem, in_obj)
+      }
+      None => todo!(),
+    },
     ast::Expr::ExprFieldGet(_) => todo!(),
     ast::Expr::ExprSubscript(_) => todo!(),
     ast::Expr::ExprCall(_) => todo!(),
@@ -43,6 +57,17 @@ fn get_expr(st: &mut St, e: Option<ast::Expr>, in_obj: bool) -> Expr {
     ast::Expr::ExprError(_) => todo!(),
   };
   Some(st.expr(data))
+}
+
+fn get_array_comp<I>(st: &mut St, mut comp_specs: I, elem: Expr, in_obj: bool) -> ExprData
+where
+  I: Iterator<Item = ast::CompSpec>,
+{
+  let Some(comp_spec) = comp_specs.next() else { return ExprData::Array(vec![elem]) };
+  match comp_spec {
+    ast::CompSpec::ForSpec(_) => todo!(),
+    ast::CompSpec::IfSpec(_) => todo!(),
+  }
 }
 
 fn get_id(st: &mut St, id: SyntaxToken) -> Id {
