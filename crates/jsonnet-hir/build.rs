@@ -29,6 +29,9 @@ fn main() {
   let out_dir = std::path::Path::new(&out_dir);
   let out_path = out_dir.join("generated.rs");
   let preset = [
+    // STD_UNUTTERABLE is the same as STD but it has a str that cannot be written in user code as an
+    // id, so it will never be shadowed.
+    ("STD_UNUTTERABLE", "<std>", true),
     ("STD", "std", true),
     ("SELF", "self", true),
     ("SUPER", "super", true),
