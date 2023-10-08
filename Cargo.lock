@@ -92,6 +92,7 @@ name = "jsonnet-hir"
 version = "0.1.0"
 dependencies = [
  "la-arena",
+ "quote",
  "rustc-hash",
 ]
 

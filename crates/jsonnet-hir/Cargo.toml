@@ -12,3 +12,6 @@ doctest = false
 [dependencies]
 la-arena.workspace = true
 rustc-hash.workspace = true
+
+[build-dependencies]
+quote = "1.0.33"

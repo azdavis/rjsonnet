@@ -2,6 +2,10 @@
 
 #![deny(clippy::pedantic, missing_debug_implementations, rust_2018_idioms)]
 
+mod generated {
+  include!(concat!(env!("OUT_DIR"), "/generated.rs"));
+}
+
 use la_arena::{Arena, Idx};
 use rustc_hash::FxHashMap;
 use std::collections::hash_map::Entry;
@@ -73,11 +77,6 @@ pub enum UnaryOp {
 pub struct Id(Str);
 
 impl Id {
-  pub const STD: Self = Self(Str::STD);
-  pub const SELF: Self = Self(Str::SELF);
-  pub const SUPER: Self = Self(Str::SUPER);
-  pub const DOLLAR: Self = Self(Str::DOLLAR);
-
   #[must_use]
   pub fn new(s: Str) -> Self {
     Self(s)
@@ -88,22 +87,6 @@ impl Id {
 pub struct Str(u32);
 
 impl Str {
-  pub const STD: Self = Self(0);
-  pub const SELF: Self = Self(1);
-  pub const SUPER: Self = Self(2);
-  pub const DOLLAR: Self = Self(3);
-  pub const PARAMETER_NOT_BOUND: Self = Self(4);
-  pub const TODO: Self = Self(5);
-
-  const PRESET: [(Self, &'static str); 6] = [
-    (Self::STD, "std"),
-    (Self::SELF, "self"),
-    (Self::SUPER, "super"),
-    (Self::DOLLAR, "$"),
-    (Self::PARAMETER_NOT_BOUND, "Parameter not bound"),
-    (Self::TODO, "TODO"),
-  ];
-
   /// Panics on failure.
   fn from_usize(u: usize) -> Self {
     Self(u.try_into().unwrap())
@@ -119,16 +102,6 @@ impl Str {
 pub struct StrArena {
   id_to_contents: Vec<Box<str>>,
   contents_to_id: FxHashMap<Box<str>, Str>,
-}
-
-impl Default for StrArena {
-  fn default() -> Self {
-    let mut ret = Self { id_to_contents: Vec::new(), contents_to_id: FxHashMap::default() };
-    for (a, b) in Str::PRESET {
-      assert_eq!(a, ret.insert(b.to_owned().into_boxed_str()));
-    }
-    ret
-  }
 }
 
 impl StrArena {
