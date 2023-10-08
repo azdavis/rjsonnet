@@ -21,7 +21,7 @@ fn get_expr(st: &mut St, e: Option<ast::Expr>, in_obj: bool) -> Expr {
     ast::Expr::ExprString(_) => ExprData::Prim(Prim::String(Str::TODO)),
     // TODO
     ast::Expr::ExprNumber(_) => ExprData::Prim(Prim::Number(0.0)),
-    ast::Expr::ExprId(e) => ExprData::Id(get_id(st, e.id()?)),
+    ast::Expr::ExprId(e) => ExprData::Id(get_id(st, e.id())),
     ast::Expr::ExprParen(e) => return get_expr(st, e.expr(), in_obj),
     ast::Expr::ExprObject(e) => get_object_inside(st, e.object_inside()?, in_obj)?,
     ast::Expr::ExprArray(e) => match get_comp_specs(st, e.comp_specs()) {
@@ -35,7 +35,7 @@ fn get_expr(st: &mut St, e: Option<ast::Expr>, in_obj: bool) -> Expr {
         for elem in expr_commas {
           st.err(&elem, "array comprehension must not contain more more than 1 element");
         }
-        get_array_comp(st, e.comp_specs(), elem, in_obj)?
+        get_array_comp(st, e.comp_specs(), elem, in_obj)
       }
       None => todo!(),
     },
@@ -43,7 +43,7 @@ fn get_expr(st: &mut St, e: Option<ast::Expr>, in_obj: bool) -> Expr {
     ast::Expr::ExprSubscript(_) => todo!(),
     ast::Expr::ExprCall(_) => todo!(),
     ast::Expr::ExprLocal(e) => {
-      let binds: Vec<_> = e.binds().filter_map(|bind| get_bind(st, bind, in_obj)).collect();
+      let binds: Vec<_> = e.binds().map(|bind| get_bind(st, bind, in_obj)).collect();
       let body = get_expr(st, e.expr(), in_obj);
       ExprData::Local { binds, body }
     }
@@ -51,7 +51,7 @@ fn get_expr(st: &mut St, e: Option<ast::Expr>, in_obj: bool) -> Expr {
     ast::Expr::ExprBinaryOp(_) => todo!(),
     ast::Expr::ExprUnaryOp(_) => todo!(),
     ast::Expr::ExprImplicitObjectPlus(_) => todo!(),
-    ast::Expr::ExprFunction(e) => get_fn(st, e.paren_params()?, e.expr(), in_obj)?,
+    ast::Expr::ExprFunction(e) => get_fn(st, e.paren_params()?, e.expr(), in_obj),
     ast::Expr::ExprAssert(_) => todo!(),
     ast::Expr::ExprImport(_) => todo!(),
     ast::Expr::ExprError(_) => todo!(),
@@ -67,14 +67,14 @@ fn call_std_func(st: &mut St, id: Id, args: Vec<Expr>) -> Expr {
   Some(st.expr(ExprData::Call { func, positional: args, named: Vec::new() }))
 }
 
-fn get_array_comp<I>(st: &mut St, mut comp_specs: I, elem: Expr, in_obj: bool) -> Option<ExprData>
+fn get_array_comp<I>(st: &mut St, mut comp_specs: I, elem: Expr, in_obj: bool) -> ExprData
 where
   I: Iterator<Item = ast::CompSpec>,
 {
-  let Some(comp_spec) = comp_specs.next() else { return Some(ExprData::Array(vec![elem])) };
+  let Some(comp_spec) = comp_specs.next() else { return ExprData::Array(vec![elem]) };
   match comp_spec {
     ast::CompSpec::ForSpec(for_spec) => {
-      let for_var = get_id(st, for_spec.id()?);
+      let for_var = get_id(st, for_spec.id());
       let in_expr = get_expr(st, for_spec.expr(), in_obj);
       let arr = st.fresh();
       let idx = st.fresh();
@@ -83,7 +83,7 @@ where
       let length = call_std_func(st, Id::LENGTH, vec![arr_expr]);
       let subscript = Some(st.expr(ExprData::Subscript { on: arr_expr, idx: idx_expr }));
       // recursion!
-      let recur = get_array_comp(st, comp_specs, elem, in_obj)?;
+      let recur = get_array_comp(st, comp_specs, elem, in_obj);
       let recur = Some(st.expr(recur));
       let recur_with_subscript =
         Some(st.expr(ExprData::Local { binds: vec![(for_var, subscript)], body: recur }));
@@ -96,27 +96,31 @@ where
       let make_array = call_std_func(st, Id::MAKE_ARRAY, vec![length, lambda_recur_with_subscript]);
       let empty_array = Some(st.expr(ExprData::Array(Vec::new())));
       let join = call_std_func(st, Id::JOIN, vec![empty_array, make_array]);
-      Some(ExprData::Local { binds: vec![(arr, in_expr)], body: join })
+      ExprData::Local { binds: vec![(arr, in_expr)], body: join }
     }
     ast::CompSpec::IfSpec(_) => todo!(),
   }
 }
 
-fn get_id(st: &mut St, id: SyntaxToken) -> Id {
-  Id::new(st.str(id.text()))
+/// makes a fresh id if no actual user-written id
+fn get_id(st: &mut St, id: Option<SyntaxToken>) -> Id {
+  match id {
+    Some(id) => Id::new(st.str(id.text())),
+    None => st.fresh(),
+  }
 }
 
-fn get_bind(st: &mut St, bind: ast::Bind, in_obj: bool) -> Option<(Id, Expr)> {
-  let lhs = get_id(st, bind.id()?);
+fn get_bind(st: &mut St, bind: ast::Bind, in_obj: bool) -> (Id, Expr) {
+  let lhs = get_id(st, bind.id());
   let rhs = bind.expr();
   let rhs = match bind.paren_params() {
     None => get_expr(st, rhs, in_obj),
     Some(params) => {
-      let fn_data = get_fn(st, params, rhs, in_obj)?;
+      let fn_data = get_fn(st, params, rhs, in_obj);
       Some(st.expr(fn_data))
     }
   };
-  Some((lhs, rhs))
+  (lhs, rhs)
 }
 
 #[allow(clippy::unnecessary_wraps)]
@@ -131,10 +135,10 @@ fn get_fn(
   paren_params: ast::ParenParams,
   body: Option<ast::Expr>,
   in_obj: bool,
-) -> Option<ExprData> {
+) -> ExprData {
   let mut params = Vec::<(Id, Expr)>::new();
   for param in paren_params.params() {
-    let lhs = get_id(st, param.id()?);
+    let lhs = get_id(st, param.id());
     let rhs = match param.eq_expr() {
       Some(rhs) => get_expr(st, rhs.expr(), in_obj),
       None => err_param_unbound(st),
@@ -142,7 +146,7 @@ fn get_fn(
     params.push((lhs, rhs));
   }
   let body = get_expr(st, body, in_obj);
-  Some(ExprData::Function { params, body })
+  ExprData::Function { params, body }
 }
 
 fn get_comp_specs<I>(st: &mut St, mut iter: I) -> Option<(ast::ForSpec, I)>
@@ -167,7 +171,7 @@ fn get_object_inside(st: &mut St, inside: ast::ObjectInside, in_obj: bool) -> Op
       for member in inside.members() {
         match member.member_kind()? {
           ast::MemberKind::ObjectLocal(local) => {
-            binds.extend(local.bind().and_then(|b| get_bind(st, b, true)));
+            binds.extend(local.bind().map(|b| get_bind(st, b, true)));
           }
           ast::MemberKind::Assert(assert) => {
             st.err(&assert, "object comprehension must not contain asserts");
@@ -201,7 +205,7 @@ fn get_object_inside(st: &mut St, inside: ast::ObjectInside, in_obj: bool) -> Op
         };
       }
       let vars = comp_specs.filter_map(|comp_spec| match comp_spec {
-        ast::CompSpec::ForSpec(spec) => Some(get_id(st, spec.id()?)),
+        ast::CompSpec::ForSpec(spec) => Some(get_id(st, spec.id())),
         ast::CompSpec::IfSpec(_) => None,
       });
       let vars: Vec<_> = vars.collect();
