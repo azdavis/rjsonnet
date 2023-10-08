@@ -23,7 +23,7 @@ fn get_expr(st: &mut St, e: Option<ast::Expr>, in_obj: bool) -> Expr {
     ast::Expr::ExprNumber(_) => ExprData::Prim(Prim::Number(0.0)),
     ast::Expr::ExprId(e) => ExprData::Id(get_id(st, e.id())),
     ast::Expr::ExprParen(e) => return get_expr(st, e.expr(), in_obj),
-    ast::Expr::ExprObject(e) => get_object_inside(st, e.object_inside()?, in_obj)?,
+    ast::Expr::ExprObject(e) => get_object_inside(st, e.object_inside()?, in_obj),
     ast::Expr::ExprArray(e) => match get_comp_specs(st, e.comp_specs()) {
       Some(_) => {
         let mut expr_commas = e.expr_commas();
@@ -162,22 +162,24 @@ where
   }
 }
 
-fn get_object_inside(st: &mut St, inside: ast::ObjectInside, in_obj: bool) -> Option<ExprData> {
+fn get_object_inside(st: &mut St, inside: ast::ObjectInside, in_obj: bool) -> ExprData {
   match get_comp_specs(st, inside.comp_specs()) {
     None => todo!(),
-    Some((for_spec, comp_specs)) => {
+    Some((_, comp_specs)) => {
       let mut binds = Vec::<(Id, Expr)>::new();
       let mut lowered_field = None::<(Expr, Expr)>;
       for member in inside.members() {
-        match member.member_kind()? {
-          ast::MemberKind::ObjectLocal(local) => {
+        match member.member_kind() {
+          None => {}
+          Some(ast::MemberKind::ObjectLocal(local)) => {
             binds.extend(local.bind().map(|b| get_bind(st, b, true)));
           }
-          ast::MemberKind::Assert(assert) => {
+          Some(ast::MemberKind::Assert(assert)) => {
             st.err(&assert, "object comprehension must not contain asserts");
           }
-          ast::MemberKind::Field(field) => match field.field_name()? {
-            ast::FieldName::FieldNameExpr(field_name) => match lowered_field {
+          Some(ast::MemberKind::Field(field)) => match field.field_name() {
+            None => {}
+            Some(ast::FieldName::FieldNameExpr(field_name)) => match lowered_field {
               None => {
                 if let Some(field_extra) = field.field_extra() {
                   st.err(
@@ -185,10 +187,11 @@ fn get_object_inside(st: &mut St, inside: ast::ObjectInside, in_obj: bool) -> Op
                     "object comprehension field must not have `+` or parameters",
                   );
                 }
-                let vis = field.visibility()?;
-                let is_colon = matches!(vis.kind, ast::VisibilityKind::Colon);
-                if !is_colon {
-                  st.err_token(vis.token, "object comprehension field must use `:`");
+                if let Some(vis) = field.visibility() {
+                  let is_colon = matches!(vis.kind, ast::VisibilityKind::Colon);
+                  if !is_colon {
+                    st.err_token(vis.token, "object comprehension field must use `:`");
+                  }
                 }
                 let name = get_expr(st, field_name.expr(), in_obj);
                 let body = get_expr(st, field.expr(), in_obj);
@@ -198,11 +201,11 @@ fn get_object_inside(st: &mut St, inside: ast::ObjectInside, in_obj: bool) -> Op
                 st.err(&field, "object comprehension must not contain more than one field");
               }
             },
-            non_expr_name => {
+            Some(non_expr_name) => {
               st.err(&non_expr_name, "object comprehension must not contain literal field names");
             }
           },
-        };
+        }
       }
       let vars = comp_specs.filter_map(|comp_spec| match comp_spec {
         ast::CompSpec::ForSpec(spec) => Some(get_id(st, spec.id())),
@@ -212,7 +215,7 @@ fn get_object_inside(st: &mut St, inside: ast::ObjectInside, in_obj: bool) -> Op
       match lowered_field {
         None => {
           st.err(&inside, "object comprehension must contain a field");
-          None
+          todo!()
         }
         Some((name, body)) => {
           let arr = st.fresh();
@@ -230,9 +233,9 @@ fn get_object_inside(st: &mut St, inside: ast::ObjectInside, in_obj: bool) -> Op
           let body = Some(st.expr(ExprData::Local { binds: body_binds, body }));
           let vars = vars.into_iter().map(|x| Some(st.expr(ExprData::Id(x))));
           let vars: Vec<_> = vars.collect();
-          let arr = Some(st.expr(ExprData::Array(vars)));
-          // ExprData::ObjectComp { name, body, id: arr, ary: () }
-          todo!()
+          let vars_ary = Some(st.expr(ExprData::Array(vars)));
+          // TODO is this right?
+          ExprData::ObjectComp { name, body, id: arr, ary: vars_ary }
         }
       }
     }
