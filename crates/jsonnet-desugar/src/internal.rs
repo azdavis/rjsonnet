@@ -35,7 +35,7 @@ fn get_expr(st: &mut St, e: Option<ast::Expr>, in_obj: bool) -> Expr {
         for elem in expr_commas {
           st.err(&elem, "array comprehension must not contain more more than 1 element");
         }
-        get_array_comp(st, e.comp_specs(), elem, in_obj)
+        get_array_comp(st, e.comp_specs(), elem, in_obj)?
       }
       None => todo!(),
     },
@@ -51,7 +51,7 @@ fn get_expr(st: &mut St, e: Option<ast::Expr>, in_obj: bool) -> Expr {
     ast::Expr::ExprBinaryOp(_) => todo!(),
     ast::Expr::ExprUnaryOp(_) => todo!(),
     ast::Expr::ExprImplicitObjectPlus(_) => todo!(),
-    ast::Expr::ExprFunction(e) => return get_fn(st, e.paren_params()?, e.expr(), in_obj),
+    ast::Expr::ExprFunction(e) => get_fn(st, e.paren_params()?, e.expr(), in_obj)?,
     ast::Expr::ExprAssert(_) => todo!(),
     ast::Expr::ExprImport(_) => todo!(),
     ast::Expr::ExprError(_) => todo!(),
@@ -59,13 +59,45 @@ fn get_expr(st: &mut St, e: Option<ast::Expr>, in_obj: bool) -> Expr {
   Some(st.expr(data))
 }
 
-fn get_array_comp<I>(st: &mut St, mut comp_specs: I, elem: Expr, in_obj: bool) -> ExprData
+#[allow(clippy::unnecessary_wraps)]
+fn call_std_func(st: &mut St, id: Id, args: Vec<Expr>) -> Expr {
+  let std = Some(st.expr(ExprData::Id(Id::STD_UNUTTERABLE)));
+  let idx = Some(st.expr(ExprData::Id(id)));
+  let func = Some(st.expr(ExprData::Subscript { on: std, idx }));
+  Some(st.expr(ExprData::Call { func, positional: args, named: Vec::new() }))
+}
+
+fn get_array_comp<I>(st: &mut St, mut comp_specs: I, elem: Expr, in_obj: bool) -> Option<ExprData>
 where
   I: Iterator<Item = ast::CompSpec>,
 {
-  let Some(comp_spec) = comp_specs.next() else { return ExprData::Array(vec![elem]) };
+  let Some(comp_spec) = comp_specs.next() else { return Some(ExprData::Array(vec![elem])) };
   match comp_spec {
-    ast::CompSpec::ForSpec(_) => todo!(),
+    ast::CompSpec::ForSpec(for_spec) => {
+      let for_var = get_id(st, for_spec.id()?);
+      let in_expr = get_expr(st, for_spec.expr(), in_obj);
+      let arr = st.fresh();
+      let idx = st.fresh();
+      let arr_expr = Some(st.expr(ExprData::Id(arr)));
+      let idx_expr = Some(st.expr(ExprData::Id(idx)));
+      let length = call_std_func(st, Id::LENGTH, vec![arr_expr]);
+      let subscript = Some(st.expr(ExprData::Subscript { on: arr_expr, idx: idx_expr }));
+      // recursion!
+      let recur = get_array_comp(st, comp_specs, elem, in_obj)?;
+      let recur = Some(st.expr(recur));
+      let recur_with_subscript =
+        Some(st.expr(ExprData::Local { binds: vec![(for_var, subscript)], body: recur }));
+      let unbound_err = err_param_unbound(st);
+      let lambda_recur_with_subscript =
+        Some(st.expr(ExprData::Function {
+          params: vec![(idx, unbound_err)],
+          body: recur_with_subscript,
+        }));
+      let make_array = call_std_func(st, Id::MAKE_ARRAY, vec![length, lambda_recur_with_subscript]);
+      let empty_array = Some(st.expr(ExprData::Array(Vec::new())));
+      let join = call_std_func(st, Id::JOIN, vec![empty_array, make_array]);
+      Some(ExprData::Local { binds: vec![(arr, in_expr)], body: join })
+    }
     ast::CompSpec::IfSpec(_) => todo!(),
   }
 }
@@ -79,9 +111,19 @@ fn get_bind(st: &mut St, bind: ast::Bind, in_obj: bool) -> Option<(Id, Expr)> {
   let rhs = bind.expr();
   let rhs = match bind.paren_params() {
     None => get_expr(st, rhs, in_obj),
-    Some(params) => get_fn(st, params, rhs, in_obj),
+    Some(params) => {
+      let fn_data = get_fn(st, params, rhs, in_obj)?;
+      Some(st.expr(fn_data))
+    }
   };
   Some((lhs, rhs))
+}
+
+#[allow(clippy::unnecessary_wraps)]
+fn err_param_unbound(st: &mut St) -> Expr {
+  let msg = ExprData::Prim(Prim::String(Str::PARAMETER_NOT_BOUND));
+  let msg = Some(st.expr(msg));
+  Some(st.expr(ExprData::Error(msg)))
 }
 
 fn get_fn(
@@ -89,22 +131,18 @@ fn get_fn(
   paren_params: ast::ParenParams,
   body: Option<ast::Expr>,
   in_obj: bool,
-) -> Expr {
+) -> Option<ExprData> {
   let mut params = Vec::<(Id, Expr)>::new();
   for param in paren_params.params() {
     let lhs = get_id(st, param.id()?);
     let rhs = match param.eq_expr() {
       Some(rhs) => get_expr(st, rhs.expr(), in_obj),
-      None => {
-        let msg = ExprData::Prim(Prim::String(Str::PARAMETER_NOT_BOUND));
-        let msg = Some(st.expr(msg));
-        Some(st.expr(ExprData::Error(msg)))
-      }
+      None => err_param_unbound(st),
     };
     params.push((lhs, rhs));
   }
   let body = get_expr(st, body, in_obj);
-  Some(st.expr(ExprData::Function { params, body }))
+  Some(ExprData::Function { params, body })
 }
 
 fn get_comp_specs<I>(st: &mut St, mut iter: I) -> Option<(ast::ForSpec, I)>
