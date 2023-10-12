@@ -11,12 +11,12 @@ checksum = "d468802bab17cbc0cc575e9b053f41e72aa36bfa6b7f55e3529ffa43161b97fa"
 [[package]]
 name = "char-name"
 version = "0.1.0"
-source = "git+https://github.com/azdavis/language-util.git#efbac6bf360fe58f6c10ab9a3e2d608336d46c40"
+source = "git+https://github.com/azdavis/language-util.git#bc4bb79b0309c596b3c5fded6b2eb4e7d9bf0a02"
 
 [[package]]
 name = "code-h2-md-map"
 version = "0.1.0"
-source = "git+https://github.com/azdavis/language-util.git#efbac6bf360fe58f6c10ab9a3e2d608336d46c40"
+source = "git+https://github.com/azdavis/language-util.git#bc4bb79b0309c596b3c5fded6b2eb4e7d9bf0a02"
 dependencies = [
  "fast-hash",
 ]
@@ -36,7 +36,7 @@ checksum = "9bda8e21c04aca2ae33ffc2fd8c23134f3cac46db123ba97bd9d3f3b8a4a85e1"
 [[package]]
 name = "event-parse"
 version = "0.1.0"
-source = "git+https://github.com/azdavis/language-util.git#efbac6bf360fe58f6c10ab9a3e2d608336d46c40"
+source = "git+https://github.com/azdavis/language-util.git#bc4bb79b0309c596b3c5fded6b2eb4e7d9bf0a02"
 dependencies = [
  "drop_bomb",
  "rowan",
@@ -46,7 +46,7 @@ dependencies = [
 [[package]]
 name = "fast-hash"
 version = "0.1.0"
-source = "git+https://github.com/azdavis/language-util.git#efbac6bf360fe58f6c10ab9a3e2d608336d46c40"
+source = "git+https://github.com/azdavis/language-util.git#bc4bb79b0309c596b3c5fded6b2eb4e7d9bf0a02"
 dependencies = [
  "rustc-hash",
 ]
@@ -60,7 +60,7 @@ checksum = "8a9ee70c43aaf417c914396645a0fa852624801b24ebb7ae78fe8272889ac888"
 [[package]]
 name = "identifier-case"
 version = "0.1.0"
-source = "git+https://github.com/azdavis/language-util.git#efbac6bf360fe58f6c10ab9a3e2d608336d46c40"
+source = "git+https://github.com/azdavis/language-util.git#bc4bb79b0309c596b3c5fded6b2eb4e7d9bf0a02"
 
 [[package]]
 name = "jsonnet-cli"
@@ -143,9 +143,9 @@ checksum = "3752f229dcc5a481d60f385fa479ff46818033d881d2d801aa27dffcfb5e8306"
 
 [[package]]
 name = "memoffset"
-version = "0.8.0"
+version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d61c719bcfbcf5d62b3a09efa6088de8c54bc0bfcd3ea7ae39fcc186108b8de1"
+checksum = "5a634b1c61a95585bd15607c6ab0c4e5b226e695ff2800ba0cdccddf208c406c"
 dependencies = [
  "autocfg",
 ]
@@ -180,9 +180,9 @@ dependencies = [
 
 [[package]]
 name = "rowan"
-version = "0.15.11"
+version = "0.15.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "64449cfef9483a475ed56ae30e2da5ee96448789fb2aa240a04beb6a055078bf"
+checksum = "906057e449592587bf6724f00155bf82a6752c868d78a8fb3aa41f4e6357cfe8"
 dependencies = [
  "countme",
  "hashbrown",
@@ -211,13 +211,15 @@ dependencies = [
 [[package]]
 name = "syntax-gen"
 version = "0.1.0"
-source = "git+https://github.com/azdavis/language-util.git#efbac6bf360fe58f6c10ab9a3e2d608336d46c40"
+source = "git+https://github.com/azdavis/language-util.git#bc4bb79b0309c596b3c5fded6b2eb4e7d9bf0a02"
 dependencies = [
  "char-name",
  "fast-hash",
  "identifier-case",
+ "prettyplease",
  "proc-macro2",
  "quote",
+ "syn",
  "ungrammar",
 ]
 
@@ -230,7 +232,7 @@ checksum = "f18aa187839b2bdb1ad2fa35ead8c4c2976b64e4363c386d45ac0f7ee85c9233"
 [[package]]
 name = "token"
 version = "0.1.0"
-source = "git+https://github.com/azdavis/language-util.git#efbac6bf360fe58f6c10ab9a3e2d608336d46c40"
+source = "git+https://github.com/azdavis/language-util.git#bc4bb79b0309c596b3c5fded6b2eb4e7d9bf0a02"
 
 [[package]]
 name = "ungrammar"
@@ -240,6 +242,6 @@ checksum = "a3e5df347f0bf3ec1d670aad6ca5c6a1859cd9ea61d2113125794654ccced68f"
 
 [[package]]
 name = "unicode-ident"
-version = "1.0.11"
+version = "1.0.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "301abaae475aa91687eb82514b328ab47a211a533026cb25fc3e519b86adfc3c"
+checksum = "3354b9ac3fae1ff6755cb6db53683adb661634f67557942dea4facebec0fee4b"
