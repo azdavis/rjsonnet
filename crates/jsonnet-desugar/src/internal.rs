@@ -72,6 +72,7 @@ where
   I: Iterator<Item = ast::CompSpec>,
 {
   let Some(comp_spec) = comp_specs.next() else { return ExprData::Array(vec![elem]) };
+  let empty_array = Some(st.expr(ExprData::Array(Vec::new())));
   match comp_spec {
     ast::CompSpec::ForSpec(for_spec) => {
       let for_var = get_id(st, for_spec.id());
@@ -94,11 +95,16 @@ where
           body: recur_with_subscript,
         }));
       let make_array = call_std_func(st, Id::MAKE_ARRAY, vec![length, lambda_recur_with_subscript]);
-      let empty_array = Some(st.expr(ExprData::Array(Vec::new())));
       let join = call_std_func(st, Id::JOIN, vec![empty_array, make_array]);
       ExprData::Local { binds: vec![(arr, in_expr)], body: join }
     }
-    ast::CompSpec::IfSpec(_) => todo!(),
+    ast::CompSpec::IfSpec(if_spec) => {
+      let cond = get_expr(st, if_spec.expr(), in_obj);
+      // recursion!
+      let yes = get_array_comp(st, comp_specs, elem, in_obj);
+      let yes = Some(st.expr(yes));
+      ExprData::If { cond, yes, no: empty_array }
+    }
   }
 }
 
