@@ -67,42 +67,42 @@ fn call_std_func(st: &mut St, id: Id, args: Vec<Expr>) -> Expr {
   Some(st.expr(ExprData::Call { func, positional: args, named: Vec::new() }))
 }
 
-fn get_array_comp<I>(st: &mut St, mut comp_specs: I, elem: Expr, in_obj: bool) -> ExprData
+fn get_array_comp<I>(st: &mut St, comp_specs: I, elem: Expr, in_obj: bool) -> ExprData
 where
   I: Iterator<Item = ast::CompSpec>,
 {
-  let Some(comp_spec) = comp_specs.next() else { return ExprData::Array(vec![elem]) };
-  // recursion!
-  let recur = get_array_comp(st, comp_specs, elem, in_obj);
-  let recur = Some(st.expr(recur));
-  let empty_array = Some(st.expr(ExprData::Array(Vec::new())));
-  match comp_spec {
-    ast::CompSpec::ForSpec(for_spec) => {
-      let for_var = get_id(st, for_spec.id());
-      let in_expr = get_expr(st, for_spec.expr(), in_obj);
-      let arr = st.fresh();
-      let idx = st.fresh();
-      let arr_expr = Some(st.expr(ExprData::Id(arr)));
-      let idx_expr = Some(st.expr(ExprData::Id(idx)));
-      let length = call_std_func(st, Id::LENGTH, vec![arr_expr]);
-      let subscript = Some(st.expr(ExprData::Subscript { on: arr_expr, idx: idx_expr }));
-      let recur_with_subscript =
-        Some(st.expr(ExprData::Local { binds: vec![(for_var, subscript)], body: recur }));
-      let unbound_err = err_param_unbound(st);
-      let lambda_recur_with_subscript =
-        Some(st.expr(ExprData::Function {
+  let comp_specs: Vec<_> = comp_specs.collect();
+  comp_specs.into_iter().rev().fold(ExprData::Array(vec![elem]), |ac, comp_spec| {
+    let ac = Some(st.expr(ac));
+    let empty_array = Some(st.expr(ExprData::Array(Vec::new())));
+    match comp_spec {
+      ast::CompSpec::ForSpec(for_spec) => {
+        let for_var = get_id(st, for_spec.id());
+        let in_expr = get_expr(st, for_spec.expr(), in_obj);
+        let arr = st.fresh();
+        let idx = st.fresh();
+        let arr_expr = Some(st.expr(ExprData::Id(arr)));
+        let idx_expr = Some(st.expr(ExprData::Id(idx)));
+        let length = call_std_func(st, Id::LENGTH, vec![arr_expr]);
+        let subscript = Some(st.expr(ExprData::Subscript { on: arr_expr, idx: idx_expr }));
+        let recur_with_subscript =
+          Some(st.expr(ExprData::Local { binds: vec![(for_var, subscript)], body: ac }));
+        let unbound_err = err_param_unbound(st);
+        let lambda_recur_with_subscript = Some(st.expr(ExprData::Function {
           params: vec![(idx, unbound_err)],
           body: recur_with_subscript,
         }));
-      let make_array = call_std_func(st, Id::MAKE_ARRAY, vec![length, lambda_recur_with_subscript]);
-      let join = call_std_func(st, Id::JOIN, vec![empty_array, make_array]);
-      ExprData::Local { binds: vec![(arr, in_expr)], body: join }
+        let make_array =
+          call_std_func(st, Id::MAKE_ARRAY, vec![length, lambda_recur_with_subscript]);
+        let join = call_std_func(st, Id::JOIN, vec![empty_array, make_array]);
+        ExprData::Local { binds: vec![(arr, in_expr)], body: join }
+      }
+      ast::CompSpec::IfSpec(if_spec) => {
+        let cond = get_expr(st, if_spec.expr(), in_obj);
+        ExprData::If { cond, yes: ac, no: empty_array }
+      }
     }
-    ast::CompSpec::IfSpec(if_spec) => {
-      let cond = get_expr(st, if_spec.expr(), in_obj);
-      ExprData::If { cond, yes: recur, no: empty_array }
-    }
-  }
+  })
 }
 
 /// makes a fresh id if no actual user-written id
