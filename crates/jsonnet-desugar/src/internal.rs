@@ -72,6 +72,9 @@ where
   I: Iterator<Item = ast::CompSpec>,
 {
   let Some(comp_spec) = comp_specs.next() else { return ExprData::Array(vec![elem]) };
+  // recursion!
+  let recur = get_array_comp(st, comp_specs, elem, in_obj);
+  let recur = Some(st.expr(recur));
   let empty_array = Some(st.expr(ExprData::Array(Vec::new())));
   match comp_spec {
     ast::CompSpec::ForSpec(for_spec) => {
@@ -83,9 +86,6 @@ where
       let idx_expr = Some(st.expr(ExprData::Id(idx)));
       let length = call_std_func(st, Id::LENGTH, vec![arr_expr]);
       let subscript = Some(st.expr(ExprData::Subscript { on: arr_expr, idx: idx_expr }));
-      // recursion!
-      let recur = get_array_comp(st, comp_specs, elem, in_obj);
-      let recur = Some(st.expr(recur));
       let recur_with_subscript =
         Some(st.expr(ExprData::Local { binds: vec![(for_var, subscript)], body: recur }));
       let unbound_err = err_param_unbound(st);
@@ -100,10 +100,7 @@ where
     }
     ast::CompSpec::IfSpec(if_spec) => {
       let cond = get_expr(st, if_spec.expr(), in_obj);
-      // recursion!
-      let yes = get_array_comp(st, comp_specs, elem, in_obj);
-      let yes = Some(st.expr(yes));
-      ExprData::If { cond, yes, no: empty_array }
+      ExprData::If { cond, yes: recur, no: empty_array }
     }
   }
 }
