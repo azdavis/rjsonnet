@@ -51,7 +51,7 @@ fn get_expr(st: &mut St, e: Option<ast::Expr>, in_obj: bool) -> Expr {
     ast::Expr::ExprBinaryOp(_) => todo!(),
     ast::Expr::ExprUnaryOp(_) => todo!(),
     ast::Expr::ExprImplicitObjectPlus(_) => todo!(),
-    ast::Expr::ExprFunction(e) => get_fn(st, e.paren_params()?, e.expr(), in_obj),
+    ast::Expr::ExprFunction(e) => get_fn(st, e.paren_params(), e.expr(), in_obj),
     ast::Expr::ExprAssert(_) => todo!(),
     ast::Expr::ExprImport(_) => todo!(),
     ast::Expr::ExprError(_) => todo!(),
@@ -116,7 +116,7 @@ fn get_bind(st: &mut St, bind: ast::Bind, in_obj: bool) -> (Id, Expr) {
   let rhs = match bind.paren_params() {
     None => get_expr(st, rhs, in_obj),
     Some(params) => {
-      let fn_data = get_fn(st, params, rhs, in_obj);
+      let fn_data = get_fn(st, Some(params), rhs, in_obj);
       Some(st.expr(fn_data))
     }
   };
@@ -132,12 +132,12 @@ fn err_param_unbound(st: &mut St) -> Expr {
 
 fn get_fn(
   st: &mut St,
-  paren_params: ast::ParenParams,
+  paren_params: Option<ast::ParenParams>,
   body: Option<ast::Expr>,
   in_obj: bool,
 ) -> ExprData {
   let mut params = Vec::<(Id, Expr)>::new();
-  for param in paren_params.params() {
+  for param in paren_params.into_iter().flat_map(|x| x.params()) {
     let lhs = get_id(st, param.id());
     let rhs = match param.eq_expr() {
       Some(rhs) => get_expr(st, rhs.expr(), in_obj),
