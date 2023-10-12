@@ -1,33 +1,6 @@
 use quote::{format_ident, quote};
 
-/// TODO replace with prettyplease from dtolnay
-mod pretty {
-  use std::fs::OpenOptions;
-  use std::io::{Result, Write as _};
-  use std::process::{Command, Stdio};
-
-  pub(crate) fn rust(name: &std::path::Path, contents: &str) -> Result<()> {
-    let prog = Command::new("rustfmt").stdin(Stdio::piped()).stdout(Stdio::piped()).spawn();
-    match prog {
-      Ok(mut prog) => {
-        let mut stdout = prog.stdout.take().unwrap();
-        let mut out_file = OpenOptions::new().write(true).create(true).truncate(true).open(name)?;
-        prog.stdin.take().unwrap().write_all(contents.as_bytes())?;
-        std::io::copy(&mut stdout, &mut out_file)?;
-        if !prog.wait()?.success() {
-          return Err(std::io::ErrorKind::Other.into());
-        }
-      }
-      Err(_) => std::fs::write(name, contents)?,
-    }
-    Ok(())
-  }
-}
-
 fn main() {
-  let out_dir = std::env::var_os("OUT_DIR").expect("OUT_DIR should be set");
-  let out_dir = std::path::Path::new(&out_dir);
-  let out_path = out_dir.join("generated.rs");
   let preset = [
     // STD_UNUTTERABLE is the same as STD but it has a str that cannot be written in user code as an
     // id, so it will never be shadowed.
@@ -84,6 +57,9 @@ fn main() {
       }
     }
   };
-  let contents = contents.to_string();
-  pretty::rust(&out_path, &contents).unwrap();
+  let file = syn::parse2(contents).unwrap();
+  let formatted = prettyplease::unparse(&file);
+  let out_dir = std::env::var_os("OUT_DIR").unwrap();
+  let dst = std::path::Path::new(&out_dir).join("generated.rs");
+  std::fs::write(dst, formatted).unwrap();
 }

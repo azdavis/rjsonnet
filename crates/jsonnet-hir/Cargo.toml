@@ -15,3 +15,5 @@ rustc-hash.workspace = true
 
 [build-dependencies]
 quote = "1.0.33"
+prettyplease = "0.2.15"
+syn = "2.0.38"
