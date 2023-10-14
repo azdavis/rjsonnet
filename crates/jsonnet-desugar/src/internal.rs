@@ -219,7 +219,9 @@ fn get_object_inside(st: &mut St, inside: ast::ObjectInside, in_obj: bool) -> Ex
       match lowered_field {
         None => {
           st.err(&inside, "object comprehension must contain a field");
-          todo!()
+          // this is a good "fake" return, since we knew this was going to be some kind of object,
+          // but now we can't figure out what fields it should have. so let's say it has no fields.
+          ExprData::Object { asserts: Vec::new(), fields: Vec::new() }
         }
         Some((name, body)) => {
           let arr = st.fresh();
