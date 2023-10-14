@@ -215,7 +215,7 @@ pub fn eval(env: &Env, ars: &Arenas, expr: Expr) -> Eval {
         // we're getting a little fancy here. this iterates across the mutable params, and if we
         // could find a param whose name matches the arg's name, then this sets the param to that
         // arg and short circuits with true. note `==` with comparing the names and `=` with setting
-        // the actual exprs. note the useage of `bool::then` with `find_map` and `is_none`.
+        // the actual exprs. note the usage of `bool::then` with `find_map` and `is_none`.
         let failed_to_set_arg = params
           .iter_mut()
           .find_map(|(param_name, param)| (*param_name == arg_name).then(|| *param = arg))
@@ -313,9 +313,9 @@ fn int_op<F>(env: &Env, ars: &Arenas, lhs: Expr, rhs: Expr, f: F) -> Eval
 where
   F: FnOnce(i64, i64) -> i64,
 {
-  let nums = float_pair(env, ars, lhs, rhs)?;
+  let ns = float_pair(env, ars, lhs, rhs)?;
   #[allow(clippy::cast_possible_truncation)]
-  let [lhs, rhs] = nums.map(|x| x as i64);
+  let [lhs, rhs] = ns.map(|x| x as i64);
   #[allow(clippy::cast_precision_loss)]
   let n = f(lhs, rhs) as f64;
   Ok(Val::Prim(Prim::Number(n)))

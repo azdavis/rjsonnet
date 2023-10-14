@@ -4,6 +4,8 @@
   },
   "rust-analyzer.check.command": "clippy",
   "cSpell.words": [
+    "bitand",
+    "conv",
     "elems",
     "Importbin",
     "Importstr",
