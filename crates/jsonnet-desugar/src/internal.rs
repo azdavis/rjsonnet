@@ -172,26 +172,42 @@ fn get_object_inside(st: &mut St, inside: ast::ObjectInside, in_obj: bool) -> Ex
       let mut asserts = Vec::<Expr>::new();
       let mut fields = Vec::<(Expr, Visibility, Expr)>::new();
       for member in inside.members() {
-        match member.member_kind() {
-          None => {}
-          Some(ast::MemberKind::ObjectLocal(local)) => {
+        let Some(member_kind) = member.member_kind() else { continue };
+        match member_kind {
+          ast::MemberKind::ObjectLocal(local) => {
             todo!()
           }
-          Some(ast::MemberKind::Assert(assert)) => {
+          ast::MemberKind::Assert(assert) => {
             todo!()
           }
-          Some(ast::MemberKind::Field(field)) => match field.field_name() {
-            None => {}
-            Some(ast::FieldName::FieldNameId(_)) => {
-              todo!()
-            }
-            Some(ast::FieldName::FieldNameString(_)) => {
-              todo!()
-            }
-            Some(ast::FieldName::FieldNameExpr(_)) => {
-              todo!()
-            }
-          },
+          ast::MemberKind::Field(field) => {
+            let name = match field.field_name() {
+              None => continue,
+              Some(ast::FieldName::FieldNameId(name)) => match name.id() {
+                Some(id) => {
+                  let expr = ExprData::Prim(Prim::String(st.str(id.text())));
+                  Some(st.expr(expr))
+                }
+                None => continue,
+              },
+              Some(ast::FieldName::FieldNameString(name)) => match name.string() {
+                Some(str) => {
+                  let expr = ExprData::Prim(Prim::String(st.str(str.text())));
+                  Some(st.expr(expr))
+                }
+                None => continue,
+              },
+              Some(ast::FieldName::FieldNameExpr(name)) => get_expr(st, name.expr(), in_obj),
+            };
+            let body = match field.field_extra() {
+              None => get_expr(st, field.expr(), true),
+              Some(ast::FieldExtra::FieldPlus(_)) => todo!(),
+              Some(ast::FieldExtra::ParenParams(paren_params)) => {
+                let expr = get_fn(st, Some(paren_params), field.expr(), true);
+                Some(st.expr(expr))
+              }
+            };
+          }
         }
       }
       ExprData::Object { asserts, fields }
