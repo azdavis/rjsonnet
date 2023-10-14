@@ -4,10 +4,13 @@ fn main() {
   let preset = [
     // STD_UNUTTERABLE is the same as STD but it has a str that cannot be written in user code as an
     // id, so it will never be shadowed.
-    ("STD_UNUTTERABLE", "<std>", true),
+    ("STD_UNUTTERABLE", "$std", true),
     ("STD", "std", true),
     ("SELF", "self", true),
     ("SUPER", "super", true),
+    // OUTER_SELF and OUTER_SUPER are also unutterable and are used in the desugaring.
+    ("OUTER_SELF", "$outerself", true),
+    ("OUTER_SUPER", "$outersuper", true),
     ("DOLLAR", "$", true),
     ("JOIN", "join", true),
     ("MAKE_ARRAY", "makeArray", true),

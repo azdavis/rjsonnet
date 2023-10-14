@@ -8,6 +8,8 @@
     "Importbin",
     "Importstr",
     "jsonnet",
+    "outerself",
+    "outersuper",
     "prettyplease",
     "rustc",
     "unparse"
