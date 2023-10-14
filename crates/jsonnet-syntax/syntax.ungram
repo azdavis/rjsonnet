@@ -38,7 +38,7 @@ ExprNumber = 'Number'
 ExprId = 'Id'
 ExprParen = '(' Expr ')'
 ExprObject = '{' ObjectInside '}'
-// array comprehension is rearranged, TODO sort out in lowering
+// array comprehension is rearranged
 ExprArray = '[' ExprComma* CompSpec* ']'
 ExprFieldGet = Expr '.' 'Id'
 ExprSubscript = Expr '[' expr_a:Expr? colon_a:':'? expr_b:Expr? colon_b:':'? expr_c:Expr? ']'
@@ -53,7 +53,7 @@ ExprAssert = Assert ';' Expr
 ExprImport = Import 'String'
 ExprError = 'error' Expr
 
-// object comprehension is rearranged, TODO sort out in lowering
+// object comprehension is rearranged
 ObjectInside = Member* CompSpec*
 Member = MemberKind ','?
 
