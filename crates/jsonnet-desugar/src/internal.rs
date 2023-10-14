@@ -200,42 +200,39 @@ fn get_object_inside(st: &mut St, inside: ast::ObjectInside, in_obj: bool) -> Ex
       let mut binds = Vec::<(Id, Expr)>::new();
       let mut lowered_field = None::<(Expr, Expr)>;
       for member in inside.members() {
-        match member.member_kind() {
-          None => {}
-          Some(ast::MemberKind::ObjectLocal(local)) => {
+        let Some(member_kind) = member.member_kind() else { continue };
+        match member_kind {
+          ast::MemberKind::ObjectLocal(local) => {
             binds.extend(local.bind().and_then(|b| get_bind(st, b, true)));
           }
-          Some(ast::MemberKind::Assert(assert)) => {
+          ast::MemberKind::Assert(assert) => {
             st.err(&assert, "object comprehension must not contain asserts");
           }
-          Some(ast::MemberKind::Field(field)) => match field.field_name() {
-            None => {}
-            Some(ast::FieldName::FieldNameExpr(field_name)) => match lowered_field {
-              None => {
-                if let Some(field_extra) = field.field_extra() {
-                  st.err(
-                    &field_extra,
-                    "object comprehension field must not have `+` or parameters",
-                  );
-                }
-                if let Some(vis) = field.visibility() {
-                  let is_colon = matches!(vis.kind, ast::VisibilityKind::Colon);
-                  if !is_colon {
-                    st.err_token(vis.token, "object comprehension field must use `:`");
-                  }
-                }
-                let name = get_expr(st, field_name.expr(), in_obj);
-                let body = get_expr(st, field.expr(), in_obj);
-                lowered_field = Some((name, body));
-              }
-              Some(_) => {
-                st.err(&field, "object comprehension must not contain more than one field");
-              }
-            },
-            Some(non_expr_name) => {
-              st.err(&non_expr_name, "object comprehension must not contain literal field names");
+          ast::MemberKind::Field(field) => {
+            let Some(field_name) = field.field_name() else {
+              continue;
+            };
+            let ast::FieldName::FieldNameExpr(field_name) = field_name else {
+              st.err(&field_name, "object comprehension must not contain literal field names");
+              continue;
+            };
+            if lowered_field.is_some() {
+              st.err(&field, "object comprehension must not contain more than one field");
+              continue;
             }
-          },
+            if let Some(field_extra) = field.field_extra() {
+              st.err(&field_extra, "object comprehension field must not have `+` or parameters");
+            }
+            if let Some(vis) = field.visibility() {
+              let is_colon = matches!(vis.kind, ast::VisibilityKind::Colon);
+              if !is_colon {
+                st.err_token(vis.token, "object comprehension field must use `:`");
+              }
+            }
+            let name = get_expr(st, field_name.expr(), in_obj);
+            let body = get_expr(st, field.expr(), in_obj);
+            lowered_field = Some((name, body));
+          }
         }
       }
       let vars = comp_specs.filter_map(|comp_spec| match comp_spec {
