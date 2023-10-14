@@ -25,6 +25,7 @@ Expr =
 | ExprAssert
 | ExprImport
 | ExprError
+| ExprTailstrict
 
 ExprNull = 'null'
 ExprTrue = 'true'
@@ -52,6 +53,8 @@ ExprFunction = 'function' ParenParams Expr
 ExprAssert = Assert ';' Expr
 ExprImport = Import 'String'
 ExprError = 'error' Expr
+// only allowed in std
+ExprTailstrict = Expr 'tailstrict'
 
 // object comprehension is rearranged
 ObjectInside = Member* CompSpec*

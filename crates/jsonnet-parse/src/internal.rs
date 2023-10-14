@@ -188,6 +188,11 @@ fn expr_prec(p: &mut Parser<'_>, min_prec: Prec) -> Option<Exited> {
         p.eat(SK::Id);
         p.exit(en, SK::ExprFieldGet)
       }
+      SK::TailstrictKw => {
+        let en = p.precede(ex);
+        p.bump();
+        p.exit(en, SK::ExprTailstrict)
+      }
       op => match bin_op_prec(op) {
         Some(op_prec) => {
           if op_prec <= min_prec {

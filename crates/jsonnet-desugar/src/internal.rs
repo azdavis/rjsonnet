@@ -9,7 +9,7 @@ pub(crate) fn get_root(st: &mut St, r: ast::Root) -> Expr {
   get_expr(st, r.expr(), false)
 }
 
-/// - TODO only allow super/$ sometimes?
+/// - TODO only allow super/$/tailstrict sometimes?
 /// - TODO actually lower strings, numbers
 fn get_expr(st: &mut St, e: Option<ast::Expr>, in_obj: bool) -> Expr {
   let data = match e? {
@@ -55,6 +55,7 @@ fn get_expr(st: &mut St, e: Option<ast::Expr>, in_obj: bool) -> Expr {
     ast::Expr::ExprAssert(_) => todo!(),
     ast::Expr::ExprImport(_) => todo!(),
     ast::Expr::ExprError(_) => todo!(),
+    ast::Expr::ExprTailstrict(_) => todo!(),
   };
   Some(st.expr(data))
 }

@@ -49,7 +49,6 @@ pub(crate) fn token(st: &mut St<'_>, b: u8) -> SK {
     let start = st.mark();
     st.bump();
     st.advance_while(|b| b.is_ascii_alphanumeric() || b == b'_');
-    // TODO reject `tailstrict`
     return SK::keyword(st.non_empty_since(start)).unwrap_or(SK::Id);
   }
   if b.is_ascii_digit() {
