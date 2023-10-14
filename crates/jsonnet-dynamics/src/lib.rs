@@ -240,8 +240,8 @@ pub fn eval(env: &Env, ars: &Arenas, expr: Expr) -> Eval {
       eval(env, ars, expr)
     }
     ExprData::BinaryOp { lhs, op, rhs } => match op {
-      // plus
-      BinaryOp::Plus => match (eval(env, ars, *lhs)?, eval(env, ars, *rhs)?) {
+      // add
+      BinaryOp::Add => match (eval(env, ars, *lhs)?, eval(env, ars, *rhs)?) {
         (Val::Prim(Prim::String(lhs)), rhs) => {
           let rhs = str_conv(rhs);
           Ok(Val::Prim(Prim::String(str_concat(lhs, rhs))))
@@ -256,27 +256,27 @@ pub fn eval(env: &Env, ars: &Arenas, expr: Expr) -> Eval {
         _ => Err(EvalError::Todo),
       },
       // arithmetic
-      BinaryOp::Star => float_op(env, ars, *lhs, *rhs, std::ops::Mul::mul),
-      BinaryOp::Slash => float_op(env, ars, *lhs, *rhs, std::ops::Div::div),
-      BinaryOp::Minus => float_op(env, ars, *lhs, *rhs, std::ops::Sub::sub),
+      BinaryOp::Mul => float_op(env, ars, *lhs, *rhs, std::ops::Mul::mul),
+      BinaryOp::Div => float_op(env, ars, *lhs, *rhs, std::ops::Div::div),
+      BinaryOp::Sub => float_op(env, ars, *lhs, *rhs, std::ops::Sub::sub),
       // bitwise
-      BinaryOp::LtLt => int_op(env, ars, *lhs, *rhs, std::ops::Shl::shl),
-      BinaryOp::GtGt => int_op(env, ars, *lhs, *rhs, std::ops::Shr::shr),
-      BinaryOp::And => int_op(env, ars, *lhs, *rhs, std::ops::BitAnd::bitand),
-      BinaryOp::Carat => int_op(env, ars, *lhs, *rhs, std::ops::BitXor::bitxor),
-      BinaryOp::Bar => int_op(env, ars, *lhs, *rhs, std::ops::BitOr::bitor),
+      BinaryOp::Shl => int_op(env, ars, *lhs, *rhs, std::ops::Shl::shl),
+      BinaryOp::Shr => int_op(env, ars, *lhs, *rhs, std::ops::Shr::shr),
+      BinaryOp::BitAnd => int_op(env, ars, *lhs, *rhs, std::ops::BitAnd::bitand),
+      BinaryOp::BitXor => int_op(env, ars, *lhs, *rhs, std::ops::BitXor::bitxor),
+      BinaryOp::BitOr => int_op(env, ars, *lhs, *rhs, std::ops::BitOr::bitor),
       // comparison
       BinaryOp::Lt => cmp_op(env, ars, *lhs, *rhs, Ordering::is_lt),
       BinaryOp::LtEq => cmp_op(env, ars, *lhs, *rhs, Ordering::is_le),
       BinaryOp::Gt => cmp_op(env, ars, *lhs, *rhs, Ordering::is_gt),
       BinaryOp::GtEq => cmp_op(env, ars, *lhs, *rhs, Ordering::is_ge),
       // logical
-      BinaryOp::AndAnd => match eval(env, ars, *lhs)? {
+      BinaryOp::LogicalAnd => match eval(env, ars, *lhs)? {
         Val::Prim(Prim::Bool(true)) => eval(env, ars, *rhs),
         Val::Prim(Prim::Bool(false)) => Ok(Val::Prim(Prim::Bool(false))),
         Val::Prim(_) | Val::Rec { .. } => Err(EvalError::IncompatibleTypes),
       },
-      BinaryOp::BarBar => match eval(env, ars, *lhs)? {
+      BinaryOp::LogicalOr => match eval(env, ars, *lhs)? {
         Val::Prim(Prim::Bool(true)) => Ok(Val::Prim(Prim::Bool(true))),
         Val::Prim(Prim::Bool(false)) => eval(env, ars, *rhs),
         Val::Prim(_) | Val::Rec { .. } => Err(EvalError::IncompatibleTypes),

@@ -48,29 +48,29 @@ pub enum Visibility {
 
 #[derive(Debug, Clone, Copy)]
 pub enum BinaryOp {
-  Star,
-  Slash,
-  Plus,
-  Minus,
-  LtLt,
-  GtGt,
+  Mul,
+  Div,
+  Add,
+  Sub,
+  Shl,
+  Shr,
   Lt,
   LtEq,
   Gt,
   GtEq,
-  And,
-  Carat,
-  Bar,
-  AndAnd,
-  BarBar,
+  BitAnd,
+  BitXor,
+  BitOr,
+  LogicalAnd,
+  LogicalOr,
 }
 
 #[derive(Debug, Clone, Copy)]
 pub enum UnaryOp {
-  Minus,
-  Plus,
-  Bang,
-  Tilde,
+  Neg,
+  Pos,
+  LogicalNot,
+  BitNot,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
