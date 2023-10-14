@@ -10,6 +10,7 @@
     "jsonnet",
     "outerself",
     "outersuper",
+    "prec",
     "prettyplease",
     "rustc",
     "unparse"

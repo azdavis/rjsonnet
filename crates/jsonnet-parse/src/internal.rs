@@ -33,7 +33,7 @@ fn expr_prec(p: &mut Parser<'_>, min_prec: Prec) -> Option<Exited> {
     // all of these expressions are atomic. this means they never require parentheses to resolve
     // precedence issues. clearly, expressions like `null` and `false` are this way, but
     // interestingly so are object literals and imports. note that objects and arrays may contain
-    // subexpressions that are not atomic, but the overall expression is atomic.
+    // sub-expressions that are not atomic, but the overall expression is atomic.
     SK::NullKw => {
       p.bump();
       SK::ExprNull
