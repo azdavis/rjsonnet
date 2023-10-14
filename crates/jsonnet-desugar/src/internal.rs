@@ -209,11 +209,11 @@ fn get_object_inside(st: &mut St, inside: ast::ObjectInside, in_obj: bool) -> Ex
             st.err(&assert, "object comprehension must not contain asserts");
           }
           ast::MemberKind::Field(field) => {
-            let Some(field_name) = field.field_name() else {
+            let Some(name) = field.field_name() else {
               continue;
             };
-            let ast::FieldName::FieldNameExpr(field_name) = field_name else {
-              st.err(&field_name, "object comprehension must not contain literal field names");
+            let ast::FieldName::FieldNameExpr(name) = name else {
+              st.err(&name, "object comprehension must not contain literal field names");
               continue;
             };
             if lowered_field.is_some() {
@@ -228,7 +228,7 @@ fn get_object_inside(st: &mut St, inside: ast::ObjectInside, in_obj: bool) -> Ex
                 st.err_token(vis.token, "object comprehension field must use `:`");
               }
             }
-            let name = get_expr(st, field_name.expr(), in_obj);
+            let name = get_expr(st, name.expr(), in_obj);
             let body = get_expr(st, field.expr(), in_obj);
             lowered_field = Some((name, body));
           }
