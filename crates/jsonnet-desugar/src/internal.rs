@@ -108,7 +108,6 @@ where
   })
 }
 
-/// makes a fresh id if no actual user-written id
 fn get_id(st: &mut St, id: SyntaxToken) -> Id {
   Id::new(st.str(id.text()))
 }
