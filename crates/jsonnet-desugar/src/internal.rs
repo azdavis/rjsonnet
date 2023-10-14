@@ -1,15 +1,16 @@
 //! The internal impl.
 //!
-//! TODO how to construct arbitrary expressions not from the source code that we can then desugar?
 
 use crate::st::St;
-use jsonnet_hir::{Expr, ExprData, Id, Prim, Str};
+use jsonnet_hir::{Expr, ExprData, Id, Prim, Str, Visibility};
 use jsonnet_syntax::{ast, kind::SyntaxToken};
 
 pub(crate) fn get_root(st: &mut St, r: ast::Root) -> Expr {
   get_expr(st, r.expr(), false)
 }
 
+/// - TODO only allow super/$ sometimes?
+/// - TODO actually lower strings, numbers
 fn get_expr(st: &mut St, e: Option<ast::Expr>, in_obj: bool) -> Expr {
   let data = match e? {
     ast::Expr::ExprNull(_) => ExprData::Prim(Prim::Null),
@@ -19,7 +20,6 @@ fn get_expr(st: &mut St, e: Option<ast::Expr>, in_obj: bool) -> Expr {
     ast::Expr::ExprSuper(_) => ExprData::Id(Id::SUPER),
     ast::Expr::ExprDollar(_) => ExprData::Id(Id::DOLLAR),
     ast::Expr::ExprString(_) => ExprData::Prim(Prim::String(Str::TODO)),
-    // TODO
     ast::Expr::ExprNumber(_) => ExprData::Prim(Prim::Number(0.0)),
     ast::Expr::ExprId(e) => ExprData::Id(get_id(st, e.id()?)),
     ast::Expr::ExprParen(e) => return get_expr(st, e.expr(), in_obj),
@@ -168,7 +168,35 @@ where
 
 fn get_object_inside(st: &mut St, inside: ast::ObjectInside, in_obj: bool) -> ExprData {
   match get_comp_specs(st, inside.comp_specs()) {
-    None => todo!(),
+    None => {
+      // this is the only time we actually use the `in_obj` flag
+      let mut asserts = Vec::<Expr>::new();
+      let mut fields = Vec::<(Expr, Visibility, Expr)>::new();
+      for member in inside.members() {
+        match member.member_kind() {
+          None => {}
+          Some(ast::MemberKind::ObjectLocal(local)) => {
+            todo!()
+          }
+          Some(ast::MemberKind::Assert(assert)) => {
+            todo!()
+          }
+          Some(ast::MemberKind::Field(field)) => match field.field_name() {
+            None => {}
+            Some(ast::FieldName::FieldNameId(_)) => {
+              todo!()
+            }
+            Some(ast::FieldName::FieldNameString(_)) => {
+              todo!()
+            }
+            Some(ast::FieldName::FieldNameExpr(_)) => {
+              todo!()
+            }
+          },
+        }
+      }
+      ExprData::Object { asserts, fields }
+    }
     Some((_, comp_specs)) => {
       let mut binds = Vec::<(Id, Expr)>::new();
       let mut lowered_field = None::<(Expr, Expr)>;
