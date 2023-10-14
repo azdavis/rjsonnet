@@ -218,7 +218,6 @@ fn get_object_inside(st: &mut St, inside: ast::ObjectInside, in_obj: bool) -> Ex
             };
             if lowered_field.is_some() {
               st.err(&field, "object comprehension must not contain more than one field");
-              continue;
             }
             if let Some(field_extra) = field.field_extra() {
               st.err(&field_extra, "object comprehension field must not have `+` or parameters");
