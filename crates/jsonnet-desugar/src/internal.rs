@@ -179,6 +179,7 @@ fn get_object_inside(st: &mut St, inside: ast::ObjectInside, in_obj: bool) -> Ex
             todo!()
           }
           ast::MemberKind::Assert(assert) => {
+            // TODO handle interactions with binds
             todo!()
           }
           ast::MemberKind::Field(field) => {
@@ -208,6 +209,16 @@ fn get_object_inside(st: &mut St, inside: ast::ObjectInside, in_obj: bool) -> Ex
                 Some(st.expr(expr))
               }
             };
+            let vis = match field.visibility() {
+              Some(vis) => match vis.kind {
+                ast::VisibilityKind::Colon => Visibility::Default,
+                ast::VisibilityKind::ColonColon => Visibility::Hidden,
+                ast::VisibilityKind::ColonColonColon => Visibility::Visible,
+              },
+              None => Visibility::Default,
+            };
+            // TODO handle interactions with binds
+            fields.push((name, vis, body));
           }
         }
       }
