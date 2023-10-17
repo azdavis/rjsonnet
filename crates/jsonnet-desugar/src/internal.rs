@@ -179,9 +179,9 @@ fn get_object_inside(st: &mut St, inside: ast::ObjectInside, in_obj: bool) -> Ex
             todo!()
           }
           ast::MemberKind::Assert(assert) => {
-            let cond = get_expr(st, assert.expr(), in_obj);
+            let cond = get_expr(st, assert.expr(), true);
             let msg = match assert.colon_expr() {
-              Some(e) => get_expr(st, e.expr(), in_obj),
+              Some(e) => get_expr(st, e.expr(), true),
               None => Some(st.expr(ExprData::Prim(Prim::String(Str::ASSERTION_FAILED)))),
             };
             let yes = Some(st.expr(ExprData::Prim(Prim::Null)));
