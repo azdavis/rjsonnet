@@ -175,12 +175,20 @@ fn get_object_inside(st: &mut St, inside: ast::ObjectInside, in_obj: bool) -> Ex
       for member in inside.members() {
         let Some(member_kind) = member.member_kind() else { continue };
         match member_kind {
-          ast::MemberKind::ObjectLocal(local) => {
+          ast::MemberKind::ObjectLocal(_) => {
             todo!()
           }
           ast::MemberKind::Assert(assert) => {
+            let cond = get_expr(st, assert.expr(), in_obj);
+            let msg = match assert.colon_expr() {
+              Some(e) => get_expr(st, e.expr(), in_obj),
+              None => Some(st.expr(ExprData::Prim(Prim::String(Str::ASSERTION_FAILED)))),
+            };
+            let yes = Some(st.expr(ExprData::Prim(Prim::Null)));
+            let no = Some(st.expr(ExprData::Error(msg)));
+            let assert = Some(st.expr(ExprData::If { cond, yes, no }));
             // TODO handle interactions with binds
-            todo!()
+            asserts.push(assert);
           }
           ast::MemberKind::Field(field) => {
             let name = match field.field_name() {

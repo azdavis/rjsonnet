@@ -16,6 +16,7 @@ fn main() {
     ("MAKE_ARRAY", "makeArray", true),
     ("LENGTH", "length", true),
     ("PARAMETER_NOT_BOUND", "Parameter not bound", false),
+    ("ASSERTION_FAILED", "Assertion failed", false),
     ("TODO", "TODO", false),
   ];
   let str_constants = preset.iter().enumerate().map(|(idx, &(name, _, make_id))| {
