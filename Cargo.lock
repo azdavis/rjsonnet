@@ -101,6 +101,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "jsonnet-manifest"
+version = "0.1.0"
+dependencies = [
+ "jsonnet-expr",
+ "jsonnet-val",
+ "rustc-hash",
+]
+
+[[package]]
 name = "jsonnet-parse"
 version = "0.1.0"
 dependencies = [
@@ -232,6 +241,7 @@ dependencies = [
  "jsonnet-exec",
  "jsonnet-expr",
  "jsonnet-lex",
+ "jsonnet-manifest",
  "jsonnet-parse",
  "jsonnet-statics",
  "jsonnet-syntax",

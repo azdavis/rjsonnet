@@ -8,9 +8,11 @@ pub(crate) fn pass(s: &str) {
   let statics_errors = st.finish();
   let env = jsonnet_val::Env::default();
   let exec = jsonnet_exec::exec(&env, &desugar.arenas, desugar.top);
+  let val = exec.unwrap();
+  let manifest = jsonnet_manifest::get(val);
   assert!(lex.errors.is_empty());
   assert!(parse.errors.is_empty());
   assert!(desugar.errors.is_empty());
   assert!(statics_errors.is_empty());
-  assert!(exec.is_ok());
+  assert!(manifest.is_ok());
 }
