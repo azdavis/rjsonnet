@@ -11,7 +11,7 @@ use rustc_hash::{FxHashMap, FxHashSet};
 use std::cmp::Ordering;
 
 #[derive(Debug)]
-pub enum EvalError {
+pub enum Error {
   Todo,
   ArrayIdxNotInteger,
   ArrayIdxOutOfRange,
@@ -27,63 +27,63 @@ pub enum EvalError {
   NoExpr,
 }
 
-type Eval<T = Val> = Result<T, EvalError>;
+pub type Exec<T = Val> = Result<T, Error>;
 
 const EPSILON: f64 = 0.0001;
 
 /// # Errors
 ///
-/// If evaluation failed.
+/// If execution failed.
 ///
 /// # Panics
 ///
 /// If the expr wasn't checked.
-pub fn eval(env: &Env, ars: &Arenas, expr: Expr) -> Eval {
+pub fn exec(env: &Env, ars: &Arenas, expr: Expr) -> Exec {
   // TODO implement a cache on expr to avoid re-computing lazy exprs? but we would also need to
-  // consider the env in which the expr is evaluated
-  let Some(expr) = expr else { return Err(EvalError::NoExpr) };
+  // consider the env in which the expr is executed
+  let Some(expr) = expr else { return Err(Error::NoExpr) };
   match &ars.expr[expr] {
     ExprData::Prim(p) => Ok(Val::Prim(*p)),
     ExprData::Object { asserts, fields } => {
       let mut named_fields = FxHashMap::<Str, (Visibility, Expr)>::default();
       for &(key, hid, val) in fields {
-        match eval(env, ars, key)? {
+        match exec(env, ars, key)? {
           Val::Prim(Prim::String(s)) => {
             if named_fields.insert(s, (hid, val)).is_some() {
-              return Err(EvalError::DuplicateField);
+              return Err(Error::DuplicateField);
             }
           }
           Val::Prim(Prim::Null) => {}
-          Val::Prim(_) | Val::Rec { .. } => return Err(EvalError::IncompatibleTypes),
+          Val::Prim(_) | Val::Rec { .. } => return Err(Error::IncompatibleTypes),
         }
       }
       let kind = RecValKind::Object { asserts: asserts.clone(), fields: named_fields };
       Ok(Val::Rec { env: env.clone(), kind })
     }
     ExprData::ObjectComp { name, body, id, ary } => {
-      let (elem_env, elems) = match eval(env, ars, *ary)? {
+      let (elem_env, elems) = match exec(env, ars, *ary)? {
         Val::Rec { env, kind: RecValKind::Array(xs) } => (env, xs),
-        Val::Prim(_) | Val::Rec { .. } => return Err(EvalError::IncompatibleTypes),
+        Val::Prim(_) | Val::Rec { .. } => return Err(Error::IncompatibleTypes),
       };
       let mut fields = FxHashMap::<Str, (Visibility, Expr)>::default();
       for elem in elems {
         let mut env = env.clone();
         env.insert(*id, Subst::Expr(elem_env.clone(), elem));
-        match eval(&env, ars, *name)? {
+        match exec(&env, ars, *name)? {
           Val::Prim(Prim::String(s)) => {
             // TODO should we continue here?
             let Some(body) = *body else { continue };
             // we want to do `[e/x]body` here?
             let body = match ars.expr[body] {
               ExprData::Prim(_) => body,
-              _ => return Err(EvalError::Todo),
+              _ => return Err(Error::Todo),
             };
             if fields.insert(s, (Visibility::Default, Some(body))).is_some() {
-              return Err(EvalError::DuplicateField);
+              return Err(Error::DuplicateField);
             }
           }
           Val::Prim(Prim::Null) => {}
-          Val::Prim(_) | Val::Rec { .. } => return Err(EvalError::IncompatibleTypes),
+          Val::Prim(_) | Val::Rec { .. } => return Err(Error::IncompatibleTypes),
         }
       }
       let kind = RecValKind::Object { asserts: Vec::new(), fields };
@@ -93,52 +93,52 @@ pub fn eval(env: &Env, ars: &Arenas, expr: Expr) -> Eval {
       let kind = RecValKind::Array(elems.clone());
       Ok(Val::Rec { env: env.clone(), kind })
     }
-    ExprData::Subscript { on, idx } => match eval(env, ars, *on)? {
+    ExprData::Subscript { on, idx } => match exec(env, ars, *on)? {
       Val::Rec { env: mut obj_env, kind: RecValKind::Object { asserts, fields } } => {
-        let name = match eval(env, ars, *idx)? {
+        let name = match exec(env, ars, *idx)? {
           Val::Prim(Prim::String(x)) => x,
-          Val::Prim(_) | Val::Rec { .. } => return Err(EvalError::IncompatibleTypes),
+          Val::Prim(_) | Val::Rec { .. } => return Err(Error::IncompatibleTypes),
         };
-        let Some(&(_, body)) = fields.get(&name) else { return Err(EvalError::NoSuchFieldName) };
+        let Some(&(_, body)) = fields.get(&name) else { return Err(Error::NoSuchFieldName) };
         let kind = RecValKind::Object { asserts: asserts.clone(), fields: fields.clone() };
         let this = Val::Rec { env: obj_env.clone(), kind };
         obj_env.insert(Id::SELF, Subst::Val(this));
         obj_env.insert(Id::SUPER, Subst::Val(Val::empty_object()));
         for assert in asserts {
-          eval(&obj_env, ars, assert)?;
+          exec(&obj_env, ars, assert)?;
         }
-        eval(&obj_env, ars, body)
+        exec(&obj_env, ars, body)
       }
       Val::Rec { env: ary_env, kind: RecValKind::Array(elems) } => {
-        let idx = match eval(env, ars, *idx)? {
+        let idx = match exec(env, ars, *idx)? {
           Val::Prim(Prim::Number(x)) => x,
-          Val::Prim(_) | Val::Rec { .. } => return Err(EvalError::IncompatibleTypes),
+          Val::Prim(_) | Val::Rec { .. } => return Err(Error::IncompatibleTypes),
         };
         let idx_floor = idx.floor();
         let diff = idx - idx_floor;
         if diff.abs() > EPSILON {
-          return Err(EvalError::ArrayIdxNotInteger);
+          return Err(Error::ArrayIdxNotInteger);
         }
         if idx_floor < 0.0 || idx_floor > f64::from(u32::MAX) {
-          return Err(EvalError::ArrayIdxOutOfRange);
+          return Err(Error::ArrayIdxOutOfRange);
         }
         #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
         let idx = idx_floor as u32;
-        let Ok(idx) = usize::try_from(idx) else { return Err(EvalError::ArrayIdxOutOfRange) };
+        let Ok(idx) = usize::try_from(idx) else { return Err(Error::ArrayIdxOutOfRange) };
         match elems.get(idx) {
-          Some(&elem) => eval(&ary_env, ars, elem),
-          None => Err(EvalError::ArrayIdxOutOfRange),
+          Some(&elem) => exec(&ary_env, ars, elem),
+          None => Err(Error::ArrayIdxOutOfRange),
         }
       }
-      Val::Rec { .. } | Val::Prim(_) => Err(EvalError::IncompatibleTypes),
+      Val::Rec { .. } | Val::Prim(_) => Err(Error::IncompatibleTypes),
     },
     ExprData::Call { func, positional, named } => {
-      let (func_env, mut params, body) = match eval(env, ars, *func)? {
+      let (func_env, mut params, body) = match exec(env, ars, *func)? {
         Val::Rec { env, kind: RecValKind::Function { params, body } } => (env, params, body),
-        Val::Rec { .. } | Val::Prim(_) => return Err(EvalError::IncompatibleTypes),
+        Val::Rec { .. } | Val::Prim(_) => return Err(Error::IncompatibleTypes),
       };
       if positional.len() + named.len() > params.len() {
-        return Err(EvalError::TooManyArguments);
+        return Err(Error::TooManyArguments);
       }
       let mut provided = FxHashSet::<Id>::default();
       for ((id, param), &arg) in params.iter_mut().zip(positional) {
@@ -147,7 +147,7 @@ pub fn eval(env: &Env, ars: &Arenas, expr: Expr) -> Eval {
       }
       for &(arg_name, arg) in named {
         if !provided.insert(arg_name) {
-          return Err(EvalError::DuplicateArgument);
+          return Err(Error::DuplicateArgument);
         }
         // we're getting a little fancy here. this iterates across the mutable params, and if we
         // could find a param whose name matches the arg's name, then this sets the param to that
@@ -158,27 +158,27 @@ pub fn eval(env: &Env, ars: &Arenas, expr: Expr) -> Eval {
           .find_map(|(param_name, param)| (*param_name == arg_name).then(|| *param = arg))
           .is_none();
         if failed_to_set_arg {
-          return Err(EvalError::NoSuchArgument);
+          return Err(Error::NoSuchArgument);
         }
       }
-      eval_local(&func_env, &params, ars, body)
+      exec_local(&func_env, &params, ars, body)
     }
     ExprData::Id(id) => match env.get(*id) {
       Subst::Val(v) => Ok(v.clone()),
-      Subst::Expr(env, expr) => eval(env, ars, *expr),
+      Subst::Expr(env, expr) => exec(env, ars, *expr),
     },
-    ExprData::Local { binds, body } => eval_local(env, binds, ars, *body),
+    ExprData::Local { binds, body } => exec_local(env, binds, ars, *body),
     ExprData::If { cond, yes, no } => {
-      let b = match eval(env, ars, *cond)? {
+      let b = match exec(env, ars, *cond)? {
         Val::Prim(Prim::Bool(x)) => x,
-        Val::Prim(_) | Val::Rec { .. } => return Err(EvalError::IncompatibleTypes),
+        Val::Prim(_) | Val::Rec { .. } => return Err(Error::IncompatibleTypes),
       };
       let &expr = if b { yes } else { no };
-      eval(env, ars, expr)
+      exec(env, ars, expr)
     }
     ExprData::BinaryOp { lhs, op, rhs } => match op {
       // add
-      BinaryOp::Add => match (eval(env, ars, *lhs)?, eval(env, ars, *rhs)?) {
+      BinaryOp::Add => match (exec(env, ars, *lhs)?, exec(env, ars, *rhs)?) {
         (Val::Prim(Prim::String(lhs)), rhs) => {
           let rhs = str_conv(rhs);
           Ok(Val::Prim(Prim::String(str_concat(lhs, rhs))))
@@ -190,7 +190,7 @@ pub fn eval(env: &Env, ars: &Arenas, expr: Expr) -> Eval {
         (Val::Prim(Prim::Number(lhs)), Val::Prim(Prim::Number(rhs))) => {
           Ok(Val::Prim(Prim::Number(lhs + rhs)))
         }
-        _ => Err(EvalError::Todo),
+        _ => Err(Error::Todo),
       },
       // arithmetic
       BinaryOp::Mul => float_op(env, ars, *lhs, *rhs, std::ops::Mul::mul),
@@ -208,37 +208,37 @@ pub fn eval(env: &Env, ars: &Arenas, expr: Expr) -> Eval {
       BinaryOp::Gt => cmp_op(env, ars, *lhs, *rhs, Ordering::is_gt),
       BinaryOp::GtEq => cmp_op(env, ars, *lhs, *rhs, Ordering::is_ge),
       // logical
-      BinaryOp::LogicalAnd => match eval(env, ars, *lhs)? {
-        Val::Prim(Prim::Bool(true)) => eval(env, ars, *rhs),
+      BinaryOp::LogicalAnd => match exec(env, ars, *lhs)? {
+        Val::Prim(Prim::Bool(true)) => exec(env, ars, *rhs),
         Val::Prim(Prim::Bool(false)) => Ok(Val::Prim(Prim::Bool(false))),
-        Val::Prim(_) | Val::Rec { .. } => Err(EvalError::IncompatibleTypes),
+        Val::Prim(_) | Val::Rec { .. } => Err(Error::IncompatibleTypes),
       },
-      BinaryOp::LogicalOr => match eval(env, ars, *lhs)? {
+      BinaryOp::LogicalOr => match exec(env, ars, *lhs)? {
         Val::Prim(Prim::Bool(true)) => Ok(Val::Prim(Prim::Bool(true))),
-        Val::Prim(Prim::Bool(false)) => eval(env, ars, *rhs),
-        Val::Prim(_) | Val::Rec { .. } => Err(EvalError::IncompatibleTypes),
+        Val::Prim(Prim::Bool(false)) => exec(env, ars, *rhs),
+        Val::Prim(_) | Val::Rec { .. } => Err(Error::IncompatibleTypes),
       },
     },
-    ExprData::UnaryOp { .. } => Err(EvalError::Todo),
+    ExprData::UnaryOp { .. } => Err(Error::Todo),
     ExprData::Function { params, body } => {
       let kind = RecValKind::Function { params: params.clone(), body: *body };
       Ok(Val::Rec { env: env.clone(), kind })
     }
     ExprData::Error(inner) => {
-      let val = eval(env, ars, *inner)?;
-      Err(EvalError::User(str_conv(val)))
+      let val = exec(env, ars, *inner)?;
+      Err(Error::User(str_conv(val)))
     }
   }
 }
 
-fn float_pair(env: &Env, ars: &Arenas, a: Expr, b: Expr) -> Eval<[f64; 2]> {
-  match (eval(env, ars, a)?, eval(env, ars, b)?) {
+fn float_pair(env: &Env, ars: &Arenas, a: Expr, b: Expr) -> Exec<[f64; 2]> {
+  match (exec(env, ars, a)?, exec(env, ars, b)?) {
     (Val::Prim(Prim::Number(a)), Val::Prim(Prim::Number(b))) => Ok([a, b]),
-    _ => Err(EvalError::IncompatibleTypes),
+    _ => Err(Error::IncompatibleTypes),
   }
 }
 
-fn float_op<F>(env: &Env, ars: &Arenas, lhs: Expr, rhs: Expr, f: F) -> Eval
+fn float_op<F>(env: &Env, ars: &Arenas, lhs: Expr, rhs: Expr, f: F) -> Exec
 where
   F: FnOnce(f64, f64) -> f64,
 {
@@ -246,7 +246,7 @@ where
   Ok(Val::Prim(Prim::Number(f(lhs, rhs))))
 }
 
-fn int_op<F>(env: &Env, ars: &Arenas, lhs: Expr, rhs: Expr, f: F) -> Eval
+fn int_op<F>(env: &Env, ars: &Arenas, lhs: Expr, rhs: Expr, f: F) -> Exec
 where
   F: FnOnce(i64, i64) -> i64,
 {
@@ -258,30 +258,30 @@ where
   Ok(Val::Prim(Prim::Number(n)))
 }
 
-fn cmp_op<F>(env: &Env, ars: &Arenas, lhs: Expr, rhs: Expr, f: F) -> Eval
+fn cmp_op<F>(env: &Env, ars: &Arenas, lhs: Expr, rhs: Expr, f: F) -> Exec
 where
   F: FnOnce(Ordering) -> bool,
 {
-  let lhs = eval(env, ars, lhs)?;
-  let rhs = eval(env, ars, rhs)?;
+  let lhs = exec(env, ars, lhs)?;
+  let rhs = exec(env, ars, rhs)?;
   let ord = cmp_val(ars, &lhs, &rhs)?;
   Ok(Val::Prim(Prim::Bool(f(ord))))
 }
 
-fn cmp_val(ars: &Arenas, lhs: &Val, rhs: &Val) -> Eval<Ordering> {
+fn cmp_val(ars: &Arenas, lhs: &Val, rhs: &Val) -> Exec<Ordering> {
   match (lhs, rhs) {
     (Val::Prim(lhs), Val::Prim(rhs)) => match (lhs, rhs) {
       (Prim::String(lhs), Prim::String(rhs)) => Ok(ars.str.get(*lhs).cmp(ars.str.get(*rhs))),
       (Prim::Number(lhs), Prim::Number(rhs)) => {
         if lhs.is_nan() || rhs.is_nan() {
-          Err(EvalError::CmpNan)
+          Err(Error::CmpNan)
         } else if rhs.is_infinite() || lhs.is_infinite() {
-          Err(EvalError::CmpInf)
+          Err(Error::CmpInf)
         } else {
           Ok(lhs.partial_cmp(rhs).expect("not nan or inf"))
         }
       }
-      _ => Err(EvalError::IncompatibleTypes),
+      _ => Err(Error::IncompatibleTypes),
     },
     (Val::Rec { env: le, kind: lhs }, Val::Rec { env: re, kind: rhs }) => match (lhs, rhs) {
       (RecValKind::Array(lhs), RecValKind::Array(rhs)) => {
@@ -293,8 +293,8 @@ fn cmp_val(ars: &Arenas, lhs: &Val, rhs: &Val) -> Eval<Ordering> {
             (None, None) => break Ordering::Equal,
             (Some(_), None) => break Ordering::Greater,
             (Some(&lhs), Some(&rhs)) => {
-              let lhs = eval(le, ars, lhs)?;
-              let rhs = eval(re, ars, rhs)?;
+              let lhs = exec(le, ars, lhs)?;
+              let rhs = exec(re, ars, rhs)?;
               match cmp_val(ars, &lhs, &rhs)? {
                 Ordering::Equal => {}
                 ord => break ord,
@@ -304,14 +304,14 @@ fn cmp_val(ars: &Arenas, lhs: &Val, rhs: &Val) -> Eval<Ordering> {
         };
         Ok(ord)
       }
-      _ => Err(EvalError::IncompatibleTypes),
+      _ => Err(Error::IncompatibleTypes),
     },
-    _ => Err(EvalError::IncompatibleTypes),
+    _ => Err(Error::IncompatibleTypes),
   }
 }
 
-fn eval_local(_: &Env, _: &[(Id, Expr)], _: &Arenas, _: Expr) -> Eval {
-  Err(EvalError::Todo)
+fn exec_local(_: &Env, _: &[(Id, Expr)], _: &Arenas, _: Expr) -> Exec {
+  Err(Error::Todo)
 }
 
 #[allow(clippy::needless_pass_by_value)]
