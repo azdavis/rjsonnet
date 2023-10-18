@@ -14,6 +14,12 @@ impl St {
   fn err(&mut self, e: ExprMust, s: &'static str) {
     self.errors.push((e, s));
   }
+
+  /// Returns all the errors accumulated in the state.
+  #[must_use]
+  pub fn finish(self) -> Vec<(ExprMust, &'static str)> {
+    self.errors
+  }
 }
 
 #[derive(Debug, Default, Clone)]

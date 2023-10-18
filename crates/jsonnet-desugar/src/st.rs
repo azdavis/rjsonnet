@@ -32,8 +32,8 @@ impl St {
     self.errors.push((range, msg));
   }
 
-  pub(crate) fn finish(self) -> Arenas {
-    self.arenas
+  pub(crate) fn finish(self) -> (Arenas, Vec<(TextRange, &'static str)>) {
+    (self.arenas, self.errors)
   }
 
   /// Returns a fresh identifier.

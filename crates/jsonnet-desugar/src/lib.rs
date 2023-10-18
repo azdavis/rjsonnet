@@ -10,11 +10,13 @@ mod st;
 pub fn get(root: jsonnet_syntax::ast::Root) -> Desugar {
   let mut st = st::St::default();
   let top = internal::get_root(&mut st, root);
-  Desugar { arenas: st.finish(), top }
+  let (arenas, errors) = st.finish();
+  Desugar { arenas, top, errors }
 }
 
 #[derive(Debug)]
 pub struct Desugar {
   pub arenas: jsonnet_hir::Arenas,
   pub top: jsonnet_hir::Expr,
+  pub errors: Vec<(text_size::TextRange, &'static str)>,
 }
