@@ -1,4 +1,4 @@
-//! High-level Intermediate Representation for Jsonnet.
+//! Jsonnet expressions.
 
 #![deny(clippy::pedantic, missing_debug_implementations, rust_2018_idioms)]
 
