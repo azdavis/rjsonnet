@@ -6,7 +6,7 @@ pub(crate) fn pass(s: &str) {
   let cx = jsonnet_statics::Cx::default();
   jsonnet_statics::check(&mut st, &cx, &desugar.arenas, desugar.top);
   let statics_errors = st.finish();
-  let env = jsonnet_dynamics::Env::default();
+  let env = jsonnet_val::Env::default();
   let eval = jsonnet_dynamics::eval(&env, &desugar.arenas, desugar.top);
   assert!(lex.errors.is_empty());
   assert!(parse.errors.is_empty());

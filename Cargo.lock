@@ -76,6 +76,7 @@ name = "jsonnet-dynamics"
 version = "0.1.0"
 dependencies = [
  "jsonnet-expr",
+ "jsonnet-val",
  "rustc-hash",
 ]
 
@@ -125,6 +126,14 @@ dependencies = [
  "rustc-hash",
  "syntax-gen",
  "token",
+]
+
+[[package]]
+name = "jsonnet-val"
+version = "0.1.0"
+dependencies = [
+ "jsonnet-expr",
+ "rustc-hash",
 ]
 
 [[package]]
@@ -226,6 +235,7 @@ dependencies = [
  "jsonnet-parse",
  "jsonnet-statics",
  "jsonnet-syntax",
+ "jsonnet-val",
 ]
 
 [[package]]

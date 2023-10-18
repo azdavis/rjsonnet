@@ -1,16 +1,13 @@
 [package]
-name = "jsonnet-dynamics"
+name = "jsonnet-val"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 publish.workspace = true
 
-[lib]
-test = false
-doctest = false
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 rustc-hash.workspace = true
 
 jsonnet-expr.path = "../jsonnet-expr"
-jsonnet-val.path = "../jsonnet-val"
