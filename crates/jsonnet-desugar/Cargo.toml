@@ -12,6 +12,6 @@ doctest = false
 [dependencies]
 text-size.workspace = true
 
-jsonnet-syntax.path = "../jsonnet-syntax"
 jsonnet-expr.path = "../jsonnet-expr"
 jsonnet-prim.path = "../jsonnet-prim"
+jsonnet-syntax.path = "../jsonnet-syntax"
