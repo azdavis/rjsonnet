@@ -12,5 +12,5 @@ doctest = false
 [dependencies]
 rustc-hash.workspace = true
 
-jsonnet-expr.path = "../jsonnet-expr"
+jsonnet-prim.path = "../jsonnet-prim"
 jsonnet-val.path = "../jsonnet-val"

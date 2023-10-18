@@ -2,7 +2,8 @@
 
 #![deny(clippy::pedantic, missing_debug_implementations, rust_2018_idioms)]
 
-use jsonnet_expr::{Expr, Id, Prim, Str, Visibility};
+use jsonnet_expr::{Expr, Visibility};
+use jsonnet_prim::{Id, Prim, Str};
 use rustc_hash::FxHashMap;
 
 #[derive(Debug, Default, Clone)]

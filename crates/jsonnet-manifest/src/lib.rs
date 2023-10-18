@@ -2,7 +2,7 @@
 
 #![deny(clippy::pedantic, missing_debug_implementations, rust_2018_idioms)]
 
-use jsonnet_expr::Prim;
+use jsonnet_prim::Prim;
 use rustc_hash::FxHashMap;
 
 #[derive(Debug)]
