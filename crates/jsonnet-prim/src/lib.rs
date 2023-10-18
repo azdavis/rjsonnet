@@ -9,6 +9,7 @@ mod generated {
 use rustc_hash::FxHashMap;
 use std::collections::hash_map::Entry;
 
+/// A primitive value.
 #[derive(Debug, Clone, Copy)]
 pub enum Prim {
   Null,
@@ -17,6 +18,7 @@ pub enum Prim {
   Number(f64),
 }
 
+/// An interned string.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Str(u32);
 
@@ -61,6 +63,7 @@ impl StrArena {
   }
 }
 
+/// An identifier.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Id(Str);
 
