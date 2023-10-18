@@ -66,7 +66,7 @@ source = "git+https://github.com/azdavis/language-util.git#bc4bb79b0309c596b3c5f
 name = "jsonnet-desugar"
 version = "0.1.0"
 dependencies = [
- "jsonnet-hir",
+ "jsonnet-expr",
  "jsonnet-syntax",
  "text-size",
 ]
@@ -75,12 +75,12 @@ dependencies = [
 name = "jsonnet-dynamics"
 version = "0.1.0"
 dependencies = [
- "jsonnet-hir",
+ "jsonnet-expr",
  "rustc-hash",
 ]
 
 [[package]]
-name = "jsonnet-hir"
+name = "jsonnet-expr"
 version = "0.1.0"
 dependencies = [
  "la-arena",
@@ -112,7 +112,7 @@ dependencies = [
 name = "jsonnet-statics"
 version = "0.1.0"
 dependencies = [
- "jsonnet-hir",
+ "jsonnet-expr",
  "rustc-hash",
 ]
 
@@ -221,7 +221,7 @@ version = "0.1.0"
 dependencies = [
  "jsonnet-desugar",
  "jsonnet-dynamics",
- "jsonnet-hir",
+ "jsonnet-expr",
  "jsonnet-lex",
  "jsonnet-parse",
  "jsonnet-statics",

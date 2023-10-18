@@ -5,7 +5,7 @@
 #![deny(clippy::pedantic, missing_debug_implementations, rust_2018_idioms)]
 #![allow(clippy::too_many_lines)]
 
-use jsonnet_hir::{Arenas, BinaryOp, Expr, ExprData, Id, Prim, Str, Visibility};
+use jsonnet_expr::{Arenas, BinaryOp, Expr, ExprData, Id, Prim, Str, Visibility};
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::cmp::Ordering;
 

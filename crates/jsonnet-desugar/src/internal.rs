@@ -2,7 +2,7 @@
 //!
 
 use crate::st::St;
-use jsonnet_hir::{Expr, ExprData, Id, Prim, Str, Visibility};
+use jsonnet_expr::{Expr, ExprData, Id, Prim, Str, Visibility};
 use jsonnet_syntax::{ast, kind::SyntaxToken};
 
 pub(crate) fn get_root(st: &mut St, r: ast::Root) -> Expr {

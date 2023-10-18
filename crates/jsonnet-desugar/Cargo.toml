@@ -13,4 +13,4 @@ doctest = false
 text-size.workspace = true
 
 jsonnet-syntax.path = "../jsonnet-syntax"
-jsonnet-hir.path = "../jsonnet-hir"
+jsonnet-expr.path = "../jsonnet-expr"

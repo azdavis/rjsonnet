@@ -16,7 +16,7 @@ pub fn get(root: jsonnet_syntax::ast::Root) -> Desugar {
 
 #[derive(Debug)]
 pub struct Desugar {
-  pub arenas: jsonnet_hir::Arenas,
-  pub top: jsonnet_hir::Expr,
+  pub arenas: jsonnet_expr::Arenas,
+  pub top: jsonnet_expr::Expr,
   pub errors: Vec<(text_size::TextRange, &'static str)>,
 }

@@ -1,4 +1,4 @@
-use jsonnet_hir::Arenas;
+use jsonnet_expr::Arenas;
 use jsonnet_syntax::{ast::AstNode, kind::SyntaxToken};
 use text_size::TextRange;
 
@@ -9,11 +9,11 @@ pub(crate) struct St {
 }
 
 impl St {
-  pub(crate) fn str(&mut self, s: &str) -> jsonnet_hir::Str {
+  pub(crate) fn str(&mut self, s: &str) -> jsonnet_expr::Str {
     self.arenas.str.insert(s.to_owned().into_boxed_str())
   }
 
-  pub(crate) fn expr(&mut self, e: jsonnet_hir::ExprData) -> jsonnet_hir::ExprMust {
+  pub(crate) fn expr(&mut self, e: jsonnet_expr::ExprData) -> jsonnet_expr::ExprMust {
     self.arenas.expr.alloc(e)
   }
 
@@ -37,7 +37,7 @@ impl St {
   }
 
   /// Returns a fresh identifier.
-  pub(crate) fn fresh(&mut self) -> jsonnet_hir::Id {
+  pub(crate) fn fresh(&mut self) -> jsonnet_expr::Id {
     todo!()
   }
 }
