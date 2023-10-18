@@ -5,7 +5,9 @@ edition.workspace = true
 license.workspace = true
 publish.workspace = true
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+test = false
+doctest = false
 
 [dependencies]
 rustc-hash.workspace = true
