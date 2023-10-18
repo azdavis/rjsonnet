@@ -63,14 +63,6 @@ version = "0.1.0"
 source = "git+https://github.com/azdavis/language-util.git#bc4bb79b0309c596b3c5fded6b2eb4e7d9bf0a02"
 
 [[package]]
-name = "jsonnet-cli"
-version = "0.1.0"
-dependencies = [
- "jsonnet-lex",
- "jsonnet-parse",
-]
-
-[[package]]
 name = "jsonnet-desugar"
 version = "0.1.0"
 dependencies = [
