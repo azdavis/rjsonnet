@@ -12,8 +12,11 @@ publish = false
 # third party
 drop_bomb = "0.1.5"
 la-arena = "0.3.1"
+prettyplease = "0.2.15"
+quote = "1.0.33"
 rowan = "0.15.11"
 rustc-hash = "1.1.0"
+syn = "2.0.38"
 text-size = "1.1.0"
 
 # language util
