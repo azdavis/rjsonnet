@@ -1,0 +1,18 @@
+[package]
+name = "tests"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lib]
+doctest = false
+
+[dev-dependencies]
+jsonnet-desugar.path = "../jsonnet-desugar"
+jsonnet-dynamics.path = "../jsonnet-dynamics"
+jsonnet-hir.path = "../jsonnet-hir"
+jsonnet-lex.path = "../jsonnet-lex"
+jsonnet-parse.path = "../jsonnet-parse"
+jsonnet-statics.path = "../jsonnet-statics"
+jsonnet-syntax.path = "../jsonnet-syntax"
