@@ -10,7 +10,7 @@ doctest = false
 
 [dev-dependencies]
 jsonnet-desugar.path = "../jsonnet-desugar"
-jsonnet-dynamics.path = "../jsonnet-dynamics"
+jsonnet-exec.path = "../jsonnet-exec"
 jsonnet-expr.path = "../jsonnet-expr"
 jsonnet-lex.path = "../jsonnet-lex"
 jsonnet-parse.path = "../jsonnet-parse"

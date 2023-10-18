@@ -1,5 +1,5 @@
 [package]
-name = "jsonnet-dynamics"
+name = "jsonnet-exec"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
