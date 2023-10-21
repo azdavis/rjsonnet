@@ -113,8 +113,11 @@ fn get_expr(st: &mut St, e: Option<ast::Expr>, in_obj: bool) -> Expr {
       get_assert(st, yes, e.assert()?, in_obj)
     }
     ast::Expr::ExprImport(_) => todo!(),
-    ast::Expr::ExprError(_) => todo!(),
-    ast::Expr::ExprTailstrict(_) => todo!(),
+    ast::Expr::ExprError(e) => {
+      let inner = get_expr(st, e.expr(), in_obj);
+      ExprData::Error(inner)
+    }
+    ast::Expr::ExprTailstrict(e) => return get_expr(st, e.expr(), in_obj),
   };
   Some(st.expr(data))
 }
