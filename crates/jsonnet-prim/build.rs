@@ -15,6 +15,7 @@ fn main() {
     ("JOIN", "join", true),
     ("MAKE_ARRAY", "makeArray", true),
     ("LENGTH", "length", true),
+    ("SLICE", "slice", true),
     ("PARAMETER_NOT_BOUND", "Parameter not bound", false),
     ("ASSERTION_FAILED", "Assertion failed", false),
     ("TODO", "TODO", false),

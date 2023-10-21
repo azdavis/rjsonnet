@@ -45,7 +45,25 @@ fn get_expr(st: &mut St, e: Option<ast::Expr>, in_obj: bool) -> Expr {
       let idx = Some(st.expr(idx));
       ExprData::Subscript { on, idx }
     }
-    ast::Expr::ExprSubscript(_) => todo!(),
+    ast::Expr::ExprSubscript(e) => {
+      let on = get_expr(st, e.on(), in_obj);
+      let is_regular_subscript = e.idx_a().is_some()
+        && e.colon_a().is_none()
+        && e.idx_b().is_none()
+        && e.colon_b().is_none()
+        && e.idx_c().is_none();
+      if is_regular_subscript {
+        let idx = get_expr(st, e.idx_a(), in_obj);
+        ExprData::Subscript { on, idx }
+      } else {
+        let indices = [e.idx_a(), e.idx_b(), e.idx_c()];
+        let [idx_a, idx_b, idx_c] = indices.map(|idx| match idx {
+          Some(x) => get_expr(st, Some(x), in_obj),
+          None => Some(st.expr(ExprData::Prim(Prim::Null))),
+        });
+        call_std_func_data(st, Id::SLICE, vec![on, idx_a, idx_b, idx_c])
+      }
+    }
     ast::Expr::ExprCall(_) => todo!(),
     ast::Expr::ExprLocal(e) => {
       let binds: Vec<_> = e.binds().filter_map(|bind| get_bind(st, bind, in_obj)).collect();
@@ -67,10 +85,15 @@ fn get_expr(st: &mut St, e: Option<ast::Expr>, in_obj: bool) -> Expr {
 
 #[allow(clippy::unnecessary_wraps)]
 fn call_std_func(st: &mut St, id: Id, args: Vec<Expr>) -> Expr {
+  let data = call_std_func_data(st, id, args);
+  Some(st.expr(data))
+}
+
+fn call_std_func_data(st: &mut St, id: Id, args: Vec<Expr>) -> ExprData {
   let std = Some(st.expr(ExprData::Id(Id::STD_UNUTTERABLE)));
   let idx = Some(st.expr(ExprData::Id(id)));
   let func = Some(st.expr(ExprData::Subscript { on: std, idx }));
-  Some(st.expr(ExprData::Call { func, positional: args, named: Vec::new() }))
+  ExprData::Call { func, positional: args, named: Vec::new() }
 }
 
 fn get_array_comp<I>(st: &mut St, comp_specs: I, elem: Expr, in_obj: bool) -> ExprData
