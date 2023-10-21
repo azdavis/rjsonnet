@@ -108,7 +108,10 @@ fn get_expr(st: &mut St, e: Option<ast::Expr>, in_obj: bool) -> Expr {
       bop(BinaryOp::Add, lhs, rhs)
     }
     ast::Expr::ExprFunction(e) => get_fn(st, e.paren_params(), e.expr(), in_obj),
-    ast::Expr::ExprAssert(_) => todo!(),
+    ast::Expr::ExprAssert(e) => {
+      let yes = get_expr(st, e.expr(), in_obj);
+      get_assert(st, yes, e.assert()?, in_obj)
+    }
     ast::Expr::ExprImport(_) => todo!(),
     ast::Expr::ExprError(_) => todo!(),
     ast::Expr::ExprTailstrict(_) => todo!(),
@@ -235,6 +238,16 @@ where
   }
 }
 
+fn get_assert(st: &mut St, yes: Expr, assert: ast::Assert, in_obj: bool) -> ExprData {
+  let cond = get_expr(st, assert.expr(), in_obj);
+  let msg = match assert.colon_expr() {
+    Some(e) => get_expr(st, e.expr(), in_obj),
+    None => Some(st.expr(ExprData::Prim(Prim::String(Str::ASSERTION_FAILED)))),
+  };
+  let no = Some(st.expr(ExprData::Error(msg)));
+  ExprData::If { cond, yes, no }
+}
+
 fn get_object_inside(st: &mut St, inside: ast::ObjectInside, in_obj: bool) -> ExprData {
   match get_comp_specs(st, inside.comp_specs()) {
     None => {
@@ -248,14 +261,9 @@ fn get_object_inside(st: &mut St, inside: ast::ObjectInside, in_obj: bool) -> Ex
             todo!()
           }
           ast::MemberKind::Assert(assert) => {
-            let cond = get_expr(st, assert.expr(), true);
-            let msg = match assert.colon_expr() {
-              Some(e) => get_expr(st, e.expr(), true),
-              None => Some(st.expr(ExprData::Prim(Prim::String(Str::ASSERTION_FAILED)))),
-            };
             let yes = Some(st.expr(ExprData::Prim(Prim::Null)));
-            let no = Some(st.expr(ExprData::Error(msg)));
-            let assert = Some(st.expr(ExprData::If { cond, yes, no }));
+            let assert = get_assert(st, yes, assert, true);
+            let assert = Some(st.expr(assert));
             // TODO handle interactions with binds
             asserts.push(assert);
           }
