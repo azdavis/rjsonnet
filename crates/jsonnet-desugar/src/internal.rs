@@ -1,5 +1,4 @@
 //! The internal impl.
-//!
 
 use crate::st::St;
 use jsonnet_expr::{Expr, ExprData, Visibility};
