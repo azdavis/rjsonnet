@@ -37,9 +37,14 @@ fn get_expr(st: &mut St, e: Option<ast::Expr>, in_obj: bool) -> Expr {
         }
         get_array_comp(st, e.comp_specs(), elem, in_obj)
       }
-      None => todo!(),
+      None => ExprData::Array(e.expr_commas().map(|x| get_expr(st, x.expr(), in_obj)).collect()),
     },
-    ast::Expr::ExprFieldGet(_) => todo!(),
+    ast::Expr::ExprFieldGet(e) => {
+      let on = get_expr(st, e.expr(), in_obj);
+      let idx = ExprData::Prim(Prim::String(st.str(e.id()?.text())));
+      let idx = Some(st.expr(idx));
+      ExprData::Subscript { on, idx }
+    }
     ast::Expr::ExprSubscript(_) => todo!(),
     ast::Expr::ExprCall(_) => todo!(),
     ast::Expr::ExprLocal(e) => {
