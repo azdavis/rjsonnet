@@ -1,7 +1,7 @@
 //! The internal impl.
 
 use crate::st::St;
-use jsonnet_expr::{Expr, ExprData, Visibility};
+use jsonnet_expr::{BinaryOp, Expr, ExprData, UnaryOp, Visibility};
 use jsonnet_prim::{Id, Prim, Str};
 use jsonnet_syntax::{ast, kind::SyntaxToken};
 
@@ -85,7 +85,12 @@ fn get_expr(st: &mut St, e: Option<ast::Expr>, in_obj: bool) -> Expr {
       let no = get_expr_or_null(st, e.else_expr().and_then(|x| x.expr()), in_obj);
       ExprData::If { cond, yes, no }
     }
-    ast::Expr::ExprBinaryOp(_) => todo!(),
+    ast::Expr::ExprBinaryOp(e) => {
+      let lhs = get_expr(st, e.lhs(), in_obj);
+      let rhs = get_expr(st, e.rhs(), in_obj);
+      let op = e.binary_op()?.kind;
+      get_binary_op(st, lhs, op, rhs)
+    }
     ast::Expr::ExprUnaryOp(_) => todo!(),
     ast::Expr::ExprImplicitObjectPlus(_) => todo!(),
     ast::Expr::ExprFunction(e) => get_fn(st, e.paren_params(), e.expr(), in_obj),
@@ -354,5 +359,36 @@ fn get_object_inside(st: &mut St, inside: ast::ObjectInside, in_obj: bool) -> Ex
         }
       }
     }
+  }
+}
+
+fn bop(op: BinaryOp, lhs: Expr, rhs: Expr) -> ExprData {
+  ExprData::BinaryOp { lhs, op, rhs }
+}
+
+fn get_binary_op(st: &mut St, lhs: Expr, op: ast::BinaryOpKind, rhs: Expr) -> ExprData {
+  match op {
+    ast::BinaryOpKind::Star => bop(BinaryOp::Mul, lhs, rhs),
+    ast::BinaryOpKind::Slash => bop(BinaryOp::Div, lhs, rhs),
+    ast::BinaryOpKind::Percent => call_std_func_data(st, Id::MOD, vec![lhs, rhs]),
+    ast::BinaryOpKind::Plus => bop(BinaryOp::Add, lhs, rhs),
+    ast::BinaryOpKind::Minus => bop(BinaryOp::Sub, lhs, rhs),
+    ast::BinaryOpKind::LtLt => bop(BinaryOp::Shl, lhs, rhs),
+    ast::BinaryOpKind::GtGt => bop(BinaryOp::Shr, lhs, rhs),
+    ast::BinaryOpKind::Lt => bop(BinaryOp::Lt, lhs, rhs),
+    ast::BinaryOpKind::LtEq => bop(BinaryOp::LtEq, lhs, rhs),
+    ast::BinaryOpKind::Gt => bop(BinaryOp::Gt, lhs, rhs),
+    ast::BinaryOpKind::GtEq => bop(BinaryOp::GtEq, lhs, rhs),
+    ast::BinaryOpKind::EqEq => call_std_func_data(st, Id::EQUALS, vec![lhs, rhs]),
+    ast::BinaryOpKind::BangEq => {
+      let inner = call_std_func(st, Id::EQUALS, vec![lhs, rhs]);
+      ExprData::UnaryOp { op: UnaryOp::LogicalNot, inner }
+    }
+    ast::BinaryOpKind::InKw => call_std_func_data(st, Id::OBJECT_HAS_EX, vec![lhs, rhs]),
+    ast::BinaryOpKind::And => bop(BinaryOp::BitAnd, lhs, rhs),
+    ast::BinaryOpKind::Carat => bop(BinaryOp::BitXor, lhs, rhs),
+    ast::BinaryOpKind::Bar => bop(BinaryOp::BitOr, lhs, rhs),
+    ast::BinaryOpKind::AndAnd => bop(BinaryOp::LogicalAnd, lhs, rhs),
+    ast::BinaryOpKind::BarBar => bop(BinaryOp::LogicalOr, lhs, rhs),
   }
 }
