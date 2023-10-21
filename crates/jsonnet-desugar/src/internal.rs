@@ -64,7 +64,19 @@ fn get_expr(st: &mut St, e: Option<ast::Expr>, in_obj: bool) -> Expr {
         call_std_func_data(st, Id::SLICE, vec![on, idx_a, idx_b, idx_c])
       }
     }
-    ast::Expr::ExprCall(_) => todo!(),
+    ast::Expr::ExprCall(e) => {
+      let func = get_expr(st, e.expr(), in_obj);
+      let mut positional = Vec::<Expr>::new();
+      let mut named = Vec::<(Id, Expr)>::new();
+      for arg in e.args() {
+        let expr = get_expr(st, arg.expr(), in_obj);
+        match arg.id_eq().and_then(|x| x.id()) {
+          None => positional.push(expr),
+          Some(id) => named.push((get_id(st, id), expr)),
+        }
+      }
+      ExprData::Call { func, positional, named }
+    }
     ast::Expr::ExprLocal(e) => {
       let binds: Vec<_> = e.binds().filter_map(|bind| get_bind(st, bind, in_obj)).collect();
       let body = get_expr(st, e.expr(), in_obj);
