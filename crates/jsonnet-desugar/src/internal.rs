@@ -57,10 +57,7 @@ fn get_expr(st: &mut St, e: Option<ast::Expr>, in_obj: bool) -> Expr {
         ExprData::Subscript { on, idx }
       } else {
         let indices = [e.idx_a(), e.idx_b(), e.idx_c()];
-        let [idx_a, idx_b, idx_c] = indices.map(|idx| match idx {
-          Some(x) => get_expr(st, Some(x), in_obj),
-          None => Some(st.expr(ExprData::Prim(Prim::Null))),
-        });
+        let [idx_a, idx_b, idx_c] = indices.map(|idx| get_expr_or_null(st, idx, in_obj));
         call_std_func_data(st, Id::SLICE, vec![on, idx_a, idx_b, idx_c])
       }
     }
@@ -82,7 +79,12 @@ fn get_expr(st: &mut St, e: Option<ast::Expr>, in_obj: bool) -> Expr {
       let body = get_expr(st, e.expr(), in_obj);
       ExprData::Local { binds, body }
     }
-    ast::Expr::ExprIf(_) => todo!(),
+    ast::Expr::ExprIf(e) => {
+      let cond = get_expr(st, e.cond(), in_obj);
+      let yes = get_expr(st, e.yes(), in_obj);
+      let no = get_expr_or_null(st, e.else_expr().and_then(|x| x.expr()), in_obj);
+      ExprData::If { cond, yes, no }
+    }
     ast::Expr::ExprBinaryOp(_) => todo!(),
     ast::Expr::ExprUnaryOp(_) => todo!(),
     ast::Expr::ExprImplicitObjectPlus(_) => todo!(),
@@ -93,6 +95,14 @@ fn get_expr(st: &mut St, e: Option<ast::Expr>, in_obj: bool) -> Expr {
     ast::Expr::ExprTailstrict(_) => todo!(),
   };
   Some(st.expr(data))
+}
+
+fn get_expr_or_null(st: &mut St, e: Option<ast::Expr>, in_obj: bool) -> Expr {
+  if e.is_some() {
+    get_expr(st, e, in_obj)
+  } else {
+    Some(st.expr(ExprData::Prim(Prim::Null)))
+  }
 }
 
 #[allow(clippy::unnecessary_wraps)]
