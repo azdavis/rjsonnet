@@ -91,8 +91,22 @@ fn get_expr(st: &mut St, e: Option<ast::Expr>, in_obj: bool) -> Expr {
       let op = e.binary_op()?.kind;
       get_binary_op(st, lhs, op, rhs)
     }
-    ast::Expr::ExprUnaryOp(_) => todo!(),
-    ast::Expr::ExprImplicitObjectPlus(_) => todo!(),
+    ast::Expr::ExprUnaryOp(e) => {
+      let inner = get_expr(st, e.expr(), in_obj);
+      let op = match e.unary_op()?.kind {
+        ast::UnaryOpKind::Minus => UnaryOp::Neg,
+        ast::UnaryOpKind::Plus => UnaryOp::Pos,
+        ast::UnaryOpKind::Bang => UnaryOp::LogicalNot,
+        ast::UnaryOpKind::Tilde => UnaryOp::BitNot,
+      };
+      ExprData::UnaryOp { op, inner }
+    }
+    ast::Expr::ExprImplicitObjectPlus(e) => {
+      let lhs = get_expr(st, e.expr(), in_obj);
+      let rhs = get_object_inside(st, e.object_inside()?, in_obj);
+      let rhs = Some(st.expr(rhs));
+      bop(BinaryOp::Add, lhs, rhs)
+    }
     ast::Expr::ExprFunction(e) => get_fn(st, e.paren_params(), e.expr(), in_obj),
     ast::Expr::ExprAssert(_) => todo!(),
     ast::Expr::ExprImport(_) => todo!(),
