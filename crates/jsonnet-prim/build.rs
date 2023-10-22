@@ -17,7 +17,7 @@ fn main() {
     ("LENGTH", "length", true),
     ("SLICE", "slice", true),
     ("MOD", "mod", true),
-    ("EQUALS", "mod", true),
+    ("EQUALS", "equals", true),
     ("OBJECT_HAS_EX", "objectHasEx", true),
     ("PARAMETER_NOT_BOUND", "Parameter not bound", false),
     ("ASSERTION_FAILED", "Assertion failed", false),
