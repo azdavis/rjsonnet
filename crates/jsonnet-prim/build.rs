@@ -1,4 +1,5 @@
 use quote::{format_ident, quote};
+use std::collections::HashSet;
 
 fn main() {
   let preset = [
@@ -23,6 +24,12 @@ fn main() {
     ("ASSERTION_FAILED", "Assertion failed", false),
     ("TODO", "TODO", false),
   ];
+  let mut names = HashSet::<&'static str>::new();
+  let mut contents = HashSet::<&'static str>::new();
+  for &(name, content, _) in &preset {
+    assert!(names.insert(name), "duplicate name: {name}");
+    assert!(contents.insert(content), "duplicate content: {content}");
+  }
   let str_constants = preset.iter().enumerate().map(|(idx, &(name, _, make_id))| {
     let name = format_ident!("{name}");
     let idx = u32::try_from(idx).unwrap();
