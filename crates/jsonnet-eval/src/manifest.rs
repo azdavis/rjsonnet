@@ -29,6 +29,8 @@ impl From<exec::Error> for Error {
 
 pub type Result<T = Val> = std::result::Result<T, Error>;
 
+/// Manifests the Jsonnet value into a JSON value.
+///
 /// # Errors
 ///
 /// If manifestation failed.

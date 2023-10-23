@@ -27,6 +27,8 @@ pub enum Error {
 
 pub type Result<T = Val> = std::result::Result<T, Error>;
 
+/// Executes the Jsonnet expression to produce a Jsonnet value.
+///
 /// # Errors
 ///
 /// If execution failed.
