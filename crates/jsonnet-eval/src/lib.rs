@@ -8,6 +8,7 @@
 
 pub mod exec;
 pub mod manifest;
+pub mod val;
 
 use jsonnet_expr::Str;
 

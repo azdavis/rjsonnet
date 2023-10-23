@@ -1,6 +1,6 @@
+use crate::val::{RecValKind, Val};
 use crate::{Error, Eval};
 use jsonnet_expr::Prim;
-use jsonnet_val::Val;
 use rustc_hash::FxHashMap;
 
 #[derive(Debug)]
@@ -13,13 +13,13 @@ pub enum JsonVal {
 /// # Errors
 ///
 /// If manifestation failed.
-pub fn manifest(val: jsonnet_val::Val) -> Eval<JsonVal> {
+pub fn manifest(val: Val) -> Eval<JsonVal> {
   match val {
-    jsonnet_val::Val::Prim(prim) => Ok(JsonVal::Prim(prim)),
-    jsonnet_val::Val::Rec { env: _, kind } => match kind {
-      jsonnet_val::RecValKind::Object { .. } => todo!(),
-      jsonnet_val::RecValKind::Function { .. } => Err(Error::Function),
-      jsonnet_val::RecValKind::Array(_) => todo!(),
+    Val::Prim(prim) => Ok(JsonVal::Prim(prim)),
+    Val::Rec { env: _, kind } => match kind {
+      RecValKind::Object { .. } => todo!(),
+      RecValKind::Function { .. } => Err(Error::Function),
+      RecValKind::Array(_) => todo!(),
     },
   }
 }

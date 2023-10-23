@@ -1,7 +1,5 @@
 //! Jsonnet values.
 
-#![deny(clippy::pedantic, missing_debug_implementations, rust_2018_idioms)]
-
 use jsonnet_expr::{Expr, Id, Prim, Str, Visibility};
 use rustc_hash::FxHashMap;
 
