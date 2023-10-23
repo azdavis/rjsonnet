@@ -1,5 +1,4 @@
-//! Execution of jsonnet expression to produce Jsonnet values, and manifestation of those values
-//! into JSON values.
+//! The dynamic semantics of Jsonnet.
 //!
 //! From the [spec](https://jsonnet.org/ref/spec.html).
 

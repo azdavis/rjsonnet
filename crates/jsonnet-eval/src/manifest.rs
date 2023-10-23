@@ -1,7 +1,13 @@
+//! Manifesting Jsonnet values into JSON values.
+//!
+//! Since Jsonnet values are lazy, they can contain unexecuted Jsonnet expressions. Manifestation is
+//! thus mutually recursive with execution.
+
 use crate::{exec, val};
 use jsonnet_expr::Prim;
 use rustc_hash::FxHashMap;
 
+/// A JSON value.
 #[derive(Debug)]
 pub enum Val {
   Prim(Prim),

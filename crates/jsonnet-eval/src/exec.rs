@@ -1,3 +1,5 @@
+//! Executing Jsonnet expression to produce Jsonnet values.
+
 use crate::val::{Env, RecValKind, Subst, Val};
 use jsonnet_expr::{Arenas, BinaryOp, Expr, ExprData, Id, Prim, Str, Visibility};
 use rustc_hash::{FxHashMap, FxHashSet};

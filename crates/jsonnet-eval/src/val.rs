@@ -25,6 +25,8 @@ pub enum Subst {
   Expr(Env, Expr),
 }
 
+/// A Jsonnet value.
+///
 /// The spec uses eager substitution but I suspect this is prohibitively non-performant. So we
 /// separate values into primitives and recursive values. Recursive values contain expressions,
 /// because Jsonnet itself has lazy semantics.
@@ -35,8 +37,6 @@ pub enum Subst {
 ///
 /// Note that implementing substitution lazily is not meant to break with the spec. The execution
 /// should be semantically equivalent.
-///
-/// We also consider errors values.
 #[derive(Debug, Clone)]
 pub enum Val {
   Prim(Prim),
