@@ -26,7 +26,7 @@ pub type Result<T = Val> = std::result::Result<T, Error>;
 /// # Errors
 ///
 /// If manifestation failed.
-pub fn manifest(val: val::Val) -> Result {
+pub fn get(val: val::Val) -> Result {
   match val {
     val::Val::Prim(prim) => Ok(Val::Prim(prim)),
     val::Val::Rec { env: _, kind } => match kind {
