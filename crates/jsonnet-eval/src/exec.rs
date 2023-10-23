@@ -21,8 +21,8 @@ pub enum Error {
   CmpNan,
   CmpInf,
   User(Str),
+  /// not an actual error from `error`
   NoExpr,
-  Function,
 }
 
 pub type Result<T = Val> = std::result::Result<T, Error>;
