@@ -80,7 +80,6 @@ fn expr_prec(p: &mut Parser<'_>, min_prec: Prec) -> Option<Exited> {
     SK::LCurly => {
       p.bump();
       while member(p).is_some() {}
-      _ = for_spec(p);
       while comp_spec(p).is_some() {}
       p.eat(SK::RCurly);
       SK::ExprObject
@@ -88,7 +87,6 @@ fn expr_prec(p: &mut Parser<'_>, min_prec: Prec) -> Option<Exited> {
     SK::LSquare => {
       p.bump();
       while expr_comma(p).is_some() {}
-      _ = for_spec(p);
       while comp_spec(p).is_some() {}
       p.eat(SK::RSquare);
       SK::ExprArray
@@ -266,27 +264,24 @@ fn bin_op_prec(op: SK) -> Option<Prec> {
 }
 
 #[must_use]
-fn for_spec(p: &mut Parser<'_>) -> Option<Exited> {
-  if !p.at(SK::ForKw) {
-    return None;
-  }
-  let en = p.enter();
-  p.bump();
-  p.eat(SK::Id);
-  p.eat(SK::InKw);
-  expr_must(p);
-  Some(p.exit(en, SK::ForSpec))
-}
-
-#[must_use]
 fn comp_spec(p: &mut Parser<'_>) -> Option<Exited> {
-  if p.at(SK::IfKw) {
-    let en = p.enter();
-    p.bump();
-    expr_must(p);
-    Some(p.exit(en, SK::IfSpec))
-  } else {
-    for_spec(p)
+  let cur = p.peek()?;
+  match cur.kind {
+    SK::ForKw => {
+      let en = p.enter();
+      p.bump();
+      p.eat(SK::Id);
+      p.eat(SK::InKw);
+      expr_must(p);
+      Some(p.exit(en, SK::ForSpec))
+    }
+    SK::IfKw => {
+      let en = p.enter();
+      p.bump();
+      expr_must(p);
+      Some(p.exit(en, SK::IfSpec))
+    }
+    _ => None,
   }
 }
 
