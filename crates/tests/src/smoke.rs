@@ -1,10 +1,19 @@
 use crate::check::pass;
 
 #[test]
-fn num() {
+fn int() {
   pass(
     r#"
 3
+"#,
+  );
+}
+
+#[test]
+fn float() {
+  pass(
+    r#"
+3.4
 "#,
   );
 }
