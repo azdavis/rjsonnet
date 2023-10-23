@@ -1,34 +1,9 @@
-//! A lazy evaluator for jsonnet.
-//!
-//! From the [spec](https://jsonnet.org/ref/spec.html).
-
-#![deny(clippy::pedantic, missing_debug_implementations, rust_2018_idioms)]
-#![allow(clippy::too_many_lines)]
-
+use crate::{Error, Eval};
 use jsonnet_expr::{Arenas, BinaryOp, Expr, ExprData, Visibility};
 use jsonnet_prim::{Id, Prim, Str};
 use jsonnet_val::{Env, RecValKind, Subst, Val};
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::cmp::Ordering;
-
-#[derive(Debug)]
-pub enum Error {
-  Todo,
-  ArrayIdxNotInteger,
-  ArrayIdxOutOfRange,
-  DuplicateArgument,
-  DuplicateField,
-  IncompatibleTypes,
-  NoSuchArgument,
-  NoSuchFieldName,
-  TooManyArguments,
-  CmpNan,
-  CmpInf,
-  User(Str),
-  NoExpr,
-}
-
-pub type Exec<T = Val> = Result<T, Error>;
 
 const EPSILON: f64 = 0.0001;
 
@@ -39,7 +14,7 @@ const EPSILON: f64 = 0.0001;
 /// # Panics
 ///
 /// If the expr wasn't checked.
-pub fn exec(env: &Env, ars: &Arenas, expr: Expr) -> Exec {
+pub fn exec(env: &Env, ars: &Arenas, expr: Expr) -> Eval<Val> {
   // TODO implement a cache on expr to avoid re-computing lazy exprs? but we would also need to
   // consider the env in which the expr is executed
   let Some(expr) = expr else { return Err(Error::NoExpr) };
@@ -232,14 +207,14 @@ pub fn exec(env: &Env, ars: &Arenas, expr: Expr) -> Exec {
   }
 }
 
-fn float_pair(env: &Env, ars: &Arenas, a: Expr, b: Expr) -> Exec<[f64; 2]> {
+fn float_pair(env: &Env, ars: &Arenas, a: Expr, b: Expr) -> Eval<[f64; 2]> {
   match (exec(env, ars, a)?, exec(env, ars, b)?) {
     (Val::Prim(Prim::Number(a)), Val::Prim(Prim::Number(b))) => Ok([a, b]),
     _ => Err(Error::IncompatibleTypes),
   }
 }
 
-fn float_op<F>(env: &Env, ars: &Arenas, lhs: Expr, rhs: Expr, f: F) -> Exec
+fn float_op<F>(env: &Env, ars: &Arenas, lhs: Expr, rhs: Expr, f: F) -> Eval<Val>
 where
   F: FnOnce(f64, f64) -> f64,
 {
@@ -247,7 +222,7 @@ where
   Ok(Val::Prim(Prim::Number(f(lhs, rhs))))
 }
 
-fn int_op<F>(env: &Env, ars: &Arenas, lhs: Expr, rhs: Expr, f: F) -> Exec
+fn int_op<F>(env: &Env, ars: &Arenas, lhs: Expr, rhs: Expr, f: F) -> Eval<Val>
 where
   F: FnOnce(i64, i64) -> i64,
 {
@@ -259,7 +234,7 @@ where
   Ok(Val::Prim(Prim::Number(n)))
 }
 
-fn cmp_op<F>(env: &Env, ars: &Arenas, lhs: Expr, rhs: Expr, f: F) -> Exec
+fn cmp_op<F>(env: &Env, ars: &Arenas, lhs: Expr, rhs: Expr, f: F) -> Eval<Val>
 where
   F: FnOnce(Ordering) -> bool,
 {
@@ -269,7 +244,7 @@ where
   Ok(Val::Prim(Prim::Bool(f(ord))))
 }
 
-fn cmp_val(ars: &Arenas, lhs: &Val, rhs: &Val) -> Exec<Ordering> {
+fn cmp_val(ars: &Arenas, lhs: &Val, rhs: &Val) -> Eval<Ordering> {
   match (lhs, rhs) {
     (Val::Prim(lhs), Val::Prim(rhs)) => match (lhs, rhs) {
       (Prim::String(lhs), Prim::String(rhs)) => Ok(ars.str.get(*lhs).cmp(ars.str.get(*rhs))),
@@ -311,7 +286,7 @@ fn cmp_val(ars: &Arenas, lhs: &Val, rhs: &Val) -> Exec<Ordering> {
   }
 }
 
-fn exec_local(_: &Env, _: &[(Id, Expr)], _: &Arenas, _: Expr) -> Exec {
+fn exec_local(_: &Env, _: &[(Id, Expr)], _: &Arenas, _: Expr) -> Eval<Val> {
   Err(Error::Todo)
 }
 

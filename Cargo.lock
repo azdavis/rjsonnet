@@ -73,7 +73,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "jsonnet-exec"
+name = "jsonnet-eval"
 version = "0.1.0"
 dependencies = [
  "jsonnet-expr",
@@ -97,15 +97,6 @@ dependencies = [
  "drop_bomb",
  "jsonnet-syntax",
  "token",
-]
-
-[[package]]
-name = "jsonnet-manifest"
-version = "0.1.0"
-dependencies = [
- "jsonnet-prim",
- "jsonnet-val",
- "rustc-hash",
 ]
 
 [[package]]
@@ -249,10 +240,9 @@ name = "tests"
 version = "0.1.0"
 dependencies = [
  "jsonnet-desugar",
- "jsonnet-exec",
+ "jsonnet-eval",
  "jsonnet-expr",
  "jsonnet-lex",
- "jsonnet-manifest",
  "jsonnet-parse",
  "jsonnet-statics",
  "jsonnet-syntax",
