@@ -9,25 +9,3 @@
 pub mod exec;
 pub mod manifest;
 pub mod val;
-
-use jsonnet_expr::Str;
-
-#[derive(Debug)]
-pub enum Error {
-  Todo,
-  ArrayIdxNotInteger,
-  ArrayIdxOutOfRange,
-  DuplicateArgument,
-  DuplicateField,
-  IncompatibleTypes,
-  NoSuchArgument,
-  NoSuchFieldName,
-  TooManyArguments,
-  CmpNan,
-  CmpInf,
-  User(Str),
-  NoExpr,
-  Function,
-}
-
-pub type Eval<T> = Result<T, Error>;

@@ -1,10 +1,29 @@
 use crate::val::{Env, RecValKind, Subst, Val};
-use crate::{Error, Eval};
 use jsonnet_expr::{Arenas, BinaryOp, Expr, ExprData, Id, Prim, Str, Visibility};
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::cmp::Ordering;
 
 const EPSILON: f64 = 0.0001;
+
+#[derive(Debug)]
+pub enum Error {
+  Todo,
+  ArrayIdxNotInteger,
+  ArrayIdxOutOfRange,
+  DuplicateArgument,
+  DuplicateField,
+  IncompatibleTypes,
+  NoSuchArgument,
+  NoSuchFieldName,
+  TooManyArguments,
+  CmpNan,
+  CmpInf,
+  User(Str),
+  NoExpr,
+  Function,
+}
+
+pub type Result<T = Val> = std::result::Result<T, Error>;
 
 /// # Errors
 ///
@@ -13,7 +32,7 @@ const EPSILON: f64 = 0.0001;
 /// # Panics
 ///
 /// If the expr wasn't checked.
-pub fn exec(env: &Env, ars: &Arenas, expr: Expr) -> Eval<Val> {
+pub fn exec(env: &Env, ars: &Arenas, expr: Expr) -> Result {
   // TODO implement a cache on expr to avoid re-computing lazy exprs? but we would also need to
   // consider the env in which the expr is executed
   let Some(expr) = expr else { return Err(Error::NoExpr) };
@@ -206,14 +225,14 @@ pub fn exec(env: &Env, ars: &Arenas, expr: Expr) -> Eval<Val> {
   }
 }
 
-fn float_pair(env: &Env, ars: &Arenas, a: Expr, b: Expr) -> Eval<[f64; 2]> {
+fn float_pair(env: &Env, ars: &Arenas, a: Expr, b: Expr) -> Result<[f64; 2]> {
   match (exec(env, ars, a)?, exec(env, ars, b)?) {
     (Val::Prim(Prim::Number(a)), Val::Prim(Prim::Number(b))) => Ok([a, b]),
     _ => Err(Error::IncompatibleTypes),
   }
 }
 
-fn float_op<F>(env: &Env, ars: &Arenas, lhs: Expr, rhs: Expr, f: F) -> Eval<Val>
+fn float_op<F>(env: &Env, ars: &Arenas, lhs: Expr, rhs: Expr, f: F) -> Result
 where
   F: FnOnce(f64, f64) -> f64,
 {
@@ -221,7 +240,7 @@ where
   Ok(Val::Prim(Prim::Number(f(lhs, rhs))))
 }
 
-fn int_op<F>(env: &Env, ars: &Arenas, lhs: Expr, rhs: Expr, f: F) -> Eval<Val>
+fn int_op<F>(env: &Env, ars: &Arenas, lhs: Expr, rhs: Expr, f: F) -> Result
 where
   F: FnOnce(i64, i64) -> i64,
 {
@@ -233,7 +252,7 @@ where
   Ok(Val::Prim(Prim::Number(n)))
 }
 
-fn cmp_op<F>(env: &Env, ars: &Arenas, lhs: Expr, rhs: Expr, f: F) -> Eval<Val>
+fn cmp_op<F>(env: &Env, ars: &Arenas, lhs: Expr, rhs: Expr, f: F) -> Result
 where
   F: FnOnce(Ordering) -> bool,
 {
@@ -243,7 +262,7 @@ where
   Ok(Val::Prim(Prim::Bool(f(ord))))
 }
 
-fn cmp_val(ars: &Arenas, lhs: &Val, rhs: &Val) -> Eval<Ordering> {
+fn cmp_val(ars: &Arenas, lhs: &Val, rhs: &Val) -> Result<Ordering> {
   match (lhs, rhs) {
     (Val::Prim(lhs), Val::Prim(rhs)) => match (lhs, rhs) {
       (Prim::String(lhs), Prim::String(rhs)) => Ok(ars.str.get(*lhs).cmp(ars.str.get(*rhs))),
@@ -285,7 +304,7 @@ fn cmp_val(ars: &Arenas, lhs: &Val, rhs: &Val) -> Eval<Ordering> {
   }
 }
 
-fn exec_local(_: &Env, _: &[(Id, Expr)], _: &Arenas, _: Expr) -> Eval<Val> {
+fn exec_local(_: &Env, _: &[(Id, Expr)], _: &Arenas, _: Expr) -> Result {
   Err(Error::Todo)
 }
 
