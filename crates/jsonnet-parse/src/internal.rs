@@ -179,6 +179,13 @@ fn expr_prec(p: &mut Parser<'_>, min_prec: Prec) -> Option<Exited> {
         p.eat(SK::RSquare);
         p.exit(en, SK::ExprSubscript)
       }
+      SK::LCurly => {
+        let en = p.precede(ex);
+        p.bump();
+        object_inside(p);
+        p.eat(SK::RCurly);
+        p.exit(en, SK::ExprImplicitObjectPlus)
+      }
       SK::Dot => {
         let en = p.precede(ex);
         p.bump();
