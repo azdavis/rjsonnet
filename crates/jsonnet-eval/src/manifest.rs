@@ -4,7 +4,7 @@
 //! thus mutually recursive with execution.
 
 use crate::{exec, val};
-use jsonnet_expr::Prim;
+use jsonnet_expr::{Arenas, Prim};
 use rustc_hash::FxHashMap;
 
 /// A JSON value.
@@ -21,18 +21,31 @@ pub enum Error {
   Exec(exec::Error),
 }
 
+impl From<exec::Error> for Error {
+  fn from(value: exec::Error) -> Self {
+    Error::Exec(value)
+  }
+}
+
 pub type Result<T = Val> = std::result::Result<T, Error>;
 
 /// # Errors
 ///
 /// If manifestation failed.
-pub fn get(val: val::Val) -> Result {
+pub fn get(ars: &Arenas, val: val::Val) -> Result {
   match val {
     val::Val::Prim(prim) => Ok(Val::Prim(prim)),
-    val::Val::Rec { env: _, kind } => match kind {
+    val::Val::Rec { env, kind } => match kind {
       val::RecValKind::Object { .. } => todo!(),
       val::RecValKind::Function { .. } => Err(Error::Function),
-      val::RecValKind::Array(_) => todo!(),
+      val::RecValKind::Array(exprs) => {
+        let iter = exprs.into_iter().map(|expr| {
+          let val = exec::get(&env, ars, expr)?;
+          get(ars, val)
+        });
+        let vs = iter.collect::<Result<Vec<_>>>()?;
+        Ok(Val::Array(vs))
+      }
     },
   }
 }

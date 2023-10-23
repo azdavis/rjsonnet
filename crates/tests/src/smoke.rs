@@ -44,3 +44,12 @@ null
 "#,
   );
 }
+
+#[test]
+fn array() {
+  pass(
+    r#"
+[1, true, "foo"]
+"#,
+  );
+}
