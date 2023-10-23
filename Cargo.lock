@@ -221,11 +221,9 @@ version = "0.1.0"
 dependencies = [
  "jsonnet-desugar",
  "jsonnet-eval",
- "jsonnet-expr",
  "jsonnet-lex",
  "jsonnet-parse",
  "jsonnet-statics",
- "jsonnet-syntax",
 ]
 
 [[package]]
