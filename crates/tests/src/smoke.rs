@@ -62,3 +62,17 @@ fn array() {
 "#,
   );
 }
+
+#[test]
+fn object() {
+  pass(
+    r#"
+{
+  num: 1,
+  bool: true,
+  str: "bar",
+  "foo quz": null,
+}
+"#,
+  );
+}
