@@ -79,8 +79,7 @@ fn expr_prec(p: &mut Parser<'_>, min_prec: Prec) -> Option<Exited> {
     }
     SK::LCurly => {
       p.bump();
-      while member(p).is_some() {}
-      while comp_spec(p).is_some() {}
+      object_inside(p);
       p.eat(SK::RCurly);
       SK::ExprObject
     }
@@ -228,6 +227,13 @@ fn arg(p: &mut Parser<'_>) -> Option<Exited> {
     p.bump();
   }
   Some(p.exit(outer, SK::Arg))
+}
+
+fn object_inside(p: &mut Parser<'_>) -> Exited {
+  let en = p.enter();
+  while member(p).is_some() {}
+  while comp_spec(p).is_some() {}
+  p.exit(en, SK::ObjectInside)
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
