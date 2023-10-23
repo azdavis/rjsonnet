@@ -67,7 +67,6 @@ name = "jsonnet-desugar"
 version = "0.1.0"
 dependencies = [
  "jsonnet-expr",
- "jsonnet-prim",
  "jsonnet-syntax",
  "text-size",
 ]
@@ -77,7 +76,6 @@ name = "jsonnet-eval"
 version = "0.1.0"
 dependencies = [
  "jsonnet-expr",
- "jsonnet-prim",
  "jsonnet-val",
  "rustc-hash",
 ]
@@ -86,8 +84,11 @@ dependencies = [
 name = "jsonnet-expr"
 version = "0.1.0"
 dependencies = [
- "jsonnet-prim",
  "la-arena",
+ "prettyplease",
+ "quote",
+ "rustc-hash",
+ "syn",
 ]
 
 [[package]]
@@ -109,21 +110,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "jsonnet-prim"
-version = "0.1.0"
-dependencies = [
- "prettyplease",
- "quote",
- "rustc-hash",
- "syn",
-]
-
-[[package]]
 name = "jsonnet-statics"
 version = "0.1.0"
 dependencies = [
  "jsonnet-expr",
- "jsonnet-prim",
  "rustc-hash",
 ]
 
@@ -143,7 +133,6 @@ name = "jsonnet-val"
 version = "0.1.0"
 dependencies = [
  "jsonnet-expr",
- "jsonnet-prim",
  "rustc-hash",
 ]
 

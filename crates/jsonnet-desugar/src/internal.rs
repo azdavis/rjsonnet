@@ -1,8 +1,7 @@
 //! The internal impl.
 
 use crate::st::St;
-use jsonnet_expr::{BinaryOp, Expr, ExprData, UnaryOp, Visibility};
-use jsonnet_prim::{Id, Prim, Str};
+use jsonnet_expr::{BinaryOp, Expr, ExprData, Id, Prim, Str, UnaryOp, Visibility};
 use jsonnet_syntax::{ast, kind::SyntaxToken};
 
 pub(crate) fn get_root(st: &mut St, r: ast::Root) -> Expr {

@@ -1,5 +1,5 @@
 use crate::{Error, Eval};
-use jsonnet_prim::Prim;
+use jsonnet_expr::Prim;
 use jsonnet_val::Val;
 use rustc_hash::FxHashMap;
 

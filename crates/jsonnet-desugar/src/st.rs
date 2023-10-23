@@ -9,7 +9,7 @@ pub(crate) struct St {
 }
 
 impl St {
-  pub(crate) fn str(&mut self, s: &str) -> jsonnet_prim::Str {
+  pub(crate) fn str(&mut self, s: &str) -> jsonnet_expr::Str {
     self.arenas.str.insert(s.to_owned().into_boxed_str())
   }
 
@@ -37,7 +37,7 @@ impl St {
   }
 
   /// Returns a fresh identifier.
-  pub(crate) fn fresh(&mut self) -> jsonnet_prim::Id {
+  pub(crate) fn fresh(&mut self) -> jsonnet_expr::Id {
     todo!()
   }
 }

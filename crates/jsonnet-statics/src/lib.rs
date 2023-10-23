@@ -2,8 +2,7 @@
 
 #![deny(clippy::pedantic, missing_debug_implementations, rust_2018_idioms)]
 
-use jsonnet_expr::{Arenas, Expr, ExprData, ExprMust};
-use jsonnet_prim::{Id, Prim, Str};
+use jsonnet_expr::{Arenas, Expr, ExprData, ExprMust, Id, Prim, Str};
 use rustc_hash::FxHashSet;
 
 #[derive(Debug, Default)]

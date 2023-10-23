@@ -13,4 +13,3 @@ doctest = false
 rustc-hash.workspace = true
 
 jsonnet-expr.path = "../jsonnet-expr"
-jsonnet-prim.path = "../jsonnet-prim"

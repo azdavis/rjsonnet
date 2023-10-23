@@ -9,7 +9,7 @@
 pub mod exec;
 pub mod manifest;
 
-use jsonnet_prim::Str;
+use jsonnet_expr::Str;
 
 #[derive(Debug)]
 pub enum Error {
