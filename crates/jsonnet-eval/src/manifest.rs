@@ -17,8 +17,8 @@ pub enum Val {
 
 #[derive(Debug)]
 pub enum Error {
-  Function,
   Exec(exec::Error),
+  Function,
 }
 
 impl From<exec::Error> for Error {
