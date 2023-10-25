@@ -1,7 +1,7 @@
 //! The internal impl.
 
 use crate::st::St;
-use jsonnet_expr::{BinaryOp, Expr, ExprData, Id, Prim, Str, UnaryOp, Visibility};
+use jsonnet_expr::{BinaryOp, Expr, ExprData, Id, Number, Prim, Str, UnaryOp, Visibility};
 use jsonnet_syntax::{ast, kind::SyntaxToken};
 
 pub(crate) fn get_root(st: &mut St, r: ast::Root) -> Expr {
@@ -22,6 +22,13 @@ fn get_expr(st: &mut St, e: Option<ast::Expr>, in_obj: bool) -> Expr {
     ast::Expr::ExprNumber(e) => {
       let tok = e.number()?;
       let num: f64 = tok.text().parse().unwrap_or(0.0);
+      let num = match Number::try_from(num) {
+        Ok(x) => x,
+        Err(_) => {
+          st.err(&e, "non-finite number");
+          Number::positive_zero()
+        }
+      };
       ExprData::Prim(Prim::Number(num))
     }
     ast::Expr::ExprId(e) => ExprData::Id(get_id(st, e.id()?)),
@@ -371,6 +378,7 @@ fn get_object_inside(st: &mut St, inside: ast::ObjectInside, in_obj: bool) -> Ex
           let name_binds = vars.iter().enumerate().map(|(idx, &id)| {
             let idx = u32::try_from(idx).unwrap();
             let idx = f64::try_from(idx).unwrap();
+            let idx = Number::try_from(idx).expect("infinite array idx");
             let idx = Some(st.expr(ExprData::Prim(Prim::Number(idx))));
             let subscript = Some(st.expr(ExprData::Subscript { on, idx }));
             (id, subscript)

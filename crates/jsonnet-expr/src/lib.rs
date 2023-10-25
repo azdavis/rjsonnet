@@ -72,7 +72,61 @@ pub enum Prim {
   Null,
   Bool(bool),
   String(Str),
-  Number(f64),
+  Number(Number),
+}
+
+/// A finite floating-point number, that is, one that is not NaN or infinity.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Number(f64);
+
+impl Number {
+  /// Returns positive zero.
+  #[must_use]
+  pub fn positive_zero() -> Self {
+    Self(0.0)
+  }
+
+  /// Exposes the inner value of this number. It will be finite.
+  #[must_use]
+  pub fn value(&self) -> f64 {
+    self.0
+  }
+}
+
+impl Eq for Number {}
+
+impl PartialOrd for Number {
+  fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+    Some(self.cmp(other))
+  }
+}
+
+impl Ord for Number {
+  fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+    self.value().partial_cmp(&other.value()).expect("should not be NaN")
+  }
+}
+
+impl TryFrom<f64> for Number {
+  type Error = Infinite;
+
+  fn try_from(value: f64) -> Result<Self, Self::Error> {
+    if value.is_nan() {
+      return Err(Infinite::Nan);
+    }
+    if value.is_infinite() {
+      let inf = if value.is_sign_positive() { Infinite::Pos } else { Infinite::Neg };
+      return Err(inf);
+    }
+    Ok(Self(value))
+  }
+}
+
+#[derive(Debug)]
+pub enum Infinite {
+  Nan,
+  Pos,
+  Neg,
 }
 
 /// An interned string.

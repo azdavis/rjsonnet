@@ -1,7 +1,7 @@
 //! Executing Jsonnet expression to produce Jsonnet values.
 
 use crate::val::{Env, RecValKind, Subst, Val};
-use jsonnet_expr::{Arenas, BinaryOp, Expr, ExprData, Id, Prim, Str, Visibility};
+use jsonnet_expr::{Arenas, BinaryOp, Expr, ExprData, Id, Infinite, Number, Prim, Str, Visibility};
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::cmp::Ordering;
 
@@ -18,11 +18,16 @@ pub enum Error {
   NoSuchArgument,
   NoSuchFieldName,
   TooManyArguments,
-  CmpNan,
-  CmpInf,
+  Infinite(Infinite),
   User(Str),
   /// not an actual error from `error`
   NoExpr,
+}
+
+impl From<Infinite> for Error {
+  fn from(value: Infinite) -> Self {
+    Self::Infinite(value)
+  }
 }
 
 pub type Result<T = Val, E = Error> = std::result::Result<T, E>;
@@ -109,7 +114,7 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result {
       }
       Val::Rec { env: ary_env, kind: RecValKind::Array(elems) } => {
         let idx = match get(env, ars, *idx)? {
-          Val::Prim(Prim::Number(x)) => x,
+          Val::Prim(Prim::Number(x)) => x.value(),
           Val::Prim(_) | Val::Rec { .. } => return Err(Error::IncompatibleTypes),
         };
         let idx_floor = idx.floor();
@@ -186,7 +191,8 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result {
           Ok(Val::Prim(Prim::String(str_concat(lhs, rhs))))
         }
         (Val::Prim(Prim::Number(lhs)), Val::Prim(Prim::Number(rhs))) => {
-          Ok(Val::Prim(Prim::Number(lhs + rhs)))
+          let n = Number::try_from(lhs.value() + rhs.value())?;
+          Ok(Val::Prim(Prim::Number(n)))
         }
         _ => Err(Error::Todo),
       },
@@ -229,7 +235,7 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result {
   }
 }
 
-fn float_pair(env: &Env, ars: &Arenas, a: Expr, b: Expr) -> Result<[f64; 2]> {
+fn number_pair(env: &Env, ars: &Arenas, a: Expr, b: Expr) -> Result<[Number; 2]> {
   match (get(env, ars, a)?, get(env, ars, b)?) {
     (Val::Prim(Prim::Number(a)), Val::Prim(Prim::Number(b))) => Ok([a, b]),
     _ => Err(Error::IncompatibleTypes),
@@ -240,19 +246,21 @@ fn float_op<F>(env: &Env, ars: &Arenas, lhs: Expr, rhs: Expr, f: F) -> Result
 where
   F: FnOnce(f64, f64) -> f64,
 {
-  let [lhs, rhs] = float_pair(env, ars, lhs, rhs)?;
-  Ok(Val::Prim(Prim::Number(f(lhs, rhs))))
+  let [lhs, rhs] = number_pair(env, ars, lhs, rhs)?;
+  let n = Number::try_from(f(lhs.value(), rhs.value()))?;
+  Ok(Val::Prim(Prim::Number(n)))
 }
 
 fn int_op<F>(env: &Env, ars: &Arenas, lhs: Expr, rhs: Expr, f: F) -> Result
 where
   F: FnOnce(i64, i64) -> i64,
 {
-  let ns = float_pair(env, ars, lhs, rhs)?;
+  let ns = number_pair(env, ars, lhs, rhs)?;
   #[allow(clippy::cast_possible_truncation)]
-  let [lhs, rhs] = ns.map(|x| x as i64);
+  let [lhs, rhs] = ns.map(|x| x.value() as i64);
   #[allow(clippy::cast_precision_loss)]
   let n = f(lhs, rhs) as f64;
+  let n = Number::try_from(n)?;
   Ok(Val::Prim(Prim::Number(n)))
 }
 
@@ -270,15 +278,7 @@ fn cmp_val(ars: &Arenas, lhs: &Val, rhs: &Val) -> Result<Ordering> {
   match (lhs, rhs) {
     (Val::Prim(lhs), Val::Prim(rhs)) => match (lhs, rhs) {
       (Prim::String(lhs), Prim::String(rhs)) => Ok(ars.str.get(*lhs).cmp(ars.str.get(*rhs))),
-      (Prim::Number(lhs), Prim::Number(rhs)) => {
-        if lhs.is_nan() || rhs.is_nan() {
-          Err(Error::CmpNan)
-        } else if rhs.is_infinite() || lhs.is_infinite() {
-          Err(Error::CmpInf)
-        } else {
-          Ok(lhs.partial_cmp(rhs).expect("not nan or inf"))
-        }
-      }
+      (Prim::Number(lhs), Prim::Number(rhs)) => Ok(lhs.cmp(rhs)),
       _ => Err(Error::IncompatibleTypes),
     },
     (Val::Rec { env: le, kind: lhs }, Val::Rec { env: re, kind: rhs }) => match (lhs, rhs) {
