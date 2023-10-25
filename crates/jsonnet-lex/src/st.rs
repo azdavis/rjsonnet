@@ -1,4 +1,4 @@
-//! The state of the parser.
+//! The state of the lexer.
 
 use drop_bomb::DebugDropBomb;
 
