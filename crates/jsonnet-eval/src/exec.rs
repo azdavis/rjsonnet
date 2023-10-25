@@ -25,7 +25,7 @@ pub enum Error {
   NoExpr,
 }
 
-pub type Result<T = Val> = std::result::Result<T, Error>;
+pub type Result<T = Val, E = Error> = std::result::Result<T, E>;
 
 /// Executes the Jsonnet expression to produce a Jsonnet value.
 ///
