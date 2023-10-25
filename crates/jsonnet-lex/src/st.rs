@@ -87,3 +87,21 @@ pub(crate) struct Marker {
   bomb: DebugDropBomb,
   idx: usize,
 }
+
+impl<'a> Iterator for St<'a> {
+  type Item = u8;
+
+  fn next(&mut self) -> Option<Self::Item> {
+    let ret = self.cur();
+    self.bump();
+    ret
+  }
+}
+
+impl<'a> jsonnet_escape::State for St<'a> {
+  fn err(&mut self, e: jsonnet_escape::Error) {
+    self.err(e.to_str());
+  }
+
+  fn output(&mut self, _: u8) {}
+}

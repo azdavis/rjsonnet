@@ -7,6 +7,7 @@
     "bitand",
     "conv",
     "elems",
+    "hexdigit",
     "Importbin",
     "Importstr",
     "jsonnet",

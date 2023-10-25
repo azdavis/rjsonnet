@@ -13,4 +13,5 @@ doctest = false
 drop_bomb.workspace = true
 token.workspace = true
 
+jsonnet-escape.path = "../jsonnet-escape"
 jsonnet-syntax.path = "../jsonnet-syntax"

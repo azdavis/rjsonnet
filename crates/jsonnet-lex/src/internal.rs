@@ -73,14 +73,7 @@ pub(crate) fn token(st: &mut St<'_>, b: u8) -> SK {
   }
   if b == b'"' {
     st.bump();
-    // TODO handle escapes
-    while let Some(cur) = st.cur() {
-      st.bump();
-      if cur == b'"' {
-        return SK::String;
-      }
-    }
-    st.err("unclosed string");
+    jsonnet_escape::get(st, b'"');
     return SK::String;
   }
   // TODO handle more strings
