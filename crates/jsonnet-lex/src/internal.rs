@@ -55,8 +55,8 @@ pub(crate) fn token(st: &mut St<'_>, b: u8) -> SK {
     st.bump();
     let m = st.mark();
     st.advance_while(|b| b.is_ascii_digit());
-    if st.did_advance_since(m) {
-      st.err("cannot have a leading 0");
+    if st.did_advance_since(m) && b == b'0' {
+      st.err("cannot have a leading 0 before other digits");
     }
     if let Some(b'.') = st.cur() {
       st.bump();
