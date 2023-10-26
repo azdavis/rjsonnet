@@ -85,3 +85,13 @@ function(x) x + 1
 "#,
   );
 }
+
+#[test]
+#[should_panic = "parse.errors"]
+fn parse_fail() {
+  manifest(
+    r#"
+if else
+"#,
+  );
+}
