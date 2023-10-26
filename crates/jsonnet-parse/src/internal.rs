@@ -265,7 +265,7 @@ fn bin_op_prec(op: SK) -> Option<Prec> {
     SK::Plus | SK::Minus => Prec::Add,
     SK::LtLt | SK::GtGt => Prec::Shift,
     SK::Lt | SK::Gt | SK::LtEq | SK::GtEq | SK::InKw => Prec::Cmp,
-    SK::Eq | SK::BangEq => Prec::Eq,
+    SK::EqEq | SK::BangEq => Prec::Eq,
     SK::And => Prec::BitAnd,
     SK::Carat => Prec::BitXor,
     SK::Bar => Prec::BitOr,
