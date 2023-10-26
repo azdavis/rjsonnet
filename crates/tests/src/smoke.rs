@@ -95,3 +95,31 @@ if else
 "#,
   );
 }
+
+#[test]
+fn if_else() {
+  manifest(
+    r#"
+if 1 < 2 then 3 else 4
+"#,
+  );
+}
+
+#[test]
+fn if_no_else() {
+  manifest(
+    r#"
+if 1 < 2 then 3
+"#,
+  );
+}
+
+#[test]
+#[should_panic = "exec error: User"]
+fn error() {
+  manifest(
+    r#"
+error "oh no!"
+"#,
+  );
+}
