@@ -123,3 +123,13 @@ error "oh no!"
 "#,
   );
 }
+
+#[test]
+fn assert() {
+  manifest(
+    r#"
+assert 2 + 2 < 5 : "math makes sense";
+0
+"#,
+  );
+}
