@@ -8,8 +8,8 @@ pub struct Error {
 }
 
 impl Error {
-  pub fn display(&self) -> impl fmt::Display + '_ {
-    Display { kind: &self.kind }
+  pub fn display<'a>(&'a self, str_arena: &'a jsonnet_expr::StrArena) -> impl fmt::Display + 'a {
+    Display { kind: &self.kind, str_arena }
   }
 }
 
@@ -23,15 +23,20 @@ pub enum Kind {
 
 struct Display<'a> {
   kind: &'a Kind,
+  str_arena: &'a jsonnet_expr::StrArena,
 }
 
 impl<'a> fmt::Display for Display<'a> {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     match &self.kind {
-      Kind::NotInScope(_) => f.write_str("not in scope"),
-      Kind::DuplicateFieldName(_) => f.write_str("duplicate field name"),
-      Kind::DuplicateNamedArg(_) => f.write_str("duplicate named argument"),
-      Kind::DuplicateBinding(_) => f.write_str("duplicate binding"),
+      Kind::NotInScope(id) => write!(f, "not in scope: {}", self.str_arena.get(id.inner())),
+      Kind::DuplicateFieldName(s) => write!(f, "duplicate field name: {}", self.str_arena.get(*s)),
+      Kind::DuplicateNamedArg(id) => {
+        write!(f, "duplicate named argument: {}", self.str_arena.get(id.inner()))
+      }
+      Kind::DuplicateBinding(id) => {
+        write!(f, "duplicate binding: {}", self.str_arena.get(id.inner()))
+      }
     }
   }
 }

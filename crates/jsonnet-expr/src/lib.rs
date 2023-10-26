@@ -183,6 +183,11 @@ impl Id {
   pub fn new(s: Str) -> Self {
     Self(s)
   }
+
+  #[must_use]
+  pub fn inner(&self) -> Str {
+    self.0
+  }
 }
 
 #[derive(Debug, Default)]

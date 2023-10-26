@@ -16,7 +16,7 @@ pub(crate) fn exec(s: &str) -> (jsonnet_desugar::Desugar, jsonnet_eval::val::Val
   jsonnet_statics::check(&mut st, &cx, &desugar.arenas, desugar.top);
   let statics_errors = st.finish();
   if let Some(e) = statics_errors.first() {
-    let e = e.display();
+    let e = e.display(&desugar.arenas.str);
     panic!("statics error: {e}");
   }
   let env = jsonnet_eval::val::Env::default();
