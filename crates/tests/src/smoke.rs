@@ -1,4 +1,4 @@
-use crate::check::manifest;
+use crate::check::{exec, manifest};
 
 #[test]
 fn int() {
@@ -73,6 +73,15 @@ fn object() {
   str: "bar",
   "foo quz": null,
 }
+"#,
+  );
+}
+
+#[test]
+fn function() {
+  exec(
+    r#"
+function(x) x + 1
 "#,
   );
 }
