@@ -1,8 +1,8 @@
-use crate::check::pass;
+use crate::check::manifest;
 
 #[test]
 fn int() {
-  pass(
+  manifest(
     r#"
 3
 "#,
@@ -11,7 +11,7 @@ fn int() {
 
 #[test]
 fn float() {
-  pass(
+  manifest(
     r#"
 3.4
 "#,
@@ -20,7 +20,7 @@ fn float() {
 
 #[test]
 fn str_double() {
-  pass(
+  manifest(
     r#"
 "hi"
 "#,
@@ -29,7 +29,7 @@ fn str_double() {
 
 #[test]
 fn bool_true() {
-  pass(
+  manifest(
     r#"
 true
 "#,
@@ -38,7 +38,7 @@ true
 
 #[test]
 fn bool_false() {
-  pass(
+  manifest(
     r#"
 false
 "#,
@@ -47,7 +47,7 @@ false
 
 #[test]
 fn null() {
-  pass(
+  manifest(
     r#"
 null
 "#,
@@ -56,7 +56,7 @@ null
 
 #[test]
 fn array() {
-  pass(
+  manifest(
     r#"
 [1, true, "foo"]
 "#,
@@ -65,7 +65,7 @@ fn array() {
 
 #[test]
 fn object() {
-  pass(
+  manifest(
     r#"
 {
   num: 1,

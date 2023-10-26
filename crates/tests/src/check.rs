@@ -1,4 +1,4 @@
-pub(crate) fn pass(s: &str) {
+pub(crate) fn exec(s: &str) -> (jsonnet_desugar::Desugar, jsonnet_eval::val::Val) {
   let lex = jsonnet_lex::get(s);
   assert!(lex.errors.is_empty());
   let parse = jsonnet_parse::get(&lex.tokens);
@@ -11,8 +11,12 @@ pub(crate) fn pass(s: &str) {
   let statics_errors = st.finish();
   assert!(statics_errors.is_empty());
   let env = jsonnet_eval::val::Env::default();
-  let exec = jsonnet_eval::exec::get(&env, &desugar.arenas, desugar.top);
-  let exec = exec.unwrap();
-  let manifest = jsonnet_eval::manifest::get(&desugar.arenas, exec);
-  assert!(manifest.is_ok());
+  let val = jsonnet_eval::exec::get(&env, &desugar.arenas, desugar.top);
+  (desugar, val.unwrap())
+}
+
+pub(crate) fn manifest(s: &str) -> jsonnet_eval::manifest::Val {
+  let (desugar, val) = exec(s);
+  let val = jsonnet_eval::manifest::get(&desugar.arenas, val);
+  val.unwrap()
 }
