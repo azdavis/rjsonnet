@@ -2,22 +2,24 @@
 
 #![deny(clippy::pedantic, missing_debug_implementations, rust_2018_idioms)]
 
+mod error;
+
 use jsonnet_expr::{Arenas, Expr, ExprData, ExprMust, Id, Prim, Str};
 use rustc_hash::FxHashSet;
 
 #[derive(Debug, Default)]
 pub struct St {
-  errors: Vec<(ExprMust, &'static str)>,
+  errors: Vec<error::Error>,
 }
 
 impl St {
-  fn err(&mut self, e: ExprMust, s: &'static str) {
-    self.errors.push((e, s));
+  fn err(&mut self, expr: ExprMust, kind: error::Kind) {
+    self.errors.push(error::Error { expr, kind });
   }
 
   /// Returns all the errors accumulated in the state.
   #[must_use]
-  pub fn finish(self) -> Vec<(ExprMust, &'static str)> {
+  pub fn finish(self) -> Vec<error::Error> {
     self.errors
   }
 }
@@ -55,7 +57,7 @@ pub fn check(st: &mut St, cx: &Cx, ars: &Arenas, expr: Expr) {
         let Some(name) = name else { continue };
         if let ExprData::Prim(Prim::String(s)) = ars.expr[name] {
           if !field_names.insert(s) {
-            st.err(name, "duplicate field name");
+            st.err(name, error::Kind::DuplicateFieldName(s));
           }
         }
       }
@@ -92,14 +94,14 @@ pub fn check(st: &mut St, cx: &Cx, ars: &Arenas, expr: Expr) {
         if !arg_names.insert(id) {
           if let Some(arg) = arg {
             // TODO move err to the id, not the arg
-            st.err(arg, "duplicate named argument");
+            st.err(arg, error::Kind::DuplicateNamedArg(id));
           }
         }
       }
     }
     ExprData::Id(id) => {
       if !cx.contains(*id) {
-        st.err(expr, "identifier not in scope");
+        st.err(expr, error::Kind::NotInScope(*id));
       }
     }
     // turns out these are exactly the same
@@ -111,7 +113,7 @@ pub fn check(st: &mut St, cx: &Cx, ars: &Arenas, expr: Expr) {
         if !bound_names.insert(id) {
           // TODO move err to the id, not the rhs
           if let Some(rhs) = rhs {
-            st.err(rhs, "duplicate binding");
+            st.err(rhs, error::Kind::DuplicateBinding(id));
           }
         }
       }
