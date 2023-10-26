@@ -1,3 +1,4 @@
+use crate::error::{self, Error};
 use jsonnet_expr::Arenas;
 use jsonnet_syntax::{ast::AstNode, kind::SyntaxToken};
 use text_size::TextRange;
@@ -5,7 +6,7 @@ use text_size::TextRange;
 #[derive(Debug, Default)]
 pub(crate) struct St {
   arenas: Arenas,
-  errors: Vec<(TextRange, &'static str)>,
+  errors: Vec<Error>,
 }
 
 impl St {
@@ -17,22 +18,22 @@ impl St {
     self.arenas.expr.alloc(e)
   }
 
-  pub(crate) fn err<N>(&mut self, node: &N, msg: &'static str)
+  pub(crate) fn err<N>(&mut self, node: &N, kind: error::Kind)
   where
     N: AstNode,
   {
-    self.err_(node.syntax().text_range(), msg);
+    self.err_(node.syntax().text_range(), kind);
   }
 
-  pub(crate) fn err_token(&mut self, tok: SyntaxToken, msg: &'static str) {
-    self.err_(tok.text_range(), msg);
+  pub(crate) fn err_token(&mut self, tok: SyntaxToken, kind: error::Kind) {
+    self.err_(tok.text_range(), kind);
   }
 
-  fn err_(&mut self, range: TextRange, msg: &'static str) {
-    self.errors.push((range, msg));
+  fn err_(&mut self, range: TextRange, kind: error::Kind) {
+    self.errors.push(Error { range, kind });
   }
 
-  pub(crate) fn finish(self) -> (Arenas, Vec<(TextRange, &'static str)>) {
+  pub(crate) fn finish(self) -> (Arenas, Vec<Error>) {
     (self.arenas, self.errors)
   }
 

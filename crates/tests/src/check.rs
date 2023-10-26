@@ -8,7 +8,7 @@ pub(crate) fn exec(s: &str) -> (jsonnet_desugar::Desugar, jsonnet_eval::val::Val
     panic!("parse error: {e:?}");
   }
   let desugar = jsonnet_desugar::get(parse.root);
-  if let Some(&(_, e)) = desugar.errors.first() {
+  if let Some(e) = desugar.errors.first() {
     panic!("desugar error: {e:?}");
   }
   let mut st = jsonnet_statics::St::default();

@@ -1,6 +1,6 @@
 //! The internal impl.
 
-use crate::st::St;
+use crate::{error, st::St};
 use jsonnet_expr::{BinaryOp, Expr, ExprData, Id, Number, Prim, Str, UnaryOp, Visibility};
 use jsonnet_syntax::{ast, kind::SyntaxToken};
 
@@ -25,7 +25,7 @@ fn get_expr(st: &mut St, e: Option<ast::Expr>, in_obj: bool) -> Expr {
       let num = match Number::try_from(num) {
         Ok(x) => x,
         Err(_) => {
-          st.err(&e, "non-finite number");
+          st.err(&e, error::Kind::CannotRepresentNumber);
           Number::positive_zero()
         }
       };
@@ -38,12 +38,12 @@ fn get_expr(st: &mut St, e: Option<ast::Expr>, in_obj: bool) -> Expr {
       Some(_) => {
         let mut expr_commas = e.expr_commas();
         let Some(elem) = expr_commas.next().and_then(|x| x.expr()) else {
-          st.err(&e, "array comprehension must contain an element");
+          st.err(&e, error::Kind::ArrayCompNotOne);
           return None;
         };
         let elem = get_expr(st, Some(elem), in_obj);
         for elem in expr_commas {
-          st.err(&elem, "array comprehension must not contain more more than 1 element");
+          st.err(&elem, error::Kind::ArrayCompNotOne);
         }
         get_array_comp(st, e.comp_specs(), elem, in_obj)
       }
@@ -245,7 +245,7 @@ where
   match iter.next()? {
     ast::CompSpec::ForSpec(for_spec) => Some((for_spec, iter)),
     ast::CompSpec::IfSpec(if_spec) => {
-      st.err(&if_spec, "the first comprehension specification must not be `if`");
+      st.err(&if_spec, error::Kind::FirstCompSpecNotFor);
       None
     }
   }
@@ -332,26 +332,26 @@ fn get_object_inside(st: &mut St, inside: ast::ObjectInside, in_obj: bool) -> Ex
             binds.extend(local.bind().and_then(|b| get_bind(st, b, true)));
           }
           ast::MemberKind::Assert(assert) => {
-            st.err(&assert, "object comprehension must not contain asserts");
+            st.err(&assert, error::Kind::ObjectCompAssert);
           }
           ast::MemberKind::Field(field) => {
             let Some(name) = field.field_name() else {
               continue;
             };
             let ast::FieldName::FieldNameExpr(name) = name else {
-              st.err(&name, "object comprehension must not contain literal field names");
+              st.err(&name, error::Kind::ObjectCompLiteralFieldName);
               continue;
             };
             if lowered_field.is_some() {
-              st.err(&field, "object comprehension must not contain more than one field");
+              st.err(&field, error::Kind::ObjectCompNotOne);
             }
             if let Some(field_extra) = field.field_extra() {
-              st.err(&field_extra, "object comprehension field must not have `+` or parameters");
+              st.err(&field_extra, error::Kind::ObjectCompFieldExtra);
             }
             if let Some(vis) = field.visibility() {
               let is_colon = matches!(vis.kind, ast::VisibilityKind::Colon);
               if !is_colon {
-                st.err_token(vis.token, "object comprehension field must use `:`");
+                st.err_token(vis.token, error::Kind::ObjectCompVisibility);
               }
             }
             let name = get_expr(st, name.expr(), in_obj);
@@ -367,7 +367,7 @@ fn get_object_inside(st: &mut St, inside: ast::ObjectInside, in_obj: bool) -> Ex
       let vars: Vec<_> = vars.collect();
       match lowered_field {
         None => {
-          st.err(&inside, "object comprehension must contain a field");
+          st.err(&inside, error::Kind::ObjectCompNotOne);
           // this is a good "fake" return, since we knew this was going to be some kind of object,
           // but now we can't figure out what fields it should have. so let's say it has no fields.
           ExprData::Object { asserts: Vec::new(), fields: Vec::new() }
