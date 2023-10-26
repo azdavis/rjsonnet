@@ -1,6 +1,6 @@
 pub(crate) fn exec(s: &str) -> (jsonnet_desugar::Desugar, jsonnet_eval::val::Val) {
   let lex = jsonnet_lex::get(s);
-  if let Some(&e) = lex.errors.first() {
+  if let Some(e) = lex.errors.first() {
     panic!("lex error: {e}");
   }
   let parse = jsonnet_parse::get(&lex.tokens);

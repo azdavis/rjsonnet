@@ -1,6 +1,6 @@
 //! The internal impl.
 
-use crate::st::St;
+use crate::{error, st::St};
 use jsonnet_syntax::kind::SyntaxKind as SK;
 
 pub(crate) fn token(st: &mut St<'_>, b: u8) -> SK {
@@ -25,7 +25,7 @@ pub(crate) fn token(st: &mut St<'_>, b: u8) -> SK {
       Some(b'*') => {
         st.bump();
         let Some(mut prev) = st.cur() else {
-          st.err("unclosed comment");
+          st.err(error::Kind::UnclosedComment);
           return SK::BlockComment;
         };
         st.bump();
@@ -36,7 +36,7 @@ pub(crate) fn token(st: &mut St<'_>, b: u8) -> SK {
           }
           prev = cur;
         }
-        st.err("unclosed comment");
+        st.err(error::Kind::UnclosedComment);
         return SK::BlockComment;
       }
       Some(_) | None => return SK::Slash,
@@ -56,7 +56,7 @@ pub(crate) fn token(st: &mut St<'_>, b: u8) -> SK {
     let m = st.mark();
     st.advance_while(|b| b.is_ascii_digit());
     if st.did_advance_since(m) && b == b'0' {
-      st.err("cannot have a leading 0 before other digits");
+      st.err(error::Kind::LeadingZero);
     }
     if let Some(b'.') = st.cur() {
       st.bump();
@@ -77,7 +77,7 @@ pub(crate) fn token(st: &mut St<'_>, b: u8) -> SK {
     return SK::String;
   }
   // TODO handle more strings
-  st.err("invalid text");
+  st.err(error::Kind::InvalidBytes);
   st.next_str();
   SK::Invalid
 }
@@ -86,7 +86,7 @@ fn digits(st: &mut St<'_>) {
   let m = st.mark();
   st.advance_while(|b| b.is_ascii_digit());
   if !st.did_advance_since(m) {
-    st.err("need at least 1 digit");
+    st.err(error::Kind::NeedDigits);
   }
 }
 

@@ -2,16 +2,19 @@
 
 #![deny(clippy::pedantic, missing_debug_implementations, rust_2018_idioms)]
 
+mod error;
 mod internal;
 mod st;
 
 use jsonnet_syntax::kind::SyntaxKind as SK;
 use st::St;
 
+pub use error::Error;
+
 #[derive(Debug, Default)]
 pub struct Lex<'a> {
   pub tokens: Vec<token::Token<'a, SK>>,
-  pub errors: Vec<&'static str>,
+  pub errors: Vec<Error>,
 }
 
 /// # Panics

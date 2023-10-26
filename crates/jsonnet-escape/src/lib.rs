@@ -2,6 +2,8 @@
 
 #![deny(clippy::pedantic, missing_debug_implementations, rust_2018_idioms)]
 
+use std::fmt;
+
 /// An error when interpreting the escaped bytes.
 #[derive(Debug)]
 pub enum Error {
@@ -13,14 +15,12 @@ pub enum Error {
   NotHexDigit,
 }
 
-impl Error {
-  /// Returns this error as a static string. TODO remove
-  #[must_use]
-  pub fn to_str(&self) -> &'static str {
+impl fmt::Display for Error {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     match self {
-      Error::NotTerminated => "unclosed string",
-      Error::InvalidEscape => "invalid escape",
-      Error::NotHexDigit => "not a hex digit",
+      Error::NotTerminated => f.write_str("unclosed string"),
+      Error::InvalidEscape => f.write_str("invalid escape"),
+      Error::NotHexDigit => f.write_str("not a hex digit"),
     }
   }
 }

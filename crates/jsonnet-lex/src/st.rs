@@ -1,13 +1,13 @@
 //! The state of the lexer.
 
+use crate::error::{self, Error};
 use drop_bomb::DebugDropBomb;
 
 #[derive(Debug, Default)]
 pub(crate) struct St<'a> {
   s: &'a str,
   idx: usize,
-  // TODO track locations
-  errors: Vec<&'static str>,
+  errors: Vec<Error>,
 }
 
 impl<'a> St<'a> {
@@ -36,8 +36,8 @@ impl<'a> St<'a> {
     }
   }
 
-  pub(crate) fn err(&mut self, e: &'static str) {
-    self.errors.push(e);
+  pub(crate) fn err(&mut self, kind: error::Kind) {
+    self.errors.push(Error { idx: self.idx, kind });
   }
 
   pub(crate) fn mark(&self) -> Marker {
@@ -78,7 +78,7 @@ impl<'a> St<'a> {
     }
   }
 
-  pub(crate) fn finish(self) -> Vec<&'static str> {
+  pub(crate) fn finish(self) -> Vec<Error> {
     self.errors
   }
 }
@@ -100,7 +100,7 @@ impl<'a> Iterator for St<'a> {
 
 impl<'a> jsonnet_escape::State for St<'a> {
   fn err(&mut self, e: jsonnet_escape::Error) {
-    self.err(e.to_str());
+    self.err(error::Kind::Escape(e));
   }
 
   fn output(&mut self, _: u8) {}
