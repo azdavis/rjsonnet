@@ -30,6 +30,8 @@ fn main() {
     assert!(names.insert(name), "duplicate name: {name}");
     assert!(contents.insert(content), "duplicate content: {content}");
   }
+  drop(names);
+  drop(contents);
   let str_constants = preset.iter().enumerate().map(|(idx, &(name, _, make_id))| {
     let name = format_ident!("{name}");
     let idx = u32::try_from(idx).unwrap();
