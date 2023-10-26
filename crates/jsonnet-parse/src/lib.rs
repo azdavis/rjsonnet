@@ -16,6 +16,7 @@ pub fn get(tokens: &[token::Token<'_, SK>]) -> Parse {
   internal::expr_must(&mut p);
   while p.peek().is_some() {
     p.error(ErrorKind::Trailing);
+    p.bump();
   }
   p.exit(en, SK::Root);
   let mut sink = event_parse::rowan_sink::RowanSink::default();
