@@ -2,20 +2,12 @@ use crate::check::{exec, manifest};
 
 #[test]
 fn int() {
-  manifest(
-    r#"
-3
-"#,
-  );
+  manifest("3");
 }
 
 #[test]
 fn float() {
-  manifest(
-    r#"
-3.4
-"#,
-  );
+  manifest("3.4");
 }
 
 #[test]
@@ -29,29 +21,17 @@ fn str_double() {
 
 #[test]
 fn bool_true() {
-  manifest(
-    r#"
-true
-"#,
-  );
+  manifest("true");
 }
 
 #[test]
 fn bool_false() {
-  manifest(
-    r#"
-false
-"#,
-  );
+  manifest("false");
 }
 
 #[test]
 fn null() {
-  manifest(
-    r#"
-null
-"#,
-  );
+  manifest("null");
 }
 
 #[test]
@@ -79,39 +59,23 @@ fn object() {
 
 #[test]
 fn function() {
-  exec(
-    r#"
-function(x) x + 1
-"#,
-  );
+  exec("function(x) x + 1");
 }
 
 #[test]
 #[should_panic = "parse error:"]
 fn parse_fail() {
-  manifest(
-    r#"
-if else
-"#,
-  );
+  manifest("if else");
 }
 
 #[test]
 fn if_else() {
-  manifest(
-    r#"
-if 1 < 2 then 3 else 4
-"#,
-  );
+  manifest("if 1 < 2 then 3 else 4");
 }
 
 #[test]
 fn if_no_else() {
-  manifest(
-    r#"
-if 1 < 2 then 3
-"#,
-  );
+  manifest("if 1 < 2 then 3");
 }
 
 #[test]
