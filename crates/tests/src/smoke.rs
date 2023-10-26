@@ -35,7 +35,12 @@ fn null() {
 }
 
 #[test]
-fn array() {
+fn array_empty() {
+  manifest("[]");
+}
+
+#[test]
+fn array_non_empty() {
   manifest(
     r#"
 [1, true, "foo"]
@@ -43,8 +48,15 @@ fn array() {
   );
 }
 
+// TODO fix
 #[test]
-fn object() {
+#[should_panic]
+fn object_empty() {
+  manifest("{}");
+}
+
+#[test]
+fn object_non_empty() {
   manifest(
     r#"
 {
