@@ -87,7 +87,7 @@ function(x) x + 1
 }
 
 #[test]
-#[should_panic = "parse.errors"]
+#[should_panic = "parse error:"]
 fn parse_fail() {
   manifest(
     r#"
