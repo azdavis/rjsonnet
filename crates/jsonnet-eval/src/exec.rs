@@ -9,7 +9,7 @@ const EPSILON: f64 = 0.0001;
 
 #[derive(Debug)]
 pub enum Error {
-  Todo,
+  Todo(&'static str),
   ArrayIdxNotInteger,
   ArrayIdxOutOfRange,
   DuplicateArgument,
@@ -79,7 +79,7 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result {
             // we want to do `[e/x]body` here?
             let body = match ars.expr[body] {
               ExprData::Prim(_) => body,
-              _ => return Err(Error::Todo),
+              _ => return Err(Error::Todo("subst for object comp")),
             };
             if fields.insert(s, (Visibility::Default, Some(body))).is_some() {
               return Err(Error::DuplicateField);
@@ -194,7 +194,7 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result {
           let n = Number::try_from(lhs.value() + rhs.value())?;
           Ok(Val::Prim(Prim::Number(n)))
         }
-        _ => Err(Error::Todo),
+        _ => Err(Error::Todo("+ for non-prim")),
       },
       // arithmetic
       BinaryOp::Mul => float_op(env, ars, *lhs, *rhs, std::ops::Mul::mul),
@@ -223,7 +223,7 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result {
         Val::Prim(_) | Val::Rec { .. } => Err(Error::IncompatibleTypes),
       },
     },
-    ExprData::UnaryOp { .. } => Err(Error::Todo),
+    ExprData::UnaryOp { .. } => Err(Error::Todo("unary ops")),
     ExprData::Function { params, body } => {
       let kind = RecValKind::Function { params: params.clone(), body: *body };
       Ok(Val::Rec { env: env.clone(), kind })
@@ -309,7 +309,7 @@ fn cmp_val(ars: &Arenas, lhs: &Val, rhs: &Val) -> Result<Ordering> {
 }
 
 fn exec_local(_: &Env, _: &[(Id, Expr)], _: &Arenas, _: Expr) -> Result {
-  Err(Error::Todo)
+  Err(Error::Todo("locals"))
 }
 
 #[allow(clippy::needless_pass_by_value)]
