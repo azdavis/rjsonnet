@@ -68,6 +68,16 @@ fn object_non_empty() {
 }
 
 #[test]
+#[should_panic = "+ for non-prim"]
+fn object_implicit_plus() {
+  manifest(
+    r#"
+{ a: 1 } { b: 2 }
+"#,
+  );
+}
+
+#[test]
 fn function() {
   exec("function(x) x + 1");
 }
