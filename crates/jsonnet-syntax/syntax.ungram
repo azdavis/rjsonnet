@@ -38,7 +38,7 @@ ExprString = 'String'
 ExprNumber = 'Number'
 ExprId = 'Id'
 ExprParen = '(' Expr ')'
-ExprObject = '{' ObjectInside '}'
+ExprObject = '{' Member* CompSpec* '}'
 // array comprehension is rearranged
 ExprArray = '[' ExprComma* CompSpec* ']'
 ExprFieldGet = Expr '.' 'Id'
@@ -48,7 +48,7 @@ ExprLocal = 'local' Bind* ';' Expr
 ExprIf = 'if' cond:Expr 'then' yes:Expr ElseExpr?
 ExprBinaryOp = lhs:Expr BinaryOp rhs:Expr
 ExprUnaryOp = UnaryOp Expr
-ExprImplicitObjectPlus = Expr '{' ObjectInside '}'
+ExprImplicitObjectPlus = Expr ExprObject
 ExprFunction = 'function' ParenParams Expr
 ExprAssert = Assert ';' Expr
 ExprImport = Import 'String'
@@ -56,10 +56,7 @@ ExprError = 'error' Expr
 // only allowed in std
 ExprTailstrict = Expr 'tailstrict'
 
-// object comprehension is rearranged
-ObjectInside = Member* CompSpec*
 Member = MemberKind ','?
-
 MemberKind = ObjectLocal | Assert | Field
 
 // slightly rearranged from the spec

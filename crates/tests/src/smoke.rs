@@ -48,9 +48,7 @@ fn array_non_empty() {
   );
 }
 
-// TODO fix
 #[test]
-#[should_panic]
 fn object_empty() {
   manifest("{}");
 }

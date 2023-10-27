@@ -78,9 +78,7 @@ fn expr_prec(p: &mut Parser<'_>, min_prec: Prec) -> Option<Exited> {
       SK::ExprParen
     }
     SK::LCurly => {
-      p.bump();
-      object_inside(p);
-      p.eat(SK::RCurly);
+      expr_object(p);
       SK::ExprObject
     }
     SK::LSquare => {
@@ -181,9 +179,9 @@ fn expr_prec(p: &mut Parser<'_>, min_prec: Prec) -> Option<Exited> {
       }
       SK::LCurly => {
         let en = p.precede(ex);
-        p.bump();
-        object_inside(p);
-        p.eat(SK::RCurly);
+        let obj = p.enter();
+        expr_object(p);
+        p.exit(obj, SK::ExprObject);
         p.exit(en, SK::ExprImplicitObjectPlus)
       }
       SK::Dot => {
@@ -214,6 +212,14 @@ fn expr_prec(p: &mut Parser<'_>, min_prec: Prec) -> Option<Exited> {
   Some(ex)
 }
 
+fn expr_object(p: &mut Parser<'_>) {
+  assert!(p.at(SK::LCurly));
+  p.bump();
+  while member(p).is_some() {}
+  while comp_spec(p).is_some() {}
+  p.eat(SK::RCurly);
+}
+
 fn arg(p: &mut Parser<'_>) -> Option<Exited> {
   let outer = p.enter();
   if p.at(SK::Id) {
@@ -234,13 +240,6 @@ fn arg(p: &mut Parser<'_>) -> Option<Exited> {
     p.bump();
   }
   Some(p.exit(outer, SK::Arg))
-}
-
-fn object_inside(p: &mut Parser<'_>) -> Exited {
-  let en = p.enter();
-  while member(p).is_some() {}
-  while comp_spec(p).is_some() {}
-  p.exit(en, SK::ObjectInside)
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]

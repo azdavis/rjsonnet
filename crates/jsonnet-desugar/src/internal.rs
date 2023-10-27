@@ -33,7 +33,7 @@ fn get_expr(st: &mut St, e: Option<ast::Expr>, in_obj: bool) -> Expr {
     }
     ast::Expr::ExprId(e) => ExprData::Id(get_id(st, e.id()?)),
     ast::Expr::ExprParen(e) => return get_expr(st, e.expr(), in_obj),
-    ast::Expr::ExprObject(e) => get_object_inside(st, e.object_inside()?, in_obj),
+    ast::Expr::ExprObject(e) => get_object(st, e, in_obj),
     ast::Expr::ExprArray(e) => match get_comp_specs(st, e.comp_specs()) {
       Some(_) => {
         let mut expr_commas = e.expr_commas();
@@ -113,7 +113,7 @@ fn get_expr(st: &mut St, e: Option<ast::Expr>, in_obj: bool) -> Expr {
     }
     ast::Expr::ExprImplicitObjectPlus(e) => {
       let lhs = get_expr(st, e.expr(), in_obj);
-      let rhs = get_object_inside(st, e.object_inside()?, in_obj);
+      let rhs = get_object(st, e.expr_object()?, in_obj);
       let rhs = Some(st.expr(rhs));
       bop(BinaryOp::Add, lhs, rhs)
     }
@@ -261,7 +261,7 @@ fn get_assert(st: &mut St, yes: Expr, assert: ast::Assert, in_obj: bool) -> Expr
   ExprData::If { cond, yes, no }
 }
 
-fn get_object_inside(st: &mut St, inside: ast::ObjectInside, in_obj: bool) -> ExprData {
+fn get_object(st: &mut St, inside: ast::ExprObject, in_obj: bool) -> ExprData {
   match get_comp_specs(st, inside.comp_specs()) {
     None => {
       // this is the only time we actually use the `in_obj` flag
