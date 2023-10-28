@@ -7,6 +7,7 @@ use text_size::TextRange;
 pub(crate) struct St {
   arenas: Arenas,
   errors: Vec<Error>,
+  fresh_idx: usize,
 }
 
 impl St {
@@ -39,6 +40,8 @@ impl St {
 
   /// Returns a fresh identifier.
   pub(crate) fn fresh(&mut self) -> jsonnet_expr::Id {
-    todo!()
+    let s = format!("${}", self.fresh_idx);
+    self.fresh_idx += 1;
+    jsonnet_expr::Id::new(self.arenas.str.insert(s.into_boxed_str()))
   }
 }
