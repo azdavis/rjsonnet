@@ -17,12 +17,12 @@ pub enum Val {
 
 #[derive(Debug)]
 pub enum Error {
-  Exec(exec::Error),
+  Exec(exec::error::Error),
   Function,
 }
 
-impl From<exec::Error> for Error {
-  fn from(value: exec::Error) -> Self {
+impl From<exec::error::Error> for Error {
+  fn from(value: exec::error::Error) -> Self {
     Error::Exec(value)
   }
 }

@@ -99,7 +99,7 @@ fn if_no_else() {
 }
 
 #[test]
-#[should_panic = "exec error: User"]
+#[should_panic = "kind: User"]
 fn error() {
   manifest(
     r#"
