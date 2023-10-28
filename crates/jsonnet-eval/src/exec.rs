@@ -20,8 +20,6 @@ pub enum Error {
   TooManyArguments,
   Infinite(Infinite),
   User(Str),
-  /// not an actual error from `error`
-  NoExpr,
 }
 
 impl From<Infinite> for Error {
@@ -44,7 +42,7 @@ pub type Result<T = Val, E = Error> = std::result::Result<T, E>;
 pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result {
   // TODO implement a cache on expr to avoid re-computing lazy exprs? but we would also need to
   // consider the env in which the expr is executed
-  let Some(expr) = expr else { return Err(Error::NoExpr) };
+  let expr = expr.expect("no expr");
   match &ars.expr[expr] {
     ExprData::Prim(p) => Ok(Val::Prim(*p)),
     ExprData::Object { asserts, fields } => {
