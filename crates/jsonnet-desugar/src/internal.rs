@@ -18,7 +18,11 @@ fn get_expr(st: &mut St, e: Option<ast::Expr>, in_obj: bool) -> Expr {
     ast::Expr::ExprSelf(_) => ExprData::Id(Id::SELF),
     ast::Expr::ExprSuper(_) => ExprData::Id(Id::SUPER),
     ast::Expr::ExprDollar(_) => ExprData::Id(Id::DOLLAR),
-    ast::Expr::ExprString(_) => ExprData::Prim(Prim::String(Str::TODO)),
+    ast::Expr::ExprString(e) => {
+      let tok = e.string()?;
+      let text = tok.text().strip_prefix('"').unwrap().strip_suffix('"').unwrap();
+      ExprData::Prim(Prim::String(st.str(text)))
+    }
     ast::Expr::ExprNumber(e) => {
       let tok = e.number()?;
       let num: f64 = tok.text().parse().unwrap_or(0.0);
