@@ -6,7 +6,7 @@ mod generated {
   include!(concat!(env!("OUT_DIR"), "/generated.rs"));
 }
 
-use la_arena::{Arena, Idx};
+pub use la_arena::{Arena, ArenaMap, Idx};
 
 use rustc_hash::FxHashMap;
 use std::collections::hash_map::Entry;

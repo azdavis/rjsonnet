@@ -10,6 +10,7 @@ test = false
 doctest = false
 
 [dependencies]
+rustc-hash.workspace = true
 text-size.workspace = true
 
 jsonnet-expr.path = "../jsonnet-expr"

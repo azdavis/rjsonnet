@@ -68,6 +68,7 @@ version = "0.1.0"
 dependencies = [
  "jsonnet-expr",
  "jsonnet-syntax",
+ "rustc-hash",
  "text-size",
 ]
 
