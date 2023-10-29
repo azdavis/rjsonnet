@@ -119,37 +119,36 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result {
       }
       Val::Rec { .. } | Val::Prim(_) => mk_error(error::Kind::IncompatibleTypes),
     },
-    ExprData::Call { func, positional, named } => {
-      let (func_env, mut params, body) = match get(env, ars, *func)? {
-        Val::Rec { env, kind: RecValKind::Function { params, body } } => (env, params, body),
-        Val::Rec { .. } | Val::Prim(_) => return mk_error(error::Kind::IncompatibleTypes),
-      };
-      if positional.len() + named.len() > params.len() {
-        return mk_error(error::Kind::TooManyArguments);
-      }
-      let mut provided = FxHashSet::<Id>::default();
-      for ((id, param), &arg) in params.iter_mut().zip(positional) {
-        *param = arg;
-        assert!(provided.insert(*id), "duplicate function param should be forbidden by check");
-      }
-      for &(arg_name, arg) in named {
-        if !provided.insert(arg_name) {
-          return mk_error(error::Kind::DuplicateArgument);
+    ExprData::Call { func, positional, named } => match get(env, ars, *func)? {
+      Val::Rec { env: func_env, kind: RecValKind::Function { mut params, body } } => {
+        if positional.len() + named.len() > params.len() {
+          return mk_error(error::Kind::TooManyArguments);
         }
-        // we're getting a little fancy here. this iterates across the mutable params, and if we
-        // could find a param whose name matches the arg's name, then this sets the param to that
-        // arg and short circuits with true. note `==` with comparing the names and `=` with setting
-        // the actual exprs. note the usage of `bool::then` with `find_map` and `is_none`.
-        let failed_to_set_arg = params
-          .iter_mut()
-          .find_map(|(param_name, param)| (*param_name == arg_name).then(|| *param = arg))
-          .is_none();
-        if failed_to_set_arg {
-          return mk_error(error::Kind::NoSuchArgument);
+        let mut provided = FxHashSet::<Id>::default();
+        for ((id, param), &arg) in params.iter_mut().zip(positional) {
+          *param = arg;
+          assert!(provided.insert(*id), "duplicate function param should be forbidden by check");
         }
+        for &(arg_name, arg) in named {
+          if !provided.insert(arg_name) {
+            return mk_error(error::Kind::DuplicateArgument);
+          }
+          // we're getting a little fancy here. this iterates across the mutable params, and if we
+          // could find a param whose name matches the arg's name, then this sets the param to that
+          // arg and short circuits with true. note `==` with comparing the names and `=` with setting
+          // the actual exprs. note the usage of `bool::then` with `find_map` and `is_none`.
+          let failed_to_set_arg = params
+            .iter_mut()
+            .find_map(|(param_name, param)| (*param_name == arg_name).then(|| *param = arg))
+            .is_none();
+          if failed_to_set_arg {
+            return mk_error(error::Kind::NoSuchArgument);
+          }
+        }
+        exec_local(&func_env, &params, ars, body)
       }
-      exec_local(&func_env, &params, ars, body)
-    }
+      Val::Rec { .. } | Val::Prim(_) => mk_error(error::Kind::IncompatibleTypes),
+    },
     ExprData::Id(id) => match env.get(*id) {
       Subst::Val(v) => Ok(v.clone()),
       Subst::Expr(env, expr) => get(env, ars, *expr),
