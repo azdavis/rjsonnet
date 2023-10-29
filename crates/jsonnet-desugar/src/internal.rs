@@ -11,79 +11,79 @@ pub(crate) fn get_root(st: &mut St, r: ast::Root) -> Expr {
 
 /// - TODO only allow super/$/tailstrict sometimes?
 /// - TODO actually lower strings, numbers
-fn get_expr(st: &mut St, e: Option<ast::Expr>, in_obj: bool) -> Expr {
-  let e = e?;
-  let ptr = ast::SyntaxNodePtr::new(e.syntax());
-  let data = match e {
+fn get_expr(st: &mut St, expr: Option<ast::Expr>, in_obj: bool) -> Expr {
+  let expr = expr?;
+  let ptr = ast::SyntaxNodePtr::new(expr.syntax());
+  let data = match expr {
     ast::Expr::ExprNull(_) => ExprData::Prim(Prim::Null),
     ast::Expr::ExprTrue(_) => ExprData::Prim(Prim::Bool(true)),
     ast::Expr::ExprFalse(_) => ExprData::Prim(Prim::Bool(false)),
     ast::Expr::ExprSelf(_) => ExprData::Id(Id::SELF),
     ast::Expr::ExprSuper(_) => ExprData::Id(Id::SUPER),
     ast::Expr::ExprDollar(_) => ExprData::Id(Id::DOLLAR),
-    ast::Expr::ExprString(e) => {
-      let tok = e.string()?;
+    ast::Expr::ExprString(expr) => {
+      let tok = expr.string()?;
       let text = tok.text().strip_prefix('"').unwrap().strip_suffix('"').unwrap();
       ExprData::Prim(Prim::String(st.str(text)))
     }
-    ast::Expr::ExprNumber(e) => {
-      let tok = e.number()?;
+    ast::Expr::ExprNumber(expr) => {
+      let tok = expr.number()?;
       let num: f64 = tok.text().parse().unwrap_or(0.0);
       let num = match Number::try_from(num) {
         Ok(x) => x,
         Err(_) => {
-          st.err(&e, error::Kind::CannotRepresentNumber);
+          st.err(&expr, error::Kind::CannotRepresentNumber);
           Number::positive_zero()
         }
       };
       ExprData::Prim(Prim::Number(num))
     }
-    ast::Expr::ExprId(e) => ExprData::Id(get_id(st, e.id()?)),
-    ast::Expr::ExprParen(e) => return get_expr(st, e.expr(), in_obj),
-    ast::Expr::ExprObject(e) => get_object(st, e, in_obj),
-    ast::Expr::ExprArray(e) => match get_comp_specs(st, e.comp_specs()) {
+    ast::Expr::ExprId(expr) => ExprData::Id(get_id(st, expr.id()?)),
+    ast::Expr::ExprParen(expr) => return get_expr(st, expr.expr(), in_obj),
+    ast::Expr::ExprObject(expr) => get_object(st, expr, in_obj),
+    ast::Expr::ExprArray(expr) => match get_comp_specs(st, expr.comp_specs()) {
       Some(_) => {
-        let mut expr_commas = e.expr_commas();
+        let mut expr_commas = expr.expr_commas();
         let Some(elem) = expr_commas.next().and_then(|x| x.expr()) else {
-          st.err(&e, error::Kind::ArrayCompNotOne);
+          st.err(&expr, error::Kind::ArrayCompNotOne);
           return None;
         };
         let elem = get_expr(st, Some(elem), in_obj);
         for elem in expr_commas {
           st.err(&elem, error::Kind::ArrayCompNotOne);
         }
-        get_array_comp(st, e.comp_specs(), elem, in_obj)
+        get_array_comp(st, expr.comp_specs(), elem, in_obj)
       }
-      None => ExprData::Array(e.expr_commas().map(|x| get_expr(st, x.expr(), in_obj)).collect()),
+      None => ExprData::Array(expr.expr_commas().map(|x| get_expr(st, x.expr(), in_obj)).collect()),
     },
-    ast::Expr::ExprFieldGet(e) => {
-      let on = get_expr(st, e.expr(), in_obj);
-      let idx = ExprData::Prim(Prim::String(st.str(e.id()?.text())));
+    ast::Expr::ExprFieldGet(expr) => {
+      let on = get_expr(st, expr.expr(), in_obj);
+      let idx = ExprData::Prim(Prim::String(st.str(expr.id()?.text())));
       let idx = Some(st.expr(ptr.clone(), idx));
       ExprData::Subscript { on, idx }
     }
-    ast::Expr::ExprSubscript(e) => {
-      let on = get_expr(st, e.on(), in_obj);
-      let is_regular_subscript = e.idx_a().is_some()
-        && e.colon_a().is_none()
-        && e.idx_b().is_none()
-        && e.colon_b().is_none()
-        && e.idx_c().is_none();
+    ast::Expr::ExprSubscript(expr) => {
+      let on = get_expr(st, expr.on(), in_obj);
+      let is_regular_subscript = expr.idx_a().is_some()
+        && expr.colon_a().is_none()
+        && expr.idx_b().is_none()
+        && expr.colon_b().is_none()
+        && expr.idx_c().is_none();
       if is_regular_subscript {
-        let idx = get_expr(st, e.idx_a(), in_obj);
+        let idx = get_expr(st, expr.idx_a(), in_obj);
         ExprData::Subscript { on, idx }
       } else {
-        let indices = [e.idx_a(), e.idx_b(), e.idx_c()];
+        let indices = [expr.idx_a(), expr.idx_b(), expr.idx_c()];
         let [idx_a, idx_b, idx_c] =
           indices.map(|idx| get_expr_or_null(st, ptr.clone(), idx, in_obj));
         call_std_func_data(st, ptr.clone(), Id::SLICE, vec![on, idx_a, idx_b, idx_c])
       }
     }
-    ast::Expr::ExprCall(e) => {
-      let func = get_expr(st, e.expr(), in_obj);
+    ast::Expr::ExprCall(expr) => {
+      let func = get_expr(st, expr.expr(), in_obj);
       let mut positional = Vec::<Expr>::new();
       let mut named = Vec::<(Id, Expr)>::new();
-      for arg in e.args() {
+      for arg in expr.args() {
         let expr = get_expr(st, arg.expr(), in_obj);
         match arg.id_eq().and_then(|x| x.id()) {
           None => positional.push(expr),
@@ -92,26 +92,26 @@ fn get_expr(st: &mut St, e: Option<ast::Expr>, in_obj: bool) -> Expr {
       }
       ExprData::Call { func, positional, named }
     }
-    ast::Expr::ExprLocal(e) => {
-      let binds: Vec<_> = e.binds().filter_map(|bind| get_bind(st, bind, in_obj)).collect();
-      let body = get_expr(st, e.expr(), in_obj);
+    ast::Expr::ExprLocal(expr) => {
+      let binds: Vec<_> = expr.binds().filter_map(|bind| get_bind(st, bind, in_obj)).collect();
+      let body = get_expr(st, expr.expr(), in_obj);
       ExprData::Local { binds, body }
     }
-    ast::Expr::ExprIf(e) => {
-      let cond = get_expr(st, e.cond(), in_obj);
-      let yes = get_expr(st, e.yes(), in_obj);
-      let no = get_expr_or_null(st, ptr.clone(), e.else_expr().and_then(|x| x.expr()), in_obj);
+    ast::Expr::ExprIf(expr) => {
+      let cond = get_expr(st, expr.cond(), in_obj);
+      let yes = get_expr(st, expr.yes(), in_obj);
+      let no = get_expr_or_null(st, ptr.clone(), expr.else_expr().and_then(|x| x.expr()), in_obj);
       ExprData::If { cond, yes, no }
     }
-    ast::Expr::ExprBinaryOp(e) => {
-      let lhs = get_expr(st, e.lhs(), in_obj);
-      let rhs = get_expr(st, e.rhs(), in_obj);
-      let op = e.binary_op()?.kind;
+    ast::Expr::ExprBinaryOp(expr) => {
+      let lhs = get_expr(st, expr.lhs(), in_obj);
+      let rhs = get_expr(st, expr.rhs(), in_obj);
+      let op = expr.binary_op()?.kind;
       get_binary_op(st, ptr.clone(), lhs, op, rhs)
     }
-    ast::Expr::ExprUnaryOp(e) => {
-      let inner = get_expr(st, e.expr(), in_obj);
-      let op = match e.unary_op()?.kind {
+    ast::Expr::ExprUnaryOp(expr) => {
+      let inner = get_expr(st, expr.expr(), in_obj);
+      let op = match expr.unary_op()?.kind {
         ast::UnaryOpKind::Minus => UnaryOp::Neg,
         ast::UnaryOpKind::Plus => UnaryOp::Pos,
         ast::UnaryOpKind::Bang => UnaryOp::LogicalNot,
@@ -119,25 +119,25 @@ fn get_expr(st: &mut St, e: Option<ast::Expr>, in_obj: bool) -> Expr {
       };
       ExprData::UnaryOp { op, inner }
     }
-    ast::Expr::ExprImplicitObjectPlus(e) => {
-      let lhs = get_expr(st, e.expr(), in_obj);
-      let rhs = e.expr_object()?;
+    ast::Expr::ExprImplicitObjectPlus(expr) => {
+      let lhs = get_expr(st, expr.expr(), in_obj);
+      let rhs = expr.expr_object()?;
       let rhs_ptr = ast::SyntaxNodePtr::new(rhs.syntax());
       let rhs = get_object(st, rhs, in_obj);
       let rhs = Some(st.expr(rhs_ptr, rhs));
       bop(BinaryOp::Add, lhs, rhs)
     }
-    ast::Expr::ExprFunction(e) => get_fn(st, e.paren_params(), e.expr(), in_obj),
-    ast::Expr::ExprAssert(e) => {
-      let yes = get_expr(st, e.expr(), in_obj);
-      get_assert(st, yes, e.assert()?, in_obj)
+    ast::Expr::ExprFunction(expr) => get_fn(st, expr.paren_params(), expr.expr(), in_obj),
+    ast::Expr::ExprAssert(expr) => {
+      let yes = get_expr(st, expr.expr(), in_obj);
+      get_assert(st, yes, expr.assert()?, in_obj)
     }
     ast::Expr::ExprImport(_) => todo!(),
-    ast::Expr::ExprError(e) => {
-      let inner = get_expr(st, e.expr(), in_obj);
+    ast::Expr::ExprError(expr) => {
+      let inner = get_expr(st, expr.expr(), in_obj);
       ExprData::Error(inner)
     }
-    ast::Expr::ExprTailstrict(e) => return get_expr(st, e.expr(), in_obj),
+    ast::Expr::ExprTailstrict(expr) => return get_expr(st, expr.expr(), in_obj),
   };
   Some(st.expr(ptr, data))
 }
@@ -145,11 +145,11 @@ fn get_expr(st: &mut St, e: Option<ast::Expr>, in_obj: bool) -> Expr {
 fn get_expr_or_null(
   st: &mut St,
   ptr: ast::SyntaxNodePtr,
-  e: Option<ast::Expr>,
+  expr: Option<ast::Expr>,
   in_obj: bool,
 ) -> Expr {
-  if e.is_some() {
-    get_expr(st, e, in_obj)
+  if expr.is_some() {
+    get_expr(st, expr, in_obj)
   } else {
     Some(st.expr(ptr, ExprData::Prim(Prim::Null)))
   }
@@ -275,7 +275,7 @@ fn get_assert(st: &mut St, yes: Expr, assert: ast::Assert, in_obj: bool) -> Expr
   let cond = get_expr(st, assert.expr(), in_obj);
   let ptr = ast::SyntaxNodePtr::new(assert.syntax());
   let msg = match assert.colon_expr() {
-    Some(e) => get_expr(st, e.expr(), in_obj),
+    Some(expr) => get_expr(st, expr.expr(), in_obj),
     None => Some(st.expr(ptr.clone(), ExprData::Prim(Prim::String(Str::ASSERTION_FAILED)))),
   };
   let no = Some(st.expr(ptr, ExprData::Error(msg)));
