@@ -86,6 +86,18 @@ impl Number {
     Self(0.0)
   }
 
+  /// Returns positive one.
+  #[must_use]
+  pub fn positive_one() -> Self {
+    Self(1.0)
+  }
+
+  /// Returns negative one.
+  #[must_use]
+  pub fn negative_one() -> Self {
+    Self(-1.0)
+  }
+
   /// Exposes the inner value of this number. It will be finite.
   #[must_use]
   pub fn value(&self) -> f64 {

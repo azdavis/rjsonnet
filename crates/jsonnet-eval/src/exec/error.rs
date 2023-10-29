@@ -17,4 +17,6 @@ pub enum Kind {
   TooManyArguments,
   Infinite(jsonnet_expr::Infinite),
   User(jsonnet_expr::Str),
+  StdFuncNamedArgs,
+  StdFuncWrongNumArgs(usize, usize),
 }

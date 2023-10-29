@@ -41,6 +41,7 @@ pub enum Subst {
 pub enum Val {
   Prim(Prim),
   Rec { env: Env, kind: RecValKind },
+  Std(Std),
 }
 
 impl Val {
@@ -67,4 +68,11 @@ pub enum RecValKind {
     body: Expr,
   },
   Array(Vec<Expr>),
+}
+
+#[derive(Debug, Clone)]
+pub enum Std {
+  Cmp,
+  /// TODO is this called "equals" or "equal"?
+  Equals,
 }

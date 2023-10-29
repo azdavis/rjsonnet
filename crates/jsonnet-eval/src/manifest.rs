@@ -63,6 +63,9 @@ pub fn get(ars: &Arenas, val: val::Val) -> Result {
         Ok(Val::Array(vs))
       }
     },
+    val::Val::Std(std_val) => match std_val {
+      val::Std::Cmp | val::Std::Equals => Err(Error::Function),
+    },
   }
 }
 

@@ -2,7 +2,7 @@
 
 pub mod error;
 
-use crate::val::{Env, RecValKind, Subst, Val};
+use crate::val::{Env, RecValKind, Std, Subst, Val};
 use jsonnet_expr::{Arenas, BinaryOp, Expr, ExprData, ExprMust, Id, Number, Prim, Str, Visibility};
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::cmp::Ordering;
@@ -115,7 +115,7 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result {
           None => mk_error(error::Kind::ArrayIdxOutOfRange),
         }
       }
-      Val::Rec { .. } | Val::Prim(_) => mk_error(error::Kind::IncompatibleTypes),
+      Val::Std(_) | Val::Rec { .. } | Val::Prim(_) => mk_error(error::Kind::IncompatibleTypes),
     },
     ExprData::Call { func, positional, named } => match get(env, ars, *func)? {
       Val::Rec { env: func_env, kind: RecValKind::Function { mut params, body } } => {
@@ -145,6 +145,33 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result {
         }
         exec_local(&func_env, &params, ars, body)
       }
+      Val::Std(std_val) => match std_val {
+        Std::Cmp => {
+          if !named.is_empty() {
+            return mk_error(error::Kind::StdFuncNamedArgs);
+          }
+          let [lhs, rhs] = positional[..] else {
+            return mk_error(error::Kind::StdFuncWrongNumArgs(2, positional.len()));
+          };
+          cmp_op(expr, env, ars, lhs, rhs, |ord| {
+            let num = match ord {
+              Ordering::Less => Number::negative_one(),
+              Ordering::Equal => Number::positive_zero(),
+              Ordering::Greater => Number::positive_one(),
+            };
+            Prim::Number(num)
+          })
+        }
+        Std::Equals => {
+          if !named.is_empty() {
+            return mk_error(error::Kind::StdFuncNamedArgs);
+          }
+          let [lhs, rhs] = positional[..] else {
+            return mk_error(error::Kind::StdFuncWrongNumArgs(2, positional.len()));
+          };
+          cmp_bool_op(expr, env, ars, lhs, rhs, Ordering::is_eq)
+        }
+      },
       Val::Rec { .. } | Val::Prim(_) => mk_error(error::Kind::IncompatibleTypes),
     },
     ExprData::Id(id) => match env.get(*id) {
@@ -190,10 +217,10 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result {
       BinaryOp::BitXor => int_op(expr, env, ars, *lhs, *rhs, std::ops::BitXor::bitxor),
       BinaryOp::BitOr => int_op(expr, env, ars, *lhs, *rhs, std::ops::BitOr::bitor),
       // comparison
-      BinaryOp::Lt => cmp_op(expr, env, ars, *lhs, *rhs, Ordering::is_lt),
-      BinaryOp::LtEq => cmp_op(expr, env, ars, *lhs, *rhs, Ordering::is_le),
-      BinaryOp::Gt => cmp_op(expr, env, ars, *lhs, *rhs, Ordering::is_gt),
-      BinaryOp::GtEq => cmp_op(expr, env, ars, *lhs, *rhs, Ordering::is_ge),
+      BinaryOp::Lt => cmp_bool_op(expr, env, ars, *lhs, *rhs, Ordering::is_lt),
+      BinaryOp::LtEq => cmp_bool_op(expr, env, ars, *lhs, *rhs, Ordering::is_le),
+      BinaryOp::Gt => cmp_bool_op(expr, env, ars, *lhs, *rhs, Ordering::is_gt),
+      BinaryOp::GtEq => cmp_bool_op(expr, env, ars, *lhs, *rhs, Ordering::is_ge),
       // logical
       BinaryOp::LogicalAnd => {
         let Val::Prim(Prim::Bool(b)) = get(env, ars, *lhs)? else {
@@ -265,12 +292,19 @@ where
 
 fn cmp_op<F>(expr: ExprMust, env: &Env, ars: &Arenas, lhs: Expr, rhs: Expr, f: F) -> Result
 where
-  F: FnOnce(Ordering) -> bool,
+  F: FnOnce(Ordering) -> Prim,
 {
   let lhs = get(env, ars, lhs)?;
   let rhs = get(env, ars, rhs)?;
   let ord = cmp_val(expr, ars, &lhs, &rhs)?;
-  Ok(Val::Prim(Prim::Bool(f(ord))))
+  Ok(Val::Prim(f(ord)))
+}
+
+fn cmp_bool_op<F>(expr: ExprMust, env: &Env, ars: &Arenas, lhs: Expr, rhs: Expr, f: F) -> Result
+where
+  F: FnOnce(Ordering) -> bool,
+{
+  cmp_op(expr, env, ars, lhs, rhs, |x| Prim::Bool(f(x)))
 }
 
 fn cmp_val(expr: ExprMust, ars: &Arenas, lhs: &Val, rhs: &Val) -> Result<Ordering> {
