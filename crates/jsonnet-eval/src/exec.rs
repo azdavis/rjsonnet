@@ -148,13 +148,13 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result {
           return mk_error(error::Kind::NoSuchArgument);
         }
       }
-      exec_local(expr, &func_env, &params, ars, body)
+      exec_local(&func_env, &params, ars, body)
     }
     ExprData::Id(id) => match env.get(*id) {
       Subst::Val(v) => Ok(v.clone()),
       Subst::Expr(env, expr) => get(env, ars, *expr),
     },
-    ExprData::Local { binds, body } => exec_local(expr, env, binds, ars, *body),
+    ExprData::Local { binds, body } => exec_local(env, binds, ars, *body),
     ExprData::If { cond, yes, no } => {
       let b = match get(env, ars, *cond)? {
         Val::Prim(Prim::Bool(x)) => x,
@@ -301,8 +301,12 @@ fn cmp_val(expr: ExprMust, ars: &Arenas, lhs: &Val, rhs: &Val) -> Result<Orderin
   }
 }
 
-fn exec_local(expr: ExprMust, _: &Env, _: &[(Id, Expr)], _: &Arenas, _: Expr) -> Result {
-  Err(error::Error { expr, kind: error::Kind::Todo("locals") })
+fn exec_local(prev_env: &Env, binds: &[(Id, Expr)], ars: &Arenas, body: Expr) -> Result {
+  let mut env = prev_env.clone();
+  for &(id, expr) in binds {
+    env.insert(id, Subst::Expr(prev_env.clone(), expr));
+  }
+  get(&env, ars, body)
 }
 
 #[allow(clippy::needless_pass_by_value)]

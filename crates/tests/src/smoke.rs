@@ -117,3 +117,13 @@ assert 2 + 2 < 5 : "math makes sense";
 "#,
   );
 }
+
+#[test]
+fn local() {
+  manifest(
+    r#"
+local x = 3;
+x + 1
+"#,
+  );
+}
