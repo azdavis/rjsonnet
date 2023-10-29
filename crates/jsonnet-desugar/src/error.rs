@@ -16,6 +16,7 @@ pub enum Kind {
   ObjectCompNotOne,
   ObjectCompFieldExtra,
   ObjectCompVisibility,
+  Escape(jsonnet_escape::Error),
 }
 
 impl fmt::Display for Error {
@@ -35,6 +36,7 @@ impl fmt::Display for Error {
         f.write_str("object comprehension field must not have `+` or parameters")
       }
       Kind::ObjectCompVisibility => f.write_str("object comprehension field must use `:`"),
+      Kind::Escape(e) => e.fmt(f),
     }
   }
 }

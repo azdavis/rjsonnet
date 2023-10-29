@@ -4,6 +4,7 @@
 #![allow(clippy::needless_pass_by_value, clippy::single_match_else, clippy::too_many_lines)]
 
 mod error;
+mod escape;
 mod internal;
 mod st;
 

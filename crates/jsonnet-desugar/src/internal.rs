@@ -1,6 +1,6 @@
 //! The internal impl.
 
-use crate::{error, st::St};
+use crate::{error, escape, st::St};
 use jsonnet_expr::{BinaryOp, Expr, ExprData, Id, Number, Prim, Str, UnaryOp, Visibility};
 use jsonnet_syntax::ast::{self, AstNode as _};
 use jsonnet_syntax::kind::SyntaxToken;
@@ -23,8 +23,8 @@ fn get_expr(st: &mut St, expr: Option<ast::Expr>, in_obj: bool) -> Expr {
     ast::Expr::ExprDollar(_) => ExprData::Id(Id::DOLLAR),
     ast::Expr::ExprString(expr) => {
       let tok = expr.string()?;
-      let text = tok.text().strip_prefix('"').unwrap().strip_suffix('"').unwrap();
-      ExprData::Prim(Prim::String(st.str(text)))
+      let string = escape::get(st, tok);
+      ExprData::Prim(Prim::String(st.str(string.as_str())))
     }
     ast::Expr::ExprNumber(expr) => {
       let tok = expr.number()?;

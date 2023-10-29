@@ -66,6 +66,7 @@ source = "git+https://github.com/azdavis/language-util.git#a9c7d21a38b249a5d6563
 name = "jsonnet-desugar"
 version = "0.1.0"
 dependencies = [
+ "jsonnet-escape",
  "jsonnet-expr",
  "jsonnet-syntax",
  "rustc-hash",
