@@ -44,9 +44,8 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result {
       Ok(Val::Rec { env: env.clone(), kind })
     }
     ExprData::ObjectComp { name, body, id, ary } => {
-      let (elem_env, elems) = match get(env, ars, *ary)? {
-        Val::Rec { env, kind: RecValKind::Array(xs) } => (env, xs),
-        Val::Prim(_) | Val::Rec { .. } => return mk_error(error::Kind::IncompatibleTypes),
+      let Val::Rec { env: elem_env, kind: RecValKind::Array(elems) } = get(env, ars, *ary)? else {
+        return mk_error(error::Kind::IncompatibleTypes);
       };
       let mut fields = FxHashMap::<Str, (Visibility, Expr)>::default();
       for elem in elems {
@@ -78,9 +77,8 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result {
     }
     ExprData::Subscript { on, idx } => match get(env, ars, *on)? {
       Val::Rec { env: mut obj_env, kind: RecValKind::Object { asserts, fields } } => {
-        let name = match get(env, ars, *idx)? {
-          Val::Prim(Prim::String(x)) => x,
-          Val::Prim(_) | Val::Rec { .. } => return mk_error(error::Kind::IncompatibleTypes),
+        let Val::Prim(Prim::String(name)) = get(env, ars, *idx)? else {
+          return mk_error(error::Kind::IncompatibleTypes);
         };
         let Some(&(_, body)) = fields.get(&name) else {
           return mk_error(error::Kind::NoSuchFieldName);
@@ -95,10 +93,10 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result {
         get(&obj_env, ars, body)
       }
       Val::Rec { env: ary_env, kind: RecValKind::Array(elems) } => {
-        let idx = match get(env, ars, *idx)? {
-          Val::Prim(Prim::Number(x)) => x.value(),
-          Val::Prim(_) | Val::Rec { .. } => return mk_error(error::Kind::IncompatibleTypes),
+        let Val::Prim(Prim::Number(idx)) = get(env, ars, *idx)? else {
+          return mk_error(error::Kind::IncompatibleTypes);
         };
+        let idx = idx.value();
         let idx_floor = idx.floor();
         let diff = idx - idx_floor;
         if diff.abs() > EPSILON {
