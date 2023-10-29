@@ -37,7 +37,7 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result {
             }
           }
           Val::Prim(Prim::Null) => {}
-          Val::Prim(_) | Val::Rec { .. } => return mk_error(error::Kind::IncompatibleTypes),
+          _ => return mk_error(error::Kind::IncompatibleTypes),
         }
       }
       let kind = RecValKind::Object { asserts: asserts.clone(), fields: named_fields };
@@ -65,7 +65,7 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result {
             }
           }
           Val::Prim(Prim::Null) => {}
-          Val::Prim(_) | Val::Rec { .. } => return mk_error(error::Kind::IncompatibleTypes),
+          _ => return mk_error(error::Kind::IncompatibleTypes),
         }
       }
       let kind = RecValKind::Object { asserts: Vec::new(), fields };
