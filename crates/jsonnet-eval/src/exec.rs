@@ -155,9 +155,8 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result {
     },
     ExprData::Local { binds, body } => exec_local(env, binds, ars, *body),
     ExprData::If { cond, yes, no } => {
-      let b = match get(env, ars, *cond)? {
-        Val::Prim(Prim::Bool(x)) => x,
-        Val::Prim(_) | Val::Rec { .. } => return mk_error(error::Kind::IncompatibleTypes),
+      let Val::Prim(Prim::Bool(b)) = get(env, ars, *cond)? else {
+        return mk_error(error::Kind::IncompatibleTypes);
       };
       let &expr = if b { yes } else { no };
       get(env, ars, expr)
@@ -198,16 +197,26 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result {
       BinaryOp::Gt => cmp_op(expr, env, ars, *lhs, *rhs, Ordering::is_gt),
       BinaryOp::GtEq => cmp_op(expr, env, ars, *lhs, *rhs, Ordering::is_ge),
       // logical
-      BinaryOp::LogicalAnd => match get(env, ars, *lhs)? {
-        Val::Prim(Prim::Bool(true)) => get(env, ars, *rhs),
-        Val::Prim(Prim::Bool(false)) => Ok(Val::Prim(Prim::Bool(false))),
-        Val::Prim(_) | Val::Rec { .. } => mk_error(error::Kind::IncompatibleTypes),
-      },
-      BinaryOp::LogicalOr => match get(env, ars, *lhs)? {
-        Val::Prim(Prim::Bool(true)) => Ok(Val::Prim(Prim::Bool(true))),
-        Val::Prim(Prim::Bool(false)) => get(env, ars, *rhs),
-        Val::Prim(_) | Val::Rec { .. } => mk_error(error::Kind::IncompatibleTypes),
-      },
+      BinaryOp::LogicalAnd => {
+        let Val::Prim(Prim::Bool(b)) = get(env, ars, *lhs)? else {
+          return mk_error(error::Kind::IncompatibleTypes);
+        };
+        if b {
+          get(env, ars, *rhs)
+        } else {
+          Ok(Val::Prim(Prim::Bool(false)))
+        }
+      }
+      BinaryOp::LogicalOr => {
+        let Val::Prim(Prim::Bool(b)) = get(env, ars, *lhs)? else {
+          return mk_error(error::Kind::IncompatibleTypes);
+        };
+        if b {
+          Ok(Val::Prim(Prim::Bool(true)))
+        } else {
+          get(env, ars, *rhs)
+        }
+      }
     },
     ExprData::UnaryOp { .. } => mk_error(error::Kind::Todo("unary ops")),
     ExprData::Function { params, body } => {
