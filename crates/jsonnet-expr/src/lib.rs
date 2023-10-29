@@ -18,18 +18,68 @@ pub type ExprArena = Arena<ExprData>;
 #[derive(Debug)]
 pub enum ExprData {
   Prim(Prim),
-  Object { asserts: Vec<Expr>, fields: Vec<(Expr, Visibility, Expr)> },
-  ObjectComp { name: Expr, body: Expr, id: Id, ary: Expr },
+  Object {
+    asserts: Vec<Expr>,
+    fields: Vec<(Expr, Visibility, Expr)>,
+  },
+  ObjectComp {
+    name: Expr,
+    body: Expr,
+    id: Id,
+    ary: Expr,
+  },
   Array(Vec<Expr>),
-  Subscript { on: Expr, idx: Expr },
-  Call { func: Expr, positional: Vec<Expr>, named: Vec<(Id, Expr)> },
+  Subscript {
+    on: Expr,
+    idx: Expr,
+  },
+  Call {
+    func: Expr,
+    positional: Vec<Expr>,
+    named: Vec<(Id, Expr)>,
+  },
   Id(Id),
-  Local { binds: Vec<(Id, Expr)>, body: Expr },
-  If { cond: Expr, yes: Expr, no: Expr },
-  BinaryOp { lhs: Expr, op: BinaryOp, rhs: Expr },
-  UnaryOp { op: UnaryOp, inner: Expr },
-  Function { params: Vec<(Id, Expr)>, body: Expr },
+  Local {
+    binds: Vec<(Id, Expr)>,
+    body: Expr,
+  },
+  If {
+    cond: Expr,
+    yes: Expr,
+    no: Expr,
+  },
+  BinaryOp {
+    lhs: Expr,
+    op: BinaryOp,
+    rhs: Expr,
+  },
+  UnaryOp {
+    op: UnaryOp,
+    inner: Expr,
+  },
+  Function {
+    params: Vec<(Id, Expr)>,
+    body: Expr,
+  },
   Error(Expr),
+  /// contrary to the spec, we do not desugar away imports here. this is because we'd rather not
+  /// repeatedly substitute the de-sugared but un-executed jsonnet file contents for every one of
+  /// its imports.
+  ///
+  /// because jsonnet imports are referentially transparent, we can instead evaluate the imported
+  /// file to a jsonnet value and cache that instead of the whole expression.
+  Import {
+    kind: ImportKind,
+    /// TODO make this a Path/PathBuf/PathId/Str?
+    path: String,
+  },
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum ImportKind {
+  Code,
+  String,
+  Binary,
 }
 
 #[derive(Debug, Clone, Copy)]

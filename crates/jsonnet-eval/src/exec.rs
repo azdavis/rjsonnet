@@ -252,6 +252,7 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result {
       let val = get(env, ars, *inner)?;
       mk_error(error::Kind::User(str_conv(val)))
     }
+    ExprData::Import { .. } => todo!(),
   }
 }
 

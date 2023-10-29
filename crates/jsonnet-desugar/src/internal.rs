@@ -1,7 +1,9 @@
 //! The internal impl.
 
 use crate::{error, escape, st::St};
-use jsonnet_expr::{BinaryOp, Expr, ExprData, Id, Number, Prim, Str, UnaryOp, Visibility};
+use jsonnet_expr::{
+  BinaryOp, Expr, ExprData, Id, ImportKind, Number, Prim, Str, UnaryOp, Visibility,
+};
 use jsonnet_syntax::ast::{self, AstNode as _};
 use jsonnet_syntax::kind::SyntaxToken;
 
@@ -132,7 +134,16 @@ fn get_expr(st: &mut St, expr: Option<ast::Expr>, in_obj: bool) -> Expr {
       let yes = get_expr(st, expr.expr(), in_obj);
       get_assert(st, yes, expr.assert()?, in_obj)
     }
-    ast::Expr::ExprImport(_) => todo!(),
+    ast::Expr::ExprImport(expr) => {
+      let kind = match expr.import()?.kind {
+        ast::ImportKind::ImportKw => ImportKind::Code,
+        ast::ImportKind::ImportstrKw => ImportKind::String,
+        ast::ImportKind::ImportbinKw => ImportKind::Binary,
+      };
+      let tok = expr.string()?;
+      let path = escape::get(st, tok);
+      ExprData::Import { kind, path }
+    }
     ast::Expr::ExprError(expr) => {
       let inner = get_expr(st, expr.expr(), in_obj);
       ExprData::Error(inner)
