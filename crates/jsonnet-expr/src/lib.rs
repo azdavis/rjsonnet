@@ -155,6 +155,7 @@ impl Number {
   }
 }
 
+/// OK because NaN is not allowed
 impl Eq for Number {}
 
 impl PartialOrd for Number {
