@@ -61,10 +61,6 @@ where
       b'u' => {
         for _ in 0..4 {
           let Some(b) = st.next() else { break };
-          if !b.is_ascii_hexdigit() {
-            st.err(Error::NotHexDigit);
-            continue;
-          }
           let minus = if b.is_ascii_digit() {
             b'0'
           } else if b.is_ascii_lowercase() {
@@ -72,7 +68,8 @@ where
           } else if b.is_ascii_uppercase() {
             b'A'
           } else {
-            unreachable!("hex digit should be digit, lowercase, or uppercase")
+            st.err(Error::NotHexDigit);
+            continue;
           };
           st.output(b - minus);
         }
