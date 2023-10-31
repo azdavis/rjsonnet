@@ -125,14 +125,14 @@ fn if_else() {
 }
 
 #[test]
-fn if_no_else_yes() {
+fn if_without_else_yes() {
   let want = Val::Prim(Prim::Number(Number::try_from(3.0).unwrap()));
   let got = manifest("if 1 < 2 then 3");
   assert_eq!(want, got);
 }
 
 #[test]
-fn if_no_else_no() {
+fn if_without_else_no() {
   let want = Val::Prim(Prim::Null);
   let got = manifest("if 1 > 2 then 3");
   assert_eq!(want, got);
