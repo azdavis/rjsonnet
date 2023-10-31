@@ -24,9 +24,19 @@ impl St {
   }
 }
 
-#[derive(Debug, Default, Clone)]
+/// The context. Stores the identifiers currently in scope.
+#[derive(Debug, Clone)]
 pub struct Cx {
   store: FxHashSet<Id>,
+}
+
+impl Default for Cx {
+  fn default() -> Self {
+    let mut ret = Self { store: FxHashSet::default() };
+    ret.insert(Id::STD);
+    ret.insert(Id::STD_UNUTTERABLE);
+    ret
+  }
 }
 
 impl Cx {
