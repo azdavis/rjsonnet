@@ -117,7 +117,7 @@ pub enum UnaryOp {
 }
 
 /// A primitive value.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Prim {
   Null,
   Bool(bool),

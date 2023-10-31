@@ -8,7 +8,7 @@ use jsonnet_expr::{Arenas, Prim, Str};
 use rustc_hash::FxHashMap;
 
 /// A JSON value.
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum Val {
   Prim(Prim),
   Object(FxHashMap<Str, Val>),
