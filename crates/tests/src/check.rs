@@ -24,6 +24,7 @@ pub(crate) fn exec(s: &str) -> (jsonnet_desugar::Desugar, jsonnet_eval::val::Val
   (desugar, val.expect("exec error"))
 }
 
+/// TODO have this take the wanted val and assert equal to gotten val?
 pub(crate) fn manifest(s: &str) -> jsonnet_eval::manifest::Val {
   let (desugar, val) = exec(s);
   let val = jsonnet_eval::manifest::get(&desugar.arenas, val);

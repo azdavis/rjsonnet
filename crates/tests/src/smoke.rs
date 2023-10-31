@@ -1,61 +1,85 @@
 use crate::check::{exec, manifest};
+use jsonnet_eval::manifest::Val;
+use jsonnet_expr::{Number, Prim};
+use std::collections::HashMap;
 
 #[test]
 fn int() {
-  manifest("3");
+  let want = Val::Prim(Prim::Number(Number::try_from(3.0).unwrap()));
+  let got = manifest("3");
+  assert_eq!(want, got);
 }
 
 #[test]
 fn float() {
-  manifest("3.4");
+  let want = Val::Prim(Prim::Number(Number::try_from(3.4).unwrap()));
+  let got = manifest("3.4");
+  assert_eq!(want, got);
 }
 
+/// TODO figure out how to assert eq for this test?
 #[test]
 fn str_double() {
-  manifest(
+  let got = manifest(
     r#"
 "hi"
 "#,
   );
+  assert!(matches!(got, Val::Prim(Prim::String(_))));
 }
 
 #[test]
 fn bool_true() {
-  manifest("true");
+  let want = Val::Prim(Prim::Bool(true));
+  let got = manifest("true");
+  assert_eq!(want, got);
 }
 
 #[test]
 fn bool_false() {
-  manifest("false");
+  let want = Val::Prim(Prim::Bool(false));
+  let got = manifest("false");
+  assert_eq!(want, got);
 }
 
 #[test]
 fn null() {
-  manifest("null");
+  let want = Val::Prim(Prim::Null);
+  let got = manifest("null");
+  assert_eq!(want, got);
 }
 
 #[test]
 fn array_empty() {
-  manifest("[]");
+  let want = Val::Array(Vec::new());
+  let got = manifest("[]");
+  assert_eq!(want, got);
 }
 
 #[test]
 fn array_non_empty() {
-  manifest(
+  let got = manifest(
     r#"
 [1, true, "foo"]
 "#,
   );
+  let Val::Array(vs) = &got else { panic!("not an array") };
+  let [fst, snd, thd] = &vs[..] else { panic!("not length 3") };
+  assert_eq!(Val::Prim(Prim::Number(Number::positive_one())), *fst);
+  assert_eq!(Val::Prim(Prim::Bool(true)), *snd);
+  assert!(matches!(*thd, Val::Prim(Prim::String(_))));
 }
 
 #[test]
 fn object_empty() {
-  manifest("{}");
+  let want = Val::Object(HashMap::default());
+  let got = manifest("{}");
+  assert_eq!(want, got);
 }
 
 #[test]
 fn object_non_empty() {
-  manifest(
+  let got = manifest(
     r#"
 {
   num: 1,
@@ -65,6 +89,7 @@ fn object_non_empty() {
 }
 "#,
   );
+  assert!(matches!(got, Val::Object(_)));
 }
 
 #[test]
@@ -79,7 +104,11 @@ fn object_implicit_plus() {
 
 #[test]
 fn function() {
-  exec("function(x) x + 1");
+  let (_, got) = exec("function(x) x + 1");
+  assert!(matches!(
+    got,
+    jsonnet_eval::val::Val::Rec { env: _, kind: jsonnet_eval::val::RecValKind::Function { .. } }
+  ));
 }
 
 #[test]
@@ -90,18 +119,29 @@ fn parse_fail() {
 
 #[test]
 fn if_else() {
-  manifest("if 1 < 2 then 3 else 4");
+  let want = Val::Prim(Prim::Number(Number::try_from(3.0).unwrap()));
+  let got = manifest("if 1 < 2 then 3 else 4");
+  assert_eq!(want, got);
 }
 
 #[test]
-fn if_no_else() {
-  manifest("if 1 < 2 then 3");
+fn if_no_else_yes() {
+  let want = Val::Prim(Prim::Number(Number::try_from(3.0).unwrap()));
+  let got = manifest("if 1 < 2 then 3");
+  assert_eq!(want, got);
+}
+
+#[test]
+fn if_no_else_no() {
+  let want = Val::Prim(Prim::Null);
+  let got = manifest("if 1 > 2 then 3");
+  assert_eq!(want, got);
 }
 
 #[test]
 #[should_panic = "kind: User"]
 fn error() {
-  manifest(
+  exec(
     r#"
 error "oh no!"
 "#,
@@ -110,20 +150,24 @@ error "oh no!"
 
 #[test]
 fn assert() {
-  manifest(
+  let want = Val::Prim(Prim::Number(Number::positive_zero()));
+  let got = manifest(
     r#"
 assert 2 + 2 < 5 : "math makes sense";
 0
 "#,
   );
+  assert_eq!(want, got);
 }
 
 #[test]
 fn local() {
-  manifest(
+  let want = Val::Prim(Prim::Number(Number::try_from(4.0).unwrap()));
+  let got = manifest(
     r#"
 local x = 3;
 x + 1
 "#,
   );
+  assert_eq!(want, got);
 }
