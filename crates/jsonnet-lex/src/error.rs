@@ -13,6 +13,7 @@ pub enum Kind {
   LeadingZero,
   InvalidBytes,
   NeedDigits,
+  InvalidVerbatimDelim,
 }
 
 impl fmt::Display for Error {
@@ -23,6 +24,7 @@ impl fmt::Display for Error {
       Kind::LeadingZero => f.write_str("leading `0` before other digits"),
       Kind::InvalidBytes => f.write_str("invalid bytes"),
       Kind::NeedDigits => f.write_str("need at least one digit"),
+      Kind::InvalidVerbatimDelim => f.write_str("invalid verbatim string delimiter"),
     }
   }
 }

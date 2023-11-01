@@ -81,6 +81,23 @@ pub(crate) fn token(st: &mut St<'_>, b: u8) -> SK {
     jsonnet_escape::get(st, b'\'');
     return SK::SingleQuotedString;
   }
+  if b == b'@' {
+    st.bump();
+    let Some(b) = st.cur() else {
+      st.err(error::Kind::InvalidVerbatimDelim);
+      return SK::Invalid;
+    };
+    let ret = match b {
+      b'"' => SK::DoubleQuotedVerbatimString,
+      b'\'' => SK::SingleQuotedVerbatimString,
+      _ => {
+        st.err(error::Kind::InvalidVerbatimDelim);
+        return SK::Invalid;
+      }
+    };
+    st.bump();
+    todo!("verbatim str: {ret}");
+  }
   // TODO handle more strings
   st.err(error::Kind::InvalidBytes);
   st.next_str();
