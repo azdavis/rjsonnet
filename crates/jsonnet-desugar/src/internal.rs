@@ -24,8 +24,8 @@ fn get_expr(st: &mut St, expr: Option<ast::Expr>, in_obj: bool) -> Expr {
     ast::Expr::ExprSuper(_) => ExprData::Id(Id::SUPER),
     ast::Expr::ExprDollar(_) => ExprData::Id(Id::DOLLAR),
     ast::Expr::ExprString(expr) => {
-      let tok = expr.string()?;
-      let string = escape::get(st, tok);
+      let string = expr.string()?;
+      let string = escape::get(st, &string);
       ExprData::Prim(Prim::String(st.str(string.as_str())))
     }
     ast::Expr::ExprNumber(expr) => {
@@ -140,8 +140,8 @@ fn get_expr(st: &mut St, expr: Option<ast::Expr>, in_obj: bool) -> Expr {
         ast::ImportKind::ImportstrKw => ImportKind::String,
         ast::ImportKind::ImportbinKw => ImportKind::Binary,
       };
-      let tok = expr.string()?;
-      let path = escape::get(st, tok);
+      let string = expr.string()?;
+      let path = escape::get(st, &string);
       ExprData::Import { kind, path }
     }
     ast::Expr::ExprError(expr) => {
@@ -326,7 +326,8 @@ fn get_object(st: &mut St, inside: ast::ExprObject, in_obj: bool) -> ExprData {
               },
               Some(ast::FieldName::FieldNameString(name)) => match name.string() {
                 Some(string) => {
-                  let expr = ExprData::Prim(Prim::String(st.str(string.text())));
+                  let string = escape::get(st, &string);
+                  let expr = ExprData::Prim(Prim::String(st.str(string.as_str())));
                   let ptr = ast::SyntaxNodePtr::new(name.syntax());
                   Some(st.expr(ptr, expr))
                 }

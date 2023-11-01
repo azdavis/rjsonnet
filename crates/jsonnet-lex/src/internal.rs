@@ -74,7 +74,7 @@ pub(crate) fn token(st: &mut St<'_>, b: u8) -> SK {
   if b == b'"' {
     st.bump();
     jsonnet_escape::get(st, b'"');
-    return SK::String;
+    return SK::DoubleQuotedString;
   }
   // TODO handle more strings
   st.err(error::Kind::InvalidBytes);

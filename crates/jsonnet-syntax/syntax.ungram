@@ -34,7 +34,7 @@ ExprSelf = 'self'
 // `super` is only allowed to occur with a field access
 ExprSuper = 'super'
 ExprDollar = '$'
-ExprString = 'String'
+ExprString = String
 ExprNumber = 'Number'
 ExprId = 'Id'
 ExprParen = '(' Expr ')'
@@ -51,7 +51,7 @@ ExprUnaryOp = UnaryOp Expr
 ExprImplicitObjectPlus = Expr ExprObject
 ExprFunction = 'function' ParenParams Expr
 ExprAssert = Assert ';' Expr
-ExprImport = Import 'String'
+ExprImport = Import String
 ExprError = 'error' Expr
 // only allowed in std
 ExprTailstrict = Expr 'tailstrict'
@@ -79,7 +79,7 @@ IfSpec = 'if' Expr
 
 FieldName = FieldNameId | FieldNameString | FieldNameExpr
 FieldNameId = 'Id'
-FieldNameString = 'String'
+FieldNameString = String
 FieldNameExpr = '[' Expr ']'
 
 Assert = 'assert' Expr ColonExpr?
@@ -104,3 +104,9 @@ ExprComma = Expr ','?
 ColonExpr = ':' Expr
 ElseExpr = 'else' Expr
 Import = 'import' | 'importstr' | 'importbin'
+String =
+  'DoubleQuotedString'
+| 'SingleQuotedString'
+| 'DoubleQuotedVerbatimString'
+| 'SingleQuotedVerbatimString'
+| 'TextBlock'

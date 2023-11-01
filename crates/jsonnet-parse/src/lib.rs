@@ -48,6 +48,7 @@ pub enum Expected {
   Expr,
   Kind(SK),
   Visibility,
+  String,
 }
 
 impl event_parse::Expected<SK> for ErrorKind {

@@ -59,10 +59,6 @@ fn expr_prec(p: &mut Parser<'_>, min_prec: Prec) -> Option<Exited> {
       p.bump();
       SK::ExprDollar
     }
-    SK::String => {
-      p.bump();
-      SK::ExprString
-    }
     SK::Number => {
       p.bump();
       SK::ExprNumber
@@ -90,7 +86,11 @@ fn expr_prec(p: &mut Parser<'_>, min_prec: Prec) -> Option<Exited> {
     }
     SK::ImportKw | SK::ImportbinKw | SK::ImportstrKw => {
       p.bump();
-      p.eat(SK::String);
+      if string(p) {
+        p.bump();
+      } else {
+        p.error(ErrorKind::Expected(Expected::String));
+      }
       SK::ExprImport
     }
     // these expressions are not atomic, but they do begin with some single identifying token that
@@ -147,8 +147,13 @@ fn expr_prec(p: &mut Parser<'_>, min_prec: Prec) -> Option<Exited> {
       SK::ExprUnaryOp
     }
     _ => {
-      p.abandon(en);
-      return None;
+      if string(p) {
+        p.bump();
+        SK::ExprString
+      } else {
+        p.abandon(en);
+        return None;
+      }
     }
   };
   // pratt parser for operator precedence
@@ -210,6 +215,19 @@ fn expr_prec(p: &mut Parser<'_>, min_prec: Prec) -> Option<Exited> {
     };
   }
   Some(ex)
+}
+
+fn string(p: &mut Parser<'_>) -> bool {
+  p.peek().is_some_and(|tok| {
+    matches!(
+      tok.kind,
+      SK::DoubleQuotedString
+        | SK::SingleQuotedString
+        | SK::DoubleQuotedVerbatimString
+        | SK::SingleQuotedVerbatimString
+        | SK::TextBlock
+    )
+  })
 }
 
 fn expr_object(p: &mut Parser<'_>) {
@@ -363,10 +381,6 @@ fn field_name(p: &mut Parser<'_>) -> Option<Exited> {
       p.bump();
       SK::FieldNameId
     }
-    SK::String => {
-      p.bump();
-      SK::FieldNameString
-    }
     SK::LSquare => {
       p.bump();
       expr_must(p);
@@ -374,8 +388,13 @@ fn field_name(p: &mut Parser<'_>) -> Option<Exited> {
       SK::FieldNameExpr
     }
     _ => {
-      p.abandon(en);
-      return None;
+      if string(p) {
+        p.bump();
+        SK::FieldNameString
+      } else {
+        p.abandon(en);
+        return None;
+      }
     }
   };
   Some(p.exit(en, kind))

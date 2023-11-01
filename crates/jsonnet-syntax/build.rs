@@ -9,7 +9,11 @@ fn main() {
   let special = FxHashMap::from_iter([
     ("Id", "an identifier"),
     ("Number", "a number"),
-    ("String", "a string"),
+    ("DoubleQuotedString", "a double-quoted string"),
+    ("SingleQuotedString", "a single-quoted string"),
+    ("DoubleQuotedVerbatimString", "a double-quoted verbatim string"),
+    ("SingleQuotedVerbatimString", "a single-quoted verbatim string"),
+    ("TextBlock", "a text block"),
   ]);
   syntax_gen::gen("Jsonnet", &trivia, grammar, &doc, &special)
 }
