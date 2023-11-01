@@ -53,7 +53,7 @@ fn main() {
   });
   let str_arena_inserts = preset.iter().map(|&(name, contents, _)| {
     let name = format_ident!("{name}");
-    quote! { assert_eq!(Str::#name, ret.insert(#contents.to_owned().into_boxed_str())); }
+    quote! { assert_eq!(Str::#name, ret.insert(bs(#contents))); }
   });
   let preset_len = preset.len();
   let file = file!();
@@ -69,6 +69,10 @@ fn main() {
 
     impl Id {
       #(#id_constants)*
+    }
+
+    fn bs(s: &str) -> Box<str> {
+      s.to_owned().into_boxed_str()
     }
 
     impl Default for StrArena {
