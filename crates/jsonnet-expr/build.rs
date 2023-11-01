@@ -56,7 +56,10 @@ fn main() {
     quote! { assert_eq!(Str::#name, ret.insert(#contents.to_owned().into_boxed_str())); }
   });
   let preset_len = preset.len();
+  let file = file!();
   let contents = quote! {
+    pub const _GENERATED_BY: &str = #file;
+
     use crate::{Id, Str, StrArena};
     use rustc_hash::FxHashMap;
 
