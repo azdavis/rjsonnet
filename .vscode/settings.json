@@ -17,6 +17,7 @@
     "prettyplease",
     "rustc",
     "tailstrict",
+    "ungram",
     "unparse"
   ]
 }
