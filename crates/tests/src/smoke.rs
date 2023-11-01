@@ -29,6 +29,16 @@ fn str_double() {
 }
 
 #[test]
+fn str_single() {
+  let got = manifest(
+    r#"
+'hi'
+"#,
+  );
+  assert!(matches!(got, Val::Prim(Prim::String(_))));
+}
+
+#[test]
 fn bool_true() {
   let want = Val::Prim(Prim::Bool(true));
   let got = manifest("true");

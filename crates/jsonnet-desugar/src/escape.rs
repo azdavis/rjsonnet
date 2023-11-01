@@ -27,14 +27,18 @@ impl<'str, 'st> jsonnet_escape::State for EscapeSt<'str, 'st> {
 }
 
 pub(crate) fn get(st: &mut St, string: &ast::String) -> String {
-  assert!(matches!(string.kind, ast::StringKind::DoubleQuotedString));
-  let text = string.token.text().strip_prefix('"').unwrap();
+  let delim = match string.kind {
+    ast::StringKind::DoubleQuotedString => b'"',
+    ast::StringKind::SingleQuotedString => b'\'',
+    _ => todo!(),
+  };
+  let text = string.token.text().strip_prefix(char::from(delim)).expect("couldn't strip prefix");
   let mut escape_st = EscapeSt {
     bytes: text.bytes(),
     st,
     token: string.token.clone(),
     out: Vec::with_capacity(text.len()),
   };
-  jsonnet_escape::get(&mut escape_st, b'"');
+  jsonnet_escape::get(&mut escape_st, delim);
   String::from_utf8(escape_st.out).expect("invalid utf-8 in str")
 }
