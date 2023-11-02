@@ -35,7 +35,7 @@ pub trait State: Iterator<Item = u8> {
   fn output(&mut self, b: u8);
 }
 
-pub fn get<S>(st: &mut S, terminator: u8)
+pub fn slash<S>(st: &mut S, terminator: u8)
 where
   S: State,
 {

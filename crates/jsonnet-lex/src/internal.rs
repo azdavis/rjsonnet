@@ -73,12 +73,12 @@ pub(crate) fn token(st: &mut St<'_>, b: u8) -> SK {
   }
   if b == b'"' {
     st.bump();
-    jsonnet_escape::get(st, b'"');
+    jsonnet_escape::slash(st, b'"');
     return SK::DoubleQuotedString;
   }
   if b == b'\'' {
     st.bump();
-    jsonnet_escape::get(st, b'\'');
+    jsonnet_escape::slash(st, b'\'');
     return SK::SingleQuotedString;
   }
   if b == b'@' {

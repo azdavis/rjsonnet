@@ -1,5 +1,5 @@
 use crate::{error, st::St};
-use jsonnet_syntax::ast;
+use jsonnet_syntax::{ast, kind::SyntaxToken};
 
 struct EscapeSt<'str, 'st> {
   bytes: std::str::Bytes<'str>,
@@ -26,19 +26,23 @@ impl<'str, 'st> jsonnet_escape::State for EscapeSt<'str, 'st> {
   }
 }
 
-pub(crate) fn get(st: &mut St, string: &ast::String) -> String {
-  let delim = match string.kind {
-    ast::StringKind::DoubleQuotedString => b'"',
-    ast::StringKind::SingleQuotedString => b'\'',
+pub(crate) fn get(st: &mut St, string: ast::String) -> String {
+  match string.kind {
+    ast::StringKind::DoubleQuotedString => slash(st, string.token, b'"'),
+    ast::StringKind::SingleQuotedString => slash(st, string.token, b'\''),
     _ => todo!(),
-  };
-  let text = string.token.text().strip_prefix(char::from(delim)).expect("couldn't strip prefix");
+  }
+}
+
+fn slash(st: &mut St, token: SyntaxToken, delim: u8) -> String {
+  let text = token.text();
   let mut escape_st = EscapeSt {
     bytes: text.bytes(),
     st,
-    token: string.token.clone(),
-    out: Vec::with_capacity(text.len()),
+    token: token.clone(),
+    out: Vec::with_capacity(text.len() - 2),
   };
-  jsonnet_escape::get(&mut escape_st, delim);
+  assert_eq!(escape_st.next().unwrap(), delim);
+  jsonnet_escape::slash(&mut escape_st, delim);
   String::from_utf8(escape_st.out).expect("invalid utf-8 in str")
 }
