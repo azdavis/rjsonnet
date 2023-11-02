@@ -15,4 +15,5 @@ token.workspace = true
 
 [build-dependencies]
 code-h2-md-map.workspace = true
+rustc-hash.workspace = true
 syntax-gen.workspace = true

@@ -1,10 +1,10 @@
 use crate::check::{manifest, manifest_raw};
 use jsonnet_eval::manifest::Val;
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 
 #[test]
 fn empty() {
-  manifest("{}", Val::Object(HashMap::default()));
+  manifest("{}", Val::Object(FxHashMap::default()));
 }
 
 #[test]

@@ -1,17 +1,17 @@
 #![deny(clippy::pedantic, missing_debug_implementations, rust_2018_idioms)]
 
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 
 fn main() {
   let doc =
     code_h2_md_map::get(include_str!("../../docs/tokens.md"), |tok| format!("Token: `{tok}`\n"));
-  let doc: HashMap<_, _> = doc.iter().map(|(&k, v)| (k, v.as_str())).collect();
+  let doc: FxHashMap<_, _> = doc.iter().map(|(&k, v)| (k, v.as_str())).collect();
   let options = syntax_gen::Options {
     lang: "Jsonnet",
     trivia: &["Whitespace", "SlashSlashComment", "HashComment", "BlockComment", "Invalid"],
     grammar: include_str!("syntax.ungram"),
     doc: &doc,
-    special: &HashMap::from([
+    special: &FxHashMap::from_iter([
       ("Id", "an identifier"),
       ("Number", "a number"),
       ("DoubleQuotedString", "a double-quoted string"),

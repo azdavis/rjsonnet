@@ -129,6 +129,7 @@ version = "0.1.0"
 dependencies = [
  "code-h2-md-map",
  "rowan",
+ "rustc-hash",
  "syntax-gen",
  "token",
 ]
@@ -231,6 +232,7 @@ dependencies = [
  "jsonnet-lex",
  "jsonnet-parse",
  "jsonnet-statics",
+ "rustc-hash",
 ]
 
 [[package]]
