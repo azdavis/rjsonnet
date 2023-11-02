@@ -20,11 +20,26 @@ fn double() {
 
 #[test]
 fn single() {
+  check("'hi'", "hi");
+}
+
+#[test]
+fn double_escape() {
   check(
     r#"
-'hi'
+"hi\nthere\"my'friend\'buddy"
 "#,
-    "hi",
+    "hi\nthere\"my'friend'buddy",
+  );
+}
+
+#[test]
+fn single_escape() {
+  check(
+    r#"
+'hi\nthere"my\'friend\"buddy'
+"#,
+    "hi\nthere\"my'friend\"buddy",
   );
 }
 
@@ -45,6 +60,16 @@ fn single_verbatim() {
 @'hi'
 "#,
     "hi",
+  );
+}
+
+#[test]
+fn double_verbatim_escape() {
+  check(
+    r#"
+@"hi "" '' \\ \n there"
+"#,
+    r#"hi " '' \\ \n there"#,
   );
 }
 
