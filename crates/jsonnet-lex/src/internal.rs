@@ -96,7 +96,8 @@ pub(crate) fn token(st: &mut St<'_>, b: u8) -> SK {
       }
     };
     st.bump();
-    todo!("verbatim str: {ret}");
+    jsonnet_escape::verbatim(st, b);
+    return ret;
   }
   // TODO handle more strings
   st.err(error::Kind::InvalidBytes);

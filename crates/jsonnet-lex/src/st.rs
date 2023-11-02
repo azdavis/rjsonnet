@@ -99,6 +99,10 @@ impl<'a> Iterator for St<'a> {
 }
 
 impl<'a> jsonnet_escape::State for St<'a> {
+  fn peek(&mut self) -> Option<u8> {
+    self.cur()
+  }
+
   fn err(&mut self, e: jsonnet_escape::Error) {
     self.err(error::Kind::Escape(e));
   }

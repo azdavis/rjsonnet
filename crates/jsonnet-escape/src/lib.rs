@@ -29,6 +29,8 @@ impl fmt::Display for Error {
 ///
 /// It is an Iterator over the escaped bytes.
 pub trait State: Iterator<Item = u8> {
+  /// Peek the next byte without advancing.
+  fn peek(&mut self) -> Option<u8>;
   /// Record an error at the current position, i.e. the most recent escaped byte the state examined.
   fn err(&mut self, e: Error);
   /// Output an interpreted byte.
@@ -76,6 +78,24 @@ where
       }
       _ => st.err(Error::InvalidEscape),
     }
+  }
+  st.err(Error::NotTerminated);
+}
+
+pub fn verbatim<S>(st: &mut S, terminator: u8)
+where
+  S: State,
+{
+  while let Some(cur) = st.next() {
+    if cur == terminator {
+      if st.peek().is_some_and(|x| x == terminator) {
+        st.next();
+        st.output(terminator);
+      } else {
+        return;
+      }
+    }
+    st.output(cur);
   }
   st.err(Error::NotTerminated);
 }
