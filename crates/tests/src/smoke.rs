@@ -1,4 +1,5 @@
 mod array;
+mod comment;
 mod keyword_lit;
 mod number;
 mod object;
