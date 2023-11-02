@@ -1,4 +1,5 @@
 use crate::{error, st::St};
+use jsonnet_escape::State;
 use jsonnet_syntax::{ast, kind::SyntaxToken};
 
 struct EscapeSt<'str, 'st> {
@@ -8,17 +9,13 @@ struct EscapeSt<'str, 'st> {
   st: &'st mut St,
 }
 
-impl<'str, 'st> Iterator for EscapeSt<'str, 'st> {
-  type Item = u8;
-
-  fn next(&mut self) -> Option<Self::Item> {
-    self.bytes.next()
-  }
-}
-
-impl<'str, 'st> jsonnet_escape::State for EscapeSt<'str, 'st> {
-  fn peek(&mut self) -> Option<u8> {
+impl<'str, 'st> State for EscapeSt<'str, 'st> {
+  fn cur(&mut self) -> Option<u8> {
     self.bytes.peek().copied()
+  }
+
+  fn bump(&mut self) {
+    self.bytes.next();
   }
 
   fn err(&mut self, e: jsonnet_escape::Error) {
@@ -48,7 +45,8 @@ fn slash(st: &mut St, token: SyntaxToken, delim: u8) -> String {
     token: token.clone(),
     out: Vec::with_capacity(text.len() - 2),
   };
-  assert_eq!(escape_st.next().unwrap(), delim);
+  assert_eq!(escape_st.cur().unwrap(), delim);
+  escape_st.bump();
   jsonnet_escape::slash(&mut escape_st, delim);
   String::from_utf8(escape_st.out).expect("invalid utf-8 in str")
 }
@@ -61,8 +59,10 @@ fn verbatim(st: &mut St, token: SyntaxToken, delim: u8) -> String {
     token: token.clone(),
     out: Vec::with_capacity(text.len() - 3),
   };
-  assert_eq!(escape_st.next().unwrap(), b'@');
-  assert_eq!(escape_st.next().unwrap(), delim);
+  assert_eq!(escape_st.cur().unwrap(), b'@');
+  escape_st.bump();
+  assert_eq!(escape_st.cur().unwrap(), delim);
+  escape_st.bump();
   jsonnet_escape::verbatim(&mut escape_st, delim);
   String::from_utf8(escape_st.out).expect("invalid utf-8 in str")
 }

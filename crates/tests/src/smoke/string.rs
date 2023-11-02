@@ -47,3 +47,9 @@ fn single_verbatim() {
     "hi",
   );
 }
+
+#[test]
+#[should_panic = "lex error: unclosed string"]
+fn unclosed() {
+  check("'", "");
+}

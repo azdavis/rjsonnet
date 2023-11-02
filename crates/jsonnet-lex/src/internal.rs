@@ -1,6 +1,7 @@
 //! The internal impl.
 
 use crate::{error, st::St};
+use jsonnet_escape::State as _;
 use jsonnet_syntax::kind::SyntaxKind as SK;
 
 pub(crate) fn token(st: &mut St<'_>, b: u8) -> SK {

@@ -26,11 +26,11 @@ impl fmt::Display for Error {
 }
 
 /// The state for turning a sequence of escaped bytes into a sequence of interpreted bytes.
-///
-/// It is an Iterator over the escaped bytes.
-pub trait State: Iterator<Item = u8> {
-  /// Peek the next byte without advancing.
-  fn peek(&mut self) -> Option<u8>;
+pub trait State {
+  /// Returns the current byte without advancing.
+  fn cur(&mut self) -> Option<u8>;
+  /// Advance to the next character.
+  fn bump(&mut self);
   /// Record an error at the current position, i.e. the most recent escaped byte the state examined.
   fn err(&mut self, e: Error);
   /// Output an interpreted byte.
@@ -41,7 +41,8 @@ pub fn slash<S>(st: &mut S, terminator: u8)
 where
   S: State,
 {
-  while let Some(cur) = st.next() {
+  while let Some(cur) = st.cur() {
+    st.bump();
     if cur == terminator {
       return;
     }
@@ -49,7 +50,8 @@ where
       st.output(cur);
       continue;
     }
-    let Some(b) = st.next() else { break };
+    let Some(b) = st.cur() else { break };
+    st.bump();
     match b {
       b'"' => st.output(b'"'),
       b'\'' => st.output(b'\''),
@@ -62,7 +64,8 @@ where
       b't' => st.output(9),
       b'u' => {
         for _ in 0..4 {
-          let Some(b) = st.next() else { break };
+          let Some(b) = st.cur() else { break };
+          st.bump();
           let minus = if b.is_ascii_digit() {
             b'0'
           } else if b.is_ascii_lowercase() {
@@ -86,11 +89,11 @@ pub fn verbatim<S>(st: &mut S, terminator: u8)
 where
   S: State,
 {
-  while let Some(cur) = st.next() {
+  while let Some(cur) = st.cur() {
+    st.bump();
     if cur == terminator {
-      if st.peek().is_some_and(|x| x == terminator) {
-        st.next();
-        st.output(terminator);
+      if st.cur().is_some_and(|x| x == terminator) {
+        st.bump();
       } else {
         return;
       }

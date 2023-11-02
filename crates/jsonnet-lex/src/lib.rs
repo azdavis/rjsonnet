@@ -6,6 +6,7 @@ mod error;
 mod internal;
 mod st;
 
+use jsonnet_escape::State as _;
 use jsonnet_syntax::kind::SyntaxKind as SK;
 use st::St;
 

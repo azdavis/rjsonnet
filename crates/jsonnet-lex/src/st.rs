@@ -2,6 +2,7 @@
 
 use crate::error::{self, Error};
 use drop_bomb::DebugDropBomb;
+use jsonnet_escape::State;
 
 #[derive(Debug, Default)]
 pub(crate) struct St<'a> {
@@ -13,14 +14,6 @@ pub(crate) struct St<'a> {
 impl<'a> St<'a> {
   pub(crate) fn new(s: &'a str) -> St<'a> {
     St { s, idx: 0, errors: Vec::new() }
-  }
-
-  pub(crate) fn bump(&mut self) {
-    self.idx += 1;
-  }
-
-  pub(crate) fn cur(&self) -> Option<u8> {
-    self.s.as_bytes().get(self.idx).copied()
   }
 
   pub(crate) fn advance_while<F>(&mut self, f: F)
@@ -88,19 +81,13 @@ pub(crate) struct Marker {
   idx: usize,
 }
 
-impl<'a> Iterator for St<'a> {
-  type Item = u8;
-
-  fn next(&mut self) -> Option<Self::Item> {
-    let ret = self.cur();
-    self.bump();
-    ret
+impl<'a> State for St<'a> {
+  fn cur(&mut self) -> Option<u8> {
+    self.s.as_bytes().get(self.idx).copied()
   }
-}
 
-impl<'a> jsonnet_escape::State for St<'a> {
-  fn peek(&mut self) -> Option<u8> {
-    self.cur()
+  fn bump(&mut self) {
+    self.idx += 1;
   }
 
   fn err(&mut self, e: jsonnet_escape::Error) {
