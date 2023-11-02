@@ -1,4 +1,12 @@
-pub(crate) fn exec(s: &str) -> (jsonnet_desugar::Desugar, jsonnet_eval::val::Val) {
+use jsonnet_desugar::Desugar;
+use jsonnet_eval::manifest;
+use jsonnet_expr::{Number, Prim};
+
+pub(crate) fn num(n: f64) -> manifest::Val {
+  manifest::Val::Prim(Prim::Number(Number::try_from(n).unwrap()))
+}
+
+pub(crate) fn exec(s: &str) -> (Desugar, jsonnet_eval::val::Val) {
   let lex = jsonnet_lex::get(s);
   if let Some(e) = lex.errors.first() {
     panic!("lex error: {e}");
@@ -25,8 +33,16 @@ pub(crate) fn exec(s: &str) -> (jsonnet_desugar::Desugar, jsonnet_eval::val::Val
 }
 
 /// TODO have this take the wanted val and assert equal to gotten val?
-pub(crate) fn manifest(s: &str) -> jsonnet_eval::manifest::Val {
+pub(crate) fn manifest_raw(s: &str) -> (Desugar, manifest::Val) {
   let (desugar, val) = exec(s);
-  let val = jsonnet_eval::manifest::get(&desugar.arenas, val);
-  val.expect("manifest error")
+  let val = manifest::get(&desugar.arenas, val);
+  (desugar, val.expect("manifest error"))
+}
+
+#[allow(clippy::needless_pass_by_value)]
+pub(crate) fn manifest(s: &str, want: manifest::Val) {
+  let (desugar, val) = exec(s);
+  let val = manifest::get(&desugar.arenas, val);
+  let got = val.expect("manifest error");
+  assert_eq!(want, got);
 }

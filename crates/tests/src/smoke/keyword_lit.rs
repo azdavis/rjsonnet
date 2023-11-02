@@ -4,21 +4,15 @@ use jsonnet_expr::Prim;
 
 #[test]
 fn bool_true() {
-  let want = Val::Prim(Prim::Bool(true));
-  let got = manifest("true");
-  assert_eq!(want, got);
+  manifest("true", Val::Prim(Prim::Bool(true)));
 }
 
 #[test]
 fn bool_false() {
-  let want = Val::Prim(Prim::Bool(false));
-  let got = manifest("false");
-  assert_eq!(want, got);
+  manifest("false", Val::Prim(Prim::Bool(false)));
 }
 
 #[test]
 fn null() {
-  let want = Val::Prim(Prim::Null);
-  let got = manifest("null");
-  assert_eq!(want, got);
+  manifest("null", Val::Prim(Prim::Null));
 }

@@ -1,24 +1,20 @@
-use crate::check::manifest;
+use crate::check::{manifest, manifest_raw, num};
 use jsonnet_eval::manifest::Val;
-use jsonnet_expr::{Number, Prim};
+use jsonnet_expr::Prim;
 
 #[test]
 fn empty() {
-  let want = Val::Array(Vec::new());
-  let got = manifest("[]");
-  assert_eq!(want, got);
+  manifest("[]", Val::Array(Vec::new()));
 }
 
 #[test]
 fn non_empty() {
-  let got = manifest(
+  let (mut desugar, got) = manifest_raw(
     r#"
 [1, true, "foo"]
 "#,
   );
-  let Val::Array(vs) = &got else { panic!("not an array") };
-  let [fst, snd, thd] = &vs[..] else { panic!("not length 3") };
-  assert_eq!(Val::Prim(Prim::Number(Number::positive_one())), *fst);
-  assert_eq!(Val::Prim(Prim::Bool(true)), *snd);
-  assert!(matches!(*thd, Val::Prim(Prim::String(_))));
+  let str = desugar.arenas.str.insert("foo".to_owned().into_boxed_str());
+  let want = Val::Array(vec![num(1.0), Val::Prim(Prim::Bool(true)), Val::Prim(Prim::String(str))]);
+  assert_eq!(want, got);
 }

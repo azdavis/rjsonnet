@@ -4,9 +4,9 @@ mod number;
 mod object;
 mod string;
 
-use crate::check::{exec, manifest};
+use crate::check::{exec, manifest, manifest_raw, num};
 use jsonnet_eval::manifest::Val;
-use jsonnet_expr::{Number, Prim};
+use jsonnet_expr::Prim;
 
 #[test]
 fn function() {
@@ -20,28 +20,22 @@ fn function() {
 #[test]
 #[should_panic = "parse error:"]
 fn parse_fail() {
-  manifest("if else");
+  manifest_raw("if else");
 }
 
 #[test]
 fn if_else() {
-  let want = Val::Prim(Prim::Number(Number::try_from(3.0).unwrap()));
-  let got = manifest("if 1 < 2 then 3 else 4");
-  assert_eq!(want, got);
+  manifest("if 1 < 2 then 3 else 4", num(3.0));
 }
 
 #[test]
 fn if_without_else_yes() {
-  let want = Val::Prim(Prim::Number(Number::try_from(3.0).unwrap()));
-  let got = manifest("if 1 < 2 then 3");
-  assert_eq!(want, got);
+  manifest("if 1 < 2 then 3", num(3.0));
 }
 
 #[test]
 fn if_without_else_no() {
-  let want = Val::Prim(Prim::Null);
-  let got = manifest("if 1 > 2 then 3");
-  assert_eq!(want, got);
+  manifest("if 1 > 2 then 3", Val::Prim(Prim::Null));
 }
 
 #[test]
@@ -56,24 +50,22 @@ error "oh no!"
 
 #[test]
 fn assert() {
-  let want = Val::Prim(Prim::Number(Number::positive_zero()));
-  let got = manifest(
+  manifest(
     r#"
 assert 2 + 2 < 5 : "math makes sense";
 0
 "#,
+    num(0.0),
   );
-  assert_eq!(want, got);
 }
 
 #[test]
 fn local() {
-  let want = Val::Prim(Prim::Number(Number::try_from(4.0).unwrap()));
-  let got = manifest(
+  manifest(
     r#"
 local x = 3;
 x + 1
 "#,
+    num(4.0),
   );
-  assert_eq!(want, got);
 }

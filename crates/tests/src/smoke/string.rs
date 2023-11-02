@@ -1,45 +1,49 @@
-//! TODO figure out how to assert eq for these tests?
-
-use crate::check::manifest;
+use crate::check::manifest_raw;
 use jsonnet_eval::manifest::Val;
 use jsonnet_expr::Prim;
 
+fn check(prog: &str, want: &str) {
+  let (mut desugar, got) = manifest_raw(prog);
+  let want = desugar.arenas.str.insert(want.to_owned().into_boxed_str());
+  assert_eq!(got, Val::Prim(Prim::String(want)));
+}
+
 #[test]
 fn double() {
-  let got = manifest(
+  check(
     r#"
 "hi"
 "#,
+    "hi",
   );
-  assert!(matches!(got, Val::Prim(Prim::String(_))));
 }
 
 #[test]
 fn single() {
-  let got = manifest(
+  check(
     r#"
 'hi'
 "#,
+    "hi",
   );
-  assert!(matches!(got, Val::Prim(Prim::String(_))));
 }
 
 #[test]
 fn double_verbatim() {
-  let got = manifest(
+  check(
     r#"
 @"hi"
 "#,
+    "hi",
   );
-  assert!(matches!(got, Val::Prim(Prim::String(_))));
 }
 
 #[test]
 fn single_verbatim() {
-  let got = manifest(
+  check(
     r#"
 @'hi'
 "#,
+    "hi",
   );
-  assert!(matches!(got, Val::Prim(Prim::String(_))));
 }

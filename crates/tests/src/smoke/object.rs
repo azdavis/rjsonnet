@@ -1,17 +1,15 @@
-use crate::check::manifest;
+use crate::check::{manifest, manifest_raw};
 use jsonnet_eval::manifest::Val;
 use std::collections::HashMap;
 
 #[test]
 fn empty() {
-  let want = Val::Object(HashMap::default());
-  let got = manifest("{}");
-  assert_eq!(want, got);
+  manifest("{}", Val::Object(HashMap::default()));
 }
 
 #[test]
 fn non_empty() {
-  let got = manifest(
+  let (_, got) = manifest_raw(
     r#"
 {
   num: 1,
@@ -27,7 +25,7 @@ fn non_empty() {
 #[test]
 #[should_panic = "+ for non-prim"]
 fn implicit_plus() {
-  manifest(
+  manifest_raw(
     r#"
 { a: 1 } { b: 2 }
 "#,
