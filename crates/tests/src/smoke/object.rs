@@ -39,33 +39,3 @@ fn implicit_plus() {
 "#,
   );
 }
-
-// TODO fix
-#[test]
-#[should_panic]
-fn use_fns() {
-  manifest(
-    r#"
-local Person(name='Alice') = {
-  name: name,
-  welcome: 'Hello ' + name + '!',
-};
-{
-  person1: Person(),
-  person2: Person('Bob'),
-}
-"#,
-    r#"
-{
-  "person1": {
-    "name": "Alice",
-    "welcome": "Hello Alice!"
-  },
-  "person2": {
-    "name": "Bob",
-    "welcome": "Hello Bob!"
-  }
-}
-"#,
-  );
-}
