@@ -46,3 +46,38 @@ pub(crate) fn manifest(s: &str, want: manifest::Val) {
   let got = val.expect("manifest error");
   assert_eq!(want, got);
 }
+
+fn from_serde(ar: &mut jsonnet_expr::StrArena, serde: serde_json::Value) -> manifest::Val {
+  match serde {
+    serde_json::Value::Null => manifest::Val::Prim(Prim::Null),
+    serde_json::Value::Bool(b) => manifest::Val::Prim(Prim::Bool(b)),
+    serde_json::Value::Number(num) => {
+      let num = num.as_f64().unwrap();
+      let num = Number::try_from(num).unwrap();
+      manifest::Val::Prim(Prim::Number(num))
+    }
+    serde_json::Value::String(str) => {
+      let str = ar.insert(str.into_boxed_str());
+      manifest::Val::Prim(Prim::String(str))
+    }
+    serde_json::Value::Array(vs) => {
+      let iter = vs.into_iter().map(|v| from_serde(ar, v));
+      manifest::Val::Array(iter.collect())
+    }
+    serde_json::Value::Object(map) => {
+      let iter = map.into_iter().map(|(k, v)| {
+        let k = ar.insert(k.into_boxed_str());
+        let v = from_serde(ar, v);
+        (k, v)
+      });
+      manifest::Val::Object(iter.collect())
+    }
+  }
+}
+
+pub(crate) fn go(jsonnet: &str, json: &str) {
+  let want: serde_json::Value = serde_json::from_str(json).unwrap();
+  let (mut desugar, got) = manifest_raw(jsonnet);
+  let want = from_serde(&mut desugar.arenas.str, want);
+  assert_eq!(want, got);
+}

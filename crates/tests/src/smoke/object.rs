@@ -1,4 +1,4 @@
-use crate::check::{manifest, manifest_raw};
+use crate::check::{go, manifest, manifest_raw};
 use jsonnet_eval::manifest::Val;
 use rustc_hash::FxHashMap;
 
@@ -9,17 +9,23 @@ fn empty() {
 
 #[test]
 fn non_empty() {
-  let (_, got) = manifest_raw(
-    r#"
+  let jsonnet = r#"
 {
   num: 1,
   bool: true,
   str: "bar",
   "foo quz": null,
 }
-"#,
-  );
-  assert!(matches!(got, Val::Object(_)));
+"#;
+  let json = r#"
+{
+  "num": 1,
+  "bool": true,
+  "str": "bar",
+  "foo quz": null
+}
+"#;
+  go(jsonnet, json);
 }
 
 #[test]
