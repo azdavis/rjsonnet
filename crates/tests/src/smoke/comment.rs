@@ -1,4 +1,4 @@
-use crate::check::{manifest, num};
+use crate::check::manifest;
 
 #[test]
 fn slash_slash() {
@@ -7,7 +7,7 @@ fn slash_slash() {
 1 + // 2 +
 3
 "#,
-    num(4.0),
+    "4.0",
   );
 }
 
@@ -17,7 +17,7 @@ fn hash() {
     r#"
 1 # + 2
 "#,
-    num(1.0),
+    "1.0",
   );
 }
 
@@ -27,6 +27,6 @@ fn slash_star() {
     r#"
 2 /* * 2 */ + 3
 "#,
-    num(5.0),
+    "5.0",
   );
 }

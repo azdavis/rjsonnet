@@ -1,16 +1,8 @@
-use crate::check::manifest_raw;
-use jsonnet_eval::manifest::Val;
-use jsonnet_expr::Prim;
-
-fn check(prog: &str, want: &str) {
-  let (mut desugar, got) = manifest_raw(prog);
-  let want = desugar.arenas.str.insert(want.to_owned().into_boxed_str());
-  assert_eq!(got, Val::Prim(Prim::String(want)));
-}
+use crate::check::manifest_str;
 
 #[test]
 fn double() {
-  check(
+  manifest_str(
     r#"
 "hi"
 "#,
@@ -20,12 +12,12 @@ fn double() {
 
 #[test]
 fn single() {
-  check("'hi'", "hi");
+  manifest_str("'hi'", "hi");
 }
 
 #[test]
 fn double_escape() {
-  check(
+  manifest_str(
     r#"
 "hi\nthere\"my'friend\'buddy"
 "#,
@@ -35,7 +27,7 @@ fn double_escape() {
 
 #[test]
 fn single_escape() {
-  check(
+  manifest_str(
     r#"
 'hi\nthere"my\'friend\"buddy'
 "#,
@@ -45,7 +37,7 @@ fn single_escape() {
 
 #[test]
 fn double_verbatim() {
-  check(
+  manifest_str(
     r#"
 @"hi"
 "#,
@@ -55,7 +47,7 @@ fn double_verbatim() {
 
 #[test]
 fn single_verbatim() {
-  check(
+  manifest_str(
     r#"
 @'hi'
 "#,
@@ -65,7 +57,7 @@ fn single_verbatim() {
 
 #[test]
 fn double_verbatim_escape() {
-  check(
+  manifest_str(
     r#"
 @"hi "" '' \\ \n there"
 "#,
@@ -76,5 +68,5 @@ fn double_verbatim_escape() {
 #[test]
 #[should_panic = "lex error: unclosed string"]
 fn unclosed() {
-  check("'", "");
+  manifest_str("'", "");
 }

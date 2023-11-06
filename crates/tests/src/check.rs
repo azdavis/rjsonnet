@@ -2,10 +2,6 @@ use jsonnet_desugar::Desugar;
 use jsonnet_eval::manifest;
 use jsonnet_expr::{Number, Prim};
 
-pub(crate) fn num(n: f64) -> manifest::Val {
-  manifest::Val::Prim(Prim::Number(Number::try_from(n).unwrap()))
-}
-
 pub(crate) fn exec(s: &str) -> (Desugar, jsonnet_eval::val::Val) {
   let lex = jsonnet_lex::get(s);
   if let Some(e) = lex.errors.first() {
@@ -33,20 +29,13 @@ pub(crate) fn exec(s: &str) -> (Desugar, jsonnet_eval::val::Val) {
 }
 
 /// TODO have this take the wanted val and assert equal to gotten val?
-pub(crate) fn manifest_raw(s: &str) -> (Desugar, manifest::Val) {
+fn manifest_raw(s: &str) -> (Desugar, manifest::Val) {
   let (desugar, val) = exec(s);
   let val = manifest::get(&desugar.arenas, val);
   (desugar, val.expect("manifest error"))
 }
 
-#[allow(clippy::needless_pass_by_value)]
-pub(crate) fn manifest(s: &str, want: manifest::Val) {
-  let (desugar, val) = exec(s);
-  let val = manifest::get(&desugar.arenas, val);
-  let got = val.expect("manifest error");
-  assert_eq!(want, got);
-}
-
+/// TODO impl deserialize for manifest val instead?
 fn from_serde(ar: &mut jsonnet_expr::StrArena, serde: serde_json::Value) -> manifest::Val {
   match serde {
     serde_json::Value::Null => manifest::Val::Prim(Prim::Null),
@@ -75,9 +64,22 @@ fn from_serde(ar: &mut jsonnet_expr::StrArena, serde: serde_json::Value) -> mani
   }
 }
 
-pub(crate) fn go(jsonnet: &str, json: &str) {
+/// tests that `jsonnet` manifests to the `json`.
+pub(crate) fn manifest(jsonnet: &str, json: &str) {
   let want: serde_json::Value = serde_json::from_str(json).unwrap();
   let (mut desugar, got) = manifest_raw(jsonnet);
   let want = from_serde(&mut desugar.arenas.str, want);
   assert_eq!(want, got);
+}
+
+/// tests that `s`, when treated as either jsonnet or json, manifests to the same thing.
+pub(crate) fn manifest_self(s: &str) {
+  manifest(s, s);
+}
+
+/// tests that `jsonnet` manifests to the string `want`. NOTE: `want` is NOT interpreted as JSON.
+pub(crate) fn manifest_str(jsonnet: &str, want: &str) {
+  let (mut desugar, got) = manifest_raw(jsonnet);
+  let want = desugar.arenas.str.insert(want.to_owned().into_boxed_str());
+  assert_eq!(got, manifest::Val::Prim(Prim::String(want)));
 }

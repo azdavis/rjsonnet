@@ -1,39 +1,41 @@
-use crate::check::{go, manifest, manifest_raw};
-use jsonnet_eval::manifest::Val;
-use rustc_hash::FxHashMap;
+use crate::check::{manifest, manifest_self};
 
 #[test]
 fn empty() {
-  manifest("{}", Val::Object(FxHashMap::default()));
+  manifest_self("{}");
 }
 
 #[test]
 fn non_empty() {
-  let jsonnet = r#"
+  manifest(
+    r#"
 {
   num: 1,
   bool: true,
   str: "bar",
   "foo quz": null,
 }
-"#;
-  let json = r#"
+"#,
+    r#"
 {
   "num": 1,
   "bool": true,
   "str": "bar",
   "foo quz": null
 }
-"#;
-  go(jsonnet, json);
+"#,
+  );
 }
 
 #[test]
 #[should_panic = "+ for non-prim"]
 fn implicit_plus() {
-  manifest_raw(
+  manifest(
     r#"
 { a: 1 } { b: 2 }
+"#,
+    r#"
+{ "a": 1, "b": 2 }
 "#,
   );
 }

@@ -5,9 +5,7 @@ mod number;
 mod object;
 mod string;
 
-use crate::check::{exec, manifest, manifest_raw, num};
-use jsonnet_eval::manifest::Val;
-use jsonnet_expr::Prim;
+use crate::check::{exec, manifest};
 
 #[test]
 fn function() {
@@ -21,22 +19,22 @@ fn function() {
 #[test]
 #[should_panic = "parse error:"]
 fn parse_fail() {
-  manifest_raw("if else");
+  manifest("if else", "0");
 }
 
 #[test]
 fn if_else() {
-  manifest("if 1 < 2 then 3 else 4", num(3.0));
+  manifest("if 1 < 2 then 3 else 4", "3.0");
 }
 
 #[test]
 fn if_without_else_yes() {
-  manifest("if 1 < 2 then 3", num(3.0));
+  manifest("if 1 < 2 then 3", "3.0");
 }
 
 #[test]
 fn if_without_else_no() {
-  manifest("if 1 > 2 then 3", Val::Prim(Prim::Null));
+  manifest("if 1 > 2 then 3", "null");
 }
 
 #[test]
@@ -56,7 +54,7 @@ fn assert() {
 assert 2 + 2 < 5 : "math makes sense";
 0
 "#,
-    num(0.0),
+    "0.0",
   );
 }
 
@@ -67,6 +65,6 @@ fn local() {
 local x = 3;
 x + 1
 "#,
-    num(4.0),
+    "4.0",
   );
 }

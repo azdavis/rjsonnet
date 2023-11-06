@@ -1,18 +1,16 @@
-use crate::check::manifest;
-use jsonnet_eval::manifest::Val;
-use jsonnet_expr::Prim;
+use crate::check::manifest_self;
 
 #[test]
 fn bool_true() {
-  manifest("true", Val::Prim(Prim::Bool(true)));
+  manifest_self("true");
 }
 
 #[test]
 fn bool_false() {
-  manifest("false", Val::Prim(Prim::Bool(false)));
+  manifest_self("false");
 }
 
 #[test]
 fn null() {
-  manifest("null", Val::Prim(Prim::Null));
+  manifest_self("null");
 }
