@@ -9,7 +9,7 @@ mod generated {
 pub use la_arena::{Arena, ArenaMap, Idx};
 
 use rustc_hash::FxHashMap;
-use std::collections::hash_map::Entry;
+use std::{collections::hash_map::Entry, fmt};
 
 pub type ExprMust = Idx<ExprData>;
 pub type Expr = Option<ExprMust>;
@@ -125,9 +125,42 @@ pub enum Prim {
   Number(Number),
 }
 
+impl Prim {
+  #[must_use]
+  pub fn display<'a>(&'a self, ar: &'a StrArena) -> impl fmt::Display + 'a {
+    DisplayPrim { prim: self, ar }
+  }
+}
+
+struct DisplayPrim<'a> {
+  prim: &'a Prim,
+  ar: &'a StrArena,
+}
+
+impl<'a> fmt::Display for DisplayPrim<'a> {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    match self.prim {
+      Prim::Null => f.write_str("null"),
+      Prim::Bool(b) => b.fmt(f),
+      Prim::String(s) => {
+        // TODO handle escapes
+        f.write_str("\"")?;
+        self.ar.get(*s).fmt(f)?;
+        f.write_str("\"")
+      }
+      Prim::Number(n) => n.fmt(f),
+    }
+  }
+}
 /// A finite floating-point number, that is, one that is not NaN or infinity.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Number(f64);
+
+impl fmt::Display for Number {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    self.0.fmt(f)
+  }
+}
 
 impl Number {
   /// Returns positive zero.
