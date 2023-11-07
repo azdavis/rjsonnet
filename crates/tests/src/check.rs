@@ -69,7 +69,11 @@ pub(crate) fn manifest(jsonnet: &str, json: &str) {
   let want: serde_json::Value = serde_json::from_str(json).unwrap();
   let (mut desugar, got) = manifest_raw(jsonnet);
   let want = from_serde(&mut desugar.arenas.str, want);
-  assert_eq!(want, got);
+  if want != got {
+    let want = want.display(&desugar.arenas.str);
+    let got = got.display(&desugar.arenas.str);
+    panic!("want: {want}\ngot:  {got}");
+  }
 }
 
 /// tests that `s`, when treated as either jsonnet or json, manifests to the same thing.

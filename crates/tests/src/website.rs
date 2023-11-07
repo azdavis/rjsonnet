@@ -31,6 +31,7 @@ fn ex1() {
 "#,
   );
 }
+
 // TODO fix
 #[test]
 #[should_panic]
