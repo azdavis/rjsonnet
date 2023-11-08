@@ -13,7 +13,7 @@ fn exec(s: &str) -> (Desugar, jsonnet_eval::exec::Result) {
   }
   let desugar = jsonnet_desugar::get(parse.root);
   if let Some(e) = desugar.errors.first() {
-    panic!("desugar error: {e:?}");
+    panic!("desugar error: {e}");
   }
   let mut st = jsonnet_statics::St::default();
   let cx = jsonnet_statics::Cx::default();
