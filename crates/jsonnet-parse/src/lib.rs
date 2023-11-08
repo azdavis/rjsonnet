@@ -43,16 +43,16 @@ pub enum ErrorKind {
   Expected(Expected),
 }
 
+impl event_parse::Expected<SK> for ErrorKind {
+  fn expected(kind: SK) -> Self {
+    ErrorKind::Expected(Expected::Kind(kind))
+  }
+}
+
 #[derive(Debug)]
 pub enum Expected {
   Expr,
   Kind(SK),
   Visibility,
   String,
-}
-
-impl event_parse::Expected<SK> for ErrorKind {
-  fn expected(kind: SK) -> Self {
-    ErrorKind::Expected(Expected::Kind(kind))
-  }
 }
