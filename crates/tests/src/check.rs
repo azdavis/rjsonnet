@@ -9,7 +9,7 @@ fn exec(s: &str) -> (Desugar, jsonnet_eval::exec::Result) {
   }
   let parse = jsonnet_parse::get(&lex.tokens);
   if let Some(e) = parse.errors.first() {
-    panic!("parse error: {e:?}");
+    panic!("parse error: {e}");
   }
   let desugar = jsonnet_desugar::get(parse.root);
   if let Some(e) = desugar.errors.first() {

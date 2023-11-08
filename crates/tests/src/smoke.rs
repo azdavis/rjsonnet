@@ -19,7 +19,7 @@ inc(3)
 }
 
 #[test]
-#[should_panic = "parse error:"]
+#[should_panic = "parse error: expected expression"]
 fn parse_fail() {
   manifest("if else", "0");
 }

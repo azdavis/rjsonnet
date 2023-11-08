@@ -5,6 +5,7 @@
 mod internal;
 
 use jsonnet_syntax::{ast::AstNode as _, kind::SyntaxKind as SK};
+use std::fmt;
 
 /// # Panics
 ///
@@ -37,6 +38,15 @@ pub struct Parse {
 #[derive(Debug)]
 pub struct Error(event_parse::rowan_sink::Error<ErrorKind>);
 
+impl fmt::Display for Error {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    match &self.0.kind {
+      ErrorKind::Trailing => f.write_str("trailing token"),
+      ErrorKind::Expected(e) => write!(f, "expected {e}"),
+    }
+  }
+}
+
 #[derive(Debug)]
 pub enum ErrorKind {
   Trailing,
@@ -55,4 +65,15 @@ pub enum Expected {
   Kind(SK),
   Visibility,
   String,
+}
+
+impl fmt::Display for Expected {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    match self {
+      Expected::Expr => f.write_str("expression"),
+      Expected::Kind(k) => k.fmt(f),
+      Expected::Visibility => f.write_str("field visibility modifier"),
+      Expected::String => f.write_str("string"),
+    }
+  }
 }
