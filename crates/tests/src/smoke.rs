@@ -9,11 +9,13 @@ use crate::check::{exec, manifest};
 
 #[test]
 fn function() {
-  let (_, got) = exec("function(x) x + 1");
-  assert!(matches!(
-    got,
-    jsonnet_eval::val::Val::Rec { env: _, kind: jsonnet_eval::val::RecValKind::Function { .. } }
-  ));
+  manifest(
+    r#"
+local inc = function(x) x + 1;
+inc(3)
+"#,
+    "4",
+  );
 }
 
 #[test]
