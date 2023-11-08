@@ -5,7 +5,7 @@ mod number;
 mod object;
 mod string;
 
-use crate::check::{exec, manifest};
+use crate::check::{exec_err, manifest};
 
 #[test]
 fn function() {
@@ -40,12 +40,12 @@ fn if_without_else_no() {
 }
 
 #[test]
-#[should_panic = "kind: User"]
 fn error() {
-  exec(
+  exec_err(
     r#"
 error "oh no!"
 "#,
+    "explicit `error`: oh no!",
   );
 }
 

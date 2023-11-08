@@ -2,7 +2,7 @@ use jsonnet_desugar::Desugar;
 use jsonnet_eval::manifest;
 use jsonnet_expr::{Number, Prim};
 
-pub(crate) fn exec(s: &str) -> (Desugar, jsonnet_eval::val::Val) {
+fn exec(s: &str) -> (Desugar, jsonnet_eval::exec::Result) {
   let lex = jsonnet_lex::get(s);
   if let Some(e) = lex.errors.first() {
     panic!("lex error: {e}");
@@ -25,13 +25,13 @@ pub(crate) fn exec(s: &str) -> (Desugar, jsonnet_eval::val::Val) {
   }
   let env = jsonnet_eval::val::Env::default();
   let val = jsonnet_eval::exec::get(&env, &desugar.arenas, desugar.top);
-  (desugar, val.expect("exec error"))
+  (desugar, val)
 }
 
 /// TODO have this take the wanted val and assert equal to gotten val?
 fn manifest_raw(s: &str) -> (Desugar, manifest::Val) {
   let (desugar, val) = exec(s);
-  let val = manifest::get(&desugar.arenas, val);
+  let val = manifest::get(&desugar.arenas, val.expect("exec err"));
   (desugar, val.expect("manifest error"))
 }
 
@@ -62,6 +62,14 @@ fn from_serde(ar: &mut jsonnet_expr::StrArena, serde: serde_json::Value) -> mani
       manifest::Val::Object(iter.collect())
     }
   }
+}
+
+/// tests that `jsonnet` execution results in an error whose message is `want`.
+pub(crate) fn exec_err(jsonnet: &str, want: &str) {
+  let (desugar, a) = exec(jsonnet);
+  let err = a.expect_err("no error");
+  let got = err.display(&desugar.arenas.str).to_string();
+  assert_eq!(want, got.as_str());
 }
 
 /// tests that `jsonnet` manifests to the `json`.

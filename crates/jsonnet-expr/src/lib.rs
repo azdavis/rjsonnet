@@ -225,6 +225,16 @@ pub enum Infinite {
   Neg,
 }
 
+impl fmt::Display for Infinite {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    match self {
+      Infinite::Nan => f.write_str("not a number"),
+      Infinite::Pos => f.write_str("positive infinity"),
+      Infinite::Neg => f.write_str("negative infinity"),
+    }
+  }
+}
+
 /// An interned string.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Str(u32);
