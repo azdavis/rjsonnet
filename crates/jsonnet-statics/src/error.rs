@@ -26,7 +26,7 @@ struct Display<'a> {
   ar: &'a jsonnet_expr::StrArena,
 }
 
-impl<'a> fmt::Display for Display<'a> {
+impl fmt::Display for Display<'_> {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     match &self.kind {
       Kind::NotInScope(id) => write!(f, "not in scope: {}", id.display(self.ar)),

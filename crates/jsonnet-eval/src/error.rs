@@ -37,7 +37,7 @@ struct DisplayError<'a> {
   ar: &'a jsonnet_expr::StrArena,
 }
 
-impl<'a> fmt::Display for DisplayError<'a> {
+impl fmt::Display for DisplayError<'_> {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     match self.error {
       Error::Exec { kind, .. } => match kind {

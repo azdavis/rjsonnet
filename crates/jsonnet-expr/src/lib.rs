@@ -137,7 +137,7 @@ struct DisplayPrim<'a> {
   ar: &'a StrArena,
 }
 
-impl<'a> fmt::Display for DisplayPrim<'a> {
+impl fmt::Display for DisplayPrim<'_> {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     match self.prim {
       Prim::Null => f.write_str("null"),
@@ -300,7 +300,7 @@ struct DisplayStr<'a> {
   ar: &'a StrArena,
 }
 
-impl<'a> fmt::Display for DisplayStr<'a> {
+impl fmt::Display for DisplayStr<'_> {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     self.ar.get(self.str).fmt(f)
   }

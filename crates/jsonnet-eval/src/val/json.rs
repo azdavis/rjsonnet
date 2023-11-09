@@ -24,7 +24,7 @@ struct DisplayVal<'a> {
   ar: &'a jsonnet_expr::StrArena,
 }
 
-impl<'a> fmt::Display for DisplayVal<'a> {
+impl fmt::Display for DisplayVal<'_> {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     match self.val {
       Val::Prim(p) => p.display(self.ar).fmt(f),
