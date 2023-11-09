@@ -3,7 +3,7 @@
 //! Since Jsonnet values are lazy, they can contain unexecuted Jsonnet expressions. Manifestation is
 //! thus mutually recursive with execution.
 
-use crate::{exec, val};
+use crate::{error, exec, val};
 use jsonnet_expr::{Arenas, Prim, Str};
 use rustc_hash::FxHashMap;
 use std::fmt;
@@ -73,20 +73,6 @@ impl<'a> fmt::Display for DisplayVal<'a> {
   }
 }
 
-#[derive(Debug)]
-pub enum Error {
-  Exec(exec::error::Error),
-  Function,
-}
-
-impl From<exec::error::Error> for Error {
-  fn from(value: exec::error::Error) -> Self {
-    Error::Exec(value)
-  }
-}
-
-pub type Result<T = Val, E = Error> = std::result::Result<T, E>;
-
 /// Manifests the Jsonnet value into a JSON value.
 ///
 /// # Errors
@@ -96,7 +82,7 @@ pub type Result<T = Val, E = Error> = std::result::Result<T, E>;
 /// # Panics
 ///
 /// Upon internal error.
-pub fn get(ars: &Arenas, val: val::Val) -> Result {
+pub fn get(ars: &Arenas, val: val::Val) -> error::Result<Val> {
   match val {
     val::Val::Prim(prim) => Ok(Val::Prim(prim)),
     val::Val::Rec { env, kind } => match kind {
@@ -114,21 +100,21 @@ pub fn get(ars: &Arenas, val: val::Val) -> Result {
         }
         Ok(Val::Object(val_fields))
       }
-      val::RecValKind::Function { .. } => Err(Error::Function),
+      val::RecValKind::Function { .. } => Err(error::Error::ManifestFn),
       val::RecValKind::Array(exprs) => {
         let iter = exprs.into_iter().map(|expr| get_(&env, ars, expr));
-        let vs = iter.collect::<Result<Vec<_>>>()?;
+        let vs = iter.collect::<error::Result<Vec<_>>>()?;
         Ok(Val::Array(vs))
       }
     },
     val::Val::Std(std_val) => match std_val {
-      val::Std::Cmp | val::Std::Equals => Err(Error::Function),
+      val::Std::Cmp | val::Std::Equals => Err(error::Error::ManifestFn),
     },
   }
 }
 
 /// both executes and manifests
-fn get_(env: &val::Env, ars: &Arenas, expr: jsonnet_expr::Expr) -> Result {
+fn get_(env: &val::Env, ars: &Arenas, expr: jsonnet_expr::Expr) -> error::Result<Val> {
   let val = exec::get(env, ars, expr)?;
   get(ars, val)
 }

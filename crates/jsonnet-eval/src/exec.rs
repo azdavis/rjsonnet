@@ -1,15 +1,12 @@
 //! Executing Jsonnet expression to produce Jsonnet values.
 
-pub mod error;
-
+use crate::error::{self, Result};
 use crate::val::{Env, RecValKind, Std, Subst, Val};
 use jsonnet_expr::{Arenas, BinaryOp, Expr, ExprData, ExprMust, Id, Number, Prim, Str, Visibility};
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::cmp::Ordering;
 
 const EPSILON: f64 = 0.0001;
-
-pub type Result<T = Val, E = error::Error> = std::result::Result<T, E>;
 
 /// Executes the Jsonnet expression to produce a Jsonnet value.
 ///
@@ -20,11 +17,11 @@ pub type Result<T = Val, E = error::Error> = std::result::Result<T, E>;
 /// # Panics
 ///
 /// If the expr wasn't checked.
-pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result {
+pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
   // TODO implement a cache on expr to avoid re-computing lazy exprs? but we would also need to
   // consider the env in which the expr is executed
   let expr = expr.expect("no expr");
-  let mk_error = |kind: error::Kind| Err(error::Error { expr, kind });
+  let mk_error = |kind: error::Kind| Err(error::Error::Exec { expr, kind });
   match &ars.expr[expr] {
     ExprData::Prim(p) => Ok(Val::Prim(*p)),
     ExprData::Object { asserts, fields } => {
@@ -259,23 +256,23 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result {
 fn number_pair(expr: ExprMust, env: &Env, ars: &Arenas, a: Expr, b: Expr) -> Result<[Number; 2]> {
   match (get(env, ars, a)?, get(env, ars, b)?) {
     (Val::Prim(Prim::Number(a)), Val::Prim(Prim::Number(b))) => Ok([a, b]),
-    _ => Err(error::Error { expr, kind: error::Kind::IncompatibleTypes }),
+    _ => Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes }),
   }
 }
 
-fn float_op<F>(expr: ExprMust, env: &Env, ars: &Arenas, lhs: Expr, rhs: Expr, f: F) -> Result
+fn float_op<F>(expr: ExprMust, env: &Env, ars: &Arenas, lhs: Expr, rhs: Expr, f: F) -> Result<Val>
 where
   F: FnOnce(f64, f64) -> f64,
 {
   let [lhs, rhs] = number_pair(expr, env, ars, lhs, rhs)?;
   let n = match Number::try_from(f(lhs.value(), rhs.value())) {
     Ok(n) => n,
-    Err(inf) => return Err(error::Error { expr, kind: error::Kind::Infinite(inf) }),
+    Err(inf) => return Err(error::Error::Exec { expr, kind: error::Kind::Infinite(inf) }),
   };
   Ok(Val::Prim(Prim::Number(n)))
 }
 
-fn int_op<F>(expr: ExprMust, env: &Env, ars: &Arenas, lhs: Expr, rhs: Expr, f: F) -> Result
+fn int_op<F>(expr: ExprMust, env: &Env, ars: &Arenas, lhs: Expr, rhs: Expr, f: F) -> Result<Val>
 where
   F: FnOnce(i64, i64) -> i64,
 {
@@ -286,12 +283,12 @@ where
   let n = f(lhs, rhs) as f64;
   let n = match Number::try_from(n) {
     Ok(n) => n,
-    Err(inf) => return Err(error::Error { expr, kind: error::Kind::Infinite(inf) }),
+    Err(inf) => return Err(error::Error::Exec { expr, kind: error::Kind::Infinite(inf) }),
   };
   Ok(Val::Prim(Prim::Number(n)))
 }
 
-fn cmp_op<F>(expr: ExprMust, env: &Env, ars: &Arenas, lhs: Expr, rhs: Expr, f: F) -> Result
+fn cmp_op<F>(expr: ExprMust, env: &Env, ars: &Arenas, lhs: Expr, rhs: Expr, f: F) -> Result<Val>
 where
   F: FnOnce(Ordering) -> Prim,
 {
@@ -301,7 +298,14 @@ where
   Ok(Val::Prim(f(ord)))
 }
 
-fn cmp_bool_op<F>(expr: ExprMust, env: &Env, ars: &Arenas, lhs: Expr, rhs: Expr, f: F) -> Result
+fn cmp_bool_op<F>(
+  expr: ExprMust,
+  env: &Env,
+  ars: &Arenas,
+  lhs: Expr,
+  rhs: Expr,
+  f: F,
+) -> Result<Val>
 where
   F: FnOnce(Ordering) -> bool,
 {
@@ -313,7 +317,7 @@ fn cmp_val(expr: ExprMust, ars: &Arenas, lhs: &Val, rhs: &Val) -> Result<Orderin
     (Val::Prim(lhs), Val::Prim(rhs)) => match (lhs, rhs) {
       (Prim::String(lhs), Prim::String(rhs)) => Ok(ars.str.get(*lhs).cmp(ars.str.get(*rhs))),
       (Prim::Number(lhs), Prim::Number(rhs)) => Ok(lhs.cmp(rhs)),
-      _ => Err(error::Error { expr, kind: error::Kind::IncompatibleTypes }),
+      _ => Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes }),
     },
     (Val::Rec { env: le, kind: lhs }, Val::Rec { env: re, kind: rhs }) => match (lhs, rhs) {
       (RecValKind::Array(lhs), RecValKind::Array(rhs)) => {
@@ -336,13 +340,13 @@ fn cmp_val(expr: ExprMust, ars: &Arenas, lhs: &Val, rhs: &Val) -> Result<Orderin
         };
         Ok(ord)
       }
-      _ => Err(error::Error { expr, kind: error::Kind::IncompatibleTypes }),
+      _ => Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes }),
     },
-    _ => Err(error::Error { expr, kind: error::Kind::IncompatibleTypes }),
+    _ => Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes }),
   }
 }
 
-fn exec_local(prev_env: &Env, binds: &[(Id, Expr)], ars: &Arenas, body: Expr) -> Result {
+fn exec_local(prev_env: &Env, binds: &[(Id, Expr)], ars: &Arenas, body: Expr) -> Result<Val> {
   let mut env = prev_env.clone();
   for &(id, expr) in binds {
     env.insert(id, Subst::Expr(prev_env.clone(), expr));

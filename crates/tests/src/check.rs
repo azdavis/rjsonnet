@@ -2,7 +2,7 @@ use jsonnet_desugar::Desugar;
 use jsonnet_eval::manifest;
 use jsonnet_expr::{Number, Prim};
 
-fn exec(s: &str) -> (Desugar, jsonnet_eval::exec::Result) {
+fn exec(s: &str) -> (Desugar, jsonnet_eval::error::Result<jsonnet_eval::val::Val>) {
   let lex = jsonnet_lex::get(s);
   if let Some(e) = lex.errors.first() {
     panic!("lex error: {e}");

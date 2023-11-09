@@ -5,6 +5,7 @@
 #![deny(clippy::pedantic, missing_debug_implementations, rust_2018_idioms)]
 #![allow(clippy::too_many_lines)]
 
+pub mod error;
 pub mod exec;
 pub mod manifest;
 pub mod val;
