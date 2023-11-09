@@ -8,8 +8,8 @@ pub struct Error {
 }
 
 impl Error {
-  pub fn display<'a>(&'a self, str_arena: &'a jsonnet_expr::StrArena) -> impl fmt::Display + 'a {
-    Display { kind: &self.kind, str_arena }
+  pub fn display<'a>(&'a self, ar: &'a jsonnet_expr::StrArena) -> impl fmt::Display + 'a {
+    Display { kind: &self.kind, ar }
   }
 }
 
@@ -23,19 +23,19 @@ pub enum Kind {
 
 struct Display<'a> {
   kind: &'a Kind,
-  str_arena: &'a jsonnet_expr::StrArena,
+  ar: &'a jsonnet_expr::StrArena,
 }
 
 impl<'a> fmt::Display for Display<'a> {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     match &self.kind {
-      Kind::NotInScope(id) => write!(f, "not in scope: {}", self.str_arena.get(id.inner())),
-      Kind::DuplicateFieldName(s) => write!(f, "duplicate field name: {}", self.str_arena.get(*s)),
+      Kind::NotInScope(id) => write!(f, "not in scope: {}", id.display(self.ar)),
+      Kind::DuplicateFieldName(s) => write!(f, "duplicate field name: {}", self.ar.get(*s)),
       Kind::DuplicateNamedArg(id) => {
-        write!(f, "duplicate named argument: {}", self.str_arena.get(id.inner()))
+        write!(f, "duplicate named argument: {}", id.display(self.ar))
       }
       Kind::DuplicateBinding(id) => {
-        write!(f, "duplicate binding: {}", self.str_arena.get(id.inner()))
+        write!(f, "duplicate binding: {}", id.display(self.ar))
       }
     }
   }

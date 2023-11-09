@@ -274,6 +274,10 @@ impl StrArena {
     }
   }
 
+  pub fn id(&mut self, contents: Box<str>) -> Id {
+    Id(self.insert(contents))
+  }
+
   #[must_use]
   pub fn get(&self, s: Str) -> &str {
     &self.str_to_contents[s.to_usize()]
@@ -286,13 +290,19 @@ pub struct Id(Str);
 
 impl Id {
   #[must_use]
-  pub fn new(s: Str) -> Self {
-    Self(s)
+  pub fn display(self, ar: &StrArena) -> impl fmt::Display + '_ {
+    DisplayStr { str: self.0, ar }
   }
+}
 
-  #[must_use]
-  pub fn inner(&self) -> Str {
-    self.0
+struct DisplayStr<'a> {
+  str: Str,
+  ar: &'a StrArena,
+}
+
+impl<'a> fmt::Display for DisplayStr<'a> {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    self.ar.get(self.str).fmt(f)
   }
 }
 

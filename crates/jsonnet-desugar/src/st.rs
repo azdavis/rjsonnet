@@ -40,6 +40,10 @@ impl St {
     self.arenas.str.insert(s.to_owned().into_boxed_str())
   }
 
+  pub(crate) fn id(&mut self, tok: SyntaxToken) -> jsonnet_expr::Id {
+    self.arenas.str.id(tok.text().to_owned().into_boxed_str())
+  }
+
   pub(crate) fn expr(
     &mut self,
     ptr: ast::SyntaxNodePtr,
@@ -73,6 +77,6 @@ impl St {
   pub(crate) fn fresh(&mut self) -> jsonnet_expr::Id {
     let s = format!("${}", self.fresh_idx);
     self.fresh_idx += 1;
-    jsonnet_expr::Id::new(self.arenas.str.insert(s.into_boxed_str()))
+    self.arenas.str.id(s.into_boxed_str())
   }
 }

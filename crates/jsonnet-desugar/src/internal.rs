@@ -5,7 +5,6 @@ use jsonnet_expr::{
   BinaryOp, Expr, ExprData, Id, ImportKind, Number, Prim, Str, UnaryOp, Visibility,
 };
 use jsonnet_syntax::ast::{self, AstNode as _};
-use jsonnet_syntax::kind::SyntaxToken;
 
 pub(crate) fn get_root(st: &mut St, r: ast::Root) -> Expr {
   get_expr(st, r.expr(), false)
@@ -40,7 +39,7 @@ fn get_expr(st: &mut St, expr: Option<ast::Expr>, in_obj: bool) -> Expr {
       };
       ExprData::Prim(Prim::Number(num))
     }
-    ast::Expr::ExprId(expr) => ExprData::Id(get_id(st, expr.id()?)),
+    ast::Expr::ExprId(expr) => ExprData::Id(st.id(expr.id()?)),
     ast::Expr::ExprParen(expr) => return get_expr(st, expr.expr(), in_obj),
     ast::Expr::ExprObject(expr) => get_object(st, expr, in_obj),
     ast::Expr::ExprArray(expr) => match get_comp_specs(st, expr.comp_specs()) {
@@ -89,7 +88,7 @@ fn get_expr(st: &mut St, expr: Option<ast::Expr>, in_obj: bool) -> Expr {
         let expr = get_expr(st, arg.expr(), in_obj);
         match arg.id_eq().and_then(|x| x.id()) {
           None => positional.push(expr),
-          Some(id) => named.push((get_id(st, id), expr)),
+          Some(id) => named.push((st.id(id), expr)),
         }
       }
       ExprData::Call { func, positional, named }
@@ -192,7 +191,7 @@ where
         // skip this `for` if no var for the `for`
         let Some(for_var) = for_spec.id() else { return ac };
         let ac = Some(st.expr(ptr.clone(), ac));
-        let for_var = get_id(st, for_var);
+        let for_var = st.id(for_var);
         let in_expr = get_expr(st, for_spec.expr(), in_obj);
         let arr = st.fresh();
         let idx = st.fresh();
@@ -221,12 +220,8 @@ where
   })
 }
 
-fn get_id(st: &mut St, id: SyntaxToken) -> Id {
-  Id::new(st.str(id.text()))
-}
-
 fn get_bind(st: &mut St, bind: ast::Bind, in_obj: bool) -> Option<(Id, Expr)> {
-  let lhs = get_id(st, bind.id()?);
+  let lhs = st.id(bind.id()?);
   let rhs = bind.expr();
   let rhs = match bind.paren_params() {
     None => get_expr(st, rhs, in_obj),
@@ -255,7 +250,7 @@ fn get_fn(
   let mut params = Vec::<(Id, Expr)>::new();
   for param in paren_params.into_iter().flat_map(|x| x.params()) {
     let Some(lhs) = param.id() else { continue };
-    let lhs = get_id(st, lhs);
+    let lhs = st.id(lhs);
     let rhs = match param.eq_expr() {
       Some(rhs) => get_expr(st, rhs.expr(), in_obj),
       None => {
@@ -400,7 +395,7 @@ fn get_object(st: &mut St, inside: ast::ExprObject, in_obj: bool) -> ExprData {
       }
       let vars = comp_specs.filter_map(|comp_spec| match comp_spec {
         ast::CompSpec::ForSpec(spec) => {
-          spec.id().map(|x| (ast::SyntaxNodePtr::new(spec.syntax()), get_id(st, x)))
+          spec.id().map(|x| (ast::SyntaxNodePtr::new(spec.syntax()), st.id(x)))
         }
         ast::CompSpec::IfSpec(_) => None,
       });
