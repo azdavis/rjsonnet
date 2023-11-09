@@ -32,9 +32,7 @@ fn ex1() {
   );
 }
 
-// TODO fix
 #[test]
-#[should_panic]
 fn ex2() {
   manifest(
     r#"

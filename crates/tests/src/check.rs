@@ -36,7 +36,7 @@ fn manifest_raw(s: &str) -> (Desugar, json::Val) {
 }
 
 /// TODO impl deserialize for manifest val instead?
-fn from_serde(ar: &mut jsonnet_expr::StrArena, serde: serde_json::Value) -> json::Val {
+fn from_serde(ar: &jsonnet_expr::StrArena, serde: serde_json::Value) -> json::Val {
   match serde {
     serde_json::Value::Null => json::Val::Prim(Prim::Null),
     serde_json::Value::Bool(b) => json::Val::Prim(Prim::Bool(b)),
@@ -46,7 +46,7 @@ fn from_serde(ar: &mut jsonnet_expr::StrArena, serde: serde_json::Value) -> json
       json::Val::Prim(Prim::Number(num))
     }
     serde_json::Value::String(str) => {
-      let str = ar.str(str.into_boxed_str());
+      let str = ar.str_shared_owned(str.into_boxed_str());
       json::Val::Prim(Prim::String(str))
     }
     serde_json::Value::Array(vs) => {
@@ -55,7 +55,7 @@ fn from_serde(ar: &mut jsonnet_expr::StrArena, serde: serde_json::Value) -> json
     }
     serde_json::Value::Object(map) => {
       let iter = map.into_iter().map(|(k, v)| {
-        let k = ar.str(k.into_boxed_str());
+        let k = ar.str_shared_owned(k.into_boxed_str());
         let v = from_serde(ar, v);
         (k, v)
       });
@@ -75,8 +75,8 @@ pub(crate) fn exec_err(jsonnet: &str, want: &str) {
 /// tests that `jsonnet` manifests to the `json`.
 pub(crate) fn manifest(jsonnet: &str, json: &str) {
   let want: serde_json::Value = serde_json::from_str(json).unwrap();
-  let (mut desugar, got) = manifest_raw(jsonnet);
-  let want = from_serde(&mut desugar.arenas.str, want);
+  let (desugar, got) = manifest_raw(jsonnet);
+  let want = from_serde(&desugar.arenas.str, want);
   if want != got {
     let want = want.display(&desugar.arenas.str);
     let got = got.display(&desugar.arenas.str);
