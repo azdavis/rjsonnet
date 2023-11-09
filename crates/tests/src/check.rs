@@ -46,7 +46,7 @@ fn from_serde(ar: &mut jsonnet_expr::StrArena, serde: serde_json::Value) -> json
       json::Val::Prim(Prim::Number(num))
     }
     serde_json::Value::String(str) => {
-      let str = ar.insert(str.into_boxed_str());
+      let str = ar.str(str.into_boxed_str());
       json::Val::Prim(Prim::String(str))
     }
     serde_json::Value::Array(vs) => {
@@ -55,7 +55,7 @@ fn from_serde(ar: &mut jsonnet_expr::StrArena, serde: serde_json::Value) -> json
     }
     serde_json::Value::Object(map) => {
       let iter = map.into_iter().map(|(k, v)| {
-        let k = ar.insert(k.into_boxed_str());
+        let k = ar.str(k.into_boxed_str());
         let v = from_serde(ar, v);
         (k, v)
       });
@@ -92,7 +92,7 @@ pub(crate) fn manifest_self(s: &str) {
 /// tests that `jsonnet` manifests to the string `want`. NOTE: `want` is NOT interpreted as JSON.
 pub(crate) fn manifest_str(jsonnet: &str, want: &str) {
   let (mut desugar, got) = manifest_raw(jsonnet);
-  let want = desugar.arenas.str.insert(want.to_owned().into_boxed_str());
+  let want = desugar.arenas.str.str(want.to_owned().into_boxed_str());
   let json::Val::Prim(Prim::String(got)) = got else { panic!("did not get a String") };
   assert_eq!(want, got);
 }

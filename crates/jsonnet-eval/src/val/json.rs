@@ -35,7 +35,7 @@ impl fmt::Display for DisplayVal<'_> {
         if let Some((k, v)) = iter.next() {
           // TODO handle escapes
           f.write_str(" \"")?;
-          self.ar.get(*k).fmt(f)?;
+          self.ar.get(k).fmt(f)?;
           f.write_str("\": ")?;
           v.display(self.ar).fmt(f)?;
           empty = false;
@@ -43,7 +43,7 @@ impl fmt::Display for DisplayVal<'_> {
         for (k, v) in iter {
           // TODO handle escapes
           f.write_str(", \"")?;
-          self.ar.get(*k).fmt(f)?;
+          self.ar.get(k).fmt(f)?;
           f.write_str("\": ")?;
           v.display(self.ar).fmt(f)?;
           empty = false;

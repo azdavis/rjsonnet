@@ -34,7 +34,7 @@ fn main() {
   }
   drop(names);
   drop(contents);
-  let str_constants = preset.iter().enumerate().map(|(idx, &(name, _, make_id))| {
+  let str_idx_constants = preset.iter().enumerate().map(|(idx, &(name, _, make_id))| {
     let name = format_ident!("{name}");
     let idx = u32::try_from(idx).unwrap();
     let vis = if make_id {
@@ -44,24 +44,35 @@ fn main() {
     };
     quote! { #vis const #name: Self = Self(#idx); }
   });
+  let str_constants = preset.iter().filter_map(|&(name, _, make_id)| {
+    if make_id {
+      return None;
+    }
+    let name = format_ident!("{name}");
+    Some(quote! { pub const #name: Self = Self(StrIdx::#name); })
+  });
   let id_constants = preset.iter().filter_map(|&(name, _, make_id)| {
     if !make_id {
       return None;
     }
     let name = format_ident!("{name}");
-    Some(quote! { pub const #name: Self = Self(Str::#name); })
+    Some(quote! { pub const #name: Self = Self(StrIdx::#name); })
   });
   let str_arena_inserts = preset.iter().map(|&(name, contents, _)| {
     let name = format_ident!("{name}");
-    quote! { assert_eq!(Str::#name, ret.insert(bs(#contents))); }
+    quote! { assert_eq!(StrIdx::#name, ret.mk_idx(bs(#contents))); }
   });
   let preset_len = preset.len();
   let file = file!();
   let contents = quote! {
     pub const _GENERATED_BY: &str = #file;
 
-    use crate::{Id, Str, StrArena};
+    use crate::{Id, Str, StrIdx, StrArena};
     use rustc_hash::FxHashMap;
+
+    impl StrIdx {
+      #(#str_idx_constants)*
+    }
 
     impl Str {
       #(#str_constants)*
@@ -78,8 +89,8 @@ fn main() {
     impl Default for StrArena {
       fn default() -> Self {
         let mut ret = Self {
-          str_to_contents: Vec::with_capacity(#preset_len),
-          contents_to_str: FxHashMap::default(),
+          idx_to_contents: Vec::with_capacity(#preset_len),
+          contents_to_idx: FxHashMap::default(),
         };
         #(#str_arena_inserts)*
         ret

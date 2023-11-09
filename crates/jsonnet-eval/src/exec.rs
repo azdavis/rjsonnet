@@ -23,7 +23,7 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
   let expr = expr.expect("no expr");
   let mk_error = |kind: error::Kind| Err(error::Error::Exec { expr, kind });
   match &ars.expr[expr] {
-    ExprData::Prim(p) => Ok(Val::Prim(*p)),
+    ExprData::Prim(p) => Ok(Val::Prim(p.clone())),
     ExprData::Object { asserts, fields } => {
       let mut named_fields = FxHashMap::<Str, (Visibility, Expr)>::default();
       for &(key, hid, val) in fields {
@@ -315,7 +315,7 @@ where
 fn cmp_val(expr: ExprMust, ars: &Arenas, lhs: &Val, rhs: &Val) -> Result<Ordering> {
   match (lhs, rhs) {
     (Val::Prim(lhs), Val::Prim(rhs)) => match (lhs, rhs) {
-      (Prim::String(lhs), Prim::String(rhs)) => Ok(ars.str.get(*lhs).cmp(ars.str.get(*rhs))),
+      (Prim::String(lhs), Prim::String(rhs)) => Ok(ars.str.get(lhs).cmp(ars.str.get(rhs))),
       (Prim::Number(lhs), Prim::Number(rhs)) => Ok(lhs.cmp(rhs)),
       _ => Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes }),
     },

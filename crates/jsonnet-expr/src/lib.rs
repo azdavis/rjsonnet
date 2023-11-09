@@ -117,7 +117,7 @@ pub enum UnaryOp {
 }
 
 /// A primitive value.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Prim {
   Null,
   Bool(bool),
@@ -145,7 +145,7 @@ impl fmt::Display for DisplayPrim<'_> {
       Prim::String(s) => {
         // TODO handle escapes
         f.write_str("\"")?;
-        self.ar.get(*s).fmt(f)?;
+        self.ar.get(s).fmt(f)?;
         f.write_str("\"")
       }
       Prim::Number(n) => n.fmt(f),
@@ -235,11 +235,15 @@ impl fmt::Display for Infinite {
   }
 }
 
-/// An interned string.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct Str(u32);
+/// A string, which may be interned.
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct Str(StrIdx);
 
-impl Str {
+/// An interned string, which is an index into a string arena.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+struct StrIdx(u32);
+
+impl StrIdx {
   /// # Panics
   ///
   /// On failure (i.e. overflow).
@@ -257,52 +261,60 @@ impl Str {
 
 #[derive(Debug)]
 pub struct StrArena {
-  str_to_contents: Vec<Box<str>>,
-  contents_to_str: FxHashMap<Box<str>, Str>,
+  idx_to_contents: Vec<Box<str>>,
+  contents_to_idx: FxHashMap<Box<str>, StrIdx>,
 }
 
 impl StrArena {
-  pub fn insert(&mut self, contents: Box<str>) -> Str {
-    match self.contents_to_str.entry(contents) {
+  fn mk_idx(&mut self, contents: Box<str>) -> StrIdx {
+    match self.contents_to_idx.entry(contents) {
       Entry::Occupied(entry) => *entry.get(),
       Entry::Vacant(entry) => {
-        let ret = Str::from_usize(self.str_to_contents.len());
-        self.str_to_contents.push(entry.key().clone());
+        let ret = StrIdx::from_usize(self.idx_to_contents.len());
+        self.idx_to_contents.push(entry.key().clone());
         entry.insert(ret);
         ret
       }
     }
   }
 
+  pub fn str(&mut self, contents: Box<str>) -> Str {
+    Str(self.mk_idx(contents))
+  }
+
   pub fn id(&mut self, contents: Box<str>) -> Id {
-    Id(self.insert(contents))
+    Id(self.mk_idx(contents))
+  }
+
+  fn get_idx(&self, idx: StrIdx) -> &str {
+    &self.idx_to_contents[idx.to_usize()]
   }
 
   #[must_use]
-  pub fn get(&self, s: Str) -> &str {
-    &self.str_to_contents[s.to_usize()]
+  pub fn get(&self, s: &Str) -> &str {
+    self.get_idx(s.0)
   }
 }
 
 /// An identifier.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct Id(Str);
+pub struct Id(StrIdx);
 
 impl Id {
   #[must_use]
   pub fn display(self, ar: &StrArena) -> impl fmt::Display + '_ {
-    DisplayStr { str: self.0, ar }
+    DisplayStrIdx { idx: self.0, ar }
   }
 }
 
-struct DisplayStr<'a> {
-  str: Str,
+struct DisplayStrIdx<'a> {
+  idx: StrIdx,
   ar: &'a StrArena,
 }
 
-impl fmt::Display for DisplayStr<'_> {
+impl fmt::Display for DisplayStrIdx<'_> {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    self.ar.get(self.str).fmt(f)
+    self.ar.get_idx(self.idx).fmt(f)
   }
 }
 

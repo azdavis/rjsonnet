@@ -37,7 +37,7 @@ pub(crate) struct St {
 
 impl St {
   pub(crate) fn str(&mut self, s: &str) -> jsonnet_expr::Str {
-    self.arenas.str.insert(s.to_owned().into_boxed_str())
+    self.arenas.str.str(s.to_owned().into_boxed_str())
   }
 
   pub(crate) fn id(&mut self, tok: SyntaxToken) -> jsonnet_expr::Id {

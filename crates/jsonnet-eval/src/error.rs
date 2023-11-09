@@ -51,7 +51,7 @@ impl fmt::Display for DisplayError<'_> {
         Kind::NoSuchFieldName => f.write_str("no such field"),
         Kind::TooManyArguments => f.write_str("too many arguments"),
         Kind::Infinite(inf) => write!(f, "infinite number: {inf}"),
-        Kind::User(s) => write!(f, "explicit `error`: {}", self.ar.get(*s)),
+        Kind::User(s) => write!(f, "explicit `error`: {}", self.ar.get(s)),
         Kind::StdFuncNamedArgs => f.write_str("named arguments to a `std` function"),
         Kind::StdFuncWrongNumArgs(want, got) => {
           write!(f, "expected {want} but found {got} arguments to a `std` function")
