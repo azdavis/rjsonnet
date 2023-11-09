@@ -93,5 +93,6 @@ pub(crate) fn manifest_self(s: &str) {
 pub(crate) fn manifest_str(jsonnet: &str, want: &str) {
   let (mut desugar, got) = manifest_raw(jsonnet);
   let want = desugar.arenas.str.insert(want.to_owned().into_boxed_str());
-  assert_eq!(got, json::Val::Prim(Prim::String(want)));
+  let json::Val::Prim(Prim::String(got)) = got else { panic!("did not get a String") };
+  assert_eq!(want, got);
 }
