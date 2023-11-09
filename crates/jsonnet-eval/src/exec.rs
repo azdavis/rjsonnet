@@ -1,6 +1,7 @@
 //! Executing Jsonnet expression to produce Jsonnet values.
 
 use crate::error::{self, Result};
+use crate::manifest;
 use crate::val::jsonnet::{Env, RecValKind, Std, Subst, Val};
 use jsonnet_expr::{
   Arenas, BinaryOp, Expr, ExprData, ExprMust, Id, Number, Prim, Str, StrArena, Visibility,
@@ -189,11 +190,11 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
       // add
       BinaryOp::Add => match (get(env, ars, *lhs)?, get(env, ars, *rhs)?) {
         (Val::Prim(Prim::String(lhs)), rhs) => {
-          let rhs = str_conv(rhs);
+          let rhs = str_conv(ars, rhs)?;
           Ok(Val::Prim(Prim::String(str_concat(&ars.str, &lhs, &rhs))))
         }
         (lhs, Val::Prim(Prim::String(rhs))) => {
-          let lhs = str_conv(lhs);
+          let lhs = str_conv(ars, lhs)?;
           Ok(Val::Prim(Prim::String(str_concat(&ars.str, &lhs, &rhs))))
         }
         (Val::Prim(Prim::Number(lhs)), Val::Prim(Prim::Number(rhs))) => {
@@ -249,7 +250,8 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
     }
     ExprData::Error(inner) => {
       let val = get(env, ars, *inner)?;
-      mk_error(error::Kind::User(str_conv(val)))
+      let msg = str_conv(ars, val)?;
+      mk_error(error::Kind::User(msg))
     }
     ExprData::Import { .. } => todo!(),
   }
@@ -356,11 +358,13 @@ fn exec_local(prev_env: &Env, binds: &[(Id, Expr)], ars: &Arenas, body: Expr) ->
   get(&env, ars, body)
 }
 
-#[allow(clippy::needless_pass_by_value)]
-fn str_conv(val: Val) -> Str {
-  match val {
-    Val::Prim(Prim::String(s)) => s,
-    _ => Str::TODO,
+fn str_conv(ars: &Arenas, val: Val) -> Result<Str> {
+  if let Val::Prim(Prim::String(s)) = val {
+    Ok(s)
+  } else {
+    let json = manifest::get(ars, val)?;
+    let string = json.display(&ars.str).to_string();
+    Ok(ars.str.str_shared_owned(string.into_boxed_str()))
   }
 }
 
