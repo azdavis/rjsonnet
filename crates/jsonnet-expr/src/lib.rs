@@ -257,17 +257,17 @@ impl Str {
 
 #[derive(Debug)]
 pub struct StrArena {
-  id_to_contents: Vec<Box<str>>,
-  contents_to_id: FxHashMap<Box<str>, Str>,
+  str_to_contents: Vec<Box<str>>,
+  contents_to_str: FxHashMap<Box<str>, Str>,
 }
 
 impl StrArena {
   pub fn insert(&mut self, contents: Box<str>) -> Str {
-    match self.contents_to_id.entry(contents) {
+    match self.contents_to_str.entry(contents) {
       Entry::Occupied(entry) => *entry.get(),
       Entry::Vacant(entry) => {
-        let ret = Str::from_usize(self.id_to_contents.len());
-        self.id_to_contents.push(entry.key().clone());
+        let ret = Str::from_usize(self.str_to_contents.len());
+        self.str_to_contents.push(entry.key().clone());
         entry.insert(ret);
         ret
       }
@@ -276,7 +276,7 @@ impl StrArena {
 
   #[must_use]
   pub fn get(&self, s: Str) -> &str {
-    &self.id_to_contents[s.to_usize()]
+    &self.str_to_contents[s.to_usize()]
   }
 }
 

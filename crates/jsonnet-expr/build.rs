@@ -78,8 +78,8 @@ fn main() {
     impl Default for StrArena {
       fn default() -> Self {
         let mut ret = Self {
-          id_to_contents: Vec::with_capacity(#preset_len),
-          contents_to_id: FxHashMap::default(),
+          str_to_contents: Vec::with_capacity(#preset_len),
+          contents_to_str: FxHashMap::default(),
         };
         #(#str_arena_inserts)*
         ret
