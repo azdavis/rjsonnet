@@ -28,14 +28,12 @@ fn exec(s: &str) -> (Desugar, jsonnet_eval::error::Result<jsonnet::Val>) {
   (desugar, val)
 }
 
-/// TODO have this take the wanted val and assert equal to gotten val?
 fn manifest_raw(s: &str) -> (Desugar, json::Val) {
   let (desugar, val) = exec(s);
   let val = jsonnet_eval::manifest::get(&desugar.arenas, val.expect("exec err"));
   (desugar, val.expect("manifest error"))
 }
 
-/// TODO impl deserialize for manifest val instead?
 fn from_serde(ar: &jsonnet_expr::StrArena, serde: serde_json::Value) -> json::Val {
   match serde {
     serde_json::Value::Null => json::Val::Prim(Prim::Null),
