@@ -44,7 +44,7 @@ fn from_serde(ar: &jsonnet_expr::StrArena, serde: serde_json::Value) -> json::Va
       json::Val::Prim(Prim::Number(num))
     }
     serde_json::Value::String(str) => {
-      let str = ar.str_shared_owned(str.into_boxed_str());
+      let str = ar.str_shared(str.into_boxed_str());
       json::Val::Prim(Prim::String(str))
     }
     serde_json::Value::Array(vs) => {
@@ -53,7 +53,7 @@ fn from_serde(ar: &jsonnet_expr::StrArena, serde: serde_json::Value) -> json::Va
     }
     serde_json::Value::Object(map) => {
       let iter = map.into_iter().map(|(k, v)| {
-        let k = ar.str_shared_owned(k.into_boxed_str());
+        let k = ar.str_shared(k.into_boxed_str());
         let v = from_serde(ar, v);
         (k, v)
       });

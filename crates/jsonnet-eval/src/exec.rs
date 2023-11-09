@@ -364,7 +364,7 @@ fn str_conv(ars: &Arenas, val: Val) -> Result<Str> {
   } else {
     let json = manifest::get(ars, val)?;
     let string = json.display(&ars.str).to_string();
-    Ok(ars.str.str_shared_owned(string.into_boxed_str()))
+    Ok(ars.str.str_shared(string.into_boxed_str()))
   }
 }
 
@@ -372,5 +372,5 @@ fn str_concat(ar: &StrArena, lhs: &Str, rhs: &Str) -> Str {
   let lhs = ar.get(lhs);
   let rhs = ar.get(rhs);
   let both = format!("{lhs}{rhs}").into_boxed_str();
-  ar.str_shared_owned(both)
+  ar.str_shared(both)
 }

@@ -295,22 +295,14 @@ impl StrArena {
     }
   }
 
+  /// inserts the contents if it was not in the arena already
   pub fn str(&mut self, contents: Box<str>) -> Str {
     Str(StrRepr::Idx(self.mk_idx(contents)))
   }
 
+  /// uses the contents if it was in the arena already, else does NOT insert
   #[must_use]
-  pub fn str_shared(&self, contents: &str) -> Str {
-    // invariant: if there is a str idx for the contents, always return that instead of allocating
-    match self.contents_to_idx.get(contents) {
-      Some(idx) => Str(StrRepr::Idx(*idx)),
-      None => Str(StrRepr::Alloc(contents.to_owned().into_boxed_str())),
-    }
-  }
-
-  /// TODO unite this with `str_shared` somehow?
-  #[must_use]
-  pub fn str_shared_owned(&self, contents: Box<str>) -> Str {
+  pub fn str_shared(&self, contents: Box<str>) -> Str {
     // invariant: if there is a str idx for the contents, always return that instead of allocating
     match self.contents_to_idx.get(contents.as_ref()) {
       Some(idx) => Str(StrRepr::Idx(*idx)),
