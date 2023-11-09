@@ -1,7 +1,7 @@
 //! Executing Jsonnet expression to produce Jsonnet values.
 
 use crate::error::{self, Result};
-use crate::val::{Env, RecValKind, Std, Subst, Val};
+use crate::val::jsonnet::{Env, RecValKind, Std, Subst, Val};
 use jsonnet_expr::{Arenas, BinaryOp, Expr, ExprData, ExprMust, Id, Number, Prim, Str, Visibility};
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::cmp::Ordering;

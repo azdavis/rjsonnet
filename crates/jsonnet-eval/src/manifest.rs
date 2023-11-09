@@ -1,74 +1,9 @@
 //! Manifesting Jsonnet values into JSON values.
 
-use crate::{error, exec, val};
-use jsonnet_expr::{Arenas, Prim, Str};
+use crate::val::{json, jsonnet};
+use crate::{error, exec};
+use jsonnet_expr::Arenas;
 use rustc_hash::FxHashMap;
-use std::fmt;
-
-/// A JSON value.
-#[derive(Debug, PartialEq, Eq)]
-pub enum Val {
-  Prim(Prim),
-  Object(FxHashMap<Str, Val>),
-  Array(Vec<Val>),
-}
-
-impl Val {
-  #[must_use]
-  pub fn display<'a>(&'a self, ar: &'a jsonnet_expr::StrArena) -> impl fmt::Display + 'a {
-    DisplayVal { val: self, ar }
-  }
-}
-
-struct DisplayVal<'a> {
-  val: &'a Val,
-  ar: &'a jsonnet_expr::StrArena,
-}
-
-impl<'a> fmt::Display for DisplayVal<'a> {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    match self.val {
-      Val::Prim(p) => p.display(self.ar).fmt(f),
-      Val::Object(map) => {
-        f.write_str("{")?;
-        let mut iter = map.iter();
-        let mut empty = true;
-        if let Some((k, v)) = iter.next() {
-          // TODO handle escapes
-          f.write_str(" \"")?;
-          self.ar.get(*k).fmt(f)?;
-          f.write_str("\": ")?;
-          v.display(self.ar).fmt(f)?;
-          empty = false;
-        }
-        for (k, v) in iter {
-          // TODO handle escapes
-          f.write_str(", \"")?;
-          self.ar.get(*k).fmt(f)?;
-          f.write_str("\": ")?;
-          v.display(self.ar).fmt(f)?;
-          empty = false;
-        }
-        if !empty {
-          f.write_str(" ")?;
-        }
-        f.write_str("}")
-      }
-      Val::Array(vs) => {
-        f.write_str("[")?;
-        let mut iter = vs.iter();
-        if let Some(v) = iter.next() {
-          v.display(self.ar).fmt(f)?;
-        }
-        for v in iter {
-          f.write_str(", ")?;
-          v.display(self.ar).fmt(f)?;
-        }
-        f.write_str("]")
-      }
-    }
-  }
-}
 
 /// Manifests the Jsonnet value into a JSON value.
 ///
@@ -79,11 +14,11 @@ impl<'a> fmt::Display for DisplayVal<'a> {
 /// # Panics
 ///
 /// Upon internal error.
-pub fn get(ars: &Arenas, val: val::Val) -> error::Result<Val> {
+pub fn get(ars: &Arenas, val: jsonnet::Val) -> error::Result<json::Val> {
   match val {
-    val::Val::Prim(prim) => Ok(Val::Prim(prim)),
-    val::Val::Rec { env, kind } => match kind {
-      val::RecValKind::Object { asserts, fields } => {
+    jsonnet::Val::Prim(prim) => Ok(json::Val::Prim(prim)),
+    jsonnet::Val::Rec { env, kind } => match kind {
+      jsonnet::RecValKind::Object { asserts, fields } => {
         for expr in asserts {
           get_(&env, ars, expr)?;
         }
@@ -95,23 +30,23 @@ pub fn get(ars: &Arenas, val: val::Val) -> error::Result<Val> {
           let val = get_(&env, ars, expr)?;
           assert!(val_fields.insert(name, val).is_none());
         }
-        Ok(Val::Object(val_fields))
+        Ok(json::Val::Object(val_fields))
       }
-      val::RecValKind::Function { .. } => Err(error::Error::ManifestFn),
-      val::RecValKind::Array(exprs) => {
+      jsonnet::RecValKind::Function { .. } => Err(error::Error::ManifestFn),
+      jsonnet::RecValKind::Array(exprs) => {
         let iter = exprs.into_iter().map(|expr| get_(&env, ars, expr));
         let vs = iter.collect::<error::Result<Vec<_>>>()?;
-        Ok(Val::Array(vs))
+        Ok(json::Val::Array(vs))
       }
     },
-    val::Val::Std(std_val) => match std_val {
-      val::Std::Cmp | val::Std::Equals => Err(error::Error::ManifestFn),
+    jsonnet::Val::Std(std_val) => match std_val {
+      jsonnet::Std::Cmp | jsonnet::Std::Equals => Err(error::Error::ManifestFn),
     },
   }
 }
 
 /// both executes and manifests
-fn get_(env: &val::Env, ars: &Arenas, expr: jsonnet_expr::Expr) -> error::Result<Val> {
+fn get_(env: &jsonnet::Env, ars: &Arenas, expr: jsonnet_expr::Expr) -> error::Result<json::Val> {
   let val = exec::get(env, ars, expr)?;
   get(ars, val)
 }
