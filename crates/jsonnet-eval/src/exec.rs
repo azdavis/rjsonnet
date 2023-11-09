@@ -2,7 +2,9 @@
 
 use crate::error::{self, Result};
 use crate::val::jsonnet::{Env, RecValKind, Std, Subst, Val};
-use jsonnet_expr::{Arenas, BinaryOp, Expr, ExprData, ExprMust, Id, Number, Prim, Str, Visibility};
+use jsonnet_expr::{
+  Arenas, BinaryOp, Expr, ExprData, ExprMust, Id, Number, Prim, Str, StrArena, Visibility,
+};
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::cmp::Ordering;
 
@@ -188,11 +190,11 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
       BinaryOp::Add => match (get(env, ars, *lhs)?, get(env, ars, *rhs)?) {
         (Val::Prim(Prim::String(lhs)), rhs) => {
           let rhs = str_conv(rhs);
-          Ok(Val::Prim(Prim::String(str_concat(lhs, rhs))))
+          Ok(Val::Prim(Prim::String(str_concat(&ars.str, &lhs, &rhs))))
         }
         (lhs, Val::Prim(Prim::String(rhs))) => {
           let lhs = str_conv(lhs);
-          Ok(Val::Prim(Prim::String(str_concat(lhs, rhs))))
+          Ok(Val::Prim(Prim::String(str_concat(&ars.str, &lhs, &rhs))))
         }
         (Val::Prim(Prim::Number(lhs)), Val::Prim(Prim::Number(rhs))) => {
           let n = match Number::try_from(lhs.value() + rhs.value()) {
@@ -362,6 +364,9 @@ fn str_conv(val: Val) -> Str {
   }
 }
 
-fn str_concat(_: Str, _: Str) -> Str {
-  Str::TODO
+fn str_concat(ar: &StrArena, lhs: &Str, rhs: &Str) -> Str {
+  let lhs = ar.get(lhs);
+  let rhs = ar.get(rhs);
+  let both = format!("{lhs}{rhs}").into_boxed_str();
+  ar.str_shared_owned(both)
 }

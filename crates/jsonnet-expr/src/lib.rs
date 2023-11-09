@@ -308,6 +308,16 @@ impl StrArena {
     }
   }
 
+  /// TODO unite this with `str_shared` somehow?
+  #[must_use]
+  pub fn str_shared_owned(&self, contents: Box<str>) -> Str {
+    // invariant: if there is a str idx for the contents, always return that instead of allocating
+    match self.contents_to_idx.get(contents.as_ref()) {
+      Some(idx) => Str(StrRepr::Idx(*idx)),
+      None => Str(StrRepr::Alloc(contents)),
+    }
+  }
+
   pub fn id(&mut self, contents: Box<str>) -> Id {
     Id(self.mk_idx(contents))
   }
