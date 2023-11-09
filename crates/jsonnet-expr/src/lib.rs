@@ -259,6 +259,17 @@ impl StrIdx {
   }
 }
 
+struct DisplayStrIdx<'a> {
+  idx: StrIdx,
+  ar: &'a StrArena,
+}
+
+impl fmt::Display for DisplayStrIdx<'_> {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    self.ar.get_idx(self.idx).fmt(f)
+  }
+}
+
 #[derive(Debug)]
 pub struct StrArena {
   idx_to_contents: Vec<Box<str>>,
@@ -304,17 +315,6 @@ impl Id {
   #[must_use]
   pub fn display(self, ar: &StrArena) -> impl fmt::Display + '_ {
     DisplayStrIdx { idx: self.0, ar }
-  }
-}
-
-struct DisplayStrIdx<'a> {
-  idx: StrIdx,
-  ar: &'a StrArena,
-}
-
-impl fmt::Display for DisplayStrIdx<'_> {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    self.ar.get_idx(self.idx).fmt(f)
   }
 }
 
