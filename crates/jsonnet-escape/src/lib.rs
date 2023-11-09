@@ -29,14 +29,15 @@ impl fmt::Display for Error {
 pub trait State {
   /// Returns the current byte without advancing.
   fn cur(&mut self) -> Option<u8>;
-  /// Advance to the next character.
+  /// Advance to the next byte.
   fn bump(&mut self);
-  /// Record an error at the current position, i.e. the most recent escaped byte the state examined.
+  /// Record an error at the byte that would be returned by `cur`.
   fn err(&mut self, e: Error);
   /// Output an interpreted byte.
   fn output(&mut self, b: u8);
 }
 
+/// Handle a string that contains slash escapes, like `\n`, ended by the terminator.
 pub fn slash<S>(st: &mut S, terminator: u8)
 where
   S: State,
@@ -85,6 +86,10 @@ where
   st.err(Error::NotTerminated);
 }
 
+/// Handle a verbatim string, ended by the terminator.
+///
+/// Two consecutive terminators do not terminate the string, but are interpreted as one terminator
+/// character in the string.
 pub fn verbatim<S>(st: &mut S, terminator: u8)
 where
   S: State,
