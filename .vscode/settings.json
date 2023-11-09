@@ -16,6 +16,7 @@
     "peekable",
     "prec",
     "prettyplease",
+    "Repr",
     "rustc",
     "tailstrict",
     "ungram",

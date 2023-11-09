@@ -49,7 +49,7 @@ fn main() {
       return None;
     }
     let name = format_ident!("{name}");
-    Some(quote! { pub const #name: Self = Self(StrIdx::#name); })
+    Some(quote! { pub const #name: Self = Self(StrRepr::Idx(StrIdx::#name)); })
   });
   let id_constants = preset.iter().filter_map(|&(name, _, make_id)| {
     if !make_id {
@@ -67,7 +67,7 @@ fn main() {
   let contents = quote! {
     pub const _GENERATED_BY: &str = #file;
 
-    use crate::{Id, Str, StrIdx, StrArena};
+    use crate::{Id, Str, StrRepr, StrIdx, StrArena};
     use rustc_hash::FxHashMap;
 
     impl StrIdx {

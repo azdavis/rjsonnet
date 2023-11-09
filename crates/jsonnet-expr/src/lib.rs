@@ -237,7 +237,13 @@ impl fmt::Display for Infinite {
 
 /// A string, which may be interned.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct Str(StrIdx);
+pub struct Str(StrRepr);
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+enum StrRepr {
+  Idx(StrIdx),
+  Alloc(Box<str>),
+}
 
 /// An interned string, which is an index into a string arena.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -290,7 +296,16 @@ impl StrArena {
   }
 
   pub fn str(&mut self, contents: Box<str>) -> Str {
-    Str(self.mk_idx(contents))
+    Str(StrRepr::Idx(self.mk_idx(contents)))
+  }
+
+  #[must_use]
+  pub fn str_shared(&self, contents: &str) -> Str {
+    // invariant: if there is a str idx for the contents, always return that instead of allocating
+    match self.contents_to_idx.get(contents) {
+      Some(idx) => Str(StrRepr::Idx(*idx)),
+      None => Str(StrRepr::Alloc(contents.to_owned().into_boxed_str())),
+    }
   }
 
   pub fn id(&mut self, contents: Box<str>) -> Id {
@@ -302,8 +317,11 @@ impl StrArena {
   }
 
   #[must_use]
-  pub fn get(&self, s: &Str) -> &str {
-    self.get_idx(s.0)
+  pub fn get<'a>(&'a self, s: &'a Str) -> &'a str {
+    match &s.0 {
+      StrRepr::Idx(idx) => self.get_idx(*idx),
+      StrRepr::Alloc(s) => s.as_ref(),
+    }
   }
 }
 
