@@ -1,7 +1,4 @@
 //! Manifesting Jsonnet values into JSON values.
-//!
-//! Since Jsonnet values are lazy, they can contain unexecuted Jsonnet expressions. Manifestation is
-//! thus mutually recursive with execution.
 
 use crate::{error, exec, val};
 use jsonnet_expr::{Arenas, Prim, Str};
