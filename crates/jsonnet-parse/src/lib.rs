@@ -1,6 +1,6 @@
 //! Parse a sequence of tokens into a concrete syntax tree.
 
-#![deny(clippy::pedantic, missing_debug_implementations, rust_2018_idioms)]
+#![deny(clippy::pedantic, missing_debug_implementations, missing_docs, rust_2018_idioms)]
 
 mod internal;
 
@@ -27,16 +27,28 @@ pub fn get(tokens: &[token::Token<'_, SK>]) -> Parse {
   Parse { root, errors: errors.into_iter().map(Error).collect() }
 }
 
-pub(crate) type Parser<'a> = event_parse::Parser<'a, SK, ErrorKind>;
+type Parser<'a> = event_parse::Parser<'a, SK, ErrorKind>;
 
+/// The result of parsing.
 #[derive(Debug)]
 pub struct Parse {
+  /// The parsed concrete syntax tree.
   pub root: jsonnet_syntax::ast::Root,
+  /// Errors when parsing.
   pub errors: Vec<Error>,
 }
 
+/// A parse error.
 #[derive(Debug)]
 pub struct Error(event_parse::rowan_sink::Error<ErrorKind>);
+
+impl Error {
+  /// The range of the error.
+  #[must_use]
+  pub fn range(&self) -> text_size::TextRange {
+    self.0.range
+  }
+}
 
 impl fmt::Display for Error {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -48,7 +60,7 @@ impl fmt::Display for Error {
 }
 
 #[derive(Debug)]
-pub enum ErrorKind {
+enum ErrorKind {
   Trailing,
   Expected(Expected),
 }
@@ -60,7 +72,7 @@ impl event_parse::Expected<SK> for ErrorKind {
 }
 
 #[derive(Debug)]
-pub enum Expected {
+enum Expected {
   Expr,
   Kind(SK),
   Visibility,

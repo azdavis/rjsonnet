@@ -1,12 +1,13 @@
 //! Static checking for jsonnet.
 
-#![deny(clippy::pedantic, missing_debug_implementations, rust_2018_idioms)]
+#![deny(clippy::pedantic, missing_debug_implementations, missing_docs, rust_2018_idioms)]
 
 mod error;
 
 use jsonnet_expr::{Arenas, Expr, ExprData, ExprMust, Id, Prim, Str};
 use rustc_hash::FxHashSet;
 
+/// The state when checking statics.
 #[derive(Debug, Default)]
 pub struct St {
   errors: Vec<error::Error>,
@@ -49,6 +50,7 @@ impl Cx {
   }
 }
 
+/// Performs the checks.
 pub fn check(st: &mut St, cx: &Cx, ars: &Arenas, expr: Expr) {
   let Some(expr) = expr else { return };
   match &ars.expr[expr] {

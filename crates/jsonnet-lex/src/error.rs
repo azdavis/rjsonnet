@@ -1,13 +1,16 @@
 use core::fmt;
 
+/// A lex error.
 #[derive(Debug)]
 pub struct Error {
-  pub idx: usize,
-  pub kind: Kind,
+  /// TODO replace with a text range?
+  #[allow(dead_code)]
+  pub(crate) idx: usize,
+  pub(crate) kind: Kind,
 }
 
 #[derive(Debug)]
-pub enum Kind {
+pub(crate) enum Kind {
   Escape(jsonnet_escape::Error),
   UnclosedComment,
   LeadingZero,

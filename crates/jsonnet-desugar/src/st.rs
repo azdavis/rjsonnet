@@ -4,6 +4,7 @@ use jsonnet_syntax::{ast, kind::SyntaxToken};
 use rustc_hash::FxHashMap;
 use text_size::TextRange;
 
+/// Pointers between arena indices and concrete syntax.
 #[derive(Debug, Default)]
 pub struct Pointers {
   ptr_to_idx: FxHashMap<ast::SyntaxNodePtr, jsonnet_expr::ExprMust>,
@@ -16,11 +17,13 @@ impl Pointers {
     self.idx_to_ptr.insert(e, ptr);
   }
 
+  /// Gets the syntax node pointer for the expr. Both must exist.
   #[must_use]
   pub fn get_ptr(&self, e: jsonnet_expr::ExprMust) -> ast::SyntaxNodePtr {
     self.idx_to_ptr[e].clone()
   }
 
+  /// Maybe gets an expression for a syntax node pointer.
   #[must_use]
   pub fn get_idx(&self, ptr: ast::SyntaxNodePtr) -> jsonnet_expr::Expr {
     self.ptr_to_idx.get(&ptr).copied()

@@ -1,13 +1,22 @@
 use std::fmt;
 
+/// An error when desugaring.
 #[derive(Debug)]
 pub struct Error {
-  pub range: text_size::TextRange,
-  pub kind: Kind,
+  pub(crate) range: text_size::TextRange,
+  pub(crate) kind: Kind,
+}
+
+impl Error {
+  /// The range of the error.
+  #[must_use]
+  pub fn range(&self) -> text_size::TextRange {
+    self.range
+  }
 }
 
 #[derive(Debug)]
-pub enum Kind {
+pub(crate) enum Kind {
   CannotRepresentNumber,
   ArrayCompNotOne,
   FirstCompSpecNotFor,

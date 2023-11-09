@@ -11,6 +11,7 @@ doctest = false
 
 [dependencies]
 event-parse.workspace = true
+text-size.workspace = true
 token.workspace = true
 
 jsonnet-syntax.path = "../jsonnet-syntax"

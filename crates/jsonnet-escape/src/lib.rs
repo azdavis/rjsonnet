@@ -1,6 +1,6 @@
 //! Dealing with Jsonnet string escapes.
 
-#![deny(clippy::pedantic, missing_debug_implementations, rust_2018_idioms)]
+#![deny(clippy::pedantic, missing_debug_implementations, missing_docs, rust_2018_idioms)]
 
 use std::fmt;
 
@@ -29,11 +29,11 @@ impl fmt::Display for Error {
 pub trait State {
   /// Returns the current byte without advancing.
   fn cur(&mut self) -> Option<u8>;
-  /// Advance to the next byte.
+  /// Advances to the next byte.
   fn bump(&mut self);
-  /// Record an error at the byte that would be returned by `cur`.
+  /// Records an error at the byte that would be returned by `cur`.
   fn err(&mut self, e: Error);
-  /// Output an interpreted byte.
+  /// Outputs an interpreted byte.
   fn output(&mut self, b: u8);
 }
 

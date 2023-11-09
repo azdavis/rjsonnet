@@ -118,6 +118,7 @@ version = "0.1.0"
 dependencies = [
  "event-parse",
  "jsonnet-syntax",
+ "text-size",
  "token",
 ]
 

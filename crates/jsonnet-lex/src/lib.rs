@@ -1,6 +1,6 @@
 //! Lexing a string into a sequence of tokens.
 
-#![deny(clippy::pedantic, missing_debug_implementations, rust_2018_idioms)]
+#![deny(clippy::pedantic, missing_debug_implementations, missing_docs, rust_2018_idioms)]
 
 mod error;
 mod internal;
@@ -12,12 +12,17 @@ use st::St;
 
 pub use error::Error;
 
+/// The result of lexing.
 #[derive(Debug, Default)]
 pub struct Lex<'a> {
+  /// The tokens.
   pub tokens: Vec<token::Token<'a, SK>>,
+  /// Errors when lexing.
   pub errors: Vec<Error>,
 }
 
+/// Transforms a string into tokens.
+///
 /// # Panics
 ///
 /// Upon internal error.
