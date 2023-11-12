@@ -143,11 +143,17 @@ where
   if prefix.is_empty() {
     out.err(st.cur_idx(), Error::NoWhitespacePrefixForTextBlockFirstLine);
   }
-  st.bump_while(|b| b != b'\n');
+  st.bump_while(|b| {
+    out.byte(b);
+    b != b'\n'
+  });
   st.bump();
   loop {
     if st.eat_prefix(prefix) {
-      st.bump_while(|b| b != b'\n');
+      st.bump_while(|b| {
+        out.byte(b);
+        b != b'\n'
+      });
     }
     if st.cur().is_some_and(|b| b == b'\n') {
       st.bump();

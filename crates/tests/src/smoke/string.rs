@@ -70,3 +70,15 @@ fn double_verbatim_escape() {
 fn unclosed() {
   manifest_str("'", "");
 }
+
+#[test]
+fn text_block() {
+  manifest_str(
+    r#"
+|||
+  hi there
+  buddy
+|||"#,
+    "hi there\nbuddy\n",
+  );
+}
