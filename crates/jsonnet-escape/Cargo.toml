@@ -11,3 +11,5 @@ doctest = false
 
 [dependencies]
 drop_bomb.workspace = true
+
+str-process.path = "../str-process"

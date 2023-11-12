@@ -3,6 +3,7 @@
 #![deny(clippy::pedantic, missing_debug_implementations, missing_docs, rust_2018_idioms)]
 
 use std::fmt;
+use str_process::St;
 
 /// An error when interpreting the escaped bytes.
 #[derive(Debug)]
@@ -26,21 +27,17 @@ impl fmt::Display for Error {
 }
 
 /// The state for turning a sequence of escaped bytes into a sequence of interpreted bytes.
-pub trait State {
-  /// Returns the current byte without advancing.
-  fn cur(&mut self) -> Option<u8>;
-  /// Advances to the next byte.
-  fn bump(&mut self);
-  /// Records an error at the byte that would be returned by `cur`.
-  fn err(&mut self, e: Error);
+pub trait Output {
+  /// Records an error at the index.
+  fn err(&mut self, idx: usize, e: Error);
   /// Outputs an interpreted byte.
-  fn output(&mut self, b: u8);
+  fn byte(&mut self, b: u8);
 }
 
 /// Handle a string that contains slash escapes, like `\n`, ended by the terminator.
-pub fn slash<S>(st: &mut S, terminator: u8)
+pub fn slash<O>(st: &mut St<'_>, out: &mut O, terminator: u8)
 where
-  S: State,
+  O: Output,
 {
   while let Some(cur) = st.cur() {
     st.bump();
@@ -48,21 +45,21 @@ where
       return;
     }
     if cur != b'\\' {
-      st.output(cur);
+      out.byte(cur);
       continue;
     }
     let Some(b) = st.cur() else { break };
     st.bump();
     match b {
-      b'"' => st.output(b'"'),
-      b'\'' => st.output(b'\''),
-      b'\\' => st.output(b'\\'),
-      b'/' => st.output(b'/'),
-      b'b' => st.output(8),
-      b'f' => st.output(12),
-      b'n' => st.output(10),
-      b'r' => st.output(13),
-      b't' => st.output(9),
+      b'"' => out.byte(b'"'),
+      b'\'' => out.byte(b'\''),
+      b'\\' => out.byte(b'\\'),
+      b'/' => out.byte(b'/'),
+      b'b' => out.byte(8),
+      b'f' => out.byte(12),
+      b'n' => out.byte(10),
+      b'r' => out.byte(13),
+      b't' => out.byte(9),
       b'u' => {
         for _ in 0..4 {
           let Some(b) = st.cur() else { break };
@@ -74,25 +71,25 @@ where
           } else if b.is_ascii_uppercase() {
             b'A'
           } else {
-            st.err(Error::NotHexDigit);
+            out.err(st.cur_idx(), Error::NotHexDigit);
             continue;
           };
-          st.output(b - minus);
+          out.byte(b - minus);
         }
       }
-      _ => st.err(Error::InvalidEscape),
+      _ => out.err(st.cur_idx(), Error::InvalidEscape),
     }
   }
-  st.err(Error::NotTerminated);
+  out.err(st.cur_idx(), Error::NotTerminated);
 }
 
 /// Handle a verbatim string, ended by the terminator.
 ///
 /// Two consecutive terminators do not terminate the string, but are interpreted as one terminator
 /// character in the string.
-pub fn verbatim<S>(st: &mut S, terminator: u8)
+pub fn verbatim<O>(st: &mut St<'_>, out: &mut O, terminator: u8)
 where
-  S: State,
+  O: Output,
 {
   while let Some(cur) = st.cur() {
     st.bump();
@@ -103,7 +100,7 @@ where
         return;
       }
     }
-    st.output(cur);
+    out.byte(cur);
   }
-  st.err(Error::NotTerminated);
+  out.err(st.cur_idx(), Error::NotTerminated);
 }

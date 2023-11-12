@@ -1,29 +1,28 @@
 use crate::{error, st::St};
-use jsonnet_escape::State;
+use jsonnet_escape::Output;
 use jsonnet_syntax::{ast, kind::SyntaxToken};
 
-struct EscapeSt<'str, 'st> {
-  inner: str_process::St<'str>,
-  out: Vec<u8>,
+struct EscapeOutput<'st> {
+  bytes: Vec<u8>,
   token: jsonnet_syntax::kind::SyntaxToken,
   st: &'st mut St,
 }
 
-impl<'str, 'st> State for EscapeSt<'str, 'st> {
-  fn cur(&mut self) -> Option<u8> {
-    self.inner.cur()
+impl<'st> EscapeOutput<'st> {
+  fn new(token: jsonnet_syntax::kind::SyntaxToken, st: &'st mut St) -> EscapeOutput<'st> {
+    // always has at least 2 delimiter bytes (1 at start, 1 at end)
+    let cap = token.text().len() - 2;
+    EscapeOutput { bytes: Vec::with_capacity(cap), token, st }
   }
+}
 
-  fn bump(&mut self) {
-    self.inner.bump();
-  }
-
-  fn err(&mut self, e: jsonnet_escape::Error) {
+impl<'st> Output for EscapeOutput<'st> {
+  fn err(&mut self, _: usize, e: jsonnet_escape::Error) {
     self.st.err_token(self.token.clone(), error::Kind::Escape(e));
   }
 
-  fn output(&mut self, b: u8) {
-    self.out.push(b);
+  fn byte(&mut self, b: u8) {
+    self.bytes.push(b);
   }
 }
 
@@ -38,31 +37,21 @@ pub(crate) fn get(st: &mut St, string: ast::String) -> String {
 }
 
 fn slash(st: &mut St, token: SyntaxToken, delim: u8) -> String {
-  let text = token.text();
-  let mut escape_st = EscapeSt {
-    inner: str_process::St::new(text),
-    st,
-    token: token.clone(),
-    out: Vec::with_capacity(text.len() - 2),
-  };
-  assert_eq!(escape_st.cur().unwrap(), delim);
-  escape_st.bump();
-  jsonnet_escape::slash(&mut escape_st, delim);
-  String::from_utf8(escape_st.out).expect("invalid utf-8 in str")
+  let mut sp_st = str_process::St::new(token.text());
+  let mut out = EscapeOutput::new(token.clone(), st);
+  assert_eq!(sp_st.cur().unwrap(), delim);
+  sp_st.bump();
+  jsonnet_escape::slash(&mut sp_st, &mut out, delim);
+  String::from_utf8(out.bytes).expect("invalid utf-8 in str")
 }
 
 fn verbatim(st: &mut St, token: SyntaxToken, delim: u8) -> String {
-  let text = token.text();
-  let mut escape_st = EscapeSt {
-    inner: str_process::St::new(text),
-    st,
-    token: token.clone(),
-    out: Vec::with_capacity(text.len() - 3),
-  };
-  assert_eq!(escape_st.cur().unwrap(), b'@');
-  escape_st.bump();
-  assert_eq!(escape_st.cur().unwrap(), delim);
-  escape_st.bump();
-  jsonnet_escape::verbatim(&mut escape_st, delim);
-  String::from_utf8(escape_st.out).expect("invalid utf-8 in str")
+  let mut sp_st = str_process::St::new(token.text());
+  let mut out = EscapeOutput::new(token.clone(), st);
+  assert_eq!(sp_st.cur().unwrap(), b'@');
+  sp_st.bump();
+  assert_eq!(sp_st.cur().unwrap(), delim);
+  sp_st.bump();
+  jsonnet_escape::verbatim(&mut sp_st, &mut out, delim);
+  String::from_utf8(out.bytes).expect("invalid utf-8 in str")
 }

@@ -85,6 +85,7 @@ name = "jsonnet-escape"
 version = "0.1.0"
 dependencies = [
  "drop_bomb",
+ "str-process",
 ]
 
 [[package]]

@@ -41,3 +41,26 @@ impl fmt::Display for Error {
     }
   }
 }
+
+#[derive(Debug, Default)]
+pub(crate) struct Output {
+  errors: Vec<Error>,
+}
+
+impl Output {
+  pub(crate) fn err(&mut self, idx: usize, kind: Kind) {
+    self.errors.push(Error { idx, kind });
+  }
+
+  pub(crate) fn finish(self) -> Vec<Error> {
+    self.errors
+  }
+}
+
+impl jsonnet_escape::Output for Output {
+  fn err(&mut self, idx: usize, e: jsonnet_escape::Error) {
+    self.err(idx, Kind::Escape(e));
+  }
+
+  fn byte(&mut self, _: u8) {}
+}
