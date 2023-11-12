@@ -8,12 +8,12 @@ use jsonnet_syntax::kind::SyntaxKind as SK;
 pub(crate) fn token(st: &mut St<'_>, b: u8) -> SK {
   if is_ws(b) {
     st.bump();
-    st.advance_while(is_ws);
+    st.inner.bump_while(is_ws);
     return SK::Whitespace;
   }
   if b == b'#' {
     st.bump();
-    st.advance_while(|b| b != b'\n');
+    st.inner.bump_while(|b| b != b'\n');
     return SK::HashComment;
   }
   if b == b'/' {
@@ -21,7 +21,7 @@ pub(crate) fn token(st: &mut St<'_>, b: u8) -> SK {
     match st.cur() {
       Some(b'/') => {
         st.bump();
-        st.advance_while(|b| b != b'\n');
+        st.inner.bump_while(|b| b != b'\n');
         return SK::SlashSlashComment;
       }
       Some(b'*') => {
@@ -45,51 +45,51 @@ pub(crate) fn token(st: &mut St<'_>, b: u8) -> SK {
     }
   }
   // put this before PUNCTUATION since that contains || and |
-  if st.eat_prefix(b"|||") {
-    st.advance_while(is_non_nl_ws);
+  if st.inner.eat_prefix(b"|||") {
+    st.inner.bump_while(is_non_nl_ws);
     if st.cur().is_some_and(|b| b == b'\n') {
       st.bump();
     } else {
       st.err(error::Kind::NoNewLineForTextBlockStart);
     }
-    let prefix_start = st.mark();
-    st.advance_while(is_non_nl_ws);
-    let prefix = st.since(prefix_start);
+    let prefix_start = st.inner.mark();
+    st.inner.bump_while(is_non_nl_ws);
+    let prefix = st.inner.since(prefix_start);
     if prefix.is_empty() {
       st.err(error::Kind::NoWhitespacePrefixForTextBlockFirstLine);
     }
-    st.advance_while(|b| b != b'\n');
+    st.inner.bump_while(|b| b != b'\n');
     st.bump();
     loop {
-      if st.eat_prefix(prefix) {
-        st.advance_while(|b| b != b'\n');
+      if st.inner.eat_prefix(prefix) {
+        st.inner.bump_while(|b| b != b'\n');
       }
       if st.cur().is_some_and(|b| b == b'\n') {
         st.bump();
         continue;
       }
-      st.advance_while(is_non_nl_ws);
-      if !st.eat_prefix(b"|||") {
+      st.inner.bump_while(is_non_nl_ws);
+      if !st.inner.eat_prefix(b"|||") {
         st.err(error::Kind::NoBarBarBarForTextBlockEnd);
       }
       break;
     }
     return SK::TextBlock;
   }
-  if let Some(&(_, sk)) = SK::PUNCTUATION.iter().find(|&(bs, _)| st.eat_prefix(bs)) {
+  if let Some(&(_, sk)) = SK::PUNCTUATION.iter().find(|&(bs, _)| st.inner.eat_prefix(bs)) {
     return sk;
   }
   if b.is_ascii_alphabetic() || b == b'_' {
-    let start = st.mark();
+    let start = st.inner.mark();
     st.bump();
-    st.advance_while(|b| b.is_ascii_alphanumeric() || b == b'_');
-    return SK::keyword(st.non_empty_since(start)).unwrap_or(SK::Id);
+    st.inner.bump_while(|b| b.is_ascii_alphanumeric() || b == b'_');
+    return SK::keyword(st.inner.non_empty_since(start)).unwrap_or(SK::Id);
   }
   if b.is_ascii_digit() {
     st.bump();
-    let m = st.mark();
-    st.advance_while(|b| b.is_ascii_digit());
-    if st.did_advance_since(m) && b == b'0' {
+    let m = st.inner.mark();
+    st.inner.bump_while(|b| b.is_ascii_digit());
+    if st.inner.did_bump_since(m) && b == b'0' {
       st.err(error::Kind::LeadingZero);
     }
     if let Some(b'.') = st.cur() {
@@ -135,14 +135,14 @@ pub(crate) fn token(st: &mut St<'_>, b: u8) -> SK {
   }
   // TODO handle more strings
   st.err(error::Kind::InvalidBytes);
-  st.next_str();
+  st.inner.next_str();
   SK::Invalid
 }
 
 fn digits(st: &mut St<'_>) {
-  let m = st.mark();
-  st.advance_while(|b| b.is_ascii_digit());
-  if !st.did_advance_since(m) {
+  let m = st.inner.mark();
+  st.inner.bump_while(|b| b.is_ascii_digit());
+  if !st.inner.did_bump_since(m) {
     st.err(error::Kind::NeedDigits);
   }
 }

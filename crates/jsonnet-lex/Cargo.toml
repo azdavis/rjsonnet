@@ -10,8 +10,8 @@ test = false
 doctest = false
 
 [dependencies]
-drop_bomb.workspace = true
 token.workspace = true
 
 jsonnet-escape.path = "../jsonnet-escape"
 jsonnet-syntax.path = "../jsonnet-syntax"
+str-process.path = "../str-process"

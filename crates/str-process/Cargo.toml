@@ -1,5 +1,5 @@
 [package]
-name = "jsonnet-escape"
+name = "str-process"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

@@ -82,6 +82,9 @@ dependencies = [
 [[package]]
 name = "jsonnet-escape"
 version = "0.1.0"
+dependencies = [
+ "drop_bomb",
+]
 
 [[package]]
 name = "jsonnet-eval"
@@ -106,9 +109,9 @@ dependencies = [
 name = "jsonnet-lex"
 version = "0.1.0"
 dependencies = [
- "drop_bomb",
  "jsonnet-escape",
  "jsonnet-syntax",
+ "str-process",
  "token",
 ]
 
@@ -238,6 +241,13 @@ dependencies = [
  "itoa",
  "ryu",
  "serde",
+]
+
+[[package]]
+name = "str-process"
+version = "0.1.0"
+dependencies = [
+ "drop_bomb",
 ]
 
 [[package]]
