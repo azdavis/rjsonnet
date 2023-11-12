@@ -19,6 +19,7 @@ pub(crate) enum Kind {
   InvalidVerbatimDelim,
   NoNewLineForTextBlockStart,
   NoWhitespacePrefixForTextBlockFirstLine,
+  NoBarBarBarForTextBlockEnd,
 }
 
 impl fmt::Display for Error {
@@ -31,11 +32,12 @@ impl fmt::Display for Error {
       Kind::NeedDigits => f.write_str("need at least one digit"),
       Kind::InvalidVerbatimDelim => f.write_str("invalid verbatim string delimiter"),
       Kind::NoNewLineForTextBlockStart => {
-        f.write_str("must have a newline after `|||` to open text block")
+        f.write_str("must have a newline after `|||` to start text block")
       }
       Kind::NoWhitespacePrefixForTextBlockFirstLine => {
         f.write_str("first line of text block must start with whitespace")
       }
+      Kind::NoBarBarBarForTextBlockEnd => f.write_str("must have a `|||` to end text block"),
     }
   }
 }

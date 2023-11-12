@@ -58,8 +58,22 @@ pub(crate) fn token(st: &mut St<'_>, b: u8) -> SK {
     if prefix.is_empty() {
       st.err(error::Kind::NoWhitespacePrefixForTextBlockFirstLine);
     }
-    // TODO consume empty lines or lines that start with prefix without error, then end text block
-    // when line does not start with prefix, and error if that line is not whitespace + `|||`
+    st.advance_while(|b| b != b'\n');
+    st.bump();
+    loop {
+      if st.eat_prefix(prefix) {
+        st.advance_while(|b| b != b'\n');
+      }
+      if st.cur().is_some_and(|b| b == b'\n') {
+        st.bump();
+        continue;
+      }
+      st.advance_while(is_non_nl_ws);
+      if !st.eat_prefix(b"|||") {
+        st.err(error::Kind::NoBarBarBarForTextBlockEnd);
+      }
+      break;
+    }
     return SK::TextBlock;
   }
   if let Some(&(_, sk)) = SK::PUNCTUATION.iter().find(|&(bs, _)| st.eat_prefix(bs)) {
