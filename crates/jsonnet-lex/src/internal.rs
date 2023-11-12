@@ -46,34 +46,7 @@ pub(crate) fn token(st: &mut St<'_>, out: &mut error::Output, b: u8) -> SK {
   }
   // put this before PUNCTUATION since that contains || and |
   if st.eat_prefix(b"|||") {
-    st.bump_while(is_non_nl_ws);
-    if st.cur().is_some_and(|b| b == b'\n') {
-      st.bump();
-    } else {
-      out.err(st.cur_idx(), error::Kind::NoNewLineForTextBlockStart);
-    }
-    let prefix_start = st.mark();
-    st.bump_while(is_non_nl_ws);
-    let prefix = st.since(prefix_start);
-    if prefix.is_empty() {
-      out.err(st.cur_idx(), error::Kind::NoWhitespacePrefixForTextBlockFirstLine);
-    }
-    st.bump_while(|b| b != b'\n');
-    st.bump();
-    loop {
-      if st.eat_prefix(prefix) {
-        st.bump_while(|b| b != b'\n');
-      }
-      if st.cur().is_some_and(|b| b == b'\n') {
-        st.bump();
-        continue;
-      }
-      st.bump_while(is_non_nl_ws);
-      if !st.eat_prefix(b"|||") {
-        out.err(st.cur_idx(), error::Kind::NoBarBarBarForTextBlockEnd);
-      }
-      break;
-    }
+    jsonnet_escape::text_block(st, out);
     return SK::TextBlock;
   }
   if let Some(&(_, sk)) = SK::PUNCTUATION.iter().find(|&(bs, _)| st.eat_prefix(bs)) {
@@ -149,8 +122,4 @@ fn digits(st: &mut St<'_>, out: &mut error::Output) {
 
 fn is_ws(b: u8) -> bool {
   matches!(b, b' ' | b'\t' | b'\n' | b'\r')
-}
-
-fn is_non_nl_ws(b: u8) -> bool {
-  matches!(b, b' ' | b'\t' | b'\r')
 }

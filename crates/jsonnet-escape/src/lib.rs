@@ -14,6 +14,12 @@ pub enum Error {
   InvalidEscape,
   /// One of the `D` in the `\uDDDD` escape was not a hex digit.
   NotHexDigit,
+  /// There was no new line on the starting `|||` line for a text block.
+  NoNewLineForTextBlockStart,
+  /// A content line of a text block didn't start with the whitespace prefix.
+  NoWhitespacePrefixForTextBlockFirstLine,
+  /// There was no closing `|||` on the ending line for a text block.
+  NoBarBarBarForTextBlockEnd,
 }
 
 impl fmt::Display for Error {
@@ -22,6 +28,13 @@ impl fmt::Display for Error {
       Error::NotTerminated => f.write_str("unclosed string"),
       Error::InvalidEscape => f.write_str("invalid escape"),
       Error::NotHexDigit => f.write_str("not a hex digit"),
+      Error::NoNewLineForTextBlockStart => {
+        f.write_str("must have a newline after `|||` to start text block")
+      }
+      Error::NoWhitespacePrefixForTextBlockFirstLine => {
+        f.write_str("first line of text block must start with whitespace")
+      }
+      Error::NoBarBarBarForTextBlockEnd => f.write_str("must have a `|||` to end text block"),
     }
   }
 }
@@ -35,6 +48,9 @@ pub trait Output {
 }
 
 /// Handle a string that contains slash escapes, like `\n`, ended by the terminator.
+///
+/// Before this function, we have already seen the opening quote (which is the same as the
+/// terminator).
 pub fn slash<O>(st: &mut St<'_>, out: &mut O, terminator: u8)
 where
   O: Output,
@@ -85,6 +101,9 @@ where
 
 /// Handle a verbatim string, ended by the terminator.
 ///
+/// Before this function, we have already seen the opening @ and delimiter character (which is the
+/// same as the terminator).
+///
 /// Two consecutive terminators do not terminate the string, but are interpreted as one terminator
 /// character in the string.
 pub fn verbatim<O>(st: &mut St<'_>, out: &mut O, terminator: u8)
@@ -103,4 +122,45 @@ where
     out.byte(cur);
   }
   out.err(st.cur_idx(), Error::NotTerminated);
+}
+
+/// Handle a text block
+///
+/// Before this function, we have already seen the opening `|||`.
+pub fn text_block<O>(st: &mut St<'_>, out: &mut O)
+where
+  O: Output,
+{
+  st.bump_while(is_non_nl_ws);
+  if st.cur().is_some_and(|b| b == b'\n') {
+    st.bump();
+  } else {
+    out.err(st.cur_idx(), Error::NoNewLineForTextBlockStart);
+  }
+  let prefix_start = st.mark();
+  st.bump_while(is_non_nl_ws);
+  let prefix = st.since(prefix_start);
+  if prefix.is_empty() {
+    out.err(st.cur_idx(), Error::NoWhitespacePrefixForTextBlockFirstLine);
+  }
+  st.bump_while(|b| b != b'\n');
+  st.bump();
+  loop {
+    if st.eat_prefix(prefix) {
+      st.bump_while(|b| b != b'\n');
+    }
+    if st.cur().is_some_and(|b| b == b'\n') {
+      st.bump();
+      continue;
+    }
+    st.bump_while(is_non_nl_ws);
+    if !st.eat_prefix(b"|||") {
+      out.err(st.cur_idx(), Error::NoBarBarBarForTextBlockEnd);
+    }
+    break;
+  }
+}
+
+fn is_non_nl_ws(b: u8) -> bool {
+  matches!(b, b' ' | b'\t' | b'\r')
 }
