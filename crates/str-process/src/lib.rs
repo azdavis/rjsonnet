@@ -36,9 +36,9 @@ impl<'a> St<'a> {
   }
 
   /// Advances the index while `cond` holds true.
-  pub fn bump_while<F>(&mut self, cond: F)
+  pub fn bump_while<F>(&mut self, mut cond: F)
   where
-    F: Fn(u8) -> bool,
+    F: FnMut(u8) -> bool,
   {
     while let Some(b) = self.cur() {
       if cond(b) {
