@@ -11,7 +11,6 @@ pub(crate) fn get_root(st: &mut St, r: ast::Root) -> Expr {
 }
 
 /// - TODO only allow super/$/tailstrict sometimes?
-/// - TODO actually lower strings, numbers
 fn get_expr(st: &mut St, expr: Option<ast::Expr>, in_obj: bool) -> Expr {
   let expr = expr?;
   let ptr = ast::SyntaxNodePtr::new(expr.syntax());
