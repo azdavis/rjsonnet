@@ -70,3 +70,15 @@ x + 1
     "4.0",
   );
 }
+
+#[test]
+fn bool_op() {
+  manifest(
+    r#"
+[false || true, true && false, !true]
+"#,
+    r#"
+[true, false, false]
+"#,
+  );
+}

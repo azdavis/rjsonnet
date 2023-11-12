@@ -243,7 +243,39 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
         }
       }
     },
-    ExprData::UnaryOp { .. } => mk_error(error::Kind::Todo("unary ops")),
+    ExprData::UnaryOp { op, inner } => {
+      let inner = get(env, ars, *inner)?;
+      match op {
+        jsonnet_expr::UnaryOp::Neg => {
+          if let Val::Prim(Prim::Number(n)) = inner {
+            Ok(Val::Prim(Prim::Number(-n)))
+          } else {
+            mk_error(error::Kind::IncompatibleTypes)
+          }
+        }
+        jsonnet_expr::UnaryOp::Pos => {
+          if matches!(inner, Val::Prim(Prim::Number(_))) {
+            Ok(inner)
+          } else {
+            mk_error(error::Kind::IncompatibleTypes)
+          }
+        }
+        jsonnet_expr::UnaryOp::LogicalNot => {
+          if let Val::Prim(Prim::Bool(b)) = inner {
+            Ok(Val::Prim(Prim::Bool(!b)))
+          } else {
+            mk_error(error::Kind::IncompatibleTypes)
+          }
+        }
+        jsonnet_expr::UnaryOp::BitNot => {
+          if let Val::Prim(Prim::Number(_)) = inner {
+            mk_error(error::Kind::Todo("bitwise not"))
+          } else {
+            mk_error(error::Kind::IncompatibleTypes)
+          }
+        }
+      }
+    }
     ExprData::Function { params, body } => {
       let kind = RecValKind::Function { params: params.clone(), body: *body };
       Ok(Val::Rec { env: env.clone(), kind })

@@ -218,6 +218,14 @@ impl TryFrom<f64> for Number {
   }
 }
 
+impl std::ops::Neg for Number {
+  type Output = Self;
+
+  fn neg(self) -> Self::Output {
+    Self(-self.0)
+  }
+}
+
 #[derive(Debug)]
 pub enum Infinite {
   Nan,
