@@ -76,6 +76,7 @@ dependencies = [
  "jsonnet-expr",
  "jsonnet-syntax",
  "rustc-hash",
+ "str-process",
  "text-size",
 ]
 

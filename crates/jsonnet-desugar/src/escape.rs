@@ -3,7 +3,7 @@ use jsonnet_escape::State;
 use jsonnet_syntax::{ast, kind::SyntaxToken};
 
 struct EscapeSt<'str, 'st> {
-  bytes: std::iter::Peekable<std::str::Bytes<'str>>,
+  inner: str_process::St<'str>,
   out: Vec<u8>,
   token: jsonnet_syntax::kind::SyntaxToken,
   st: &'st mut St,
@@ -11,11 +11,11 @@ struct EscapeSt<'str, 'st> {
 
 impl<'str, 'st> State for EscapeSt<'str, 'st> {
   fn cur(&mut self) -> Option<u8> {
-    self.bytes.peek().copied()
+    self.inner.cur()
   }
 
   fn bump(&mut self) {
-    self.bytes.next();
+    self.inner.bump();
   }
 
   fn err(&mut self, e: jsonnet_escape::Error) {
@@ -40,7 +40,7 @@ pub(crate) fn get(st: &mut St, string: ast::String) -> String {
 fn slash(st: &mut St, token: SyntaxToken, delim: u8) -> String {
   let text = token.text();
   let mut escape_st = EscapeSt {
-    bytes: text.bytes().peekable(),
+    inner: str_process::St::new(text),
     st,
     token: token.clone(),
     out: Vec::with_capacity(text.len() - 2),
@@ -54,7 +54,7 @@ fn slash(st: &mut St, token: SyntaxToken, delim: u8) -> String {
 fn verbatim(st: &mut St, token: SyntaxToken, delim: u8) -> String {
   let text = token.text();
   let mut escape_st = EscapeSt {
-    bytes: text.bytes().peekable(),
+    inner: str_process::St::new(text),
     st,
     token: token.clone(),
     out: Vec::with_capacity(text.len() - 3),
