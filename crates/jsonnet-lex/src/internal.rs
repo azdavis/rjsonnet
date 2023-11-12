@@ -4,6 +4,7 @@ use crate::{error, st::St};
 use jsonnet_escape::State as _;
 use jsonnet_syntax::kind::SyntaxKind as SK;
 
+#[allow(clippy::too_many_lines)]
 pub(crate) fn token(st: &mut St<'_>, b: u8) -> SK {
   if is_ws(b) {
     st.bump();
@@ -42,6 +43,24 @@ pub(crate) fn token(st: &mut St<'_>, b: u8) -> SK {
       }
       Some(_) | None => return SK::Slash,
     }
+  }
+  // put this before PUNCTUATION since that contains || and |
+  if st.eat_prefix(b"|||") {
+    st.advance_while(is_non_nl_ws);
+    if st.cur().is_some_and(|b| b == b'\n') {
+      st.bump();
+    } else {
+      st.err(error::Kind::NoNewLineForTextBlockStart);
+    }
+    let prefix_start = st.mark();
+    st.advance_while(is_non_nl_ws);
+    let prefix = st.since(prefix_start);
+    if prefix.is_empty() {
+      st.err(error::Kind::NoWhitespacePrefixForTextBlockFirstLine);
+    }
+    // TODO consume empty lines or lines that start with prefix without error, then end text block
+    // when line does not start with prefix, and error if that line is not whitespace + `|||`
+    return SK::TextBlock;
   }
   if let Some(&(_, sk)) = SK::PUNCTUATION.iter().find(|&(bs, _)| st.eat_prefix(bs)) {
     return sk;
@@ -116,4 +135,8 @@ fn digits(st: &mut St<'_>) {
 
 fn is_ws(b: u8) -> bool {
   matches!(b, b' ' | b'\t' | b'\n' | b'\r')
+}
+
+fn is_non_nl_ws(b: u8) -> bool {
+  matches!(b, b' ' | b'\t' | b'\r')
 }

@@ -37,9 +37,17 @@ impl<'a> St<'a> {
     Marker { bomb: DebugDropBomb::new("must be passed to a `St` method"), idx: self.idx }
   }
 
+  /// like `since` but panics if empty
   pub(crate) fn non_empty_since(&self, m: Marker) -> &'a [u8] {
     let start = m.idx;
     assert!(self.did_advance_since(m));
+    &self.s.as_bytes()[start..self.idx]
+  }
+
+  /// NOTE: allowed to be empty
+  pub(crate) fn since(&self, mut m: Marker) -> &'a [u8] {
+    let start = m.idx;
+    m.bomb.defuse();
     &self.s.as_bytes()[start..self.idx]
   }
 
