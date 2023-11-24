@@ -54,7 +54,7 @@ pub enum Val {
     body: Expr,
   },
   /// arranging it in this way allows for different elements of the array to be lazy under different
-  /// environments. one benefit is that this allows O(1) append
+  /// environments. this allows us to implement append
   Array(Vec<ArrayPart>),
   StdFn(StdFn),
 }

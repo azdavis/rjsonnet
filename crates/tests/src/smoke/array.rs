@@ -15,7 +15,6 @@ fn non_empty() {
 }
 
 #[test]
-#[should_panic = "+ for arrays"]
 fn plus() {
   manifest(
     r#"

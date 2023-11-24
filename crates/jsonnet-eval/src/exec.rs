@@ -203,7 +203,10 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
           };
           Ok(Val::Prim(Prim::Number(n)))
         }
-        (Val::Array { .. }, Val::Array { .. }) => mk_error(error::Kind::Todo("+ for arrays")),
+        (Val::Array(mut lhs), Val::Array(mut rhs)) => {
+          lhs.append(&mut rhs);
+          Ok(Val::Array(lhs))
+        }
         (Val::Object { .. }, Val::Object { .. }) => mk_error(error::Kind::Todo("+ for objects")),
         _ => mk_error(error::Kind::IncompatibleTypes),
       },
