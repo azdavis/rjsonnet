@@ -83,10 +83,7 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
         let Some(&(_, body)) = fields.get(&name) else {
           return mk_error(error::Kind::NoSuchFieldName);
         };
-        let kind = RecValKind::Object { asserts: asserts.clone(), fields: fields.clone() };
-        let this = Val::Rec { env: obj_env.clone(), kind };
-        obj_env.insert(Id::SELF, Subst::Val(this));
-        obj_env.insert(Id::SUPER, Subst::Val(Val::empty_object()));
+        insert_obj_self_super(&mut obj_env, asserts.clone(), fields);
         for assert in asserts {
           get(&obj_env, ars, assert)?;
         }
@@ -287,6 +284,17 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
     }
     ExprData::Import { .. } => todo!(),
   }
+}
+
+pub(crate) fn insert_obj_self_super(
+  obj_env: &mut Env,
+  asserts: Vec<jsonnet_expr::Expr>,
+  fields: FxHashMap<Str, (Visibility, jsonnet_expr::Expr)>,
+) {
+  let kind = RecValKind::Object { asserts, fields };
+  let this = Val::Rec { env: obj_env.clone(), kind };
+  obj_env.insert(Id::SELF, Subst::Val(this));
+  obj_env.insert(Id::SUPER, Subst::Val(Val::empty_object()));
 }
 
 fn number_pair(expr: ExprMust, env: &Env, ars: &Arenas, a: Expr, b: Expr) -> Result<[Number; 2]> {
