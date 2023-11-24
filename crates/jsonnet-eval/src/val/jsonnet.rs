@@ -53,11 +53,16 @@ pub enum Val {
     params: Vec<(Id, Expr)>,
     body: Expr,
   },
-  Array {
-    env: Env,
-    elems: Vec<Expr>,
-  },
+  /// arranging it in this way allows for different elements of the array to be lazy under different
+  /// environments. one benefit is that this allows O(1) append
+  Array(Vec<ArrayPart>),
   StdFn(StdFn),
+}
+
+#[derive(Debug, Clone)]
+pub struct ArrayPart {
+  pub env: Env,
+  pub elems: Vec<Expr>,
 }
 
 impl Val {
