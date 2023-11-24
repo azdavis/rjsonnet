@@ -17,8 +17,9 @@ use rustc_hash::FxHashMap;
 pub fn get(ars: &Arenas, val: jsonnet::Val) -> error::Result<json::Val> {
   match val {
     jsonnet::Val::Prim(prim) => Ok(json::Val::Prim(prim)),
-    jsonnet::Val::Rec { env, kind } => match kind {
+    jsonnet::Val::Rec { mut env, kind } => match kind {
       jsonnet::RecValKind::Object { asserts, fields } => {
+        exec::insert_obj_self_super(&mut env, asserts.clone(), fields.clone());
         for expr in asserts {
           get_(&env, ars, expr)?;
         }
