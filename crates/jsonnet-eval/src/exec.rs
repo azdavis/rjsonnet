@@ -2,7 +2,7 @@
 
 use crate::error::{self, Result};
 use crate::manifest;
-use crate::val::jsonnet::{Env, RecValKind, StdFn, Subst, Val};
+use crate::val::jsonnet::{Env, StdFn, Subst, Val};
 use jsonnet_expr::{
   Arenas, BinaryOp, Expr, ExprData, ExprMust, Id, Number, Prim, Str, StrArena, Visibility,
 };
@@ -40,11 +40,10 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
           _ => return mk_error(error::Kind::IncompatibleTypes),
         }
       }
-      let kind = RecValKind::Object { asserts: asserts.clone(), fields: named_fields };
-      Ok(Val::Rec { env: env.clone(), kind })
+      Ok(Val::Object { env: env.clone(), asserts: asserts.clone(), fields: named_fields })
     }
     ExprData::ObjectComp { name, body, id, ary } => {
-      let Val::Rec { env: elem_env, kind: RecValKind::Array(elems) } = get(env, ars, *ary)? else {
+      let Val::Array { env: elem_env, elems } = get(env, ars, *ary)? else {
         return mk_error(error::Kind::IncompatibleTypes);
       };
       let mut fields = FxHashMap::<Str, (Visibility, Expr)>::default();
@@ -68,15 +67,11 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
           _ => return mk_error(error::Kind::IncompatibleTypes),
         }
       }
-      let kind = RecValKind::Object { asserts: Vec::new(), fields };
-      Ok(Val::Rec { env: env.clone(), kind })
+      Ok(Val::Object { env: env.clone(), asserts: Vec::new(), fields })
     }
-    ExprData::Array(elems) => {
-      let kind = RecValKind::Array(elems.clone());
-      Ok(Val::Rec { env: env.clone(), kind })
-    }
+    ExprData::Array(elems) => Ok(Val::Array { env: env.clone(), elems: elems.clone() }),
     ExprData::Subscript { on, idx } => match get(env, ars, *on)? {
-      Val::Rec { env: mut obj_env, kind: RecValKind::Object { asserts, fields } } => {
+      Val::Object { env: mut obj_env, asserts, fields } => {
         let Val::Prim(Prim::String(name)) = get(env, ars, *idx)? else {
           return mk_error(error::Kind::IncompatibleTypes);
         };
@@ -89,7 +84,7 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
         }
         get(&obj_env, ars, body)
       }
-      Val::Rec { env: ary_env, kind: RecValKind::Array(elems) } => {
+      Val::Array { env: ary_env, elems } => {
         let Val::Prim(Prim::Number(idx)) = get(env, ars, *idx)? else {
           return mk_error(error::Kind::IncompatibleTypes);
         };
@@ -112,10 +107,10 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
           None => mk_error(error::Kind::ArrayIdxOutOfRange),
         }
       }
-      Val::StdFn(_) | Val::Rec { .. } | Val::Prim(_) => mk_error(error::Kind::IncompatibleTypes),
+      _ => mk_error(error::Kind::IncompatibleTypes),
     },
     ExprData::Call { func, positional, named } => match get(env, ars, *func)? {
-      Val::Rec { env: func_env, kind: RecValKind::Function { mut params, body } } => {
+      Val::Function { env: func_env, mut params, body } => {
         if positional.len() + named.len() > params.len() {
           return mk_error(error::Kind::TooManyArguments);
         }
@@ -169,7 +164,7 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
           cmp_bool_op(expr, env, ars, lhs, rhs, Ordering::is_eq)
         }
       },
-      Val::Rec { .. } | Val::Prim(_) => mk_error(error::Kind::IncompatibleTypes),
+      _ => mk_error(error::Kind::IncompatibleTypes),
     },
     ExprData::Id(id) => match env.get(*id) {
       Subst::Val(v) => Ok(v.clone()),
@@ -201,17 +196,9 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
           };
           Ok(Val::Prim(Prim::Number(n)))
         }
-        (
-          Val::Rec { env: _, kind: RecValKind::Array(_) },
-          Val::Rec { env: _, kind: RecValKind::Array(_) },
-        ) => mk_error(error::Kind::Todo("+ for arrays")),
-        (
-          Val::Rec { env: _, kind: RecValKind::Object { .. } },
-          Val::Rec { env: _, kind: RecValKind::Object { .. } },
-        ) => mk_error(error::Kind::Todo("+ for objects")),
-        (Val::Rec { .. }, Val::Rec { .. })
-        | (Val::StdFn(_) | Val::Prim(_), _)
-        | (_, Val::StdFn(_) | Val::Prim(_)) => mk_error(error::Kind::IncompatibleTypes),
+        (Val::Array { .. }, Val::Array { .. }) => mk_error(error::Kind::Todo("+ for arrays")),
+        (Val::Object { .. }, Val::Object { .. }) => mk_error(error::Kind::Todo("+ for objects")),
+        _ => mk_error(error::Kind::IncompatibleTypes),
       },
       // arithmetic
       BinaryOp::Mul => float_op(expr, env, ars, *lhs, *rhs, std::ops::Mul::mul),
@@ -284,8 +271,7 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
       }
     }
     ExprData::Function { params, body } => {
-      let kind = RecValKind::Function { params: params.clone(), body: *body };
-      Ok(Val::Rec { env: env.clone(), kind })
+      Ok(Val::Function { env: env.clone(), params: params.clone(), body: *body })
     }
     ExprData::Error(inner) => {
       let val = get(env, ars, *inner)?;
@@ -301,8 +287,7 @@ pub(crate) fn insert_obj_self_super(
   asserts: Vec<jsonnet_expr::Expr>,
   fields: FxHashMap<Str, (Visibility, jsonnet_expr::Expr)>,
 ) {
-  let kind = RecValKind::Object { asserts, fields };
-  let this = Val::Rec { env: obj_env.clone(), kind };
+  let this = Val::Object { env: obj_env.clone(), asserts, fields };
   obj_env.insert(Id::SELF, Subst::Val(this));
   obj_env.insert(Id::SUPER, Subst::Val(Val::empty_object()));
 }
@@ -373,29 +358,26 @@ fn cmp_val(expr: ExprMust, ars: &Arenas, lhs: &Val, rhs: &Val) -> Result<Orderin
       (Prim::Number(lhs), Prim::Number(rhs)) => Ok(lhs.cmp(rhs)),
       _ => Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes }),
     },
-    (Val::Rec { env: le, kind: lhs }, Val::Rec { env: re, kind: rhs }) => match (lhs, rhs) {
-      (RecValKind::Array(lhs), RecValKind::Array(rhs)) => {
-        let mut lhs = lhs.iter();
-        let mut rhs = rhs.iter();
-        let ord = loop {
-          match (lhs.next(), rhs.next()) {
-            (None, Some(_)) => break Ordering::Less,
-            (None, None) => break Ordering::Equal,
-            (Some(_), None) => break Ordering::Greater,
-            (Some(&lhs), Some(&rhs)) => {
-              let lhs = get(le, ars, lhs)?;
-              let rhs = get(re, ars, rhs)?;
-              match cmp_val(expr, ars, &lhs, &rhs)? {
-                Ordering::Equal => {}
-                ord => break ord,
-              }
+    (Val::Array { env: le, elems: lhs }, Val::Array { env: re, elems: rhs }) => {
+      let mut lhs = lhs.iter();
+      let mut rhs = rhs.iter();
+      let ord = loop {
+        match (lhs.next(), rhs.next()) {
+          (None, Some(_)) => break Ordering::Less,
+          (None, None) => break Ordering::Equal,
+          (Some(_), None) => break Ordering::Greater,
+          (Some(&lhs), Some(&rhs)) => {
+            let lhs = get(le, ars, lhs)?;
+            let rhs = get(re, ars, rhs)?;
+            match cmp_val(expr, ars, &lhs, &rhs)? {
+              Ordering::Equal => {}
+              ord => break ord,
             }
           }
-        };
-        Ok(ord)
-      }
-      _ => Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes }),
-    },
+        }
+      };
+      Ok(ord)
+    }
     _ => Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes }),
   }
 }

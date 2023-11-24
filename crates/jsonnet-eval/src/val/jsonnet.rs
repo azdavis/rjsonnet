@@ -40,34 +40,31 @@ pub enum Subst {
 #[derive(Debug, Clone)]
 pub enum Val {
   Prim(Prim),
-  Rec { env: Env, kind: RecValKind },
-  StdFn(StdFn),
-}
-
-impl Val {
-  #[must_use]
-  pub fn empty_object() -> Self {
-    Self::Rec {
-      env: Env::default(),
-      kind: RecValKind::Object { asserts: Vec::new(), fields: FxHashMap::default() },
-    }
-  }
-}
-
-#[derive(Debug, Clone)]
-pub enum RecValKind {
   Object {
+    env: Env,
     asserts: Vec<Expr>,
     fields: FxHashMap<Str, (Visibility, Expr)>,
   },
   Function {
+    env: Env,
     /// we'd like to get good performance for lookup by both index for positional arguments and name
     /// for keyword arguments, but to do that we'd need to something like double the memory and
     /// store both a vec and a map. which we could do but we choose to not right now.
     params: Vec<(Id, Expr)>,
     body: Expr,
   },
-  Array(Vec<Expr>),
+  Array {
+    env: Env,
+    elems: Vec<Expr>,
+  },
+  StdFn(StdFn),
+}
+
+impl Val {
+  #[must_use]
+  pub fn empty_object() -> Self {
+    Self::Object { env: Env::default(), asserts: Vec::new(), fields: FxHashMap::default() }
+  }
 }
 
 #[derive(Debug, Clone)]
