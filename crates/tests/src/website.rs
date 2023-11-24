@@ -4,7 +4,7 @@ use crate::check::manifest;
 
 // TODO fix
 #[test]
-#[should_panic]
+#[should_panic = "+ for non-prim"]
 fn ex1() {
   manifest(
     r#"
