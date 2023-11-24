@@ -82,21 +82,3 @@ fn bool_op() {
 "#,
   );
 }
-
-#[test]
-fn self_() {
-  manifest(
-    r#"
-{
-  a: 3,
-  b: self.a + 1,
-}
-"#,
-    r#"
-{
-  "a": 3,
-  "b": 4
-}
-"#,
-  );
-}

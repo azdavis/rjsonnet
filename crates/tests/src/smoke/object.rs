@@ -28,6 +28,24 @@ fn non_empty() {
 }
 
 #[test]
+fn self_() {
+  manifest(
+    r#"
+{
+  a: 3,
+  b: self.a + 1,
+}
+"#,
+    r#"
+{
+  "a": 3,
+  "b": 4
+}
+"#,
+  );
+}
+
+#[test]
 #[should_panic = "+ for objects"]
 fn explicit_plus() {
   manifest(
