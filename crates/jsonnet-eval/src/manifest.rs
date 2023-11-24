@@ -40,8 +40,8 @@ pub fn get(ars: &Arenas, val: jsonnet::Val) -> error::Result<json::Val> {
         Ok(json::Val::Array(vs))
       }
     },
-    jsonnet::Val::Std(std_val) => match std_val {
-      jsonnet::Std::Cmp | jsonnet::Std::Equals => Err(error::Error::ManifestFn),
+    jsonnet::Val::StdFn(std_val) => match std_val {
+      jsonnet::StdFn::Cmp | jsonnet::StdFn::Equals => Err(error::Error::ManifestFn),
     },
   }
 }

@@ -41,7 +41,7 @@ pub enum Subst {
 pub enum Val {
   Prim(Prim),
   Rec { env: Env, kind: RecValKind },
-  Std(Std),
+  StdFn(StdFn),
 }
 
 impl Val {
@@ -71,7 +71,7 @@ pub enum RecValKind {
 }
 
 #[derive(Debug, Clone)]
-pub enum Std {
+pub enum StdFn {
   Cmp,
   Equals,
 }

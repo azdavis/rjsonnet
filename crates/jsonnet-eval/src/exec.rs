@@ -2,7 +2,7 @@
 
 use crate::error::{self, Result};
 use crate::manifest;
-use crate::val::jsonnet::{Env, RecValKind, Std, Subst, Val};
+use crate::val::jsonnet::{Env, RecValKind, StdFn, Subst, Val};
 use jsonnet_expr::{
   Arenas, BinaryOp, Expr, ExprData, ExprMust, Id, Number, Prim, Str, StrArena, Visibility,
 };
@@ -112,7 +112,7 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
           None => mk_error(error::Kind::ArrayIdxOutOfRange),
         }
       }
-      Val::Std(_) | Val::Rec { .. } | Val::Prim(_) => mk_error(error::Kind::IncompatibleTypes),
+      Val::StdFn(_) | Val::Rec { .. } | Val::Prim(_) => mk_error(error::Kind::IncompatibleTypes),
     },
     ExprData::Call { func, positional, named } => match get(env, ars, *func)? {
       Val::Rec { env: func_env, kind: RecValKind::Function { mut params, body } } => {
@@ -142,8 +142,8 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
         }
         exec_local(&func_env, &params, ars, body)
       }
-      Val::Std(std_val) => match std_val {
-        Std::Cmp => {
+      Val::StdFn(std_val) => match std_val {
+        StdFn::Cmp => {
           if !named.is_empty() {
             return mk_error(error::Kind::StdFuncNamedArgs);
           }
@@ -159,7 +159,7 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
             Prim::Number(num)
           })
         }
-        Std::Equals => {
+        StdFn::Equals => {
           if !named.is_empty() {
             return mk_error(error::Kind::StdFuncNamedArgs);
           }
