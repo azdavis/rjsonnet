@@ -424,7 +424,6 @@ fn get_object(st: &mut St, inside: ast::ExprObject, in_obj: bool) -> ExprData {
           let vars = vars.into_iter().map(|(ptr, x)| Some(st.expr(ptr, ExprData::Id(x))));
           let vars: Vec<_> = vars.collect();
           let vars_ary = Some(st.expr(ptr, ExprData::Array(vars)));
-          // TODO is this right?
           ExprData::ObjectComp { name, body, id: arr, ary: vars_ary }
         }
       }

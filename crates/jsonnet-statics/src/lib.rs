@@ -105,7 +105,6 @@ pub fn check(st: &mut St, cx: &Cx, ars: &Arenas, expr: Expr) {
         check(st, cx, ars, arg);
         if !arg_names.insert(id) {
           if let Some(arg) = arg {
-            // TODO move err to the id, not the arg
             st.err(arg, error::Kind::DuplicateNamedArg(id));
           }
         }
@@ -123,7 +122,6 @@ pub fn check(st: &mut St, cx: &Cx, ars: &Arenas, expr: Expr) {
       for &(id, rhs) in binds {
         cx.insert(id);
         if !bound_names.insert(id) {
-          // TODO move err to the id, not the rhs
           if let Some(rhs) = rhs {
             st.err(rhs, error::Kind::DuplicateBinding(id));
           }

@@ -3,10 +3,18 @@ use core::fmt;
 /// A lex error.
 #[derive(Debug)]
 pub struct Error {
-  /// TODO replace with a text range?
-  #[allow(dead_code)]
-  pub(crate) idx: usize,
+  pub(crate) idx: u32,
   pub(crate) kind: Kind,
+}
+
+impl Error {
+  /// Returns the range of this.
+  #[must_use]
+  pub fn range(&self) -> text_size::TextRange {
+    // let idx = u32::try_from(self.idx).unwrap();
+    let ts = text_size::TextSize::new(self.idx);
+    text_size::TextRange::empty(ts)
+  }
 }
 
 #[derive(Debug)]
@@ -38,8 +46,11 @@ pub(crate) struct Output {
 }
 
 impl Output {
+  /// # Panics
+  ///
+  /// If a usize overflows a u32.
   pub(crate) fn err(&mut self, idx: usize, kind: Kind) {
-    self.errors.push(Error { idx, kind });
+    self.errors.push(Error { idx: u32::try_from(idx).unwrap(), kind });
   }
 
   pub(crate) fn finish(self) -> Vec<Error> {

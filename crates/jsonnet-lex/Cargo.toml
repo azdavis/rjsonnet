@@ -11,6 +11,7 @@ doctest = false
 
 [dependencies]
 token.workspace = true
+text-size.workspace = true
 
 jsonnet-escape.path = "../jsonnet-escape"
 jsonnet-syntax.path = "../jsonnet-syntax"

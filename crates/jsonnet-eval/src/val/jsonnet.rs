@@ -73,6 +73,5 @@ pub enum RecValKind {
 #[derive(Debug, Clone)]
 pub enum Std {
   Cmp,
-  /// TODO is this called "equals" or "equal"?
   Equals,
 }

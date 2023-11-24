@@ -114,6 +114,7 @@ dependencies = [
  "jsonnet-escape",
  "jsonnet-syntax",
  "str-process",
+ "text-size",
  "token",
 ]
 
