@@ -47,6 +47,33 @@ fn self_() {
 
 #[test]
 #[should_panic = "+ for objects"]
+fn super_() {
+  manifest(
+    r#"
+local base = {
+  a: 3,
+  b: self.a + 1,
+};
+
+base + {
+  a: 5,
+  super_a: super.a,
+  super_b: super.b,
+}
+"#,
+    r#"
+{
+  "a": 5,
+  "b": 6,
+  "super_a": 3,
+  "super_b": 6
+}
+"#,
+  );
+}
+
+#[test]
+#[should_panic = "+ for objects"]
 fn explicit_plus() {
   manifest(
     r#"
