@@ -28,7 +28,7 @@ fn non_empty() {
 }
 
 #[test]
-#[should_panic = "+ for non-prim"]
+#[should_panic = "+ for objects"]
 fn implicit_plus() {
   manifest(
     r#"

@@ -201,7 +201,17 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
           };
           Ok(Val::Prim(Prim::Number(n)))
         }
-        _ => mk_error(error::Kind::Todo("+ for non-prim")),
+        (
+          Val::Rec { env: _, kind: RecValKind::Array(_) },
+          Val::Rec { env: _, kind: RecValKind::Array(_) },
+        ) => mk_error(error::Kind::Todo("+ for arrays")),
+        (
+          Val::Rec { env: _, kind: RecValKind::Object { .. } },
+          Val::Rec { env: _, kind: RecValKind::Object { .. } },
+        ) => mk_error(error::Kind::Todo("+ for objects")),
+        (Val::Rec { .. }, Val::Rec { .. })
+        | (Val::StdFn(_) | Val::Prim(_), _)
+        | (_, Val::StdFn(_) | Val::Prim(_)) => mk_error(error::Kind::IncompatibleTypes),
       },
       // arithmetic
       BinaryOp::Mul => float_op(expr, env, ars, *lhs, *rhs, std::ops::Mul::mul),
