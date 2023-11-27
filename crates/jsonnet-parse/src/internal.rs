@@ -74,7 +74,7 @@ fn expr_prec(p: &mut Parser<'_>, min_prec: Prec) -> Option<Exited> {
       SK::ExprParen
     }
     SK::LCurly => {
-      expr_object(p);
+      object(p);
       SK::ExprObject
     }
     SK::LSquare => {
@@ -184,9 +184,7 @@ fn expr_prec(p: &mut Parser<'_>, min_prec: Prec) -> Option<Exited> {
       }
       SK::LCurly => {
         let en = p.precede(ex);
-        let obj = p.enter();
-        expr_object(p);
-        p.exit(obj, SK::ExprObject);
+        object(p);
         p.exit(en, SK::ExprImplicitObjectPlus)
       }
       SK::Dot => {
@@ -230,12 +228,14 @@ fn string(p: &mut Parser<'_>) -> bool {
   })
 }
 
-fn expr_object(p: &mut Parser<'_>) {
+fn object(p: &mut Parser<'_>) -> Exited {
   assert!(p.at(SK::LCurly));
+  let en = p.enter();
   p.bump();
   while member(p).is_some() {}
   while comp_spec(p).is_some() {}
   p.eat(SK::RCurly);
+  p.exit(en, SK::Object)
 }
 
 fn arg(p: &mut Parser<'_>) -> Option<Exited> {

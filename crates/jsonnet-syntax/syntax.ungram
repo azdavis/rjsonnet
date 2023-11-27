@@ -38,7 +38,10 @@ ExprString = String
 ExprNumber = 'Number'
 ExprId = 'Id'
 ExprParen = '(' Expr ')'
-ExprObject = '{' Member* CompSpec* '}'
+// make Object separate from ExprObject so that the rule ExprImplicitObjectPlus doesn't get
+// confused.
+ExprObject = Object
+Object = '{' Member* CompSpec* '}'
 // array comprehension is rearranged
 ExprArray = '[' ExprComma* CompSpec* ']'
 ExprFieldGet = Expr '.' 'Id'
@@ -48,7 +51,9 @@ ExprLocal = 'local' Bind* ';' Expr
 ExprIf = 'if' cond:Expr 'then' yes:Expr ElseExpr?
 ExprBinaryOp = lhs:Expr BinaryOp rhs:Expr
 ExprUnaryOp = UnaryOp Expr
-ExprImplicitObjectPlus = Expr ExprObject
+// if we defined this rule as 'Expr ExprObject', the generated code might get confused on which
+// ExprObject we mean if the lhs Expr is also an ExprObject.
+ExprImplicitObjectPlus = Expr Object
 ExprFunction = 'function' ParenParams Expr
 ExprAssert = Assert ';' Expr
 ExprImport = Import String

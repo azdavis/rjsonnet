@@ -10,7 +10,7 @@ pub(crate) fn get_root(st: &mut St, r: ast::Root) -> Expr {
   get_expr(st, r.expr(), false)
 }
 
-/// - TODO only allow super/$/tailstrict sometimes?
+/// TODO only allow super/$/tailstrict sometimes?
 fn get_expr(st: &mut St, expr: Option<ast::Expr>, in_obj: bool) -> Expr {
   let expr = expr?;
   let ptr = ast::SyntaxNodePtr::new(expr.syntax());
@@ -40,7 +40,7 @@ fn get_expr(st: &mut St, expr: Option<ast::Expr>, in_obj: bool) -> Expr {
     }
     ast::Expr::ExprId(expr) => ExprData::Id(st.id(expr.id()?)),
     ast::Expr::ExprParen(expr) => return get_expr(st, expr.expr(), in_obj),
-    ast::Expr::ExprObject(expr) => get_object(st, expr, in_obj),
+    ast::Expr::ExprObject(expr) => get_object(st, expr.object()?, in_obj),
     ast::Expr::ExprArray(expr) => match get_comp_specs(st, expr.comp_specs()) {
       Some(_) => {
         let mut expr_commas = expr.expr_commas();
@@ -121,7 +121,7 @@ fn get_expr(st: &mut St, expr: Option<ast::Expr>, in_obj: bool) -> Expr {
     }
     ast::Expr::ExprImplicitObjectPlus(expr) => {
       let lhs = get_expr(st, expr.expr(), in_obj);
-      let rhs = expr.expr_object()?;
+      let rhs = expr.object()?;
       let rhs_ptr = ast::SyntaxNodePtr::new(rhs.syntax());
       let rhs = get_object(st, rhs, in_obj);
       let rhs = Some(st.expr(rhs_ptr, rhs));
@@ -287,7 +287,7 @@ fn get_assert(st: &mut St, yes: Expr, assert: ast::Assert, in_obj: bool) -> Expr
   ExprData::If { cond, yes, no }
 }
 
-fn get_object(st: &mut St, inside: ast::ExprObject, in_obj: bool) -> ExprData {
+fn get_object(st: &mut St, inside: ast::Object, in_obj: bool) -> ExprData {
   match get_comp_specs(st, inside.comp_specs()) {
     None => {
       // this is the only time we actually use the `in_obj` flag

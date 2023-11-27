@@ -85,9 +85,7 @@ fn explicit_plus() {
   );
 }
 
-// TODO fix
 #[test]
-#[should_panic]
 fn implicit_plus() {
   manifest(
     r#"
