@@ -45,6 +45,7 @@ pub enum Val {
     asserts: Vec<Expr>,
     fields: FxHashMap<Str, (Visibility, Expr)>,
   },
+  Array(Array),
   Function {
     env: Env,
     /// we'd like to get good performance for lookup by both index for positional arguments and name
@@ -53,7 +54,6 @@ pub enum Val {
     params: Vec<(Id, Expr)>,
     body: Expr,
   },
-  Array(Array),
   StdFn(StdFn),
 }
 

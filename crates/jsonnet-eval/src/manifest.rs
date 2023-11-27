@@ -32,15 +32,12 @@ pub fn get(ars: &Arenas, val: jsonnet::Val) -> error::Result<json::Val> {
       }
       Ok(json::Val::Object(val_fields))
     }
-    jsonnet::Val::Function { .. } => Err(error::Error::ManifestFn),
     jsonnet::Val::Array(parts) => {
       let iter = parts.iter().map(|(env, elem)| get_(env, ars, elem));
       let vs = iter.collect::<error::Result<Vec<_>>>()?;
       Ok(json::Val::Array(vs))
     }
-    jsonnet::Val::StdFn(std_val) => match std_val {
-      jsonnet::StdFn::Cmp | jsonnet::StdFn::Equals => Err(error::Error::ManifestFn),
-    },
+    jsonnet::Val::Function { .. } | jsonnet::Val::StdFn(_) => Err(error::Error::ManifestFn),
   }
 }
 
