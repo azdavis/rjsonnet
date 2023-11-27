@@ -57,6 +57,13 @@ pub enum Val {
   StdFn(StdFn),
 }
 
+impl Val {
+  #[must_use]
+  pub fn empty_object() -> Self {
+    Self::Object { env: Env::default(), asserts: Vec::new(), fields: FxHashMap::default() }
+  }
+}
+
 #[derive(Debug, Clone)]
 pub struct Array {
   /// arranging it in this way allows for different elements of the array to be lazy under different
@@ -94,13 +101,6 @@ impl Array {
 struct ArrayPart {
   env: Env,
   elems: Vec<Expr>,
-}
-
-impl Val {
-  #[must_use]
-  pub fn empty_object() -> Self {
-    Self::Object { env: Env::default(), asserts: Vec::new(), fields: FxHashMap::default() }
-  }
 }
 
 #[derive(Debug, Clone)]
