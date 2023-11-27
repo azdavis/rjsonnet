@@ -2,9 +2,7 @@
 
 use crate::check::manifest;
 
-// TODO fix
 #[test]
-#[should_panic = "+ for objects"]
 fn ex1() {
   manifest(
     r#"

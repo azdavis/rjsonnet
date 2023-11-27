@@ -201,7 +201,10 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
           lhs.append(&mut rhs);
           Ok(Val::Array(lhs))
         }
-        (Val::Object { .. }, Val::Object { .. }) => mk_error(error::Kind::Todo("+ for objects")),
+        (Val::Object(mut lhs), Val::Object(mut rhs)) => {
+          lhs.append(&mut rhs);
+          Ok(Val::Object(lhs))
+        }
         _ => mk_error(error::Kind::IncompatibleTypes),
       },
       // arithmetic

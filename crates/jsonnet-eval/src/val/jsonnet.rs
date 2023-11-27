@@ -99,6 +99,10 @@ impl Object {
       .rev()
       .find_map(|part| part.fields.get(name).map(|&(vis, expr)| (&part.env, vis, expr)))
   }
+
+  pub(crate) fn append(&mut self, other: &mut Self) {
+    self.parts.append(&mut other.parts);
+  }
 }
 
 #[derive(Debug, Clone)]
