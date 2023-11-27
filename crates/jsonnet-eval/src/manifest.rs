@@ -17,18 +17,18 @@ use rustc_hash::FxHashMap;
 pub fn get(ars: &Arenas, val: jsonnet::Val) -> error::Result<json::Val> {
   match val {
     jsonnet::Val::Prim(prim) => Ok(json::Val::Prim(prim)),
-    jsonnet::Val::Object { mut env, asserts, fields } => {
-      exec::insert_obj_self_super(&mut env, asserts.clone(), fields.clone());
-      for expr in asserts {
-        get_(&env, ars, expr)?;
+    jsonnet::Val::Object(mut object) => {
+      object.insert_self_super();
+      for (env, expr) in object.asserts() {
+        get_(env, ars, expr)?;
       }
       let mut val_fields = FxHashMap::default();
-      for (name, (vis, expr)) in fields {
+      for (env, name, vis, expr) in object.fields() {
         if matches!(vis, jsonnet_expr::Visibility::Hidden) {
           continue;
         }
-        let val = get_(&env, ars, expr)?;
-        assert!(val_fields.insert(name, val).is_none());
+        let val = get_(env, ars, expr)?;
+        assert!(val_fields.insert(name.clone(), val).is_none());
       }
       Ok(json::Val::Object(val_fields))
     }

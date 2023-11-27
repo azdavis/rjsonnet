@@ -2,7 +2,7 @@
 
 use crate::error::{self, Result};
 use crate::manifest;
-use crate::val::jsonnet::{Array, Env, StdFn, Subst, Val};
+use crate::val::jsonnet::{Array, Env, Object, StdFn, Subst, Val};
 use jsonnet_expr::{
   Arenas, BinaryOp, Expr, ExprData, ExprMust, Id, Number, Prim, Str, StrArena, Visibility,
 };
@@ -40,7 +40,8 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
           _ => return mk_error(error::Kind::IncompatibleTypes),
         }
       }
-      Ok(Val::Object { env: env.clone(), asserts: asserts.clone(), fields: named_fields })
+
+      Ok(Val::Object(Object::new(env.clone(), asserts.clone(), named_fields)))
     }
     ExprData::ObjectComp { name, body, id, ary } => {
       let Val::Array(array) = get(env, ars, *ary)? else {
@@ -67,22 +68,22 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
           _ => return mk_error(error::Kind::IncompatibleTypes),
         }
       }
-      Ok(Val::Object { env: env.clone(), asserts: Vec::new(), fields })
+      Ok(Val::Object(Object::new(env.clone(), Vec::new(), fields)))
     }
     ExprData::Array(elems) => Ok(Val::Array(Array::new(env.clone(), elems.clone()))),
     ExprData::Subscript { on, idx } => match get(env, ars, *on)? {
-      Val::Object { env: mut obj_env, asserts, fields } => {
+      Val::Object(mut object) => {
         let Val::Prim(Prim::String(name)) = get(env, ars, *idx)? else {
           return mk_error(error::Kind::IncompatibleTypes);
         };
-        let Some(&(_, body)) = fields.get(&name) else {
+        object.insert_self_super();
+        let Some((env, _, body)) = object.get_field(&name) else {
           return mk_error(error::Kind::NoSuchFieldName);
         };
-        insert_obj_self_super(&mut obj_env, asserts.clone(), fields);
-        for assert in asserts {
-          get(&obj_env, ars, assert)?;
+        for (env, assert) in object.asserts() {
+          get(env, ars, assert)?;
         }
-        get(&obj_env, ars, body)
+        get(env, ars, body)
       }
       Val::Array(array) => {
         let Val::Prim(Prim::Number(idx)) = get(env, ars, *idx)? else {
@@ -283,16 +284,6 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
     }
     ExprData::Import { .. } => todo!(),
   }
-}
-
-pub(crate) fn insert_obj_self_super(
-  obj_env: &mut Env,
-  asserts: Vec<jsonnet_expr::Expr>,
-  fields: FxHashMap<Str, (Visibility, jsonnet_expr::Expr)>,
-) {
-  let this = Val::Object { env: obj_env.clone(), asserts, fields };
-  obj_env.insert(Id::SELF, Subst::Val(this));
-  obj_env.insert(Id::SUPER, Subst::Val(Val::empty_object()));
 }
 
 fn number_pair(expr: ExprMust, env: &Env, ars: &Arenas, a: Expr, b: Expr) -> Result<[Number; 2]> {

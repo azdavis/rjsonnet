@@ -1,7 +1,7 @@
 //! Jsonnet values.
 
 use jsonnet_expr::{Expr, Id, Prim, Str, Visibility};
-use rustc_hash::FxHashMap;
+use rustc_hash::{FxHashMap, FxHashSet};
 
 #[derive(Debug, Default, Clone)]
 pub struct Env {
@@ -40,11 +40,7 @@ pub enum Subst {
 #[derive(Debug, Clone)]
 pub enum Val {
   Prim(Prim),
-  Object {
-    env: Env,
-    asserts: Vec<Expr>,
-    fields: FxHashMap<Str, (Visibility, Expr)>,
-  },
+  Object(Object),
   Array(Array),
   Function {
     env: Env,
@@ -57,14 +53,59 @@ pub enum Val {
   StdFn(StdFn),
 }
 
-impl Val {
+#[derive(Debug, Default, Clone)]
+pub struct Object {
+  parts: Vec<ObjectPart>,
+}
+
+impl Object {
   #[must_use]
-  pub fn empty_object() -> Self {
-    Self::Object { env: Env::default(), asserts: Vec::new(), fields: FxHashMap::default() }
+  pub(crate) fn new(
+    env: Env,
+    asserts: Vec<Expr>,
+    fields: FxHashMap<Str, (Visibility, Expr)>,
+  ) -> Object {
+    Self { parts: vec![ObjectPart { env, asserts, fields }] }
+  }
+
+  pub(crate) fn insert_self_super(&mut self) {
+    let this = self.clone();
+    for part in &mut self.parts {
+      part.env.insert(Id::SELF, Subst::Val(Val::Object(this.clone())));
+      part.env.insert(Id::SUPER, Subst::Val(Val::Object(Object::default())));
+    }
+  }
+
+  pub(crate) fn asserts(&self) -> impl Iterator<Item = (&Env, Expr)> {
+    self.parts.iter().flat_map(|part| part.asserts.iter().map(|&e| (&part.env, e)))
+  }
+
+  pub(crate) fn fields(&self) -> impl Iterator<Item = (&Env, &Str, Visibility, Expr)> {
+    let mut seen = FxHashSet::<&Str>::default();
+    self
+      .parts
+      .iter()
+      .flat_map(|part| part.fields.iter().map(|(name, &(vis, expr))| (&part.env, name, vis, expr)))
+      .filter(move |&(_, name, _, _)| seen.insert(name))
+  }
+
+  #[must_use]
+  pub(crate) fn get_field(&self, name: &Str) -> Option<(&Env, Visibility, Expr)> {
+    self
+      .parts
+      .iter()
+      .find_map(|part| part.fields.get(name).map(|&(vis, expr)| (&part.env, vis, expr)))
   }
 }
 
 #[derive(Debug, Clone)]
+struct ObjectPart {
+  env: Env,
+  asserts: Vec<Expr>,
+  fields: FxHashMap<Str, (Visibility, Expr)>,
+}
+
+#[derive(Debug, Default, Clone)]
 pub struct Array {
   /// arranging it in this way allows for different elements of the array to be lazy under different
   /// environments. this allows us to implement append
@@ -73,16 +114,16 @@ pub struct Array {
 
 impl Array {
   #[must_use]
-  pub fn new(env: Env, elems: Vec<Expr>) -> Self {
+  pub(crate) fn new(env: Env, elems: Vec<Expr>) -> Self {
     Self { parts: vec![ArrayPart { env, elems }] }
   }
 
-  pub fn iter(&self) -> impl Iterator<Item = (&Env, Expr)> {
+  pub(crate) fn iter(&self) -> impl Iterator<Item = (&Env, Expr)> {
     self.parts.iter().flat_map(|part| part.elems.iter().map(|&elem| (&part.env, elem)))
   }
 
   #[must_use]
-  pub fn get(&self, mut idx: usize) -> Option<(&Env, Expr)> {
+  pub(crate) fn get(&self, mut idx: usize) -> Option<(&Env, Expr)> {
     for part in &self.parts {
       match part.elems.get(idx) {
         Some(&elem) => return Some((&part.env, elem)),
@@ -92,7 +133,7 @@ impl Array {
     None
   }
 
-  pub fn append(&mut self, other: &mut Self) {
+  pub(crate) fn append(&mut self, other: &mut Self) {
     self.parts.append(&mut other.parts);
   }
 }
