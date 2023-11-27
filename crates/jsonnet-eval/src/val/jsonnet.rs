@@ -55,6 +55,7 @@ pub enum Val {
 
 #[derive(Debug, Default, Clone)]
 pub struct Object {
+  /// more recent parts at the end
   parts: Vec<ObjectPart>,
 }
 
@@ -85,6 +86,7 @@ impl Object {
     self
       .parts
       .iter()
+      .rev()
       .flat_map(|part| part.fields.iter().map(|(name, &(vis, expr))| (&part.env, name, vis, expr)))
       .filter(move |&(_, name, _, _)| seen.insert(name))
   }
@@ -94,6 +96,7 @@ impl Object {
     self
       .parts
       .iter()
+      .rev()
       .find_map(|part| part.fields.get(name).map(|&(vis, expr)| (&part.env, vis, expr)))
   }
 }
