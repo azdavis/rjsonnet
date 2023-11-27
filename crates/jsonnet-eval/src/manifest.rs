@@ -34,9 +34,7 @@ pub fn get(ars: &Arenas, val: jsonnet::Val) -> error::Result<json::Val> {
     }
     jsonnet::Val::Function { .. } => Err(error::Error::ManifestFn),
     jsonnet::Val::Array(parts) => {
-      let iter = parts
-        .into_iter()
-        .flat_map(|part| part.elems.into_iter().map(move |elem| get_(&part.env, ars, elem)));
+      let iter = parts.iter().map(|(env, elem)| get_(env, ars, elem));
       let vs = iter.collect::<error::Result<Vec<_>>>()?;
       Ok(json::Val::Array(vs))
     }

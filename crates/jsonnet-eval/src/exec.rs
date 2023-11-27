@@ -2,7 +2,7 @@
 
 use crate::error::{self, Result};
 use crate::manifest;
-use crate::val::jsonnet::{ArrayPart, Env, StdFn, Subst, Val};
+use crate::val::jsonnet::{Array, Env, StdFn, Subst, Val};
 use jsonnet_expr::{
   Arenas, BinaryOp, Expr, ExprData, ExprMust, Id, Number, Prim, Str, StrArena, Visibility,
 };
@@ -43,37 +43,33 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
       Ok(Val::Object { env: env.clone(), asserts: asserts.clone(), fields: named_fields })
     }
     ExprData::ObjectComp { name, body, id, ary } => {
-      let Val::Array(parts) = get(env, ars, *ary)? else {
+      let Val::Array(array) = get(env, ars, *ary)? else {
         return mk_error(error::Kind::IncompatibleTypes);
       };
       let mut fields = FxHashMap::<Str, (Visibility, Expr)>::default();
-      for part in parts {
-        for elem in part.elems {
-          let mut env = env.clone();
-          env.insert(*id, Subst::Expr(part.env.clone(), elem));
-          match get(&env, ars, *name)? {
-            Val::Prim(Prim::String(s)) => {
-              // TODO should we continue here?
-              let Some(body) = *body else { continue };
-              // we want to do `[e/x]body` here?
-              let body = match ars.expr[body] {
-                ExprData::Prim(_) => body,
-                _ => return mk_error(error::Kind::Todo("subst for object comp")),
-              };
-              if fields.insert(s, (Visibility::Default, Some(body))).is_some() {
-                return mk_error(error::Kind::DuplicateField);
-              }
+      for (part_env, elem) in array.iter() {
+        let mut env = env.clone();
+        env.insert(*id, Subst::Expr(part_env.clone(), elem));
+        match get(&env, ars, *name)? {
+          Val::Prim(Prim::String(s)) => {
+            // TODO should we continue here?
+            let Some(body) = *body else { continue };
+            // we want to do `[e/x]body` here?
+            let body = match ars.expr[body] {
+              ExprData::Prim(_) => body,
+              _ => return mk_error(error::Kind::Todo("subst for object comp")),
+            };
+            if fields.insert(s, (Visibility::Default, Some(body))).is_some() {
+              return mk_error(error::Kind::DuplicateField);
             }
-            Val::Prim(Prim::Null) => {}
-            _ => return mk_error(error::Kind::IncompatibleTypes),
           }
+          Val::Prim(Prim::Null) => {}
+          _ => return mk_error(error::Kind::IncompatibleTypes),
         }
       }
       Ok(Val::Object { env: env.clone(), asserts: Vec::new(), fields })
     }
-    ExprData::Array(elems) => {
-      Ok(Val::Array(vec![ArrayPart { env: env.clone(), elems: elems.clone() }]))
-    }
+    ExprData::Array(elems) => Ok(Val::Array(Array::new(env.clone(), elems.clone()))),
     ExprData::Subscript { on, idx } => match get(env, ars, *on)? {
       Val::Object { env: mut obj_env, asserts, fields } => {
         let Val::Prim(Prim::String(name)) = get(env, ars, *idx)? else {
@@ -88,7 +84,7 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
         }
         get(&obj_env, ars, body)
       }
-      Val::Array(parts) => {
+      Val::Array(array) => {
         let Val::Prim(Prim::Number(idx)) = get(env, ars, *idx)? else {
           return mk_error(error::Kind::IncompatibleTypes);
         };
@@ -103,16 +99,13 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
         }
         #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
         let idx = idx_floor as u32;
-        let Ok(mut idx) = usize::try_from(idx) else {
+        let Ok(idx) = usize::try_from(idx) else {
           return mk_error(error::Kind::ArrayIdxOutOfRange);
         };
-        for part in parts {
-          match part.elems.get(idx) {
-            Some(&elem) => return get(&part.env, ars, elem),
-            None => idx -= part.elems.len(),
-          }
+        match array.get(idx) {
+          Some((env, elem)) => get(env, ars, elem),
+          None => mk_error(error::Kind::ArrayIdxOutOfRange),
         }
-        mk_error(error::Kind::ArrayIdxOutOfRange)
       }
       _ => mk_error(error::Kind::IncompatibleTypes),
     },
@@ -361,10 +354,6 @@ where
   cmp_op(expr, env, ars, lhs, rhs, |x| Prim::Bool(f(x)))
 }
 
-fn elems_with_envs(xs: &[ArrayPart]) -> impl Iterator<Item = (&Env, Expr)> + '_ {
-  xs.iter().flat_map(|part| part.elems.iter().map(|&elem| (&part.env, elem)))
-}
-
 fn cmp_val(expr: ExprMust, ars: &Arenas, lhs: &Val, rhs: &Val) -> Result<Ordering> {
   match (lhs, rhs) {
     (Val::Prim(lhs), Val::Prim(rhs)) => match (lhs, rhs) {
@@ -373,8 +362,8 @@ fn cmp_val(expr: ExprMust, ars: &Arenas, lhs: &Val, rhs: &Val) -> Result<Orderin
       _ => Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes }),
     },
     (Val::Array(lhs), Val::Array(rhs)) => {
-      let mut lhs = elems_with_envs(lhs);
-      let mut rhs = elems_with_envs(rhs);
+      let mut lhs = lhs.iter();
+      let mut rhs = rhs.iter();
       let ord = loop {
         match (lhs.next(), rhs.next()) {
           (None, Some(_)) => break Ordering::Less,

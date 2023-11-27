@@ -53,16 +53,47 @@ pub enum Val {
     params: Vec<(Id, Expr)>,
     body: Expr,
   },
-  /// arranging it in this way allows for different elements of the array to be lazy under different
-  /// environments. this allows us to implement append
-  Array(Vec<ArrayPart>),
+  Array(Array),
   StdFn(StdFn),
 }
 
 #[derive(Debug, Clone)]
-pub struct ArrayPart {
-  pub env: Env,
-  pub elems: Vec<Expr>,
+pub struct Array {
+  /// arranging it in this way allows for different elements of the array to be lazy under different
+  /// environments. this allows us to implement append
+  parts: Vec<ArrayPart>,
+}
+
+impl Array {
+  #[must_use]
+  pub fn new(env: Env, elems: Vec<Expr>) -> Self {
+    Self { parts: vec![ArrayPart { env, elems }] }
+  }
+
+  pub fn iter(&self) -> impl Iterator<Item = (&Env, Expr)> {
+    self.parts.iter().flat_map(|part| part.elems.iter().map(|&elem| (&part.env, elem)))
+  }
+
+  #[must_use]
+  pub fn get(&self, mut idx: usize) -> Option<(&Env, Expr)> {
+    for part in &self.parts {
+      match part.elems.get(idx) {
+        Some(&elem) => return Some((&part.env, elem)),
+        None => idx -= part.elems.len(),
+      }
+    }
+    None
+  }
+
+  pub fn append(&mut self, other: &mut Self) {
+    self.parts.append(&mut other.parts);
+  }
+}
+
+#[derive(Debug, Clone)]
+struct ArrayPart {
+  env: Env,
+  elems: Vec<Expr>,
 }
 
 impl Val {
