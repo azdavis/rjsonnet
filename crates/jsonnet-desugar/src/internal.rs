@@ -463,7 +463,13 @@ fn get_binary_op(
     ast::BinaryOpKind::And => bop(BinaryOp::BitAnd, lhs, rhs),
     ast::BinaryOpKind::Carat => bop(BinaryOp::BitXor, lhs, rhs),
     ast::BinaryOpKind::Bar => bop(BinaryOp::BitOr, lhs, rhs),
-    ast::BinaryOpKind::AndAnd => bop(BinaryOp::LogicalAnd, lhs, rhs),
-    ast::BinaryOpKind::BarBar => bop(BinaryOp::LogicalOr, lhs, rhs),
+    ast::BinaryOpKind::AndAnd => {
+      let no = Some(st.expr(ptr, ExprData::Prim(Prim::Bool(false))));
+      ExprData::If { cond: lhs, yes: rhs, no }
+    }
+    ast::BinaryOpKind::BarBar => {
+      let yes = Some(st.expr(ptr, ExprData::Prim(Prim::Bool(true))));
+      ExprData::If { cond: lhs, yes, no: rhs }
+    }
   }
 }

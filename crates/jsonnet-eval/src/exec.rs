@@ -222,27 +222,6 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
       BinaryOp::LtEq => cmp_bool_op(expr, env, ars, *lhs, *rhs, Ordering::is_le),
       BinaryOp::Gt => cmp_bool_op(expr, env, ars, *lhs, *rhs, Ordering::is_gt),
       BinaryOp::GtEq => cmp_bool_op(expr, env, ars, *lhs, *rhs, Ordering::is_ge),
-      // logical
-      BinaryOp::LogicalAnd => {
-        let Val::Prim(Prim::Bool(b)) = get(env, ars, *lhs)? else {
-          return mk_error(error::Kind::IncompatibleTypes);
-        };
-        if b {
-          get(env, ars, *rhs)
-        } else {
-          Ok(Val::Prim(Prim::Bool(false)))
-        }
-      }
-      BinaryOp::LogicalOr => {
-        let Val::Prim(Prim::Bool(b)) = get(env, ars, *lhs)? else {
-          return mk_error(error::Kind::IncompatibleTypes);
-        };
-        if b {
-          Ok(Val::Prim(Prim::Bool(true)))
-        } else {
-          get(env, ars, *rhs)
-        }
-      }
     },
     ExprData::UnaryOp { op, inner } => {
       let inner = get(env, ars, *inner)?;

@@ -104,8 +104,6 @@ pub enum BinaryOp {
   BitAnd,
   BitXor,
   BitOr,
-  LogicalAnd,
-  LogicalOr,
 }
 
 #[derive(Debug, Clone, Copy)]
