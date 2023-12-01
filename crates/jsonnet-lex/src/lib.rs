@@ -1,7 +1,5 @@
 //! Lexing a string into a sequence of tokens.
 
-#![deny(clippy::pedantic, missing_debug_implementations, missing_docs, rust_2018_idioms)]
-
 mod error;
 mod internal;
 

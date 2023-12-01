@@ -1,7 +1,5 @@
 //! Parse a sequence of tokens into a concrete syntax tree.
 
-#![deny(clippy::pedantic, missing_debug_implementations, missing_docs, rust_2018_idioms)]
-
 mod internal;
 
 use jsonnet_syntax::{ast::AstNode as _, kind::SyntaxKind as SK};

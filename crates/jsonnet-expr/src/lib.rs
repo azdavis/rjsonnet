@@ -1,6 +1,6 @@
 //! Jsonnet expressions.
 
-#![deny(clippy::pedantic, missing_debug_implementations, rust_2018_idioms)]
+#![allow(missing_docs)]
 
 mod generated {
   include!(concat!(env!("OUT_DIR"), "/generated.rs"));

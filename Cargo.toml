@@ -19,9 +19,15 @@ rustc-hash = "1.1.0"
 serde_json = "1.0.108"
 syn = "2.0.38"
 text-size = "1.1.1"
-
 # language util
 code-h2-md-map.git = "https://github.com/azdavis/language-util.git"
 event-parse.git = "https://github.com/azdavis/language-util.git"
 syntax-gen.git = "https://github.com/azdavis/language-util.git"
 token.git = "https://github.com/azdavis/language-util.git"
+
+[workspace.lints.rust]
+missing_debug_implementations = "deny"
+missing_docs = "deny"
+rust_2018_idioms = "deny"
+[workspace.lints.clippy]
+pedantic = "deny"

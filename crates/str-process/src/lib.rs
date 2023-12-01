@@ -1,7 +1,5 @@
 //! Process a string.
 
-#![deny(clippy::pedantic, missing_debug_implementations, missing_docs, rust_2018_idioms)]
-
 use drop_bomb::DebugDropBomb;
 
 /// The state for processing a string.

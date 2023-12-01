@@ -21,6 +21,7 @@
     "rustc",
     "tailstrict",
     "ungram",
+    "Ungrammar",
     "unparse"
   ]
 }

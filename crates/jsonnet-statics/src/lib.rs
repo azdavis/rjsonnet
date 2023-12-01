@@ -1,7 +1,5 @@
 //! Static checking for jsonnet.
 
-#![deny(clippy::pedantic, missing_debug_implementations, missing_docs, rust_2018_idioms)]
-
 mod error;
 
 use jsonnet_expr::{Arenas, Expr, ExprData, ExprMust, Id, Prim, Str};
