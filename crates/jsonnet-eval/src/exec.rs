@@ -202,6 +202,7 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
           Ok(Val::Array(lhs))
         }
         (Val::Object(mut lhs), Val::Object(mut rhs)) => {
+          // TODO: this is insufficient. we need to make super in the rhs refer to lhs.
           lhs.append(&mut rhs);
           Ok(Val::Object(lhs))
         }
