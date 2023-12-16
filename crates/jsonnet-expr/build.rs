@@ -3,6 +3,7 @@
 use quote::{format_ident, quote};
 use std::collections::HashSet;
 
+#[allow(clippy::too_many_lines)]
 fn main() {
   let preset = [
     ("STD", "std", true),
@@ -44,6 +45,10 @@ fn main() {
     };
     quote! { #vis const #name: Self = Self(#idx); }
   });
+  let str_idx_debug_arms = preset.iter().enumerate().map(|(idx, &(_, contents, _))| {
+    let idx = u32::try_from(idx).unwrap();
+    quote! { #idx => d.field(&#contents), }
+  });
   let str_constants = preset.iter().filter_map(|&(name, _, make_id)| {
     if make_id {
       return None;
@@ -69,9 +74,21 @@ fn main() {
 
     use crate::{Id, Str, StrRepr, StrIdx, StrArena};
     use rustc_hash::FxHashMap;
+    use std::fmt;
 
     impl StrIdx {
       #(#str_idx_constants)*
+    }
+
+    impl fmt::Debug for StrIdx {
+      fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut d = f.debug_tuple("StrIdx");
+        match self.to_u32() {
+          #(#str_idx_debug_arms)*
+          n => d.field(&n),
+        };
+        d.finish()
+      }
     }
 
     impl Str {

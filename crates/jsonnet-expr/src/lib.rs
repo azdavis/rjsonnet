@@ -252,7 +252,7 @@ enum StrRepr {
 }
 
 /// An interned string, which is an index into a string arena.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 struct StrIdx(u32);
 
 impl StrIdx {
@@ -268,6 +268,10 @@ impl StrIdx {
   /// On failure (i.e. overflow).
   fn to_usize(self) -> usize {
     self.0.try_into().unwrap()
+  }
+
+  fn to_u32(self) -> u32 {
+    self.0
   }
 }
 
