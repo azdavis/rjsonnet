@@ -10,10 +10,10 @@ use crate::check::{exec_err, manifest};
 #[test]
 fn function() {
   manifest(
-    r#"
+    r"
 local inc = function(x) x + 1;
 inc(3)
-"#,
+",
     "4",
   );
 }
@@ -63,10 +63,10 @@ assert 2 + 2 < 5 : "math makes sense";
 #[test]
 fn local() {
   manifest(
-    r#"
+    r"
 local x = 3;
 x + 1
-"#,
+",
     "4.0",
   );
 }
@@ -74,11 +74,11 @@ x + 1
 #[test]
 fn bool_op() {
   manifest(
-    r#"
+    r"
 [false || true, true && false, !true]
-"#,
-    r#"
+",
+    r"
 [true, false, false]
-"#,
+",
   );
 }

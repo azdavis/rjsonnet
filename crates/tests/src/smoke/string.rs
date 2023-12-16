@@ -48,10 +48,9 @@ fn double_verbatim() {
 #[test]
 fn single_verbatim() {
   manifest_str(
-    r#"
+    r"
 @'hi'
-"#,
-    "hi",
+", "hi",
   );
 }
 
@@ -74,11 +73,11 @@ fn unclosed() {
 #[test]
 fn text_block() {
   manifest_str(
-    r#"
+    r"
 |||
   hi there
   buddy
-|||"#,
+|||",
     "hi there\nbuddy\n",
   );
 }

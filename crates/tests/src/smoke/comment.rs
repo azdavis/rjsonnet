@@ -3,10 +3,10 @@ use crate::check::manifest;
 #[test]
 fn slash_slash() {
   manifest(
-    r#"
+    r"
 1 + // 2 +
 3
-"#,
+",
     "4.0",
   );
 }
@@ -14,9 +14,9 @@ fn slash_slash() {
 #[test]
 fn hash() {
   manifest(
-    r#"
+    r"
 1 # + 2
-"#,
+",
     "1.0",
   );
 }
@@ -24,9 +24,9 @@ fn hash() {
 #[test]
 fn slash_star() {
   manifest(
-    r#"
+    r"
 2 /* * 2 */ + 3
-"#,
+",
     "5.0",
   );
 }

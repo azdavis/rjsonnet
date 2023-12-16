@@ -30,12 +30,12 @@ fn non_empty() {
 #[test]
 fn self_() {
   manifest(
-    r#"
+    r"
 {
   a: 3,
   b: self.a + 1,
 }
-"#,
+",
     r#"
 {
   "a": 3,
@@ -46,11 +46,11 @@ fn self_() {
 }
 
 // TODO fix
-#[should_panic]
+#[should_panic = "NoSuchFieldName"]
 #[test]
 fn super_() {
   manifest(
-    r#"
+    r"
 local base = {
   a: 3,
   b: self.a + 1,
@@ -61,7 +61,7 @@ base + {
   super_a: super.a,
   super_b: super.b,
 }
-"#,
+",
     r#"
 {
   "a": 5,
@@ -76,9 +76,9 @@ base + {
 #[test]
 fn explicit_plus() {
   manifest(
-    r#"
+    r"
 { a: 1 } + { b: 2 }
-"#,
+",
     r#"
 { "a": 1, "b": 2 }
 "#,
@@ -88,9 +88,9 @@ fn explicit_plus() {
 #[test]
 fn implicit_plus() {
   manifest(
-    r#"
+    r"
 { a: 1 } { b: 2 }
-"#,
+",
     r#"
 { "a": 1, "b": 2 }
 "#,

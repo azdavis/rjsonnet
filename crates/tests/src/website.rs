@@ -33,7 +33,7 @@ fn ex1() {
 #[test]
 fn ex2() {
   manifest(
-    r#"
+    r"
 // A function that returns an object.
 local Person(name='Alice') = {
   name: name,
@@ -43,7 +43,7 @@ local Person(name='Alice') = {
   person1: Person(),
   person2: Person('Bob'),
 }
-"#,
+",
     r#"
 {
   "person1": {
