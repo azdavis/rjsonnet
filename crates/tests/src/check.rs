@@ -24,14 +24,16 @@ fn exec(s: &str) -> (Desugar, jsonnet_eval::error::Result<jsonnet::Val>) {
     panic!("statics error: {e}");
   }
   let env = jsonnet::Env::default();
-  let cx = jsonnet_eval::exec::Cx::new(&env);
+  let empty = jsonnet::Object::default();
+  let cx = jsonnet_eval::exec::Cx::new(&env, &empty);
   let val = jsonnet_eval::exec::get(cx, &desugar.arenas, desugar.top);
   (desugar, val)
 }
 
 fn manifest_raw(s: &str) -> (Desugar, json::Val) {
   let (desugar, val) = exec(s);
-  let val = jsonnet_eval::manifest::get(&desugar.arenas, val.expect("exec err"));
+  let empty = jsonnet::Object::default();
+  let val = jsonnet_eval::manifest::get(&desugar.arenas, &empty, val.expect("exec err"));
   (desugar, val.expect("manifest error"))
 }
 

@@ -2,7 +2,7 @@
 
 use crate::error::{self, Result};
 use crate::manifest;
-use crate::val::jsonnet::{Array, Env, Object, StdFn, Subst, Val};
+use crate::val::jsonnet::{Array, Env, Object, StdFn, Val};
 use jsonnet_expr::{
   Arenas, BinaryOp, Expr, ExprData, ExprMust, Id, Number, Prim, Str, StrArena, Visibility,
 };
@@ -50,7 +50,7 @@ pub fn get(cx: Cx<'_>, ars: &Arenas, expr: Expr) -> Result<Val> {
       let mut fields = FxHashMap::<Str, (Visibility, Expr)>::default();
       for (part_env, elem) in array.iter() {
         let mut env = cx.env.clone();
-        env.insert(*id, Subst::Expr(part_env.clone(), elem));
+        env.insert(*id, part_env.clone(), elem);
         match get(cx.with_env(&env), ars, *name)? {
           Val::Prim(Prim::String(s)) => {
             // TODO should we continue here?
@@ -72,11 +72,10 @@ pub fn get(cx: Cx<'_>, ars: &Arenas, expr: Expr) -> Result<Val> {
     }
     ExprData::Array(elems) => Ok(Val::Array(Array::new(cx.env.clone(), elems.clone()))),
     ExprData::Subscript { on, idx } => match get(cx, ars, *on)? {
-      Val::Object(mut object) => {
+      Val::Object(object) => {
         let Val::Prim(Prim::String(name)) = get(cx, ars, *idx)? else {
           return mk_error(error::Kind::IncompatibleTypes);
         };
-        object.insert_self_super();
         let Some((env, _, body)) = object.get_field(&name) else {
           return mk_error(error::Kind::NoSuchFieldName);
         };
@@ -167,10 +166,19 @@ pub fn get(cx: Cx<'_>, ars: &Arenas, expr: Expr) -> Result<Val> {
       },
       _ => mk_error(error::Kind::IncompatibleTypes),
     },
-    ExprData::Id(id) => match cx.env.get(*id) {
-      Subst::Val(v) => Ok(v.clone()),
-      Subst::Expr(env, expr) => get(cx.with_env(env), ars, *expr),
-    },
+    ExprData::Id(id) => {
+      if *id == Id::SELF {
+        return Ok(Val::Object(cx.this.clone()));
+      }
+      if *id == Id::SUPER {
+        return Ok(Val::Object(cx.this.parent().expect("invalid `super`").clone()));
+      }
+      if *id == Id::DOLLAR {
+        return Ok(Val::Object(cx.this.root().expect("invalid `$`").clone()));
+      }
+      let (env, expr) = cx.env.get(*id);
+      get(cx.with_env(env), ars, expr)
+    }
     ExprData::Local { binds, body } => exec_local(cx, binds, ars, *body),
     ExprData::If { cond, yes, no } => {
       let Val::Prim(Prim::Bool(b)) = get(cx, ars, *cond)? else {
@@ -183,11 +191,11 @@ pub fn get(cx: Cx<'_>, ars: &Arenas, expr: Expr) -> Result<Val> {
       // add
       BinaryOp::Add => match (get(cx, ars, *lhs)?, get(cx, ars, *rhs)?) {
         (Val::Prim(Prim::String(lhs)), rhs) => {
-          let rhs = str_conv(ars, rhs)?;
+          let rhs = str_conv(cx.this, ars, rhs)?;
           Ok(Val::Prim(Prim::String(str_concat(&ars.str, &lhs, &rhs))))
         }
         (lhs, Val::Prim(Prim::String(rhs))) => {
-          let lhs = str_conv(ars, lhs)?;
+          let lhs = str_conv(cx.this, ars, lhs)?;
           Ok(Val::Prim(Prim::String(str_concat(&ars.str, &lhs, &rhs))))
         }
         (Val::Prim(Prim::Number(lhs)), Val::Prim(Prim::Number(rhs))) => {
@@ -201,10 +209,9 @@ pub fn get(cx: Cx<'_>, ars: &Arenas, expr: Expr) -> Result<Val> {
           lhs.append(&mut rhs);
           Ok(Val::Array(lhs))
         }
-        (Val::Object(mut lhs), Val::Object(mut rhs)) => {
-          // TODO: this is insufficient. we need to make super in the rhs refer to lhs.
-          lhs.append(&mut rhs);
-          Ok(Val::Object(lhs))
+        (Val::Object(lhs), Val::Object(mut rhs)) => {
+          rhs.set_parent_to(lhs);
+          Ok(Val::Object(rhs))
         }
         _ => mk_error(error::Kind::IncompatibleTypes),
       },
@@ -262,7 +269,7 @@ pub fn get(cx: Cx<'_>, ars: &Arenas, expr: Expr) -> Result<Val> {
     }
     ExprData::Error(inner) => {
       let val = get(cx, ars, *inner)?;
-      let msg = str_conv(ars, val)?;
+      let msg = str_conv(cx.this, ars, val)?;
       mk_error(error::Kind::User(msg))
     }
     ExprData::Import { .. } => todo!("Import"),
@@ -272,18 +279,22 @@ pub fn get(cx: Cx<'_>, ars: &Arenas, expr: Expr) -> Result<Val> {
 #[derive(Debug, Clone, Copy)]
 pub struct Cx<'a> {
   env: &'a Env,
+  this: &'a Object,
 }
 
 impl<'a> Cx<'a> {
   /// Returns a new Cx.
   #[must_use]
-  pub fn new(env: &'a Env) -> Cx<'a> {
-    Cx { env }
+  pub fn new(env: &'a Env, this: &'a Object) -> Cx<'a> {
+    Cx { env, this }
   }
 
-  #[allow(clippy::unused_self)]
+  pub(crate) fn this(self) -> &'a Object {
+    self.this
+  }
+
   fn with_env(self, env: &'a Env) -> Cx<'a> {
-    Cx::new(env)
+    Cx::new(env, self.this)
   }
 }
 
@@ -328,7 +339,7 @@ where
 {
   let lhs = get(cx, ars, lhs)?;
   let rhs = get(cx, ars, rhs)?;
-  let ord = cmp_val(expr, ars, &lhs, &rhs)?;
+  let ord = cmp_val(expr, cx.this, ars, &lhs, &rhs)?;
   Ok(Val::Prim(f(ord)))
 }
 
@@ -346,7 +357,7 @@ where
   cmp_op(expr, cx, ars, lhs, rhs, |x| Prim::Bool(f(x)))
 }
 
-fn cmp_val(expr: ExprMust, ars: &Arenas, lhs: &Val, rhs: &Val) -> Result<Ordering> {
+fn cmp_val(expr: ExprMust, this: &Object, ars: &Arenas, lhs: &Val, rhs: &Val) -> Result<Ordering> {
   match (lhs, rhs) {
     (Val::Prim(lhs), Val::Prim(rhs)) => match (lhs, rhs) {
       (Prim::String(lhs), Prim::String(rhs)) => Ok(ars.str.get(lhs).cmp(ars.str.get(rhs))),
@@ -362,9 +373,9 @@ fn cmp_val(expr: ExprMust, ars: &Arenas, lhs: &Val, rhs: &Val) -> Result<Orderin
           (None, None) => break Ordering::Equal,
           (Some(_), None) => break Ordering::Greater,
           (Some((le, lhs)), Some((re, rhs))) => {
-            let lhs = get(Cx::new(le), ars, lhs)?;
-            let rhs = get(Cx::new(re), ars, rhs)?;
-            match cmp_val(expr, ars, &lhs, &rhs)? {
+            let lhs = get(Cx::new(le, this), ars, lhs)?;
+            let rhs = get(Cx::new(re, this), ars, rhs)?;
+            match cmp_val(expr, this, ars, &lhs, &rhs)? {
               Ordering::Equal => {}
               ord => break ord,
             }
@@ -380,16 +391,16 @@ fn cmp_val(expr: ExprMust, ars: &Arenas, lhs: &Val, rhs: &Val) -> Result<Orderin
 fn exec_local(cx: Cx<'_>, binds: &[(Id, Expr)], ars: &Arenas, body: Expr) -> Result<Val> {
   let mut env = cx.env.clone();
   for &(id, expr) in binds {
-    env.insert(id, Subst::Expr(cx.env.clone(), expr));
+    env.insert(id, cx.env.clone(), expr);
   }
   get(cx.with_env(&env), ars, body)
 }
 
-fn str_conv(ars: &Arenas, val: Val) -> Result<Str> {
+fn str_conv(this: &Object, ars: &Arenas, val: Val) -> Result<Str> {
   if let Val::Prim(Prim::String(s)) = val {
     Ok(s)
   } else {
-    let json = manifest::get(ars, val)?;
+    let json = manifest::get(ars, this, val)?;
     let string = json.display(&ars.str).to_string();
     Ok(ars.str.str_shared(string.into_boxed_str()))
   }

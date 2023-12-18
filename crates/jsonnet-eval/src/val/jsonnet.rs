@@ -5,24 +5,19 @@ use rustc_hash::{FxHashMap, FxHashSet};
 
 #[derive(Debug, Default, Clone)]
 pub struct Env {
-  store: FxHashMap<Id, Subst>,
+  store: FxHashMap<Id, (Env, Expr)>,
 }
 
 impl Env {
-  pub fn insert(&mut self, id: Id, subst: Subst) {
-    self.store.insert(id, subst);
+  pub fn insert(&mut self, id: Id, env: Env, expr: Expr) {
+    self.store.insert(id, (env, expr));
   }
 
   #[must_use]
-  pub fn get(&self, id: Id) -> &Subst {
-    &self.store[&id]
+  pub fn get(&self, id: Id) -> (&Env, Expr) {
+    let (ref env, expr) = self.store[&id];
+    (env, expr)
   }
-}
-
-#[derive(Debug, Clone)]
-pub enum Subst {
-  Val(Val),
-  Expr(Env, Expr),
 }
 
 /// A Jsonnet value.
@@ -55,61 +50,68 @@ pub enum Val {
 
 #[derive(Debug, Default, Clone)]
 pub struct Object {
-  /// more recent parts at the end
-  parts: Vec<ObjectPart>,
+  parent: Option<Box<Object>>,
+  env: Env,
+  asserts: Vec<Expr>,
+  fields: FxHashMap<Str, (Visibility, Expr)>,
 }
 
 impl Object {
+  /// first itself, then its parent, etc
+  fn ancestry(&self) -> impl Iterator<Item = &Self> {
+    let mut cur = Some(self);
+    std::iter::from_fn(move || {
+      let this = cur?;
+      cur = this.parent.as_deref();
+      Some(this)
+    })
+  }
+
+  pub(crate) fn parent(&self) -> Option<&Self> {
+    self.ancestry().nth(1)
+  }
+
+  pub(crate) fn root(&self) -> Option<&Self> {
+    self.ancestry().last()
+  }
+
   #[must_use]
   pub(crate) fn new(
     env: Env,
     asserts: Vec<Expr>,
     fields: FxHashMap<Str, (Visibility, Expr)>,
   ) -> Object {
-    Self { parts: vec![ObjectPart { env, asserts, fields }] }
-  }
-
-  pub(crate) fn insert_self_super(&mut self) {
-    let this = self.clone();
-    for part in &mut self.parts {
-      part.env.insert(Id::SELF, Subst::Val(Val::Object(this.clone())));
-      part.env.insert(Id::SUPER, Subst::Val(Val::Object(Object::default())));
-    }
+    Object { parent: None, env, asserts, fields }
   }
 
   pub(crate) fn asserts(&self) -> impl Iterator<Item = (&Env, Expr)> {
-    self.parts.iter().flat_map(|part| part.asserts.iter().map(|&e| (&part.env, e)))
+    self.ancestry().flat_map(|this| this.asserts.iter()).map(|&e| (&self.env, e))
   }
 
   pub(crate) fn fields(&self) -> impl Iterator<Item = (&Env, &Str, Visibility, Expr)> {
     let mut seen = FxHashSet::<&Str>::default();
     self
-      .parts
-      .iter()
-      .rev()
-      .flat_map(|part| part.fields.iter().map(|(name, &(vis, expr))| (&part.env, name, vis, expr)))
+      .ancestry()
+      .flat_map(|this| this.fields.iter())
+      .map(|(name, &(vis, expr))| (&self.env, name, vis, expr))
       .filter(move |&(_, name, _, _)| seen.insert(name))
   }
 
   #[must_use]
   pub(crate) fn get_field(&self, name: &Str) -> Option<(&Env, Visibility, Expr)> {
     self
-      .parts
-      .iter()
-      .rev()
-      .find_map(|part| part.fields.get(name).map(|&(vis, expr)| (&part.env, vis, expr)))
+      .ancestry()
+      .find_map(|this| this.fields.get(name))
+      .map(move |&(vis, expr)| (&self.env, vis, expr))
   }
 
-  pub(crate) fn append(&mut self, other: &mut Self) {
-    self.parts.append(&mut other.parts);
+  pub(crate) fn set_parent_to(&mut self, other: Self) {
+    let mut top = self;
+    while let Some(ref mut parent) = top.parent {
+      top = parent.as_mut();
+    }
+    top.parent = Some(Box::new(other));
   }
-}
-
-#[derive(Debug, Clone)]
-struct ObjectPart {
-  env: Env,
-  asserts: Vec<Expr>,
-  fields: FxHashMap<Str, (Visibility, Expr)>,
 }
 
 #[derive(Debug, Default, Clone)]

@@ -45,8 +45,6 @@ fn self_() {
   );
 }
 
-// TODO fix
-#[should_panic = "NoSuchFieldName"]
 #[test]
 fn super_() {
   manifest(
