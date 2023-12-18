@@ -265,7 +265,7 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
       let msg = str_conv(ars, val)?;
       mk_error(error::Kind::User(msg))
     }
-    ExprData::Import { .. } => todo!(),
+    ExprData::Import { .. } => todo!("Import"),
   }
 }
 

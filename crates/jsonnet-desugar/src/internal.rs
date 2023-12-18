@@ -297,7 +297,7 @@ fn get_object(st: &mut St, inside: ast::Object, in_obj: bool) -> ExprData {
         let Some(member_kind) = member.member_kind() else { continue };
         match member_kind {
           ast::MemberKind::ObjectLocal(_) => {
-            todo!()
+            todo!("ObjectLocal")
           }
           ast::MemberKind::Assert(assert) => {
             let ptr = ast::SyntaxNodePtr::new(assert.syntax());
@@ -331,7 +331,7 @@ fn get_object(st: &mut St, inside: ast::Object, in_obj: bool) -> ExprData {
             };
             let body = match field.field_extra() {
               None => get_expr(st, field.expr(), true),
-              Some(ast::FieldExtra::FieldPlus(_)) => todo!(),
+              Some(ast::FieldExtra::FieldPlus(_)) => todo!("FieldPlus"),
               Some(ast::FieldExtra::ParenParams(paren_params)) => {
                 let ptr = ast::SyntaxNodePtr::new(paren_params.syntax());
                 let expr = get_fn(st, Some(paren_params), field.expr(), true);
