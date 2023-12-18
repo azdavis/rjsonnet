@@ -24,7 +24,8 @@ fn exec(s: &str) -> (Desugar, jsonnet_eval::error::Result<jsonnet::Val>) {
     panic!("statics error: {e}");
   }
   let env = jsonnet::Env::default();
-  let val = jsonnet_eval::exec::get(&env, &desugar.arenas, desugar.top);
+  let cx = jsonnet_eval::exec::Cx::new(&env);
+  let val = jsonnet_eval::exec::get(cx, &desugar.arenas, desugar.top);
   (desugar, val)
 }
 

@@ -20,7 +20,7 @@ const EPSILON: f64 = 0.0001;
 /// # Panics
 ///
 /// If the expr wasn't checked.
-pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
+pub fn get(cx: Cx<'_>, ars: &Arenas, expr: Expr) -> Result<Val> {
   // TODO implement a cache on expr to avoid re-computing lazy exprs? but we would also need to
   // consider the env in which the expr is executed
   let expr = expr.expect("no expr");
@@ -30,7 +30,7 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
     ExprData::Object { asserts, fields } => {
       let mut named_fields = FxHashMap::<Str, (Visibility, Expr)>::default();
       for &(key, hid, val) in fields {
-        match get(env, ars, key)? {
+        match get(cx, ars, key)? {
           Val::Prim(Prim::String(s)) => {
             if named_fields.insert(s, (hid, val)).is_some() {
               return mk_error(error::Kind::DuplicateField);
@@ -41,17 +41,17 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
         }
       }
 
-      Ok(Val::Object(Object::new(env.clone(), asserts.clone(), named_fields)))
+      Ok(Val::Object(Object::new(cx.env.clone(), asserts.clone(), named_fields)))
     }
     ExprData::ObjectComp { name, body, id, ary } => {
-      let Val::Array(array) = get(env, ars, *ary)? else {
+      let Val::Array(array) = get(cx, ars, *ary)? else {
         return mk_error(error::Kind::IncompatibleTypes);
       };
       let mut fields = FxHashMap::<Str, (Visibility, Expr)>::default();
       for (part_env, elem) in array.iter() {
-        let mut env = env.clone();
+        let mut env = cx.env.clone();
         env.insert(*id, Subst::Expr(part_env.clone(), elem));
-        match get(&env, ars, *name)? {
+        match get(cx.with_env(&env), ars, *name)? {
           Val::Prim(Prim::String(s)) => {
             // TODO should we continue here?
             let Some(body) = *body else { continue };
@@ -68,12 +68,12 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
           _ => return mk_error(error::Kind::IncompatibleTypes),
         }
       }
-      Ok(Val::Object(Object::new(env.clone(), Vec::new(), fields)))
+      Ok(Val::Object(Object::new(cx.env.clone(), Vec::new(), fields)))
     }
-    ExprData::Array(elems) => Ok(Val::Array(Array::new(env.clone(), elems.clone()))),
-    ExprData::Subscript { on, idx } => match get(env, ars, *on)? {
+    ExprData::Array(elems) => Ok(Val::Array(Array::new(cx.env.clone(), elems.clone()))),
+    ExprData::Subscript { on, idx } => match get(cx, ars, *on)? {
       Val::Object(mut object) => {
-        let Val::Prim(Prim::String(name)) = get(env, ars, *idx)? else {
+        let Val::Prim(Prim::String(name)) = get(cx, ars, *idx)? else {
           return mk_error(error::Kind::IncompatibleTypes);
         };
         object.insert_self_super();
@@ -81,12 +81,12 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
           return mk_error(error::Kind::NoSuchFieldName);
         };
         for (env, assert) in object.asserts() {
-          get(env, ars, assert)?;
+          get(cx.with_env(env), ars, assert)?;
         }
-        get(env, ars, body)
+        get(cx.with_env(env), ars, body)
       }
       Val::Array(array) => {
-        let Val::Prim(Prim::Number(idx)) = get(env, ars, *idx)? else {
+        let Val::Prim(Prim::Number(idx)) = get(cx, ars, *idx)? else {
           return mk_error(error::Kind::IncompatibleTypes);
         };
         let idx = idx.value();
@@ -104,13 +104,13 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
           return mk_error(error::Kind::ArrayIdxOutOfRange);
         };
         match array.get(idx) {
-          Some((env, elem)) => get(env, ars, elem),
+          Some((env, elem)) => get(cx.with_env(env), ars, elem),
           None => mk_error(error::Kind::ArrayIdxOutOfRange),
         }
       }
       _ => mk_error(error::Kind::IncompatibleTypes),
     },
-    ExprData::Call { func, positional, named } => match get(env, ars, *func)? {
+    ExprData::Call { func, positional, named } => match get(cx, ars, *func)? {
       Val::Function { env: func_env, mut params, body } => {
         if positional.len() + named.len() > params.len() {
           return mk_error(error::Kind::TooManyArguments);
@@ -136,7 +136,7 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
             return mk_error(error::Kind::NoSuchArgument);
           }
         }
-        exec_local(&func_env, &params, ars, body)
+        exec_local(cx.with_env(&func_env), &params, ars, body)
       }
       Val::StdFn(std_val) => match std_val {
         StdFn::Cmp => {
@@ -146,7 +146,7 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
           let [lhs, rhs] = positional[..] else {
             return mk_error(error::Kind::StdFuncWrongNumArgs(2, positional.len()));
           };
-          cmp_op(expr, env, ars, lhs, rhs, |ord| {
+          cmp_op(expr, cx, ars, lhs, rhs, |ord| {
             let num = match ord {
               Ordering::Less => Number::negative_one(),
               Ordering::Equal => Number::positive_zero(),
@@ -162,26 +162,26 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
           let [lhs, rhs] = positional[..] else {
             return mk_error(error::Kind::StdFuncWrongNumArgs(2, positional.len()));
           };
-          cmp_bool_op(expr, env, ars, lhs, rhs, Ordering::is_eq)
+          cmp_bool_op(expr, cx, ars, lhs, rhs, Ordering::is_eq)
         }
       },
       _ => mk_error(error::Kind::IncompatibleTypes),
     },
-    ExprData::Id(id) => match env.get(*id) {
+    ExprData::Id(id) => match cx.env.get(*id) {
       Subst::Val(v) => Ok(v.clone()),
-      Subst::Expr(env, expr) => get(env, ars, *expr),
+      Subst::Expr(env, expr) => get(cx.with_env(env), ars, *expr),
     },
-    ExprData::Local { binds, body } => exec_local(env, binds, ars, *body),
+    ExprData::Local { binds, body } => exec_local(cx, binds, ars, *body),
     ExprData::If { cond, yes, no } => {
-      let Val::Prim(Prim::Bool(b)) = get(env, ars, *cond)? else {
+      let Val::Prim(Prim::Bool(b)) = get(cx, ars, *cond)? else {
         return mk_error(error::Kind::IncompatibleTypes);
       };
       let &expr = if b { yes } else { no };
-      get(env, ars, expr)
+      get(cx, ars, expr)
     }
     ExprData::BinaryOp { lhs, op, rhs } => match op {
       // add
-      BinaryOp::Add => match (get(env, ars, *lhs)?, get(env, ars, *rhs)?) {
+      BinaryOp::Add => match (get(cx, ars, *lhs)?, get(cx, ars, *rhs)?) {
         (Val::Prim(Prim::String(lhs)), rhs) => {
           let rhs = str_conv(ars, rhs)?;
           Ok(Val::Prim(Prim::String(str_concat(&ars.str, &lhs, &rhs))))
@@ -209,23 +209,23 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
         _ => mk_error(error::Kind::IncompatibleTypes),
       },
       // arithmetic
-      BinaryOp::Mul => float_op(expr, env, ars, *lhs, *rhs, std::ops::Mul::mul),
-      BinaryOp::Div => float_op(expr, env, ars, *lhs, *rhs, std::ops::Div::div),
-      BinaryOp::Sub => float_op(expr, env, ars, *lhs, *rhs, std::ops::Sub::sub),
+      BinaryOp::Mul => float_op(expr, cx, ars, *lhs, *rhs, std::ops::Mul::mul),
+      BinaryOp::Div => float_op(expr, cx, ars, *lhs, *rhs, std::ops::Div::div),
+      BinaryOp::Sub => float_op(expr, cx, ars, *lhs, *rhs, std::ops::Sub::sub),
       // bitwise
-      BinaryOp::Shl => int_op(expr, env, ars, *lhs, *rhs, std::ops::Shl::shl),
-      BinaryOp::Shr => int_op(expr, env, ars, *lhs, *rhs, std::ops::Shr::shr),
-      BinaryOp::BitAnd => int_op(expr, env, ars, *lhs, *rhs, std::ops::BitAnd::bitand),
-      BinaryOp::BitXor => int_op(expr, env, ars, *lhs, *rhs, std::ops::BitXor::bitxor),
-      BinaryOp::BitOr => int_op(expr, env, ars, *lhs, *rhs, std::ops::BitOr::bitor),
+      BinaryOp::Shl => int_op(expr, cx, ars, *lhs, *rhs, std::ops::Shl::shl),
+      BinaryOp::Shr => int_op(expr, cx, ars, *lhs, *rhs, std::ops::Shr::shr),
+      BinaryOp::BitAnd => int_op(expr, cx, ars, *lhs, *rhs, std::ops::BitAnd::bitand),
+      BinaryOp::BitXor => int_op(expr, cx, ars, *lhs, *rhs, std::ops::BitXor::bitxor),
+      BinaryOp::BitOr => int_op(expr, cx, ars, *lhs, *rhs, std::ops::BitOr::bitor),
       // comparison
-      BinaryOp::Lt => cmp_bool_op(expr, env, ars, *lhs, *rhs, Ordering::is_lt),
-      BinaryOp::LtEq => cmp_bool_op(expr, env, ars, *lhs, *rhs, Ordering::is_le),
-      BinaryOp::Gt => cmp_bool_op(expr, env, ars, *lhs, *rhs, Ordering::is_gt),
-      BinaryOp::GtEq => cmp_bool_op(expr, env, ars, *lhs, *rhs, Ordering::is_ge),
+      BinaryOp::Lt => cmp_bool_op(expr, cx, ars, *lhs, *rhs, Ordering::is_lt),
+      BinaryOp::LtEq => cmp_bool_op(expr, cx, ars, *lhs, *rhs, Ordering::is_le),
+      BinaryOp::Gt => cmp_bool_op(expr, cx, ars, *lhs, *rhs, Ordering::is_gt),
+      BinaryOp::GtEq => cmp_bool_op(expr, cx, ars, *lhs, *rhs, Ordering::is_ge),
     },
     ExprData::UnaryOp { op, inner } => {
-      let inner = get(env, ars, *inner)?;
+      let inner = get(cx, ars, *inner)?;
       match op {
         jsonnet_expr::UnaryOp::Neg => {
           if let Val::Prim(Prim::Number(n)) = inner {
@@ -258,10 +258,10 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
       }
     }
     ExprData::Function { params, body } => {
-      Ok(Val::Function { env: env.clone(), params: params.clone(), body: *body })
+      Ok(Val::Function { env: cx.env.clone(), params: params.clone(), body: *body })
     }
     ExprData::Error(inner) => {
-      let val = get(env, ars, *inner)?;
+      let val = get(cx, ars, *inner)?;
       let msg = str_conv(ars, val)?;
       mk_error(error::Kind::User(msg))
     }
@@ -269,18 +269,36 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
   }
 }
 
-fn number_pair(expr: ExprMust, env: &Env, ars: &Arenas, a: Expr, b: Expr) -> Result<[Number; 2]> {
-  match (get(env, ars, a)?, get(env, ars, b)?) {
+#[derive(Debug, Clone, Copy)]
+pub struct Cx<'a> {
+  env: &'a Env,
+}
+
+impl<'a> Cx<'a> {
+  /// Returns a new Cx.
+  #[must_use]
+  pub fn new(env: &'a Env) -> Cx<'a> {
+    Cx { env }
+  }
+
+  #[allow(clippy::unused_self)]
+  fn with_env(self, env: &'a Env) -> Cx<'a> {
+    Cx::new(env)
+  }
+}
+
+fn number_pair(expr: ExprMust, cx: Cx<'_>, ars: &Arenas, a: Expr, b: Expr) -> Result<[Number; 2]> {
+  match (get(cx, ars, a)?, get(cx, ars, b)?) {
     (Val::Prim(Prim::Number(a)), Val::Prim(Prim::Number(b))) => Ok([a, b]),
     _ => Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes }),
   }
 }
 
-fn float_op<F>(expr: ExprMust, env: &Env, ars: &Arenas, lhs: Expr, rhs: Expr, f: F) -> Result<Val>
+fn float_op<F>(expr: ExprMust, cx: Cx<'_>, ars: &Arenas, lhs: Expr, rhs: Expr, f: F) -> Result<Val>
 where
   F: FnOnce(f64, f64) -> f64,
 {
-  let [lhs, rhs] = number_pair(expr, env, ars, lhs, rhs)?;
+  let [lhs, rhs] = number_pair(expr, cx, ars, lhs, rhs)?;
   let n = match Number::try_from(f(lhs.value(), rhs.value())) {
     Ok(n) => n,
     Err(inf) => return Err(error::Error::Exec { expr, kind: error::Kind::Infinite(inf) }),
@@ -288,11 +306,11 @@ where
   Ok(Val::Prim(Prim::Number(n)))
 }
 
-fn int_op<F>(expr: ExprMust, env: &Env, ars: &Arenas, lhs: Expr, rhs: Expr, f: F) -> Result<Val>
+fn int_op<F>(expr: ExprMust, cx: Cx<'_>, ars: &Arenas, lhs: Expr, rhs: Expr, f: F) -> Result<Val>
 where
   F: FnOnce(i64, i64) -> i64,
 {
-  let ns = number_pair(expr, env, ars, lhs, rhs)?;
+  let ns = number_pair(expr, cx, ars, lhs, rhs)?;
   #[allow(clippy::cast_possible_truncation)]
   let [lhs, rhs] = ns.map(|x| x.value() as i64);
   #[allow(clippy::cast_precision_loss)]
@@ -304,19 +322,19 @@ where
   Ok(Val::Prim(Prim::Number(n)))
 }
 
-fn cmp_op<F>(expr: ExprMust, env: &Env, ars: &Arenas, lhs: Expr, rhs: Expr, f: F) -> Result<Val>
+fn cmp_op<F>(expr: ExprMust, cx: Cx<'_>, ars: &Arenas, lhs: Expr, rhs: Expr, f: F) -> Result<Val>
 where
   F: FnOnce(Ordering) -> Prim,
 {
-  let lhs = get(env, ars, lhs)?;
-  let rhs = get(env, ars, rhs)?;
+  let lhs = get(cx, ars, lhs)?;
+  let rhs = get(cx, ars, rhs)?;
   let ord = cmp_val(expr, ars, &lhs, &rhs)?;
   Ok(Val::Prim(f(ord)))
 }
 
 fn cmp_bool_op<F>(
   expr: ExprMust,
-  env: &Env,
+  cx: Cx<'_>,
   ars: &Arenas,
   lhs: Expr,
   rhs: Expr,
@@ -325,7 +343,7 @@ fn cmp_bool_op<F>(
 where
   F: FnOnce(Ordering) -> bool,
 {
-  cmp_op(expr, env, ars, lhs, rhs, |x| Prim::Bool(f(x)))
+  cmp_op(expr, cx, ars, lhs, rhs, |x| Prim::Bool(f(x)))
 }
 
 fn cmp_val(expr: ExprMust, ars: &Arenas, lhs: &Val, rhs: &Val) -> Result<Ordering> {
@@ -344,8 +362,8 @@ fn cmp_val(expr: ExprMust, ars: &Arenas, lhs: &Val, rhs: &Val) -> Result<Orderin
           (None, None) => break Ordering::Equal,
           (Some(_), None) => break Ordering::Greater,
           (Some((le, lhs)), Some((re, rhs))) => {
-            let lhs = get(le, ars, lhs)?;
-            let rhs = get(re, ars, rhs)?;
+            let lhs = get(Cx::new(le), ars, lhs)?;
+            let rhs = get(Cx::new(re), ars, rhs)?;
             match cmp_val(expr, ars, &lhs, &rhs)? {
               Ordering::Equal => {}
               ord => break ord,
@@ -359,12 +377,12 @@ fn cmp_val(expr: ExprMust, ars: &Arenas, lhs: &Val, rhs: &Val) -> Result<Orderin
   }
 }
 
-fn exec_local(prev_env: &Env, binds: &[(Id, Expr)], ars: &Arenas, body: Expr) -> Result<Val> {
-  let mut env = prev_env.clone();
+fn exec_local(cx: Cx<'_>, binds: &[(Id, Expr)], ars: &Arenas, body: Expr) -> Result<Val> {
+  let mut env = cx.env.clone();
   for &(id, expr) in binds {
-    env.insert(id, Subst::Expr(prev_env.clone(), expr));
+    env.insert(id, Subst::Expr(cx.env.clone(), expr));
   }
-  get(&env, ars, body)
+  get(cx.with_env(&env), ars, body)
 }
 
 fn str_conv(ars: &Arenas, val: Val) -> Result<Str> {
