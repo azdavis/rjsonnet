@@ -12,6 +12,7 @@
     "Importbin",
     "Importstr",
     "jsonnet",
+    "Mojito",
     "outerself",
     "outersuper",
     "peekable",
@@ -20,6 +21,7 @@
     "Repr",
     "rustc",
     "tailstrict",
+    "templating",
     "ungram",
     "Ungrammar",
     "unparse"
