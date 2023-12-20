@@ -59,7 +59,7 @@ fn get_expr(st: &mut St, expr: Option<ast::Expr>, in_obj: bool) -> Expr {
     ast::Expr::ExprFieldGet(expr) => {
       let on = get_expr(st, expr.expr(), in_obj);
       let idx = ExprData::Prim(Prim::String(st.str(expr.id()?.text())));
-      let idx = Some(st.expr(ptr.clone(), idx));
+      let idx = Some(st.expr(ptr, idx));
       ExprData::Subscript { on, idx }
     }
     ast::Expr::ExprSubscript(expr) => {
@@ -74,9 +74,8 @@ fn get_expr(st: &mut St, expr: Option<ast::Expr>, in_obj: bool) -> Expr {
         ExprData::Subscript { on, idx }
       } else {
         let indices = [expr.idx_a(), expr.idx_b(), expr.idx_c()];
-        let [idx_a, idx_b, idx_c] =
-          indices.map(|idx| get_expr_or_null(st, ptr.clone(), idx, in_obj));
-        call_std_func_data(st, ptr.clone(), Id::SLICE, vec![on, idx_a, idx_b, idx_c])
+        let [idx_a, idx_b, idx_c] = indices.map(|idx| get_expr_or_null(st, ptr, idx, in_obj));
+        call_std_func_data(st, ptr, Id::SLICE, vec![on, idx_a, idx_b, idx_c])
       }
     }
     ast::Expr::ExprCall(expr) => {
@@ -100,14 +99,14 @@ fn get_expr(st: &mut St, expr: Option<ast::Expr>, in_obj: bool) -> Expr {
     ast::Expr::ExprIf(expr) => {
       let cond = get_expr(st, expr.cond(), in_obj);
       let yes = get_expr(st, expr.yes(), in_obj);
-      let no = get_expr_or_null(st, ptr.clone(), expr.else_expr().and_then(|x| x.expr()), in_obj);
+      let no = get_expr_or_null(st, ptr, expr.else_expr().and_then(|x| x.expr()), in_obj);
       ExprData::If { cond, yes, no }
     }
     ast::Expr::ExprBinaryOp(expr) => {
       let lhs = get_expr(st, expr.lhs(), in_obj);
       let rhs = get_expr(st, expr.rhs(), in_obj);
       let op = expr.binary_op()?.kind;
-      get_binary_op(st, ptr.clone(), lhs, op, rhs)
+      get_binary_op(st, ptr, lhs, op, rhs)
     }
     ast::Expr::ExprUnaryOp(expr) => {
       let inner = get_expr(st, expr.expr(), in_obj);
@@ -166,13 +165,13 @@ fn get_expr_or_null(
 
 #[allow(clippy::unnecessary_wraps)]
 fn call_std_func(st: &mut St, ptr: ast::SyntaxNodePtr, id: Id, args: Vec<Expr>) -> Expr {
-  let data = call_std_func_data(st, ptr.clone(), id, args);
+  let data = call_std_func_data(st, ptr, id, args);
   Some(st.expr(ptr, data))
 }
 
 fn call_std_func_data(st: &mut St, ptr: ast::SyntaxNodePtr, id: Id, args: Vec<Expr>) -> ExprData {
-  let std = Some(st.expr(ptr.clone(), ExprData::Id(Id::STD_UNUTTERABLE)));
-  let idx = Some(st.expr(ptr.clone(), ExprData::Id(id)));
+  let std = Some(st.expr(ptr, ExprData::Id(Id::STD_UNUTTERABLE)));
+  let idx = Some(st.expr(ptr, ExprData::Id(id)));
   let func = Some(st.expr(ptr, ExprData::Subscript { on: std, idx }));
   ExprData::Call { func, positional: args, named: Vec::new() }
 }
@@ -184,29 +183,28 @@ where
   let comp_specs: Vec<_> = comp_specs.collect();
   comp_specs.into_iter().rev().fold(ExprData::Array(vec![elem]), |ac, comp_spec| {
     let ptr = ast::SyntaxNodePtr::new(comp_spec.syntax());
-    let empty_array = Some(st.expr(ptr.clone(), ExprData::Array(Vec::new())));
+    let empty_array = Some(st.expr(ptr, ExprData::Array(Vec::new())));
     match comp_spec {
       ast::CompSpec::ForSpec(for_spec) => {
         // skip this `for` if no var for the `for`
         let Some(for_var) = for_spec.id() else { return ac };
-        let ac = Some(st.expr(ptr.clone(), ac));
+        let ac = Some(st.expr(ptr, ac));
         let for_var = st.id(for_var);
         let in_expr = get_expr(st, for_spec.expr(), in_obj);
         let arr = st.fresh();
         let idx = st.fresh();
-        let arr_expr = Some(st.expr(ptr.clone(), ExprData::Id(arr)));
-        let idx_expr = Some(st.expr(ptr.clone(), ExprData::Id(idx)));
-        let length = call_std_func(st, ptr.clone(), Id::LENGTH, vec![arr_expr]);
-        let subscript =
-          Some(st.expr(ptr.clone(), ExprData::Subscript { on: arr_expr, idx: idx_expr }));
+        let arr_expr = Some(st.expr(ptr, ExprData::Id(arr)));
+        let idx_expr = Some(st.expr(ptr, ExprData::Id(idx)));
+        let length = call_std_func(st, ptr, Id::LENGTH, vec![arr_expr]);
+        let subscript = Some(st.expr(ptr, ExprData::Subscript { on: arr_expr, idx: idx_expr }));
         let recur_with_subscript = ExprData::Local { binds: vec![(for_var, subscript)], body: ac };
-        let recur_with_subscript = Some(st.expr(ptr.clone(), recur_with_subscript));
-        let unbound_err = err_param_unbound(st, ptr.clone());
+        let recur_with_subscript = Some(st.expr(ptr, recur_with_subscript));
+        let unbound_err = err_param_unbound(st, ptr);
         let lambda =
           ExprData::Function { params: vec![(idx, unbound_err)], body: recur_with_subscript };
-        let lambda_recur_with_subscript = Some(st.expr(ptr.clone(), lambda));
+        let lambda_recur_with_subscript = Some(st.expr(ptr, lambda));
         let make_array =
-          call_std_func(st, ptr.clone(), Id::MAKE_ARRAY, vec![length, lambda_recur_with_subscript]);
+          call_std_func(st, ptr, Id::MAKE_ARRAY, vec![length, lambda_recur_with_subscript]);
         let join = call_std_func(st, ptr, Id::JOIN, vec![empty_array, make_array]);
         ExprData::Local { binds: vec![(arr, in_expr)], body: join }
       }
@@ -236,7 +234,7 @@ fn get_bind(st: &mut St, bind: ast::Bind, in_obj: bool) -> Option<(Id, Expr)> {
 #[allow(clippy::unnecessary_wraps)]
 fn err_param_unbound(st: &mut St, ptr: ast::SyntaxNodePtr) -> Expr {
   let msg = ExprData::Prim(Prim::String(Str::PARAMETER_NOT_BOUND));
-  let msg = Some(st.expr(ptr.clone(), msg));
+  let msg = Some(st.expr(ptr, msg));
   Some(st.expr(ptr, ExprData::Error(msg)))
 }
 
@@ -281,7 +279,7 @@ fn get_assert(st: &mut St, yes: Expr, assert: ast::Assert, in_obj: bool) -> Expr
   let ptr = ast::SyntaxNodePtr::new(assert.syntax());
   let msg = match assert.colon_expr() {
     Some(expr) => get_expr(st, expr.expr(), in_obj),
-    None => Some(st.expr(ptr.clone(), ExprData::Prim(Prim::String(Str::ASSERTION_FAILED)))),
+    None => Some(st.expr(ptr, ExprData::Prim(Prim::String(Str::ASSERTION_FAILED)))),
   };
   let no = Some(st.expr(ptr, ExprData::Error(msg)));
   ExprData::If { cond, yes, no }
@@ -301,7 +299,7 @@ fn get_object(st: &mut St, inside: ast::Object, in_obj: bool) -> ExprData {
           }
           ast::MemberKind::Assert(assert) => {
             let ptr = ast::SyntaxNodePtr::new(assert.syntax());
-            let yes = Some(st.expr(ptr.clone(), ExprData::Prim(Prim::Null)));
+            let yes = Some(st.expr(ptr, ExprData::Prim(Prim::Null)));
             let assert = get_assert(st, yes, assert, true);
             let assert = Some(st.expr(ptr, assert));
             // TODO handle interactions with binds
@@ -408,19 +406,19 @@ fn get_object(st: &mut St, inside: ast::Object, in_obj: bool) -> ExprData {
         }
         Some((ptr, name, body)) => {
           let arr = st.fresh();
-          let on = Some(st.expr(ptr.clone(), ExprData::Id(arr)));
+          let on = Some(st.expr(ptr, ExprData::Id(arr)));
           let name_binds = vars.iter().enumerate().map(|(idx, (ptr, id))| {
             let idx = u32::try_from(idx).unwrap();
             let idx = f64::try_from(idx).unwrap();
             let idx = Number::try_from(idx).expect("infinite array idx");
-            let idx = Some(st.expr(ptr.clone(), ExprData::Prim(Prim::Number(idx))));
-            let subscript = Some(st.expr(ptr.clone(), ExprData::Subscript { on, idx }));
+            let idx = Some(st.expr(*ptr, ExprData::Prim(Prim::Number(idx))));
+            let subscript = Some(st.expr(*ptr, ExprData::Subscript { on, idx }));
             (*id, subscript)
           });
           let name_binds: Vec<_> = name_binds.collect();
           let body_binds: Vec<_> = name_binds.iter().copied().chain(binds).collect();
-          let name = Some(st.expr(ptr.clone(), ExprData::Local { binds: name_binds, body: name }));
-          let body = Some(st.expr(ptr.clone(), ExprData::Local { binds: body_binds, body }));
+          let name = Some(st.expr(ptr, ExprData::Local { binds: name_binds, body: name }));
+          let body = Some(st.expr(ptr, ExprData::Local { binds: body_binds, body }));
           let vars = vars.into_iter().map(|(ptr, x)| Some(st.expr(ptr, ExprData::Id(x))));
           let vars: Vec<_> = vars.collect();
           let vars_ary = Some(st.expr(ptr, ExprData::Array(vars)));

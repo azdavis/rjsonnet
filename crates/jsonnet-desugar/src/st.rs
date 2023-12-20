@@ -13,14 +13,14 @@ pub struct Pointers {
 
 impl Pointers {
   pub(crate) fn insert(&mut self, ptr: ast::SyntaxNodePtr, e: jsonnet_expr::ExprMust) {
-    self.ptr_to_idx.insert(ptr.clone(), e);
+    self.ptr_to_idx.insert(ptr, e);
     self.idx_to_ptr.insert(e, ptr);
   }
 
   /// Gets the syntax node pointer for the expr. Both must exist.
   #[must_use]
   pub fn get_ptr(&self, e: jsonnet_expr::ExprMust) -> ast::SyntaxNodePtr {
-    self.idx_to_ptr[e].clone()
+    self.idx_to_ptr[e]
   }
 
   /// Maybe gets an expression for a syntax node pointer.
