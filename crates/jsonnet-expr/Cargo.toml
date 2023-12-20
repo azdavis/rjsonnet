@@ -18,5 +18,4 @@ rustc-hash.workspace = true
 
 [build-dependencies]
 quote.workspace = true
-prettyplease.workspace = true
-syn.workspace = true
+write-rs-tokens.workspace = true

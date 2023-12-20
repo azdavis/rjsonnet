@@ -114,9 +114,5 @@ fn main() {
       }
     }
   };
-  let file = syn::parse2(contents).unwrap();
-  let formatted = prettyplease::unparse(&file);
-  let out_dir = std::env::var_os("OUT_DIR").unwrap();
-  let dst = std::path::Path::new(&out_dir).join("generated.rs");
-  std::fs::write(dst, formatted).unwrap();
+  write_rs_tokens::go(contents, "generated.rs");
 }
