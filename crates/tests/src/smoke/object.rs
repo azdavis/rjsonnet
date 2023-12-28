@@ -56,6 +56,8 @@ local base = {
 
 base + {
   a: 5,
+  self_a: self.a,
+  self_b: self.b,
   super_a: super.a,
   super_b: super.b,
 }
@@ -64,6 +66,8 @@ base + {
 {
   "a": 5,
   "b": 6,
+  "self_a": 5,
+  "self_b": 6,
   "super_a": 3,
   "super_b": 6
 }
@@ -75,10 +79,10 @@ base + {
 fn explicit_plus() {
   manifest(
     r"
-{ a: 1 } + { b: 2 }
+{ a: 1, b: 2 } + { a: 3, c: 4 }
 ",
     r#"
-{ "a": 1, "b": 2 }
+{ "a": 3, "b": 2, "c": 4 }
 "#,
   );
 }
