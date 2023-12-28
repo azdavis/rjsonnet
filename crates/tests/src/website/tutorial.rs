@@ -297,7 +297,8 @@ fn t4() {
     garnish: 'Olive',
     served: 'Straight Up',
   },
-}"#,
+}
+"#,
     r#"
 {
   "Martini": {
