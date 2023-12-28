@@ -258,8 +258,17 @@ pub fn get(cx: Cx<'_>, ars: &Arenas, expr: Expr) -> Result<Val> {
           }
         }
         jsonnet_expr::UnaryOp::BitNot => {
-          if let Val::Prim(Prim::Number(_)) = inner {
-            mk_error(error::Kind::Todo("bitwise not"))
+          if let Val::Prim(Prim::Number(n)) = inner {
+            let n = n.value().round();
+            #[allow(clippy::cast_precision_loss)]
+            let n = n.clamp(i64::MIN as f64, i64::MAX as f64);
+            #[allow(clippy::cast_possible_truncation)]
+            let n = n as i64;
+            let n = !n;
+            #[allow(clippy::cast_precision_loss)]
+            let n = n as f64;
+            let n = Number::try_from(n).expect("bitwise not failed");
+            Ok(Val::Prim(Prim::Number(n)))
           } else {
             mk_error(error::Kind::IncompatibleTypes)
           }
