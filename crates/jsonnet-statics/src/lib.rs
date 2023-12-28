@@ -1,6 +1,6 @@
 //! Static checking for jsonnet.
 
-mod error;
+pub mod error;
 
 use jsonnet_expr::{Arenas, Expr, ExprData, ExprMust, Id, Prim, Str};
 use rustc_hash::FxHashSet;

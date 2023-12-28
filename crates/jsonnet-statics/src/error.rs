@@ -1,20 +1,31 @@
+//! Errors.
+
 use jsonnet_expr::{ExprMust, Id, Str};
 use std::fmt;
 
+/// An error.
 #[derive(Debug)]
 pub struct Error {
-  pub expr: ExprMust,
-  pub kind: Kind,
+  pub(crate) expr: ExprMust,
+  pub(crate) kind: Kind,
 }
 
 impl Error {
+  /// Display the error.
+  #[must_use]
   pub fn display<'a>(&'a self, ar: &'a jsonnet_expr::StrArena) -> impl fmt::Display + 'a {
     Display { kind: &self.kind, ar }
+  }
+
+  /// Returns the expr this error is for.
+  #[must_use]
+  pub fn expr(self) -> ExprMust {
+    self.expr
   }
 }
 
 #[derive(Debug)]
-pub enum Kind {
+pub(crate) enum Kind {
   NotInScope(Id),
   DuplicateFieldName(Str),
   DuplicateNamedArg(Id),

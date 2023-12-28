@@ -10,8 +10,9 @@ struct EscapeOutput<'st> {
 
 impl<'st> EscapeOutput<'st> {
   fn new(token: jsonnet_syntax::kind::SyntaxToken, st: &'st mut St) -> EscapeOutput<'st> {
-    // always has at least 2 delimiter bytes (1 at start, 1 at end)
-    let cap = token.text().len() - 2;
+    // usually has at least 2 delimiter bytes (1 at start, 1 at end), but may not if the token was
+    // malformed (lex/parse error)
+    let cap = token.text().len().saturating_sub(2);
     EscapeOutput { bytes: Vec::with_capacity(cap), token, st }
   }
 }

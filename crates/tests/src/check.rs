@@ -2,35 +2,38 @@ use jsonnet_eval::val::{json, jsonnet};
 use jsonnet_expr::{Number, Prim};
 
 struct Artifacts {
+  lex_errors: Vec<jsonnet_lex::Error>,
+  parse: jsonnet_parse::Parse,
+  statics_errors: Vec<jsonnet_statics::error::Error>,
   desugar: jsonnet_desugar::Desugar,
 }
 
 fn exec(s: &str) -> (Artifacts, jsonnet_eval::error::Result<jsonnet::Val>) {
   let lex = jsonnet_lex::get(s);
-  if let Some(e) = lex.errors.first() {
-    panic!("lex error: {e}");
-  }
   let parse = jsonnet_parse::get(&lex.tokens);
-  if let Some(e) = parse.errors.first() {
-    panic!("parse error: {e}");
-  }
-  let desugar = jsonnet_desugar::get(parse.root);
-  if let Some(e) = desugar.errors.first() {
-    panic!("desugar error: {e}");
-  }
+  let desugar = jsonnet_desugar::get(parse.root.clone());
   let mut st = jsonnet_statics::St::default();
   let cx = jsonnet_statics::Cx::default();
   jsonnet_statics::check(&mut st, &cx, &desugar.arenas, desugar.top);
   let statics_errors = st.finish();
-  if let Some(e) = statics_errors.first() {
-    let e = e.display(&desugar.arenas.str);
-    panic!("statics error: {e}");
-  }
   let env = jsonnet::Env::default();
   let empty = jsonnet::Object::default();
   let cx = jsonnet_eval::exec::Cx::new(&env, &empty);
-  let val = jsonnet_eval::exec::get(cx, &desugar.arenas, desugar.top);
-  let art = Artifacts { desugar };
+  let art = Artifacts { lex_errors: lex.errors, parse, statics_errors, desugar };
+  if let Some(e) = art.lex_errors.first() {
+    panic!("lex error: {e}");
+  }
+  if let Some(e) = art.parse.errors.first() {
+    panic!("parse error: {e}");
+  }
+  if let Some(e) = art.desugar.errors.first() {
+    panic!("desugar error: {e}");
+  }
+  if let Some(e) = art.statics_errors.first() {
+    let e = e.display(&art.desugar.arenas.str);
+    panic!("statics error: {e}");
+  }
+  let val = jsonnet_eval::exec::get(cx, &art.desugar.arenas, art.desugar.top);
   (art, val)
 }
 
