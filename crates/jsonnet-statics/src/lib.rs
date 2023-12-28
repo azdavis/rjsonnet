@@ -116,18 +116,7 @@ pub fn check(st: &mut St, cx: &Cx, ars: &Arenas, expr: Expr) {
     // turns out these are exactly the same
     ExprData::Local { binds, body } | ExprData::Function { params: binds, body } => {
       let mut cx = cx.clone();
-      let mut bound_names = FxHashSet::<Id>::default();
-      for &(id, rhs) in binds {
-        cx.insert(id);
-        if !bound_names.insert(id) {
-          if let Some(rhs) = rhs {
-            st.err(rhs, error::Kind::DuplicateBinding(id));
-          }
-        }
-      }
-      for &(_, rhs) in binds {
-        check(st, &cx, ars, rhs);
-      }
+      check_binds(st, &mut cx, ars, binds);
       check(st, &cx, ars, *body);
     }
     ExprData::If { cond, yes, no } => {
@@ -142,5 +131,20 @@ pub fn check(st: &mut St, cx: &Cx, ars: &Arenas, expr: Expr) {
     ExprData::UnaryOp { inner, .. } | ExprData::Error(inner) => {
       check(st, cx, ars, *inner);
     }
+  }
+}
+
+fn check_binds(st: &mut St, cx: &mut Cx, ars: &Arenas, binds: &[(Id, Expr)]) {
+  let mut bound_names = FxHashSet::<Id>::default();
+  for &(id, rhs) in binds {
+    cx.insert(id);
+    if !bound_names.insert(id) {
+      if let Some(rhs) = rhs {
+        st.err(rhs, error::Kind::DuplicateBinding(id));
+      }
+    }
+  }
+  for &(_, rhs) in binds {
+    check(st, cx, ars, rhs);
   }
 }

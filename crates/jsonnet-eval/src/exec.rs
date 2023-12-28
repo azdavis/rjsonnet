@@ -135,7 +135,8 @@ pub fn get(cx: Cx<'_>, ars: &Arenas, expr: Expr) -> Result<Val> {
             return mk_error(error::Kind::NoSuchArgument);
           }
         }
-        exec_local(cx.with_env(&func_env), &params, ars, body)
+        let env = add_binds(&func_env, &params);
+        get(cx.with_env(&env), ars, body)
       }
       Val::StdFn(std_val) => match std_val {
         StdFn::Cmp => {
@@ -179,7 +180,10 @@ pub fn get(cx: Cx<'_>, ars: &Arenas, expr: Expr) -> Result<Val> {
       let (env, expr) = cx.env.get(*id);
       get(cx.with_env(env), ars, expr)
     }
-    ExprData::Local { binds, body } => exec_local(cx, binds, ars, *body),
+    ExprData::Local { binds, body } => {
+      let env = add_binds(cx.env, binds);
+      get(cx.with_env(&env), ars, *body)
+    }
     ExprData::If { cond, yes, no } => {
       let Val::Prim(Prim::Bool(b)) = get(cx, ars, *cond)? else {
         return mk_error(error::Kind::IncompatibleTypes);
@@ -388,12 +392,12 @@ fn cmp_val(expr: ExprMust, this: &Object, ars: &Arenas, lhs: &Val, rhs: &Val) ->
   }
 }
 
-fn exec_local(cx: Cx<'_>, binds: &[(Id, Expr)], ars: &Arenas, body: Expr) -> Result<Val> {
-  let mut env = cx.env.clone();
+fn add_binds(env: &Env, binds: &[(Id, Expr)]) -> Env {
+  let mut ret = env.clone();
   for &(id, expr) in binds {
-    env.insert(id, cx.env.clone(), expr);
+    ret.insert(id, env.clone(), expr);
   }
-  get(cx.with_env(&env), ars, body)
+  ret
 }
 
 fn str_conv(this: &Object, ars: &Arenas, val: Val) -> Result<Str> {
