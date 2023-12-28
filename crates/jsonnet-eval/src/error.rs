@@ -17,7 +17,6 @@ impl Error {
 
 #[derive(Debug)]
 pub enum Kind {
-  Todo(&'static str),
   ArrayIdxNotInteger,
   ArrayIdxOutOfRange,
   DuplicateArgument,
@@ -41,7 +40,6 @@ impl fmt::Display for DisplayError<'_> {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     match self.error {
       Error::Exec { kind, .. } => match kind {
-        Kind::Todo(s) => write!(f, "TODO: {s}"),
         Kind::ArrayIdxNotInteger => f.write_str("array index not an integer"),
         Kind::ArrayIdxOutOfRange => f.write_str("array index out of range"),
         Kind::DuplicateArgument => f.write_str("duplicate argument"),

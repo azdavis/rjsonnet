@@ -51,12 +51,11 @@ pub fn get(cx: Cx<'_>, ars: &Arenas, expr: Expr) -> Result<Val> {
         env.insert(*id, part_env.clone(), elem);
         match get(cx.with_env(&env), ars, *name)? {
           Val::Prim(Prim::String(s)) => {
-            // TODO should we continue here?
             let Some(body) = *body else { continue };
             // we want to do `[e/x]body` here?
             let body = match ars.expr[body] {
               ExprData::Prim(_) => body,
-              _ => return mk_error(error::Kind::Todo("subst for object comp")),
+              _ => todo!("subst for object comp"),
             };
             if fields.insert(s, (Visibility::Default, Some(body))).is_some() {
               return mk_error(error::Kind::DuplicateField);
