@@ -33,8 +33,15 @@ fn exec(s: &str) -> (Desugar, jsonnet_eval::error::Result<jsonnet::Val>) {
 fn manifest_raw(s: &str) -> (Desugar, json::Val) {
   let (desugar, val) = exec(s);
   let empty = jsonnet::Object::default();
-  let val = jsonnet_eval::manifest::get(&desugar.arenas, &empty, val.expect("exec err"));
-  (desugar, val.expect("manifest error"))
+  let val = match val {
+    Ok(x) => x,
+    Err(e) => panic!("exec error: {}", e.display(&desugar.arenas.str)),
+  };
+  let val = match jsonnet_eval::manifest::get(&desugar.arenas, &empty, val) {
+    Ok(x) => x,
+    Err(e) => panic!("manifest error: {}", e.display(&desugar.arenas.str)),
+  };
+  (desugar, val)
 }
 
 fn from_serde(ar: &jsonnet_expr::StrArena, serde: serde_json::Value) -> json::Val {
