@@ -21,8 +21,6 @@ const EPSILON: f64 = 0.0001;
 ///
 /// If the expr wasn't checked.
 pub fn get(cx: Cx<'_>, ars: &Arenas, expr: Expr) -> Result<Val> {
-  // TODO implement a cache on expr to avoid re-computing lazy exprs? but we would also need to
-  // consider the env in which the expr is executed
   let expr = expr.expect("no expr");
   let mk_error = |kind: error::Kind| Err(error::Error::Exec { expr, kind });
   match &ars.expr[expr] {
