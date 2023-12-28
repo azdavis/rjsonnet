@@ -120,6 +120,7 @@ local x = {
   );
 }
 
+// TODO fix
 #[test]
 #[should_panic = "want:"]
 fn self_3() {

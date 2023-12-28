@@ -289,20 +289,20 @@ fn get_object(st: &mut St, inside: ast::Object, in_obj: bool) -> ExprData {
   match get_comp_specs(st, inside.comp_specs()) {
     None => {
       // this is the only time we actually use the `in_obj` flag
+      let mut binds = Vec::<(Id, Expr)>::new();
       let mut asserts = Vec::<Expr>::new();
       let mut fields = Vec::<(Expr, Visibility, Expr)>::new();
       for member in inside.members() {
         let Some(member_kind) = member.member_kind() else { continue };
         match member_kind {
-          ast::MemberKind::ObjectLocal(_) => {
-            todo!("ObjectLocal")
+          ast::MemberKind::ObjectLocal(local) => {
+            binds.extend(local.bind().and_then(|b| get_bind(st, b, true)));
           }
           ast::MemberKind::Assert(assert) => {
             let ptr = ast::SyntaxNodePtr::new(assert.syntax());
             let yes = Some(st.expr(ptr, ExprData::Prim(Prim::Null)));
             let assert = get_assert(st, yes, assert, true);
             let assert = Some(st.expr(ptr, assert));
-            // TODO handle interactions with binds
             asserts.push(assert);
           }
           ast::MemberKind::Field(field) => {
@@ -344,12 +344,11 @@ fn get_object(st: &mut St, inside: ast::Object, in_obj: bool) -> ExprData {
               },
               None => Visibility::Default,
             };
-            // TODO handle interactions with binds
             fields.push((name, vis, body));
           }
         }
       }
-      ExprData::Object { asserts, fields }
+      ExprData::Object { binds, asserts, fields }
     }
     Some((_, comp_specs)) => {
       let mut binds = Vec::<(Id, Expr)>::new();
@@ -402,7 +401,7 @@ fn get_object(st: &mut St, inside: ast::Object, in_obj: bool) -> ExprData {
           st.err(&inside, error::Kind::ObjectCompNotOne);
           // this is a good "fake" return, since we knew this was going to be some kind of object,
           // but now we can't figure out what fields it should have. so let's say it has no fields.
-          ExprData::Object { asserts: Vec::new(), fields: Vec::new() }
+          ExprData::Object { binds: Vec::new(), asserts: Vec::new(), fields: Vec::new() }
         }
         Some((ptr, name, body)) => {
           let arr = st.fresh();

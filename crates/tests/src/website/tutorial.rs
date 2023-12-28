@@ -95,7 +95,6 @@ fn t1() {
 }
 
 #[test]
-#[should_panic = "not yet implemented: ObjectLocal"]
 fn t2() {
   manifest(
     r"
@@ -279,8 +278,9 @@ fn t3() {
   );
 }
 
+// TODO fix
 #[test]
-#[should_panic = "not yet implemented: ObjectLocal"]
+#[should_panic = "no such field: ingredients"]
 fn t4() {
   manifest(
     r#"

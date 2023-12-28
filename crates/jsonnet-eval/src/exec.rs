@@ -27,7 +27,8 @@ pub fn get(cx: Cx<'_>, ars: &Arenas, expr: Expr) -> Result<Val> {
   let mk_error = |kind: error::Kind| Err(error::Error::Exec { expr, kind });
   match &ars.expr[expr] {
     ExprData::Prim(p) => Ok(Val::Prim(p.clone())),
-    ExprData::Object { asserts, fields } => {
+    ExprData::Object { binds, asserts, fields } => {
+      let env = add_binds(cx.env, binds);
       let mut named_fields = FxHashMap::<Str, (Visibility, Expr)>::default();
       for &(key, hid, val) in fields {
         match get(cx, ars, key)? {
@@ -40,8 +41,7 @@ pub fn get(cx: Cx<'_>, ars: &Arenas, expr: Expr) -> Result<Val> {
           _ => return mk_error(error::Kind::IncompatibleTypes),
         }
       }
-
-      Ok(Val::Object(Object::new(cx.env.clone(), asserts.clone(), named_fields)))
+      Ok(Val::Object(Object::new(env, asserts.clone(), named_fields)))
     }
     ExprData::ObjectComp { name, body, id, ary } => {
       let Val::Array(array) = get(cx, ars, *ary)? else {
