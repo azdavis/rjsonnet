@@ -8,31 +8,41 @@ struct Artifacts {
   desugar: jsonnet_desugar::Desugar,
 }
 
+impl Artifacts {
+  fn get(s: &str) -> Self {
+    let lex = jsonnet_lex::get(s);
+    let parse = jsonnet_parse::get(&lex.tokens);
+    let desugar = jsonnet_desugar::get(parse.root.clone());
+    let mut st = jsonnet_statics::St::default();
+    let cx = jsonnet_statics::Cx::default();
+    jsonnet_statics::check(&mut st, &cx, &desugar.arenas, desugar.top);
+    let statics_errors = st.finish();
+    Self { lex_errors: lex.errors, parse, statics_errors, desugar }
+  }
+
+  fn check(&self) {
+    if let Some(e) = self.lex_errors.first() {
+      panic!("lex error: {e}");
+    }
+    if let Some(e) = self.parse.errors.first() {
+      panic!("parse error: {e}");
+    }
+    if let Some(e) = self.desugar.errors.first() {
+      panic!("desugar error: {e}");
+    }
+    if let Some(e) = self.statics_errors.first() {
+      let e = e.display(&self.desugar.arenas.str);
+      panic!("statics error: {e}");
+    }
+  }
+}
+
 fn exec(s: &str) -> (Artifacts, jsonnet_eval::error::Result<jsonnet::Val>) {
-  let lex = jsonnet_lex::get(s);
-  let parse = jsonnet_parse::get(&lex.tokens);
-  let desugar = jsonnet_desugar::get(parse.root.clone());
-  let mut st = jsonnet_statics::St::default();
-  let cx = jsonnet_statics::Cx::default();
-  jsonnet_statics::check(&mut st, &cx, &desugar.arenas, desugar.top);
-  let statics_errors = st.finish();
+  let art = Artifacts::get(s);
+  art.check();
   let env = jsonnet::Env::default();
   let empty = jsonnet::Object::default();
   let cx = jsonnet_eval::exec::Cx::new(&env, &empty);
-  let art = Artifacts { lex_errors: lex.errors, parse, statics_errors, desugar };
-  if let Some(e) = art.lex_errors.first() {
-    panic!("lex error: {e}");
-  }
-  if let Some(e) = art.parse.errors.first() {
-    panic!("parse error: {e}");
-  }
-  if let Some(e) = art.desugar.errors.first() {
-    panic!("desugar error: {e}");
-  }
-  if let Some(e) = art.statics_errors.first() {
-    let e = e.display(&art.desugar.arenas.str);
-    panic!("statics error: {e}");
-  }
   let val = jsonnet_eval::exec::get(cx, &art.desugar.arenas, art.desugar.top);
   (art, val)
 }
