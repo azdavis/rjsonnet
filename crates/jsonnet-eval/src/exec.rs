@@ -77,7 +77,7 @@ pub fn get(cx: Cx<'_>, ars: &Arenas, expr: Expr) -> Result<Val> {
           return mk_error(error::Kind::IncompatibleTypes);
         };
         let Some((env, _, body)) = object.get_field(&name) else {
-          return mk_error(error::Kind::NoSuchFieldName);
+          return mk_error(error::Kind::NoSuchFieldName(name.clone()));
         };
         for (env, assert) in object.asserts() {
           get(cx.with_env(env), ars, assert)?;
@@ -132,7 +132,7 @@ pub fn get(cx: Cx<'_>, ars: &Arenas, expr: Expr) -> Result<Val> {
             .find_map(|(param_name, param)| (*param_name == arg_name).then(|| *param = arg))
             .is_none();
           if failed_to_set_arg {
-            return mk_error(error::Kind::NoSuchArgument);
+            return mk_error(error::Kind::NoSuchArgument(arg_name));
           }
         }
         let env = add_binds(&func_env, &params);
