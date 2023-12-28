@@ -94,3 +94,28 @@ fn implicit_plus() {
 "#,
   );
 }
+
+#[test]
+fn self_2() {
+  manifest(
+    r"
+local x = {
+  a: 3,
+  b: self.a,
+};
+{
+  a: 4,
+  x: x,
+}
+",
+    r#"
+{
+  "a": 4,
+  "x": {
+    "a": 3,
+    "b": 3
+  }
+}
+"#,
+  );
+}
