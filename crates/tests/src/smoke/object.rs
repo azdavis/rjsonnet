@@ -119,3 +119,32 @@ local x = {
 "#,
   );
 }
+
+#[test]
+#[should_panic = "want:"]
+fn self_3() {
+  manifest(
+    r"
+{
+  a: 1,
+  inner: local this = self; {
+    a: 2,
+    this_a: this.a,
+    self_a: self.a,
+  },
+  outer_self_a: self.a,
+}
+",
+    r#"
+{
+  "a": 1,
+  "inner": {
+    "a": 2,
+    "this_a": 1,
+    "self_a": 2
+  },
+  "outer_self_a": 1
+}
+"#,
+  );
+}
