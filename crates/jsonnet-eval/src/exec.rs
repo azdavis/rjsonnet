@@ -74,7 +74,7 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
           return mk_error(error::Kind::IncompatibleTypes);
         };
         let Some((env, _, body)) = object.get_field(&name) else {
-          return mk_error(error::Kind::NoSuchFieldName(name.clone()));
+          return mk_error(error::Kind::NoSuchField(name.clone()));
         };
         for (env, assert) in object.asserts() {
           get(&env, ars, assert)?;
