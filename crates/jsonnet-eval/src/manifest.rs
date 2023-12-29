@@ -19,25 +19,20 @@ pub fn get(ars: &Arenas, val: jsonnet::Val) -> error::Result<json::Val> {
     jsonnet::Val::Prim(prim) => Ok(json::Val::Prim(prim)),
     jsonnet::Val::Object(object) => {
       for (env, expr) in object.asserts() {
-        let cx = exec::Cx::new(&env);
-        get_(cx, ars, expr)?;
+        get_(&env, ars, expr)?;
       }
       let mut val_fields = FxHashMap::default();
       for (env, name, vis, expr) in object.fields() {
         if matches!(vis, jsonnet_expr::Visibility::Hidden) {
           continue;
         }
-        let cx = exec::Cx::new(&env);
-        let val = get_(cx, ars, expr)?;
+        let val = get_(&env, ars, expr)?;
         assert!(val_fields.insert(name.clone(), val).is_none());
       }
       Ok(json::Val::Object(val_fields))
     }
     jsonnet::Val::Array(parts) => {
-      let iter = parts.iter().map(|(env, elem)| {
-        let cx = exec::Cx::new(env);
-        get_(cx, ars, elem)
-      });
+      let iter = parts.iter().map(|(env, elem)| get_(env, ars, elem));
       let vs = iter.collect::<error::Result<Vec<_>>>()?;
       Ok(json::Val::Array(vs))
     }
@@ -46,7 +41,7 @@ pub fn get(ars: &Arenas, val: jsonnet::Val) -> error::Result<json::Val> {
 }
 
 /// both executes and manifests
-fn get_(cx: exec::Cx<'_>, ars: &Arenas, expr: jsonnet_expr::Expr) -> error::Result<json::Val> {
-  let val = exec::get(cx, ars, expr)?;
+fn get_(env: &jsonnet::Env, ars: &Arenas, expr: jsonnet_expr::Expr) -> error::Result<json::Val> {
+  let val = exec::get(env, ars, expr)?;
   get(ars, val)
 }
