@@ -41,20 +41,18 @@ fn exec(s: &str) -> (Artifacts, jsonnet_eval::error::Result<jsonnet::Val>) {
   let art = Artifacts::get(s);
   art.check();
   let env = jsonnet::Env::default();
-  let empty = jsonnet::Object::default();
-  let cx = jsonnet_eval::exec::Cx::new(&env, &empty);
+  let cx = jsonnet_eval::exec::Cx::new(&env);
   let val = jsonnet_eval::exec::get(cx, &art.desugar.arenas, art.desugar.top);
   (art, val)
 }
 
 fn manifest_raw(s: &str) -> (Artifacts, json::Val) {
   let (art, val) = exec(s);
-  let empty = jsonnet::Object::default();
   let val = match val {
     Ok(x) => x,
     Err(e) => panic!("exec error: {}", e.display(&art.desugar.arenas.str)),
   };
-  let val = match jsonnet_eval::manifest::get(&art.desugar.arenas, &empty, val) {
+  let val = match jsonnet_eval::manifest::get(&art.desugar.arenas, val) {
     Ok(x) => x,
     Err(e) => panic!("manifest error: {}", e.display(&art.desugar.arenas.str)),
   };

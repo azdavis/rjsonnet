@@ -6,6 +6,7 @@ use rustc_hash::{FxHashMap, FxHashSet};
 #[derive(Debug, Default, Clone)]
 pub struct Env {
   store: FxHashMap<Id, (Env, Expr)>,
+  this: Option<Box<Object>>,
 }
 
 impl Env {
@@ -17,6 +18,14 @@ impl Env {
   pub fn get(&self, id: Id) -> (&Env, Expr) {
     let (ref env, expr) = self.store[&id];
     (env, expr)
+  }
+
+  /// # Panics
+  ///
+  /// If this was not in scope.
+  #[must_use]
+  pub fn this(&self) -> &Object {
+    self.this.as_deref().expect("`self` not in scope")
   }
 }
 
@@ -54,6 +63,10 @@ pub struct Object {
   env: Env,
   asserts: Vec<Expr>,
   fields: FxHashMap<Str, (Visibility, Expr)>,
+  /// skip fields directly on this. used to implement super. kind of strange. maybe we could
+  /// rearrange this to take better advantage of the fact that we know that `super` must always be
+  /// immediately followed by a field-get (super.foo or super[foo] or foo in super)?
+  is_super: bool,
 }
 
 impl Object {
@@ -67,12 +80,10 @@ impl Object {
     })
   }
 
-  pub(crate) fn parent(&self) -> Option<&Self> {
-    self.ancestry().nth(1)
-  }
-
-  pub(crate) fn root(&self) -> Option<&Self> {
-    self.ancestry().last()
+  pub(crate) fn parent(&self) -> Self {
+    let mut parent = self.clone();
+    parent.is_super = true;
+    parent
   }
 
   #[must_use]
@@ -81,28 +92,40 @@ impl Object {
     asserts: Vec<Expr>,
     fields: FxHashMap<Str, (Visibility, Expr)>,
   ) -> Object {
-    Object { parent: None, env, asserts, fields }
+    Object { parent: None, env, asserts, fields, is_super: false }
   }
 
-  pub(crate) fn asserts(&self) -> impl Iterator<Item = (&Env, Expr)> {
-    self.ancestry().flat_map(|this| this.asserts.iter()).map(|&e| (&self.env, e))
+  fn set_this(&self, env: &Env) -> Env {
+    let mut env = env.clone();
+    let mut this = self.clone();
+    this.is_super = false;
+    env.this = Some(Box::new(this));
+    env
   }
 
-  pub(crate) fn fields(&self) -> impl Iterator<Item = (&Env, &Str, Visibility, Expr)> {
+  pub(crate) fn asserts(&self) -> impl Iterator<Item = (Env, Expr)> + '_ {
+    let iter =
+      self.ancestry().flat_map(|this| this.asserts.iter().map(move |&expr| (&this.env, expr)));
+    iter.map(|(env, expr)| (self.set_this(env), expr))
+  }
+
+  pub(crate) fn fields(&self) -> impl Iterator<Item = (Env, &Str, Visibility, Expr)> {
     let mut seen = FxHashSet::<&Str>::default();
-    self
+    let iter = self
       .ancestry()
-      .flat_map(|this| this.fields.iter())
-      .map(|(name, &(vis, expr))| (&self.env, name, vis, expr))
-      .filter(move |&(_, name, _, _)| seen.insert(name))
+      .flat_map(|this| {
+        this.fields.iter().map(move |(name, &(vis, expr))| (&this.env, name, vis, expr))
+      })
+      .filter(move |(_, name, _, _)| seen.insert(name));
+    iter.map(|(env, name, vis, expr)| (self.set_this(env), name, vis, expr))
   }
 
   #[must_use]
-  pub(crate) fn get_field(&self, name: &Str) -> Option<(&Env, Visibility, Expr)> {
-    self
-      .ancestry()
-      .find_map(|this| this.fields.get(name))
-      .map(move |&(vis, expr)| (&self.env, vis, expr))
+  pub(crate) fn get_field(&self, name: &Str) -> Option<(Env, Visibility, Expr)> {
+    self.ancestry().skip(self.is_super.into()).find_map(|this| {
+      let &(vis, expr) = this.fields.get(name)?;
+      Some((self.set_this(&this.env), vis, expr))
+    })
   }
 
   pub(crate) fn set_parent_to(&mut self, other: Self) {

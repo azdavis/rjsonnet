@@ -77,9 +77,9 @@ pub fn get(cx: Cx<'_>, ars: &Arenas, expr: Expr) -> Result<Val> {
           return mk_error(error::Kind::NoSuchFieldName(name.clone()));
         };
         for (env, assert) in object.asserts() {
-          get(cx.with_env(env), ars, assert)?;
+          get(cx.with_env(&env), ars, assert)?;
         }
-        get(cx.with_env(env), ars, body)
+        get(cx.with_env(&env), ars, body)
       }
       Val::Array(array) => {
         let Val::Prim(Prim::Number(idx)) = get(cx, ars, *idx)? else {
@@ -166,13 +166,13 @@ pub fn get(cx: Cx<'_>, ars: &Arenas, expr: Expr) -> Result<Val> {
     },
     ExprData::Id(id) => {
       if *id == Id::SELF {
-        return Ok(Val::Object(cx.this.clone()));
+        return Ok(Val::Object(cx.env.this().clone()));
       }
       if *id == Id::SUPER {
-        return Ok(Val::Object(cx.this.parent().expect("invalid `super`").clone()));
+        return Ok(Val::Object(cx.env.this().parent()));
       }
       if *id == Id::DOLLAR {
-        return Ok(Val::Object(cx.this.root().expect("invalid `$`").clone()));
+        todo!("get $");
       }
       let (env, expr) = cx.env.get(*id);
       get(cx.with_env(env), ars, expr)
@@ -192,11 +192,11 @@ pub fn get(cx: Cx<'_>, ars: &Arenas, expr: Expr) -> Result<Val> {
       // add
       BinaryOp::Add => match (get(cx, ars, *lhs)?, get(cx, ars, *rhs)?) {
         (Val::Prim(Prim::String(lhs)), rhs) => {
-          let rhs = str_conv(cx.this, ars, rhs)?;
+          let rhs = str_conv(ars, rhs)?;
           Ok(Val::Prim(Prim::String(str_concat(&ars.str, &lhs, &rhs))))
         }
         (lhs, Val::Prim(Prim::String(rhs))) => {
-          let lhs = str_conv(cx.this, ars, lhs)?;
+          let lhs = str_conv(ars, lhs)?;
           Ok(Val::Prim(Prim::String(str_concat(&ars.str, &lhs, &rhs))))
         }
         (Val::Prim(Prim::Number(lhs)), Val::Prim(Prim::Number(rhs))) => {
@@ -279,7 +279,7 @@ pub fn get(cx: Cx<'_>, ars: &Arenas, expr: Expr) -> Result<Val> {
     }
     ExprData::Error(inner) => {
       let val = get(cx, ars, *inner)?;
-      let msg = str_conv(cx.this, ars, val)?;
+      let msg = str_conv(ars, val)?;
       mk_error(error::Kind::User(msg))
     }
     ExprData::Import { .. } => todo!("Import"),
@@ -289,22 +289,19 @@ pub fn get(cx: Cx<'_>, ars: &Arenas, expr: Expr) -> Result<Val> {
 #[derive(Debug, Clone, Copy)]
 pub struct Cx<'a> {
   env: &'a Env,
-  this: &'a Object,
 }
 
 impl<'a> Cx<'a> {
   /// Returns a new Cx.
   #[must_use]
-  pub fn new(env: &'a Env, this: &'a Object) -> Cx<'a> {
-    Cx { env, this }
+  pub fn new(env: &'a Env) -> Cx<'a> {
+    Cx { env }
   }
 
-  pub(crate) fn this(self) -> &'a Object {
-    self.this
-  }
-
+  /// TODO fix
+  #[allow(clippy::unused_self)]
   fn with_env(self, env: &'a Env) -> Cx<'a> {
-    Cx::new(env, self.this)
+    Cx::new(env)
   }
 }
 
@@ -349,7 +346,7 @@ where
 {
   let lhs = get(cx, ars, lhs)?;
   let rhs = get(cx, ars, rhs)?;
-  let ord = cmp_val(expr, cx.this, ars, &lhs, &rhs)?;
+  let ord = cmp_val(expr, ars, &lhs, &rhs)?;
   Ok(Val::Prim(f(ord)))
 }
 
@@ -367,7 +364,7 @@ where
   cmp_op(expr, cx, ars, lhs, rhs, |x| Prim::Bool(f(x)))
 }
 
-fn cmp_val(expr: ExprMust, this: &Object, ars: &Arenas, lhs: &Val, rhs: &Val) -> Result<Ordering> {
+fn cmp_val(expr: ExprMust, ars: &Arenas, lhs: &Val, rhs: &Val) -> Result<Ordering> {
   match (lhs, rhs) {
     (Val::Prim(lhs), Val::Prim(rhs)) => match (lhs, rhs) {
       (Prim::String(lhs), Prim::String(rhs)) => Ok(ars.str.get(lhs).cmp(ars.str.get(rhs))),
@@ -383,9 +380,9 @@ fn cmp_val(expr: ExprMust, this: &Object, ars: &Arenas, lhs: &Val, rhs: &Val) ->
           (None, None) => break Ordering::Equal,
           (Some(_), None) => break Ordering::Greater,
           (Some((le, lhs)), Some((re, rhs))) => {
-            let lhs = get(Cx::new(le, this), ars, lhs)?;
-            let rhs = get(Cx::new(re, this), ars, rhs)?;
-            match cmp_val(expr, this, ars, &lhs, &rhs)? {
+            let lhs = get(Cx::new(le), ars, lhs)?;
+            let rhs = get(Cx::new(re), ars, rhs)?;
+            match cmp_val(expr, ars, &lhs, &rhs)? {
               Ordering::Equal => {}
               ord => break ord,
             }
@@ -406,11 +403,11 @@ fn add_binds(env: &Env, binds: &[(Id, Expr)]) -> Env {
   ret
 }
 
-fn str_conv(this: &Object, ars: &Arenas, val: Val) -> Result<Str> {
+fn str_conv(ars: &Arenas, val: Val) -> Result<Str> {
   if let Val::Prim(Prim::String(s)) = val {
     Ok(s)
   } else {
-    let json = manifest::get(ars, this, val)?;
+    let json = manifest::get(ars, val)?;
     let string = json.display(&ars.str).to_string();
     Ok(ars.str.str_shared(string.into_boxed_str()))
   }
