@@ -1,18 +1,36 @@
 {
   "scopeName": "source.jsonnet",
   "patterns": [
+    { "include": "#slashSlashComment" },
+    { "include": "#hashComment" },
     { "include": "#blockComment" },
+    { "include": "#number" },
     { "include": "#singleQuotedString" },
     { "include": "#doubleQuotedString" },
+    { "include": "#textBlock" },
     { "include": "#specialName" },
     { "include": "#controlKeyword" },
     { "include": "#otherKeyword" }
   ],
   "repository": {
+    "slashSlashComment": {
+      "name": "comment.line.slash.jsonnet",
+      "begin": "//",
+      "end": "$"
+    },
+    "hashComment": {
+      "name": "comment.line.hash.jsonnet",
+      "begin": "#",
+      "end": "$"
+    },
     "blockComment": {
       "name": "comment.block.jsonnet",
       "begin": "/\\*",
       "end": "\\*/"
+    },
+    "number": {
+      "name": "constant.numeric.jsonnet",
+      "match": "[0-9]+\\.?[0-9]*[eE]?[+-]?[0-9]*"
     },
     "singleQuotedString": {
       "name": "string.quoted.single.jsonnet",
@@ -24,6 +42,12 @@
       "name": "string.quoted.double.jsonnet",
       "begin": "\"",
       "end": "\"",
+      "patterns": [{ "include": "#escape" }]
+    },
+    "textBlock": {
+      "name": "string.quoted.text-block.jsonnet",
+      "begin": "\\|\\|\\|",
+      "end": "\\|\\|\\|",
       "patterns": [{ "include": "#escape" }]
     },
     "escape": {
