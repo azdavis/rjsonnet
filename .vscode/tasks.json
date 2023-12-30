@@ -1,0 +1,14 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build-vscode-extension",
+      "group": "build",
+      "type": "shell",
+      "command": "cargo xtask dist",
+      "presentation": {
+        "reveal": "silent"
+      }
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "scopeName": "source.jsonnet",
+  "patterns": [
+    { "include": "#blockComment" },
+    { "include": "#singleQuotedString" },
+    { "include": "#doubleQuotedString" },
+    { "include": "#specialName" },
+    { "include": "#controlKeyword" },
+    { "include": "#otherKeyword" }
+  ],
+  "repository": {
+    "blockComment": {
+      "name": "comment.block.jsonnet",
+      "begin": "/\\*",
+      "end": "\\*/"
+    },
+    "singleQuotedString": {
+      "name": "string.quoted.single.jsonnet",
+      "begin": "'",
+      "end": "'",
+      "patterns": [{ "include": "#escape" }]
+    },
+    "doubleQuotedString": {
+      "name": "string.quoted.double.jsonnet",
+      "begin": "\"",
+      "end": "\"",
+      "patterns": [{ "include": "#escape" }]
+    },
+    "escape": {
+      "name": "constant.character.escape.jsonnet",
+      "match": "\\\\[\"'\\\\/bfnrt]"
+    },
+    "specialName": {
+      "name": "constant.language.jsonnet",
+      "match": "\\b(true|false|null|self|super|\\$)\\b"
+    },
+    "controlKeyword": {
+      "name": "keyword.control.jsonnet",
+      "match": "\\b(if|then|else|for|in|assert|error)\\b"
+    },
+    "otherKeyword": {
+      "name": "keyword.other.jsonnet",
+      "match": "\\b(local|function|import|importstr|importbin)\\b"
+    }
+  }
+}

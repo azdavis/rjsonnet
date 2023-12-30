@@ -1,0 +1,57 @@
+{
+  "private": true,
+  "name": "jsonnet",
+  "displayName": "Jsonnet",
+  "version": "0.1.0",
+  "description": "Jsonnet support",
+  "publisher": "azdavis",
+  "author": "Ariel Davis <ariel.z.davis@icloud.com>",
+  "repository": {
+    "url": "https://github.com/azdavis/rjsonnet.git",
+    "type": "git"
+  },
+  "main": "no-op.js",
+  "license": "MIT OR Apache-2.0",
+  "categories": [
+    "Programming Languages"
+  ],
+  "keywords": [
+    "Jsonnet",
+    "language server"
+  ],
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "activationEvents": [
+    "workspaceContains:**/*.{jsonnet,libsonnet,TEMPLATE}"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "jsonnet",
+        "extensions": [
+          ".jsonnet",
+          ".libsonnet",
+          ".TEMPLATE"
+        ],
+        "aliases": [
+          "Jsonnet"
+        ],
+        "configuration": "languages/jsonnet/language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "jsonnet",
+        "scopeName": "source.jsonnet",
+        "path": "languages/jsonnet/syntax.json"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "jsonnet",
+        "path": "languages/jsonnet/snippets.json"
+      }
+    ]
+  }
+}

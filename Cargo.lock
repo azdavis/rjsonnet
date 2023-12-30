@@ -323,3 +323,7 @@ dependencies = [
  "proc-macro2",
  "syn",
 ]
+
+[[package]]
+name = "xtask"
+version = "0.1.0"
