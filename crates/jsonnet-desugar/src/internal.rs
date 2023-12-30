@@ -327,6 +327,14 @@ fn get_object(st: &mut St, inside: ast::Object, in_obj: bool) -> ExprData {
               },
               Some(ast::FieldName::FieldNameExpr(name)) => get_expr(st, name.expr(), in_obj),
             };
+            let vis = match field.visibility() {
+              Some(vis) => match vis.kind {
+                ast::VisibilityKind::Colon => Visibility::Default,
+                ast::VisibilityKind::ColonColon => Visibility::Hidden,
+                ast::VisibilityKind::ColonColonColon => Visibility::Visible,
+              },
+              None => Visibility::Default,
+            };
             let body = match field.field_extra() {
               None => get_expr(st, field.expr(), true),
               Some(ast::FieldExtra::FieldPlus(_)) => todo!("FieldPlus"),
@@ -335,14 +343,6 @@ fn get_object(st: &mut St, inside: ast::Object, in_obj: bool) -> ExprData {
                 let expr = get_fn(st, Some(paren_params), field.expr(), true);
                 Some(st.expr(ptr, expr))
               }
-            };
-            let vis = match field.visibility() {
-              Some(vis) => match vis.kind {
-                ast::VisibilityKind::Colon => Visibility::Default,
-                ast::VisibilityKind::ColonColon => Visibility::Hidden,
-                ast::VisibilityKind::ColonColonColon => Visibility::Visible,
-              },
-              None => Visibility::Default,
             };
             fields.push((name, vis, body));
           }
