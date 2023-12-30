@@ -1,6 +1,7 @@
 {
   "files.exclude": {
     "editors/vscode/node_modules": true,
+    "editors/vscode/out": true,
     "target": true
   },
   "rust-analyzer.check.command": "clippy",

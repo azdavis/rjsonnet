@@ -10,7 +10,6 @@
     "url": "https://github.com/azdavis/rjsonnet.git",
     "type": "git"
   },
-  "main": "no-op.js",
   "license": "MIT OR Apache-2.0",
   "categories": [
     "Programming Languages"
@@ -19,8 +18,26 @@
     "Jsonnet",
     "language server"
   ],
+  "main": "out/main.js",
+  "scripts": {
+    "build-base": "esbuild src/main.ts --bundle --outfile=out/main.js --external:vscode --format=cjs --platform=node --target=node18",
+    "build-debug": "npm run build-base",
+    "build-release": "npm run build-base -- --minify",
+    "check": "tsc"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^18.16.19",
+    "@types/vscode": "^1.79.0",
+    "esbuild": "^0.19.8",
+    "ovsx": "^0.8.2",
+    "typescript": "^5.1.6",
+    "@vscode/vsce": "^2.19.0"
+  },
   "engines": {
-    "vscode": "^1.85.0"
+    "vscode": "^1.79.0"
   },
   "activationEvents": [
     "workspaceContains:**/*.{jsonnet,libsonnet,TEMPLATE}"

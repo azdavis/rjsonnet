@@ -27,5 +27,6 @@ fn main() {
   if fs::metadata("node_modules").is_err() {
     run(cmd_exe("npm").arg("ci"));
   }
-  // TODO build the extension etc
+  run(cmd_exe("npm").args(["run", "check"]));
+  run(cmd_exe("npm").args(["run", "build-debug"]));
 }
