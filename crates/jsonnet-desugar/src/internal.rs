@@ -426,7 +426,7 @@ fn get_object(st: &mut St, inside: ast::Object, in_obj: bool) -> ExprData {
           let on = Some(st.expr(ptr, ExprData::Id(arr)));
           let name_binds = vars.iter().enumerate().map(|(idx, (ptr, id))| {
             let idx = u32::try_from(idx).unwrap();
-            let idx = f64::try_from(idx).unwrap();
+            let idx = f64::from(idx);
             let idx = Number::try_from(idx).expect("infinite array idx");
             let idx = Some(st.expr(*ptr, ExprData::Prim(Prim::Number(idx))));
             let subscript = Some(st.expr(*ptr, ExprData::Subscript { on, idx }));
