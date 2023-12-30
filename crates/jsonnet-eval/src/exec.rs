@@ -25,11 +25,10 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
   let mk_error = |kind: error::Kind| Err(error::Error::Exec { expr, kind });
   match &ars.expr[expr] {
     ExprData::Prim(p) => Ok(Val::Prim(p.clone())),
-    ExprData::Object { binds, asserts, fields } => {
-      let env = add_binds(env, binds);
+    ExprData::Object { asserts, fields } => {
       let mut named_fields = FxHashMap::<Str, (Visibility, Expr)>::default();
       for &(key, hid, val) in fields {
-        match get(&env, ars, key)? {
+        match get(env, ars, key)? {
           Val::Prim(Prim::String(s)) => {
             if named_fields.insert(s, (hid, val)).is_some() {
               return mk_error(error::Kind::DuplicateField);
@@ -39,7 +38,7 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
           _ => return mk_error(error::Kind::IncompatibleTypes),
         }
       }
-      Ok(Val::Object(Object::new(env, asserts.clone(), named_fields)))
+      Ok(Val::Object(Object::new(env.clone(), asserts.clone(), named_fields)))
     }
     ExprData::ObjectComp { name, body, id, ary } => {
       let Val::Array(array) = get(env, ars, *ary)? else {

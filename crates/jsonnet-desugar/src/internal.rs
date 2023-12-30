@@ -288,21 +288,35 @@ fn get_assert(st: &mut St, yes: Expr, assert: ast::Assert, in_obj: bool) -> Expr
 fn get_object(st: &mut St, inside: ast::Object, in_obj: bool) -> ExprData {
   match get_comp_specs(st, inside.comp_specs()) {
     None => {
-      // this is the only time we actually use the `in_obj` flag
+      // first get the binds
       let mut binds = Vec::<(Id, Expr)>::new();
+      for member in inside.members() {
+        let Some(member_kind) = member.member_kind() else { continue };
+        let ast::MemberKind::ObjectLocal(local) = member_kind else { continue };
+        binds.extend(local.bind().and_then(|b| get_bind(st, b, true)));
+      }
+      // this is the only time we actually use the `in_obj` flag
+      if !in_obj {
+        let ptr = ast::SyntaxNodePtr::new(inside.syntax());
+        let this = Some(st.expr(ptr, ExprData::Id(Id::SELF)));
+        binds.push((Id::DOLLAR, this));
+      }
+      // then get the asserts and fields
       let mut asserts = Vec::<Expr>::new();
       let mut fields = Vec::<(Expr, Visibility, Expr)>::new();
       for member in inside.members() {
         let Some(member_kind) = member.member_kind() else { continue };
         match member_kind {
-          ast::MemberKind::ObjectLocal(local) => {
-            binds.extend(local.bind().and_then(|b| get_bind(st, b, true)));
-          }
+          // already did locals
+          ast::MemberKind::ObjectLocal(_) => {}
           ast::MemberKind::Assert(assert) => {
             let ptr = ast::SyntaxNodePtr::new(assert.syntax());
             let yes = Some(st.expr(ptr, ExprData::Prim(Prim::Null)));
             let assert = get_assert(st, yes, assert, true);
-            let assert = Some(st.expr(ptr, assert));
+            let mut assert = Some(st.expr(ptr, assert));
+            if !binds.is_empty() {
+              assert = Some(st.expr(ptr, ExprData::Local { binds: binds.clone(), body: assert }));
+            }
             asserts.push(assert);
           }
           ast::MemberKind::Field(field) => {
@@ -335,7 +349,7 @@ fn get_object(st: &mut St, inside: ast::Object, in_obj: bool) -> ExprData {
               },
               None => Visibility::Default,
             };
-            let body = match field.field_extra() {
+            let mut body = match field.field_extra() {
               None => get_expr(st, field.expr(), true),
               Some(ast::FieldExtra::FieldPlus(_)) => todo!("FieldPlus"),
               Some(ast::FieldExtra::ParenParams(paren_params)) => {
@@ -344,11 +358,15 @@ fn get_object(st: &mut St, inside: ast::Object, in_obj: bool) -> ExprData {
                 Some(st.expr(ptr, expr))
               }
             };
+            if !binds.is_empty() {
+              let ptr = ast::SyntaxNodePtr::new(field.syntax());
+              body = Some(st.expr(ptr, ExprData::Local { binds: binds.clone(), body }));
+            }
             fields.push((name, vis, body));
           }
         }
       }
-      ExprData::Object { binds, asserts, fields }
+      ExprData::Object { asserts, fields }
     }
     Some((_, comp_specs)) => {
       let mut binds = Vec::<(Id, Expr)>::new();
@@ -401,7 +419,7 @@ fn get_object(st: &mut St, inside: ast::Object, in_obj: bool) -> ExprData {
           st.err(&inside, error::Kind::ObjectCompNotOne);
           // this is a good "fake" return, since we knew this was going to be some kind of object,
           // but now we can't figure out what fields it should have. so let's say it has no fields.
-          ExprData::Object { binds: Vec::new(), asserts: Vec::new(), fields: Vec::new() }
+          ExprData::Object { asserts: Vec::new(), fields: Vec::new() }
         }
         Some((ptr, name, body)) => {
           let arr = st.fresh();

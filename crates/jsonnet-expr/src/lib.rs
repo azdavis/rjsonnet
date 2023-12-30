@@ -19,8 +19,6 @@ pub type ExprArena = Arena<ExprData>;
 pub enum ExprData {
   Prim(Prim),
   Object {
-    /// in the spec, these are removed, but here we keep them
-    binds: Vec<(Id, Expr)>,
     asserts: Vec<Expr>,
     fields: Vec<(Expr, Visibility, Expr)>,
   },

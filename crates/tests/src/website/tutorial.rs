@@ -184,7 +184,7 @@ local house_rum = 'Banks Rum';
 }
 
 #[test]
-#[should_panic = "statics error: not in scope: $"]
+#[should_panic = "not yet implemented: get $"]
 fn t3() {
   manifest(
     r#"
@@ -278,9 +278,7 @@ fn t3() {
   );
 }
 
-// TODO fix
 #[test]
-#[should_panic = "no such field: ingredients"]
 fn t4() {
   manifest(
     r#"

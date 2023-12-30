@@ -53,12 +53,11 @@ pub fn check(st: &mut St, cx: &Cx, ars: &Arenas, expr: Expr) {
   let Some(expr) = expr else { return };
   match &ars.expr[expr] {
     ExprData::Prim(_) | ExprData::Import { .. } => {}
-    ExprData::Object { binds, asserts, fields } => {
+    ExprData::Object { asserts, fields } => {
       let cx_big = {
         let mut cx = cx.clone();
         cx.insert(Id::SELF);
         cx.insert(Id::SUPER);
-        check_binds(st, &mut cx, ars, binds);
         cx
       };
       let mut field_names = FxHashSet::<&Str>::default();
