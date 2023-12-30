@@ -318,7 +318,7 @@ fn t4() {
 }
 
 #[test]
-#[should_panic = "statics error: not in scope: equals"]
+#[should_panic = "no entry found for key"]
 fn t5() {
   manifest(
     r"
