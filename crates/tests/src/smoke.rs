@@ -3,6 +3,7 @@ mod comment;
 mod keyword_lit;
 mod number;
 mod object;
+mod std_lib;
 mod string;
 
 use crate::check::{exec_err, manifest};
