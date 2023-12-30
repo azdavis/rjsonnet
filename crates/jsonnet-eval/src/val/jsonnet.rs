@@ -10,12 +10,12 @@ pub struct Env {
 }
 
 impl Env {
-  pub fn insert(&mut self, id: Id, env: Env, expr: Expr) {
+  pub(crate) fn insert(&mut self, id: Id, env: Env, expr: Expr) {
     self.store.insert(id, (env, expr));
   }
 
   #[must_use]
-  pub fn get(&self, id: Id) -> (&Env, Expr) {
+  pub(crate) fn get(&self, id: Id) -> (&Env, Expr) {
     let (ref env, expr) = self.store[&id];
     (env, expr)
   }
@@ -24,7 +24,7 @@ impl Env {
   ///
   /// If this was not in scope.
   #[must_use]
-  pub fn this(&self) -> &Object {
+  pub(crate) fn this(&self) -> &Object {
     self.this.as_deref().expect("`self` not in scope")
   }
 }
