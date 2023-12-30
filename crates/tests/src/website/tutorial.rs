@@ -184,7 +184,6 @@ local house_rum = 'Banks Rum';
 }
 
 #[test]
-#[should_panic = "not yet implemented: get $"]
 fn t3() {
   manifest(
     r#"

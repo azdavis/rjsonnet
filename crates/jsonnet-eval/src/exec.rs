@@ -170,9 +170,6 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
       if *id == Id::SUPER {
         return Ok(Val::Object(env.this().parent()));
       }
-      if *id == Id::DOLLAR {
-        todo!("get $");
-      }
       let (env, expr) = env.get(*id);
       get(env, ars, expr)
     }
