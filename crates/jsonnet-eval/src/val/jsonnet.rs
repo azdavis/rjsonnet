@@ -16,7 +16,7 @@ impl Env {
 
   #[must_use]
   pub(crate) fn get(&self, id: Id) -> (&Env, Expr) {
-    let (ref env, expr) = self.store[&id];
+    let Some(&(ref env, expr)) = self.store.get(&id) else { panic!("get failed: {id:?}") };
     (env, expr)
   }
 

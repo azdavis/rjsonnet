@@ -1,7 +1,7 @@
 use crate::check::manifest_str;
 
 #[test]
-#[should_panic = "no entry found for key"]
+#[should_panic = "std"]
 fn type_num() {
   manifest_str(
     r"

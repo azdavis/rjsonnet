@@ -318,7 +318,7 @@ fn t4() {
 }
 
 #[test]
-#[should_panic = "no entry found for key"]
+#[should_panic = "$std"]
 fn t5() {
   manifest(
     r"
