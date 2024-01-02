@@ -27,13 +27,17 @@ fn main() {
     ("OBJECT_HAS_EX", "objectHasEx"),
     ("SLICE", "slice"),
   ];
-  let std_fields = || std::iter::once(&("THIS_FILE", "thisFile")).chain(std_fns.iter());
   let messages = [
     ("ASSERTION_FAILED", "Assertion failed"),
     ("PARAMETER_NOT_BOUND", "Parameter not bound"),
     ("TODO", "TODO"),
   ];
-  let strings = || std_fields().chain(messages.iter());
+  let strings = || {
+    std::iter::empty()
+      .chain(std::iter::once(&("THIS_FILE", "thisFile")))
+      .chain(std_fns.iter())
+      .chain(messages.iter())
+  };
 
   let mut names = HashSet::<&'static str>::new();
   let mut contents = HashSet::<&'static str>::new();
