@@ -1,7 +1,7 @@
 use crate::check::manifest_str;
 
 #[test]
-#[should_panic = "std"]
+#[should_panic = "get std"]
 fn type_num() {
   manifest_str(
     r"

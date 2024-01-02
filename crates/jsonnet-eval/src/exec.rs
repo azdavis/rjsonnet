@@ -2,7 +2,7 @@
 
 use crate::error::{self, Result};
 use crate::manifest;
-use crate::val::jsonnet::{Array, Env, Object, StdFn, Val};
+use crate::val::jsonnet::{Array, Env, Get, Object, StdFn, Val};
 use jsonnet_expr::{
   Arenas, BinaryOp, Expr, ExprData, ExprMust, Id, Number, Prim, Str, StrArena, Visibility,
 };
@@ -163,16 +163,12 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
       },
       _ => mk_error(error::Kind::IncompatibleTypes),
     },
-    ExprData::Id(id) => {
-      if *id == Id::SELF {
-        return Ok(Val::Object(env.this().clone()));
-      }
-      if *id == Id::SUPER {
-        return Ok(Val::Object(env.this().parent()));
-      }
-      let (env, expr) = env.get(*id);
-      get(env, ars, expr)
-    }
+    ExprData::Id(id) => match env.get(*id) {
+      Get::Self_ => Ok(Val::Object(env.this().clone())),
+      Get::Super => Ok(Val::Object(env.this().parent())),
+      Get::Std => todo!("get std"),
+      Get::Expr(env, expr) => get(env, ars, expr),
+    },
     ExprData::Local { binds, body } => {
       let env = add_binds(env, binds);
       get(&env, ars, *body)

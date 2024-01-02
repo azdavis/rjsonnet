@@ -15,9 +15,22 @@ impl Env {
   }
 
   #[must_use]
-  pub(crate) fn get(&self, id: Id) -> (&Env, Expr) {
-    let Some(&(ref env, expr)) = self.store.get(&id) else { panic!("get failed: {id:?}") };
-    (env, expr)
+  pub(crate) fn get(&self, id: Id) -> Get<'_> {
+    if id == Id::SELF {
+      return Get::Self_;
+    }
+    if id == Id::SUPER {
+      return Get::Super;
+    }
+    if id == Id::STD_UNUTTERABLE {
+      return Get::Std;
+    }
+    if let Some(&(ref env, expr)) = self.store.get(&id) {
+      Get::Expr(env, expr)
+    } else {
+      assert_eq!(id, Id::STD, "get failed: {id:?}");
+      Get::Std
+    }
   }
 
   /// # Panics
@@ -27,6 +40,13 @@ impl Env {
   pub(crate) fn this(&self) -> &Object {
     self.this.as_deref().expect("`self` not in scope")
   }
+}
+
+pub(crate) enum Get<'a> {
+  Self_,
+  Super,
+  Std,
+  Expr(&'a Env, Expr),
 }
 
 /// A Jsonnet value.

@@ -318,7 +318,7 @@ fn t4() {
 }
 
 #[test]
-#[should_panic = "$std"]
+#[should_panic = "get std"]
 fn t5() {
   manifest(
     r"
