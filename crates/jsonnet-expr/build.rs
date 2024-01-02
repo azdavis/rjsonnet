@@ -44,7 +44,7 @@ fn main() {
   drop(names);
   drop(contents);
 
-  let identifiers_and_strings = {
+  let impl_str_idx_and_arena = {
     let str_idx_constants = std::iter::empty()
       .chain(identifiers.iter().map(|x| (x, false)))
       .chain(strings().map(|x| (x, true)))
@@ -103,7 +103,7 @@ fn main() {
     }
   };
 
-  let identifiers_only = {
+  let impl_id = {
     let constants = identifiers.iter().map(|&(name, _)| {
       let name = format_ident!("{name}");
       quote! { pub const #name: Self = Self(StrIdx::#name); }
@@ -116,7 +116,7 @@ fn main() {
     }
   };
 
-  let strings_only = {
+  let impl_str = {
     let constants = strings().map(|&(name, _)| {
       let name = format_ident!("{name}");
       quote! { pub const #name: Self = Self(StrRepr::Idx(StrIdx::#name)); }
@@ -138,11 +138,11 @@ fn main() {
     use rustc_hash::FxHashMap;
     use std::fmt;
 
-    #identifiers_and_strings
+    #impl_str_idx_and_arena
 
-    #identifiers_only
+    #impl_id
 
-    #strings_only
+    #impl_str
   };
   write_rs_tokens::go(contents, "generated.rs");
 }
