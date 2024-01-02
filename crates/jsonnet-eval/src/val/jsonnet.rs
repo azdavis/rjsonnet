@@ -153,11 +153,11 @@ impl Object {
           }
         }
         ObjectKind::Std => {
-          for (name, field) in &StdField::ALL {
+          for (name, field) in StdField::all() {
             if !seen.insert(name) {
               continue;
             }
-            ret.push((name.clone(), Visibility::Hidden, Field::Std(field.clone())));
+            ret.push((name.clone(), Visibility::Hidden, Field::Std(field)));
           }
         }
       }
@@ -201,24 +201,23 @@ struct RegularObjectKind {
   fields: FxHashMap<Str, (Visibility, Expr)>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub enum Field {
   Std(StdField),
   Expr(Env, Expr),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub enum StdField {
   ThisFile,
   Fn(StdFn),
 }
 
 impl StdField {
-  const ALL: [(Str, StdField); 3] = [
-    (Str::THIS_FILE, StdField::ThisFile),
-    (Str::CMP, StdField::Fn(StdFn::Cmp)),
-    (Str::EQUALS, StdField::Fn(StdFn::Equals)),
-  ];
+  fn all() -> impl Iterator<Item = (&'static Str, Self)> {
+    std::iter::once((&Str::THIS_FILE, StdField::ThisFile))
+      .chain(StdFn::ALL.iter().map(|(a, b)| (a, StdField::Fn(*b))))
+  }
 }
 
 impl TryFrom<&Str> for StdField {
@@ -228,20 +227,35 @@ impl TryFrom<&Str> for StdField {
     if *s == Str::THIS_FILE {
       return Ok(Self::ThisFile);
     }
-    if *s == Str::CMP {
-      return Ok(Self::Fn(StdFn::Cmp));
-    }
-    if *s == Str::EQUALS {
-      return Ok(Self::Fn(StdFn::Equals));
+    if let Ok(x) = StdFn::try_from(s) {
+      return Ok(Self::Fn(x));
     }
     Err(())
   }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub enum StdFn {
   Cmp,
   Equals,
+}
+
+impl StdFn {
+  const ALL: [(Str, Self); 2] = [(Str::CMP, Self::Cmp), (Str::EQUALS, Self::Equals)];
+}
+
+impl TryFrom<&Str> for StdFn {
+  type Error = ();
+
+  fn try_from(s: &Str) -> Result<Self, Self::Error> {
+    if *s == Str::CMP {
+      return Ok(Self::Cmp);
+    }
+    if *s == Str::EQUALS {
+      return Ok(Self::Equals);
+    }
+    Err(())
+  }
 }
 
 #[derive(Debug, Default, Clone)]
