@@ -98,12 +98,6 @@ impl Object {
     })
   }
 
-  pub(crate) fn parent(&self) -> Self {
-    let mut parent = self.clone();
-    parent.is_super = true;
-    parent
-  }
-
   #[must_use]
   pub(crate) fn new(
     env: Env,
@@ -117,6 +111,12 @@ impl Object {
   #[must_use]
   pub(crate) fn std_lib() -> Self {
     Self { parent: None, kind: ObjectKind::Std, is_super: false }
+  }
+
+  pub(crate) fn parent(&self) -> Self {
+    let mut parent = self.clone();
+    parent.is_super = true;
+    parent
   }
 
   fn set_this(&self, env: &Env) -> Env {
@@ -238,6 +238,12 @@ impl TryFrom<&Str> for StdField {
   }
 }
 
+#[derive(Debug, Clone)]
+pub enum StdFn {
+  Cmp,
+  Equals,
+}
+
 #[derive(Debug, Default, Clone)]
 pub struct Array {
   /// arranging it in this way allows for different elements of the array to be lazy under different
@@ -275,10 +281,4 @@ impl Array {
 struct ArrayPart {
   env: Env,
   elems: Vec<Expr>,
-}
-
-#[derive(Debug, Clone)]
-pub enum StdFn {
-  Cmp,
-  Equals,
 }
