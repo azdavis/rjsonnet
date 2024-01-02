@@ -17,7 +17,7 @@ fn main() {
     ("OUTER_SUPER", "$outersuper"),
     ("DOLLAR", "$"),
   ];
-  let strings = [
+  let std_fields = [
     ("JOIN", "join"),
     ("MAKE_ARRAY", "makeArray"),
     ("THIS_FILE", "thisFile"),
@@ -27,14 +27,17 @@ fn main() {
     ("MOD", "mod"),
     ("EQUALS", "equals"),
     ("OBJECT_HAS_EX", "objectHasEx"),
+  ];
+  let messages = [
     ("PARAMETER_NOT_BOUND", "Parameter not bound"),
     ("ASSERTION_FAILED", "Assertion failed"),
     ("TODO", "TODO"),
   ];
+  let strings = || std_fields.iter().chain(messages.iter());
 
   let mut names = HashSet::<&'static str>::new();
   let mut contents = HashSet::<&'static str>::new();
-  for &(name, content) in identifiers.iter().chain(strings.iter()) {
+  for &(name, content) in identifiers.iter().chain(strings()) {
     assert!(names.insert(name), "duplicate name: {name}");
     assert!(contents.insert(content), "duplicate content: {content}");
   }
@@ -44,7 +47,7 @@ fn main() {
   let identifiers_and_strings = {
     let str_idx_constants = std::iter::empty()
       .chain(identifiers.iter().map(|x| (x, false)))
-      .chain(strings.iter().map(|x| (x, true)))
+      .chain(strings().map(|x| (x, true)))
       .enumerate()
       .map(|(idx, (&(name, _), is_pub))| {
         let name = format_ident!("{name}");
@@ -57,12 +60,12 @@ fn main() {
         quote! { #vis const #name: Self = Self(#idx); }
       });
     let str_idx_debug_arms =
-      identifiers.iter().chain(strings.iter()).enumerate().map(|(idx, &(_, contents))| {
+      identifiers.iter().chain(strings()).enumerate().map(|(idx, &(_, contents))| {
         let idx = u32::try_from(idx).unwrap();
         quote! { #idx => d.field(&#contents), }
       });
-    let capacity = identifiers.len() + strings.len();
-    let str_arena_inserts = identifiers.iter().chain(strings.iter()).map(|&(name, contents)| {
+    let capacity = identifiers.len() + strings().count();
+    let str_arena_inserts = identifiers.iter().chain(strings()).map(|&(name, contents)| {
       let name = format_ident!("{name}");
       quote! { assert_eq!(StrIdx::#name, ret.mk_idx(bs(#contents))); }
     });
@@ -114,7 +117,7 @@ fn main() {
   };
 
   let strings_only = {
-    let constants = strings.iter().map(|&(name, _)| {
+    let constants = strings().map(|&(name, _)| {
       let name = format_ident!("{name}");
       quote! { pub const #name: Self = Self(StrRepr::Idx(StrIdx::#name)); }
     });
