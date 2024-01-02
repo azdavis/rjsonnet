@@ -20,6 +20,8 @@ fn main() {
   let strings = [
     ("JOIN", "join"),
     ("MAKE_ARRAY", "makeArray"),
+    ("THIS_FILE", "thisFile"),
+    ("CMP", "cmp"),
     ("LENGTH", "length"),
     ("SLICE", "slice"),
     ("MOD", "mod"),

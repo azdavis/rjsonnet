@@ -2,7 +2,7 @@
 
 use crate::error::{self, Result};
 use crate::manifest;
-use crate::val::jsonnet::{Array, Env, Get, Object, StdFn, Val};
+use crate::val::jsonnet::{Array, Env, Field, Get, Object, StdField, StdFn, Val};
 use jsonnet_expr::{
   Arenas, BinaryOp, Expr, ExprData, ExprMust, Id, Number, Prim, Str, StrArena, Visibility,
 };
@@ -72,13 +72,20 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
         let Val::Prim(Prim::String(name)) = get(env, ars, *idx)? else {
           return mk_error(error::Kind::IncompatibleTypes);
         };
-        let Some((_, env, body)) = object.get_field(&name) else {
+        let Some((_, field)) = object.get_field(&name) else {
           return mk_error(error::Kind::NoSuchField(name.clone()));
         };
+        // TODO do we need all the asserts/do we have to evaluate them to json values?
         for (env, assert) in object.asserts() {
           get(&env, ars, assert)?;
         }
-        get(&env, ars, body)
+        match field {
+          Field::Std(field) => match field {
+            StdField::ThisFile => todo!("this file"),
+            StdField::Fn(f) => Ok(Val::StdFn(f)),
+          },
+          Field::Expr(env, expr) => get(&env, ars, expr),
+        }
       }
       Val::Array(array) => {
         let Val::Prim(Prim::Number(idx)) = get(env, ars, *idx)? else {
@@ -166,7 +173,7 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
     ExprData::Id(id) => match env.get(*id) {
       Get::Self_ => Ok(Val::Object(env.this().clone())),
       Get::Super => Ok(Val::Object(env.this().parent())),
-      Get::Std => todo!("get std"),
+      Get::Std => Ok(Val::Object(Object::std_lib())),
       Get::Expr(env, expr) => get(env, ars, expr),
     },
     ExprData::Local { binds, body } => {

@@ -77,12 +77,10 @@ pub enum Val {
   StdFn(StdFn),
 }
 
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Clone)]
 pub struct Object {
   parent: Option<Box<Object>>,
-  env: Env,
-  asserts: Vec<Expr>,
-  fields: FxHashMap<Str, (Visibility, Expr)>,
+  kind: ObjectKind,
   /// skip fields directly on this. used to implement super. kind of strange. maybe we could
   /// rearrange this to take better advantage of the fact that we know that `super` must always be
   /// immediately followed by a field-get (super.foo or super[foo] or foo in super)?
@@ -111,8 +109,14 @@ impl Object {
     env: Env,
     asserts: Vec<Expr>,
     fields: FxHashMap<Str, (Visibility, Expr)>,
-  ) -> Object {
-    Object { parent: None, env, asserts, fields, is_super: false }
+  ) -> Self {
+    let kind = ObjectKind::Regular(RegularObjectKind { env, asserts, fields });
+    Self { parent: None, kind, is_super: false }
+  }
+
+  #[must_use]
+  pub(crate) fn std_lib() -> Self {
+    Self { parent: None, kind: ObjectKind::Std, is_super: false }
   }
 
   fn set_this(&self, env: &Env) -> Env {
@@ -124,27 +128,54 @@ impl Object {
   }
 
   pub(crate) fn asserts(&self) -> impl Iterator<Item = (Env, Expr)> + '_ {
-    let iter =
-      self.ancestry().flat_map(|this| this.asserts.iter().map(move |&expr| (&this.env, expr)));
+    let iter = self
+      .ancestry()
+      .filter_map(|this| match &this.kind {
+        ObjectKind::Regular(this) => Some(this),
+        ObjectKind::Std => None,
+      })
+      .flat_map(|this| this.asserts.iter().map(move |&expr| (&this.env, expr)));
     iter.map(|(env, expr)| (self.set_this(env), expr))
   }
 
-  pub(crate) fn fields(&self) -> impl Iterator<Item = (Str, Visibility, Env, Expr)> + '_ {
+  /// TODO this should be a generator
+  pub(crate) fn fields(&self) -> Vec<(Str, Visibility, Field)> {
+    let mut ret = Vec::<(Str, Visibility, Field)>::new();
     let mut seen = FxHashSet::<&Str>::default();
-    let iter = self
-      .ancestry()
-      .flat_map(|this| {
-        this.fields.iter().map(move |(name, &(vis, expr))| (name, vis, &this.env, expr))
-      })
-      .filter(move |(name, _, _, _)| seen.insert(name));
-    iter.map(|(name, vis, env, expr)| (name.clone(), vis, self.set_this(env), expr))
+    for this in self.ancestry().skip(self.is_super.into()) {
+      match &this.kind {
+        ObjectKind::Regular(this) => {
+          for (name, &(vis, expr)) in &this.fields {
+            if !seen.insert(name) {
+              continue;
+            }
+            ret.push((name.clone(), vis, Field::Expr(self.set_this(&this.env), expr)));
+          }
+        }
+        ObjectKind::Std => {
+          for (name, field) in &StdField::ALL {
+            if !seen.insert(name) {
+              continue;
+            }
+            ret.push((name.clone(), Visibility::Hidden, Field::Std(field.clone())));
+          }
+        }
+      }
+    }
+    ret
   }
 
   #[must_use]
-  pub(crate) fn get_field(&self, name: &Str) -> Option<(Visibility, Env, Expr)> {
-    self.ancestry().skip(self.is_super.into()).find_map(|this| {
-      let &(vis, expr) = this.fields.get(name)?;
-      Some((vis, self.set_this(&this.env), expr))
+  pub(crate) fn get_field(&self, name: &Str) -> Option<(Visibility, Field)> {
+    self.ancestry().skip(self.is_super.into()).find_map(|this| match &this.kind {
+      ObjectKind::Std => {
+        let field = StdField::try_from(name).ok()?;
+        Some((Visibility::Hidden, Field::Std(field)))
+      }
+      ObjectKind::Regular(this) => {
+        let &(vis, expr) = this.fields.get(name)?;
+        Some((vis, Field::Expr(self.set_this(&this.env), expr)))
+      }
     })
   }
 
@@ -154,6 +185,56 @@ impl Object {
       top = parent.as_mut();
     }
     top.parent = Some(Box::new(other));
+  }
+}
+
+#[derive(Debug, Clone)]
+enum ObjectKind {
+  Std,
+  Regular(RegularObjectKind),
+}
+
+#[derive(Debug, Clone)]
+struct RegularObjectKind {
+  env: Env,
+  asserts: Vec<Expr>,
+  fields: FxHashMap<Str, (Visibility, Expr)>,
+}
+
+#[derive(Debug, Clone)]
+pub enum Field {
+  Std(StdField),
+  Expr(Env, Expr),
+}
+
+#[derive(Debug, Clone)]
+pub enum StdField {
+  ThisFile,
+  Fn(StdFn),
+}
+
+impl StdField {
+  const ALL: [(Str, StdField); 3] = [
+    (Str::THIS_FILE, StdField::ThisFile),
+    (Str::CMP, StdField::Fn(StdFn::Cmp)),
+    (Str::EQUALS, StdField::Fn(StdFn::Equals)),
+  ];
+}
+
+impl TryFrom<&Str> for StdField {
+  type Error = ();
+
+  fn try_from(s: &Str) -> Result<Self, Self::Error> {
+    if *s == Str::THIS_FILE {
+      return Ok(Self::ThisFile);
+    }
+    if *s == Str::CMP {
+      return Ok(Self::Fn(StdFn::Cmp));
+    }
+    if *s == Str::EQUALS {
+      return Ok(Self::Fn(StdFn::Equals));
+    }
+    Err(())
   }
 }
 

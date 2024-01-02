@@ -22,10 +22,11 @@ pub fn get(ars: &Arenas, val: jsonnet::Val) -> error::Result<json::Val> {
         get_(&env, ars, expr)?;
       }
       let mut val_fields = FxHashMap::default();
-      for (name, vis, env, expr) in object.fields() {
+      for (name, vis, field) in object.fields() {
         if matches!(vis, jsonnet_expr::Visibility::Hidden) {
           continue;
         }
+        let jsonnet::Field::Expr(env, expr) = field else { unreachable!("non-hidden std field") };
         let val = get_(&env, ars, expr)?;
         assert!(val_fields.insert(name, val).is_none());
       }
