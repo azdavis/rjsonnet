@@ -129,15 +129,15 @@ impl Object {
     iter.map(|(env, expr)| (self.set_this(env), expr))
   }
 
-  pub(crate) fn fields(&self) -> impl Iterator<Item = (Env, &Str, Visibility, Expr)> {
+  pub(crate) fn fields(&self) -> impl Iterator<Item = (&Str, Visibility, Env, Expr)> {
     let mut seen = FxHashSet::<&Str>::default();
     let iter = self
       .ancestry()
       .flat_map(|this| {
-        this.fields.iter().map(move |(name, &(vis, expr))| (&this.env, name, vis, expr))
+        this.fields.iter().map(move |(name, &(vis, expr))| (name, vis, &this.env, expr))
       })
-      .filter(move |(_, name, _, _)| seen.insert(name));
-    iter.map(|(env, name, vis, expr)| (self.set_this(env), name, vis, expr))
+      .filter(move |(name, _, _, _)| seen.insert(name));
+    iter.map(|(name, vis, env, expr)| (name, vis, self.set_this(env), expr))
   }
 
   #[must_use]
