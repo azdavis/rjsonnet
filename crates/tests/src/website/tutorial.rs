@@ -318,7 +318,7 @@ fn t4() {
 }
 
 #[test]
-#[should_panic = "no such field: mod"]
+#[should_panic = "not yet implemented: std Mod"]
 fn t5() {
   manifest(
     r"

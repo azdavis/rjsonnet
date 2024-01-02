@@ -1,6 +1,6 @@
 //! Jsonnet values.
 
-use jsonnet_expr::{Expr, Id, Prim, Str, Visibility};
+use jsonnet_expr::{Expr, Id, Prim, StdFn, Str, Visibility};
 use rustc_hash::{FxHashMap, FxHashSet};
 
 #[derive(Debug, Default, Clone)]
@@ -227,32 +227,8 @@ impl TryFrom<&Str> for StdField {
     if *s == Str::THIS_FILE {
       return Ok(Self::ThisFile);
     }
-    if let Ok(x) = StdFn::try_from(s) {
+    if let Some(&(_, x)) = StdFn::ALL.iter().find(|&(x, _)| x == s) {
       return Ok(Self::Fn(x));
-    }
-    Err(())
-  }
-}
-
-#[derive(Debug, Clone, Copy)]
-pub enum StdFn {
-  Cmp,
-  Equals,
-}
-
-impl StdFn {
-  const ALL: [(Str, Self); 2] = [(Str::CMP, Self::Cmp), (Str::EQUALS, Self::Equals)];
-}
-
-impl TryFrom<&Str> for StdFn {
-  type Error = ();
-
-  fn try_from(s: &Str) -> Result<Self, Self::Error> {
-    if *s == Str::CMP {
-      return Ok(Self::Cmp);
-    }
-    if *s == Str::EQUALS {
-      return Ok(Self::Equals);
     }
     Err(())
   }

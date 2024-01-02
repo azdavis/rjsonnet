@@ -2,9 +2,9 @@
 
 use crate::error::{self, Result};
 use crate::manifest;
-use crate::val::jsonnet::{Array, Env, Field, Get, Object, StdField, StdFn, Val};
+use crate::val::jsonnet::{Array, Env, Field, Get, Object, StdField, Val};
 use jsonnet_expr::{
-  Arenas, BinaryOp, Expr, ExprData, ExprMust, Id, Number, Prim, Str, StrArena, Visibility,
+  Arenas, BinaryOp, Expr, ExprData, ExprMust, Id, Number, Prim, StdFn, Str, StrArena, Visibility,
 };
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::cmp::Ordering;
@@ -167,6 +167,12 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
           };
           cmp_bool_op(expr, env, ars, lhs, rhs, Ordering::is_eq)
         }
+        StdFn::Join => todo!("std Join"),
+        StdFn::Length => todo!("std Length"),
+        StdFn::MakeArray => todo!("std MakeArray"),
+        StdFn::Mod => todo!("std Mod"),
+        StdFn::ObjectHasEx => todo!("std ObjectHasEx"),
+        StdFn::Slice => todo!("std Slice"),
       },
       _ => mk_error(error::Kind::IncompatibleTypes),
     },

@@ -17,7 +17,7 @@ fn main() {
     ("OUTER_SUPER", "$outersuper"),
     ("DOLLAR", "$"),
   ];
-  let std_fields = [
+  let std_fns = [
     ("CMP", "cmp"),
     ("EQUALS", "equals"),
     ("JOIN", "join"),
@@ -26,14 +26,14 @@ fn main() {
     ("MOD", "mod"),
     ("OBJECT_HAS_EX", "objectHasEx"),
     ("SLICE", "slice"),
-    ("THIS_FILE", "thisFile"),
   ];
+  let std_fields = || std::iter::once(&("THIS_FILE", "thisFile")).chain(std_fns.iter());
   let messages = [
     ("ASSERTION_FAILED", "Assertion failed"),
     ("PARAMETER_NOT_BOUND", "Parameter not bound"),
     ("TODO", "TODO"),
   ];
-  let strings = || std_fields.iter().chain(messages.iter());
+  let strings = || std_fields().chain(messages.iter());
 
   let mut names = HashSet::<&'static str>::new();
   let mut contents = HashSet::<&'static str>::new();
@@ -129,6 +129,32 @@ fn main() {
     }
   };
 
+  let std_fn = {
+    let variants = std_fns.iter().map(|&(name, _)| {
+      let pascal = identifier_case::snake_to_pascal(name);
+      format_ident!("{pascal}")
+    });
+    let count = std_fns.len();
+    let str_variant_tuples = std_fns.iter().map(|&(name, _)| {
+      let pascal = identifier_case::snake_to_pascal(name);
+      let str_name = format_ident!("{name}");
+      let variant_name = format_ident!("{pascal}");
+      quote! { (Str::#str_name, Self::#variant_name) }
+    });
+    quote! {
+      #[derive(Debug, Clone, Copy)]
+      pub enum StdFn {
+        #(#variants,)*
+      }
+
+      impl StdFn {
+        pub const ALL: [(Str, Self); #count] = [
+          #(#str_variant_tuples,)*
+        ];
+      }
+    }
+  };
+
   let file = file!();
 
   let contents = quote! {
@@ -143,6 +169,8 @@ fn main() {
     #impl_id
 
     #impl_str
+
+    #std_fn
   };
   write_rs_tokens::go(contents, "generated.rs");
 }
