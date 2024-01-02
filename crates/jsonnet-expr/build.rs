@@ -18,19 +18,19 @@ fn main() {
     ("DOLLAR", "$"),
   ];
   let std_fields = [
-    ("JOIN", "join"),
-    ("MAKE_ARRAY", "makeArray"),
-    ("THIS_FILE", "thisFile"),
     ("CMP", "cmp"),
-    ("LENGTH", "length"),
-    ("SLICE", "slice"),
-    ("MOD", "mod"),
     ("EQUALS", "equals"),
+    ("JOIN", "join"),
+    ("LENGTH", "length"),
+    ("MAKE_ARRAY", "makeArray"),
+    ("MOD", "mod"),
     ("OBJECT_HAS_EX", "objectHasEx"),
+    ("SLICE", "slice"),
+    ("THIS_FILE", "thisFile"),
   ];
   let messages = [
-    ("PARAMETER_NOT_BOUND", "Parameter not bound"),
     ("ASSERTION_FAILED", "Assertion failed"),
+    ("PARAMETER_NOT_BOUND", "Parameter not bound"),
     ("TODO", "TODO"),
   ];
   let strings = || std_fields.iter().chain(messages.iter());
