@@ -72,7 +72,7 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
         let Val::Prim(Prim::String(name)) = get(env, ars, *idx)? else {
           return mk_error(error::Kind::IncompatibleTypes);
         };
-        let Some((env, _, body)) = object.get_field(&name) else {
+        let Some((_, env, body)) = object.get_field(&name) else {
           return mk_error(error::Kind::NoSuchField(name.clone()));
         };
         for (env, assert) in object.asserts() {

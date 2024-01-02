@@ -141,10 +141,10 @@ impl Object {
   }
 
   #[must_use]
-  pub(crate) fn get_field(&self, name: &Str) -> Option<(Env, Visibility, Expr)> {
+  pub(crate) fn get_field(&self, name: &Str) -> Option<(Visibility, Env, Expr)> {
     self.ancestry().skip(self.is_super.into()).find_map(|this| {
       let &(vis, expr) = this.fields.get(name)?;
-      Some((self.set_this(&this.env), vis, expr))
+      Some((vis, self.set_this(&this.env), expr))
     })
   }
 
