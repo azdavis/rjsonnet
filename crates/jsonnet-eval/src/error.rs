@@ -27,6 +27,7 @@ pub enum Kind {
   TooManyArguments,
   Infinite(jsonnet_expr::Infinite),
   User(jsonnet_expr::Str),
+  /// TODO remove this and allow named args for std fns
   StdFuncNamedArgs,
   StdFuncWrongNumArgs(usize, usize),
 }

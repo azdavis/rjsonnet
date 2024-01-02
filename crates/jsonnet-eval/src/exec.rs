@@ -128,8 +128,8 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
           }
           // we're getting a little fancy here. this iterates across the mutable params, and if we
           // could find a param whose name matches the arg's name, then this sets the param to that
-          // arg and short circuits with true. note `==` with comparing the names and `=` with setting
-          // the actual exprs. note the usage of `bool::then` with `find_map` and `is_none`.
+          // arg and short circuits with true. note `==` with comparing the names and `=` with
+          // setting the actual exprs. note the usage of `bool::then` with `find_map` and `is_none`.
           let failed_to_set_arg = params
             .iter_mut()
             .find_map(|(param_name, param)| (*param_name == arg_name).then(|| *param = arg))
@@ -141,7 +141,7 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
         let env = add_binds(&func_env, &params);
         get(&env, ars, body)
       }
-      Val::StdFn(std_val) => match std_val {
+      Val::StdFn(std_fn) => match std_fn {
         StdFn::Cmp => {
           if !named.is_empty() {
             return mk_error(error::Kind::StdFuncNamedArgs);
