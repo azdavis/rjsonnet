@@ -62,7 +62,7 @@ fn main() {
     let str_idx_debug_arms =
       identifiers.iter().chain(strings()).enumerate().map(|(idx, &(_, contents))| {
         let idx = u32::try_from(idx).unwrap();
-        quote! { #idx => d.field(&#contents), }
+        quote! { #idx => d.field(&#contents) }
       });
     let capacity = identifiers.len() + strings().count();
     let str_arena_inserts = identifiers.iter().chain(strings()).map(|&(name, contents)| {
@@ -79,7 +79,7 @@ fn main() {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
           let mut d = f.debug_tuple("StrIdx");
           match self.to_u32() {
-            #(#str_idx_debug_arms)*
+            #(#str_idx_debug_arms,)*
             n => d.field(&n),
           };
           d.finish()
