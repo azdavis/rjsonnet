@@ -27,7 +27,7 @@ pub fn get(ars: &Arenas, val: jsonnet::Val) -> error::Result<json::Val> {
           continue;
         }
         let val = get_(&env, ars, expr)?;
-        assert!(val_fields.insert(name.clone(), val).is_none());
+        assert!(val_fields.insert(name, val).is_none());
       }
       Ok(json::Val::Object(val_fields))
     }
