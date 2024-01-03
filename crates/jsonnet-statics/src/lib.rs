@@ -32,8 +32,8 @@ pub struct Cx {
 impl Default for Cx {
   fn default() -> Self {
     let mut ret = Self { store: FxHashSet::default() };
-    ret.insert(Id::STD);
-    ret.insert(Id::STD_UNUTTERABLE);
+    ret.insert(Id::std);
+    ret.insert(Id::std_unutterable);
     ret
   }
 }
@@ -56,8 +56,8 @@ pub fn check(st: &mut St, cx: &Cx, ars: &Arenas, expr: Expr) {
     ExprData::Object { asserts, fields } => {
       let cx_big = {
         let mut cx = cx.clone();
-        cx.insert(Id::SELF);
-        cx.insert(Id::SUPER);
+        cx.insert(Id::self_);
+        cx.insert(Id::super_);
         cx
       };
       let mut field_names = FxHashSet::<&Str>::default();
@@ -80,8 +80,8 @@ pub fn check(st: &mut St, cx: &Cx, ars: &Arenas, expr: Expr) {
       let mut cx = cx.clone();
       cx.insert(*id);
       check(st, &cx, ars, *name);
-      cx.insert(Id::SELF);
-      cx.insert(Id::SUPER);
+      cx.insert(Id::self_);
+      cx.insert(Id::super_);
       check(st, &cx, ars, *body);
     }
     ExprData::Array(exprs) => {

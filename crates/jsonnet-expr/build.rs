@@ -30,33 +30,30 @@ impl<const N: usize> Group<N> {
 #[allow(clippy::too_many_lines)]
 fn main() {
   let identifiers = Group([
-    ("std", Some("STD")),
-    // STD_UNUTTERABLE is the same as STD but it has a str that cannot be written in user code as an
+    ("std", None),
+    // std_unutterable is the same as std but it has a str that cannot be written in user code as an
     // id, so it will never be shadowed. it is used in desugaring.
-    ("$std", Some("STD_UNUTTERABLE")),
-    ("self", Some("SELF")),
-    ("super", Some("SUPER")),
-    ("$", Some("DOLLAR")),
+    ("$std", Some("std_unutterable")),
+    ("self", Some("self_")),
+    ("super", Some("super_")),
+    ("$", Some("dollar")),
   ]);
   let std_fns = Group([
-    ("cmp", Some("CMP")),
-    ("equals", Some("EQUALS")),
-    ("join", Some("JOIN")),
-    ("length", Some("LENGTH")),
-    ("makeArray", Some("MAKE_ARRAY")),
-    ("mod", Some("MOD")),
-    ("objectHasEx", Some("OBJECT_HAS_EX")),
-    ("slice", Some("SLICE")),
+    ("cmp", None),
+    ("equals", None),
+    ("join", None),
+    ("length", None),
+    ("makeArray", None),
+    ("mod", Some("mod_")),
+    ("objectHasEx", None),
+    ("slice", None),
   ]);
   let messages = Group([
     ("Assertion failed", Some("ASSERTION_FAILED")),
     ("Parameter not bound", Some("PARAMETER_NOT_BOUND")),
   ]);
-  let strings = || {
-    std::iter::once(Entry::new("thisFile", Some("THIS_FILE")))
-      .chain(std_fns.iter())
-      .chain(messages.iter())
-  };
+  let strings =
+    || std::iter::once(Entry::new("thisFile", None)).chain(std_fns.iter()).chain(messages.iter());
   let all = || identifiers.iter().chain(strings());
 
   let mut names = HashSet::<&'static str>::new();
@@ -94,6 +91,7 @@ fn main() {
     });
 
     quote! {
+      #[allow(non_upper_case_globals)]
       impl StrIdx {
         #(#str_idx_constants)*
       }
@@ -133,6 +131,7 @@ fn main() {
     });
 
     quote! {
+      #[allow(non_upper_case_globals)]
       impl Id {
         #(#constants)*
       }
@@ -146,6 +145,7 @@ fn main() {
     });
 
     quote! {
+      #[allow(non_upper_case_globals)]
       impl Str {
         #(#constants)*
       }

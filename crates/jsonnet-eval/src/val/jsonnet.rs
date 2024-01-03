@@ -16,19 +16,19 @@ impl Env {
 
   #[must_use]
   pub(crate) fn get(&self, id: Id) -> Get<'_> {
-    if id == Id::SELF {
+    if id == Id::self_ {
       return Get::Self_;
     }
-    if id == Id::SUPER {
+    if id == Id::super_ {
       return Get::Super;
     }
-    if id == Id::STD_UNUTTERABLE {
+    if id == Id::std_unutterable {
       return Get::Std;
     }
     if let Some(&(ref env, expr)) = self.store.get(&id) {
       Get::Expr(env, expr)
     } else {
-      assert_eq!(id, Id::STD, "get failed: {id:?}");
+      assert_eq!(id, Id::std, "get failed: {id:?}");
       Get::Std
     }
   }
@@ -215,7 +215,7 @@ pub enum StdField {
 
 impl StdField {
   fn all() -> impl Iterator<Item = (&'static Str, Self)> {
-    std::iter::once((&Str::THIS_FILE, StdField::ThisFile))
+    std::iter::once((&Str::thisFile, StdField::ThisFile))
       .chain(StdFn::ALL.iter().map(|(a, b)| (a, StdField::Fn(*b))))
   }
 }
@@ -224,7 +224,7 @@ impl TryFrom<&Str> for StdField {
   type Error = ();
 
   fn try_from(s: &Str) -> Result<Self, Self::Error> {
-    if *s == Str::THIS_FILE {
+    if *s == Str::thisFile {
       return Ok(Self::ThisFile);
     }
     if let Some(&(_, x)) = StdFn::ALL.iter().find(|&(x, _)| x == s) {
