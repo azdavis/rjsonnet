@@ -318,7 +318,7 @@ fn t4() {
 }
 
 #[test]
-#[should_panic = "not yet implemented: std.mod"]
+#[should_panic = "manifest error: incompatible types"]
 fn t5() {
   manifest(
     r"
