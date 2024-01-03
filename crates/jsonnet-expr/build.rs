@@ -3,57 +3,77 @@
 use quote::{format_ident, quote};
 use std::collections::HashSet;
 
+#[derive(Debug, Clone, Copy)]
+struct Entry {
+  name: &'static str,
+  content: &'static str,
+}
+
+impl Entry {
+  fn new(content: &'static str, name: Option<&'static str>) -> Entry {
+    Entry { name: name.unwrap_or(content), content }
+  }
+}
+
+struct Group<const N: usize>([(&'static str, Option<&'static str>); N]);
+
+impl<const N: usize> Group<N> {
+  fn iter(&self) -> impl Iterator<Item = Entry> + '_ {
+    self.0.iter().map(|&(a, b)| Entry::new(a, b))
+  }
+
+  fn len(&self) -> usize {
+    self.0.len()
+  }
+}
+
 #[allow(clippy::too_many_lines)]
 fn main() {
-  let identifiers = [
-    ("STD", "std"),
+  let identifiers = Group([
+    ("std", Some("STD")),
     // STD_UNUTTERABLE is the same as STD but it has a str that cannot be written in user code as an
     // id, so it will never be shadowed. it is used in desugaring.
-    ("STD_UNUTTERABLE", "$std"),
-    ("SELF", "self"),
-    ("SUPER", "super"),
-    // OUTER_SELF and OUTER_SUPER are also unutterable and are used in the desugaring.
-    ("OUTER_SELF", "$outerself"),
-    ("OUTER_SUPER", "$outersuper"),
-    ("DOLLAR", "$"),
-  ];
-  let std_fns = [
-    ("CMP", "cmp"),
-    ("EQUALS", "equals"),
-    ("JOIN", "join"),
-    ("LENGTH", "length"),
-    ("MAKE_ARRAY", "makeArray"),
-    ("MOD", "mod"),
-    ("OBJECT_HAS_EX", "objectHasEx"),
-    ("SLICE", "slice"),
-  ];
-  let messages = [
-    ("ASSERTION_FAILED", "Assertion failed"),
-    ("PARAMETER_NOT_BOUND", "Parameter not bound"),
-    ("TODO", "TODO"),
-  ];
+    ("$std", Some("STD_UNUTTERABLE")),
+    ("self", Some("SELF")),
+    ("super", Some("SUPER")),
+    ("$", Some("DOLLAR")),
+  ]);
+  let std_fns = Group([
+    ("cmp", Some("CMP")),
+    ("equals", Some("EQUALS")),
+    ("join", Some("JOIN")),
+    ("length", Some("LENGTH")),
+    ("makeArray", Some("MAKE_ARRAY")),
+    ("mod", Some("MOD")),
+    ("objectHasEx", Some("OBJECT_HAS_EX")),
+    ("slice", Some("SLICE")),
+  ]);
+  let messages = Group([
+    ("Assertion failed", Some("ASSERTION_FAILED")),
+    ("Parameter not bound", Some("PARAMETER_NOT_BOUND")),
+  ]);
   let strings = || {
-    std::iter::empty()
-      .chain(std::iter::once(("THIS_FILE", "thisFile")))
-      .chain(std_fns.iter().copied())
-      .chain(messages.iter().copied())
+    std::iter::once(Entry::new("thisFile", Some("THIS_FILE")))
+      .chain(std_fns.iter())
+      .chain(messages.iter())
   };
+  let all = || identifiers.iter().chain(strings());
 
   let mut names = HashSet::<&'static str>::new();
   let mut contents = HashSet::<&'static str>::new();
-  for (name, content) in identifiers.iter().copied().chain(strings()) {
-    assert!(names.insert(name), "duplicate name: {name}");
-    assert!(contents.insert(content), "duplicate content: {content}");
+  for Entry { name, content } in all() {
+    assert!(names.insert(name), "duplicate name: {name}",);
+    assert!(contents.insert(content), "duplicate content: {content}",);
   }
   drop(names);
   drop(contents);
 
   let impl_str_idx_and_arena = {
     let str_idx_constants = std::iter::empty()
-      .chain(identifiers.iter().map(|&x| (x, false)))
+      .chain(identifiers.iter().map(|x| (x, false)))
       .chain(strings().map(|x| (x, true)))
       .enumerate()
-      .map(|(idx, ((name, _), is_pub))| {
+      .map(|(idx, (Entry { name, .. }, is_pub))| {
         let name = format_ident!("{name}");
         let idx = u32::try_from(idx).unwrap();
         let vis = if is_pub {
@@ -63,15 +83,14 @@ fn main() {
         };
         quote! { #vis const #name: Self = Self(#idx); }
       });
-    let str_idx_debug_arms =
-      identifiers.iter().copied().chain(strings()).enumerate().map(|(idx, (_, contents))| {
-        let idx = u32::try_from(idx).unwrap();
-        quote! { #idx => d.field(&#contents) }
-      });
-    let capacity = identifiers.len() + strings().count();
-    let str_arena_inserts = identifiers.iter().copied().chain(strings()).map(|(name, contents)| {
+    let str_idx_debug_arms = all().enumerate().map(|(idx, Entry { content, .. })| {
+      let idx = u32::try_from(idx).unwrap();
+      quote! { #idx => d.field(&#content) }
+    });
+    let capacity = all().count();
+    let str_arena_inserts = all().map(|Entry { name, content }| {
       let name = format_ident!("{name}");
-      quote! { assert_eq!(StrIdx::#name, ret.mk_idx(bs(#contents))); }
+      quote! { assert_eq!(StrIdx::#name, ret.mk_idx(bs(#content))); }
     });
 
     quote! {
@@ -108,7 +127,7 @@ fn main() {
   };
 
   let impl_id = {
-    let constants = identifiers.iter().map(|&(name, _)| {
+    let constants = identifiers.iter().map(|Entry { name, .. }| {
       let name = format_ident!("{name}");
       quote! { pub const #name: Self = Self(StrIdx::#name); }
     });
@@ -121,7 +140,7 @@ fn main() {
   };
 
   let impl_str = {
-    let constants = strings().map(|(name, _)| {
+    let constants = strings().map(|Entry { name, .. }| {
       let name = format_ident!("{name}");
       quote! { pub const #name: Self = Self(StrRepr::Idx(StrIdx::#name)); }
     });
@@ -134,9 +153,9 @@ fn main() {
   };
 
   let std_fn = {
-    let variants = std_fns.iter().map(|&(name, _)| format_ident!("{name}"));
+    let variants = std_fns.iter().map(|Entry { name, .. }| format_ident!("{name}"));
     let count = std_fns.len();
-    let str_variant_tuples = std_fns.iter().map(|&(name, _)| {
+    let str_variant_tuples = std_fns.iter().map(|Entry { name, .. }| {
       let name = format_ident!("{name}");
       quote! { (Str::#name, Self::#name) }
     });
