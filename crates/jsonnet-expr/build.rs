@@ -34,14 +34,14 @@ fn main() {
   ];
   let strings = || {
     std::iter::empty()
-      .chain(std::iter::once(&("THIS_FILE", "thisFile")))
-      .chain(std_fns.iter())
-      .chain(messages.iter())
+      .chain(std::iter::once(("THIS_FILE", "thisFile")))
+      .chain(std_fns.iter().copied())
+      .chain(messages.iter().copied())
   };
 
   let mut names = HashSet::<&'static str>::new();
   let mut contents = HashSet::<&'static str>::new();
-  for &(name, content) in identifiers.iter().chain(strings()) {
+  for (name, content) in identifiers.iter().copied().chain(strings()) {
     assert!(names.insert(name), "duplicate name: {name}");
     assert!(contents.insert(content), "duplicate content: {content}");
   }
@@ -50,10 +50,10 @@ fn main() {
 
   let impl_str_idx_and_arena = {
     let str_idx_constants = std::iter::empty()
-      .chain(identifiers.iter().map(|x| (x, false)))
+      .chain(identifiers.iter().map(|&x| (x, false)))
       .chain(strings().map(|x| (x, true)))
       .enumerate()
-      .map(|(idx, (&(name, _), is_pub))| {
+      .map(|(idx, ((name, _), is_pub))| {
         let name = format_ident!("{name}");
         let idx = u32::try_from(idx).unwrap();
         let vis = if is_pub {
@@ -64,12 +64,12 @@ fn main() {
         quote! { #vis const #name: Self = Self(#idx); }
       });
     let str_idx_debug_arms =
-      identifiers.iter().chain(strings()).enumerate().map(|(idx, &(_, contents))| {
+      identifiers.iter().copied().chain(strings()).enumerate().map(|(idx, (_, contents))| {
         let idx = u32::try_from(idx).unwrap();
         quote! { #idx => d.field(&#contents) }
       });
     let capacity = identifiers.len() + strings().count();
-    let str_arena_inserts = identifiers.iter().chain(strings()).map(|&(name, contents)| {
+    let str_arena_inserts = identifiers.iter().copied().chain(strings()).map(|(name, contents)| {
       let name = format_ident!("{name}");
       quote! { assert_eq!(StrIdx::#name, ret.mk_idx(bs(#contents))); }
     });
@@ -121,7 +121,7 @@ fn main() {
   };
 
   let impl_str = {
-    let constants = strings().map(|&(name, _)| {
+    let constants = strings().map(|(name, _)| {
       let name = format_ident!("{name}");
       quote! { pub const #name: Self = Self(StrRepr::Idx(StrIdx::#name)); }
     });
