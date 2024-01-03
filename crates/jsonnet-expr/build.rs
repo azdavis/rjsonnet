@@ -134,19 +134,15 @@ fn main() {
   };
 
   let std_fn = {
-    let variants = std_fns.iter().map(|&(name, _)| {
-      let pascal = identifier_case::snake_to_pascal(name);
-      format_ident!("{pascal}")
-    });
+    let variants = std_fns.iter().map(|&(name, _)| format_ident!("{name}"));
     let count = std_fns.len();
     let str_variant_tuples = std_fns.iter().map(|&(name, _)| {
-      let pascal = identifier_case::snake_to_pascal(name);
-      let str_name = format_ident!("{name}");
-      let variant_name = format_ident!("{pascal}");
-      quote! { (Str::#str_name, Self::#variant_name) }
+      let name = format_ident!("{name}");
+      quote! { (Str::#name, Self::#name) }
     });
     quote! {
       #[derive(Debug, Clone, Copy)]
+      #[allow(non_camel_case_types)]
       pub enum StdFn {
         #(#variants,)*
       }

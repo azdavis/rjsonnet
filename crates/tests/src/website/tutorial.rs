@@ -318,7 +318,7 @@ fn t4() {
 }
 
 #[test]
-#[should_panic = "not yet implemented: std Mod"]
+#[should_panic = "not yet implemented: std MOD"]
 fn t5() {
   manifest(
     r"

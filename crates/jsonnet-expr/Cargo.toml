@@ -18,5 +18,4 @@ rustc-hash.workspace = true
 
 [build-dependencies]
 quote.workspace = true
-identifier-case.workspace = true
 write-rs-tokens.workspace = true

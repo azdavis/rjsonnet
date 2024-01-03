@@ -100,7 +100,6 @@ dependencies = [
 name = "jsonnet-expr"
 version = "0.1.0"
 dependencies = [
- "identifier-case",
  "la-arena",
  "quote",
  "rustc-hash",

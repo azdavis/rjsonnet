@@ -142,7 +142,7 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
         get(&env, ars, body)
       }
       Val::StdFn(std_fn) => match std_fn {
-        StdFn::Cmp => {
+        StdFn::CMP => {
           if !named.is_empty() {
             return mk_error(error::Kind::StdFuncNamedArgs);
           }
@@ -158,7 +158,7 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
             Prim::Number(num)
           })
         }
-        StdFn::Equals => {
+        StdFn::EQUALS => {
           if !named.is_empty() {
             return mk_error(error::Kind::StdFuncNamedArgs);
           }
@@ -167,12 +167,12 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
           };
           cmp_bool_op(expr, env, ars, lhs, rhs, Ordering::is_eq)
         }
-        StdFn::Join => todo!("std Join"),
-        StdFn::Length => todo!("std Length"),
-        StdFn::MakeArray => todo!("std MakeArray"),
-        StdFn::Mod => todo!("std Mod"),
-        StdFn::ObjectHasEx => todo!("std ObjectHasEx"),
-        StdFn::Slice => todo!("std Slice"),
+        StdFn::JOIN => todo!("std JOIN"),
+        StdFn::LENGTH => todo!("std LENGTH"),
+        StdFn::MAKE_ARRAY => todo!("std MAKE_ARRAY"),
+        StdFn::MOD => todo!("std MOD"),
+        StdFn::OBJECT_HAS_EX => todo!("std OBJECT_HAS_EX"),
+        StdFn::SLICE => todo!("std SLICE"),
       },
       _ => mk_error(error::Kind::IncompatibleTypes),
     },
