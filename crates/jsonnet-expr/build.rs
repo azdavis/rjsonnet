@@ -1,7 +1,7 @@
 //! Generate some string/identifier names.
 
 use quote::{format_ident, quote};
-use std::collections::HashSet;
+use std::collections::{BTreeSet, HashSet};
 
 #[derive(Debug, Clone, Copy)]
 struct S {
@@ -143,6 +143,9 @@ fn main() {
     (S::new("equals"), &["a", "b"]),
     (S::new("objectHasEx"), &["o", "f"]),
   ];
+  let std_fn_names: HashSet<_> = std_fns.iter().map(|&(S { name, .. }, _)| name).collect();
+  let arg_names: BTreeSet<_> =
+    std_fns.iter().flat_map(|&(_, xs)| xs).copied().filter(|x| !std_fn_names.contains(x)).collect();
   let builtin_identifiers = [
     S::new("std"),
     // std_unutterable is the same as std but it has a str that cannot be written in user code as an
@@ -152,7 +155,8 @@ fn main() {
     S::named("super", "super_"),
     S::named("$", "dollar"),
   ];
-  let identifiers = || builtin_identifiers.iter().copied();
+  let identifiers =
+    || builtin_identifiers.iter().copied().chain(arg_names.iter().map(|&x| S::new(x)));
   let messages = [
     S::named("Assertion failed", "ASSERTION_FAILED"),
     S::named("Parameter not bound", "PARAMETER_NOT_BOUND"),
