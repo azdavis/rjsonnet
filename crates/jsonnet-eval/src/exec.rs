@@ -31,8 +31,8 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
       for &(key, hid, val) in fields {
         match get(env, ars, key)? {
           Val::Prim(Prim::String(s)) => {
-            if named_fields.insert(s, (hid, val)).is_some() {
-              return mk_error(error::Kind::DuplicateField);
+            if named_fields.insert(s.clone(), (hid, val)).is_some() {
+              return mk_error(error::Kind::DuplicateField(s));
             }
           }
           Val::Prim(Prim::Null) => {}
@@ -57,8 +57,8 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
               ExprData::Prim(_) => body,
               _ => todo!("subst for object comp"),
             };
-            if fields.insert(s, (Visibility::Default, Some(body))).is_some() {
-              return mk_error(error::Kind::DuplicateField);
+            if fields.insert(s.clone(), (Visibility::Default, Some(body))).is_some() {
+              return mk_error(error::Kind::DuplicateField(s));
             }
           }
           Val::Prim(Prim::Null) => {}
@@ -115,8 +115,9 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
     },
     ExprData::Call { func, positional, named } => match get(env, ars, *func)? {
       Val::Function { env: func_env, mut params, body } => {
-        if positional.len() + named.len() > params.len() {
-          return mk_error(error::Kind::TooManyArguments);
+        let tma = error::TooManyArguments::new(params.len(), positional.len(), named.len());
+        if let Some(tma) = tma {
+          return mk_error(error::Kind::TooManyArguments(tma));
         }
         let mut provided = FxHashSet::<Id>::default();
         for ((id, param), &arg) in params.iter_mut().zip(positional) {
@@ -125,7 +126,7 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
         }
         for &(arg_name, arg) in named {
           if !provided.insert(arg_name) {
-            return mk_error(error::Kind::DuplicateArgument);
+            return mk_error(error::Kind::DuplicateArgument(arg_name));
           }
           // we're getting a little fancy here. this iterates across the mutable params, and if we
           // could find a param whose name matches the arg's name, then this sets the param to that

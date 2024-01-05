@@ -16,15 +16,28 @@ impl Error {
 }
 
 #[derive(Debug)]
+pub struct TooManyArguments {
+  params: usize,
+  positional: usize,
+  named: usize,
+}
+
+impl TooManyArguments {
+  pub(crate) fn new(params: usize, positional: usize, named: usize) -> Option<Self> {
+    (positional + named > params).then_some(Self { params, positional, named })
+  }
+}
+
+#[derive(Debug)]
 pub enum Kind {
   ArrayIdxNotInteger,
   ArrayIdxOutOfRange,
-  DuplicateArgument,
-  DuplicateField,
+  DuplicateArgument(jsonnet_expr::Id),
+  DuplicateField(jsonnet_expr::Str),
   IncompatibleTypes,
   NoSuchArgument(jsonnet_expr::Id),
   NoSuchField(jsonnet_expr::Str),
-  TooManyArguments,
+  TooManyArguments(TooManyArguments),
   Infinite(jsonnet_expr::Infinite),
   User(jsonnet_expr::Str),
   /// TODO remove this and allow named args for std fns
@@ -43,12 +56,16 @@ impl fmt::Display for DisplayError<'_> {
       Error::Exec { kind, .. } => match kind {
         Kind::ArrayIdxNotInteger => f.write_str("array index not an integer"),
         Kind::ArrayIdxOutOfRange => f.write_str("array index out of range"),
-        Kind::DuplicateArgument => f.write_str("duplicate argument"),
-        Kind::DuplicateField => f.write_str("duplicate field"),
+        Kind::DuplicateArgument(x) => write!(f, "duplicate argument: {}", x.display(self.ar)),
+        Kind::DuplicateField(x) => write!(f, "duplicate field: {}", self.ar.get(x)),
         Kind::IncompatibleTypes => f.write_str("incompatible types"),
         Kind::NoSuchArgument(arg) => write!(f, "no such argument: {}", arg.display(self.ar)),
         Kind::NoSuchField(name) => write!(f, "no such field: {}", self.ar.get(name)),
-        Kind::TooManyArguments => f.write_str("too many arguments"),
+        Kind::TooManyArguments(tma) => write!(
+          f,
+          "too many arguments: have {} parameters, but got {} positional and {} named arguments",
+          tma.params, tma.positional, tma.named
+        ),
         Kind::Infinite(inf) => write!(f, "infinite number: {inf}"),
         Kind::User(s) => write!(f, "explicit `error`: {}", self.ar.get(s)),
         Kind::StdFuncNamedArgs => f.write_str("named arguments to a `std` function"),
