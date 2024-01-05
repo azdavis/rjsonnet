@@ -243,17 +243,17 @@ impl fmt::Display for Infinite {
 }
 
 /// A string, which may be interned.
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Str(StrRepr);
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 enum StrRepr {
   Idx(StrIdx),
   Alloc(Box<str>),
 }
 
 /// An interned string, which is an index into a string arena.
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 struct StrIdx(u32);
 
 impl StrIdx {

@@ -2,8 +2,8 @@
 
 use crate::val::{json, jsonnet};
 use crate::{error, exec};
-use jsonnet_expr::Arenas;
-use rustc_hash::FxHashMap;
+use jsonnet_expr::{Arenas, Str};
+use std::collections::BTreeMap;
 
 /// Manifests the Jsonnet value into a JSON value.
 ///
@@ -21,7 +21,7 @@ pub fn get(ars: &Arenas, val: jsonnet::Val) -> error::Result<json::Val> {
       for (env, expr) in object.asserts() {
         get_(&env, ars, expr)?;
       }
-      let mut val_fields = FxHashMap::default();
+      let mut val_fields = BTreeMap::<Str, json::Val>::default();
       for (name, vis, field) in object.fields() {
         if matches!(vis, jsonnet_expr::Visibility::Hidden) {
           continue;

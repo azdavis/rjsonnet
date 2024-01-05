@@ -2,6 +2,7 @@
 
 use jsonnet_expr::{Expr, Id, Prim, StdFn, Str, Visibility};
 use rustc_hash::{FxHashMap, FxHashSet};
+use std::collections::BTreeMap;
 
 #[derive(Debug, Default, Clone)]
 pub struct Env {
@@ -102,7 +103,7 @@ impl Object {
   pub(crate) fn new(
     env: Env,
     asserts: Vec<Expr>,
-    fields: FxHashMap<Str, (Visibility, Expr)>,
+    fields: BTreeMap<Str, (Visibility, Expr)>,
   ) -> Self {
     let kind = ObjectKind::Regular(RegularObjectKind { env, asserts, fields });
     Self { parent: None, kind, is_super: false }
@@ -198,7 +199,8 @@ enum ObjectKind {
 struct RegularObjectKind {
   env: Env,
   asserts: Vec<Expr>,
-  fields: FxHashMap<Str, (Visibility, Expr)>,
+  /// we want non-random order
+  fields: BTreeMap<Str, (Visibility, Expr)>,
 }
 
 #[derive(Debug)]

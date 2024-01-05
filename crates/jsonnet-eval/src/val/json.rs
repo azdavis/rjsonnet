@@ -1,14 +1,13 @@
 //! JSON values.
 
 use jsonnet_expr::{Prim, Str};
-use rustc_hash::FxHashMap;
-use std::fmt;
+use std::{collections::BTreeMap, fmt};
 
 /// A JSON value.
 #[derive(Debug, PartialEq, Eq)]
 pub enum Val {
   Prim(Prim),
-  Object(FxHashMap<Str, Val>),
+  Object(BTreeMap<Str, Val>),
   Array(Vec<Val>),
 }
 

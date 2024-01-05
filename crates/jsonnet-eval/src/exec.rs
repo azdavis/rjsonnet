@@ -6,8 +6,9 @@ use crate::val::jsonnet::{Array, Env, Field, Get, Object, StdField, Val};
 use jsonnet_expr::{
   Arenas, BinaryOp, Expr, ExprData, ExprMust, Id, Number, Prim, StdFn, Str, StrArena, Visibility,
 };
-use rustc_hash::{FxHashMap, FxHashSet};
+use rustc_hash::FxHashSet;
 use std::cmp::Ordering;
+use std::collections::BTreeMap;
 
 const EPSILON: f64 = 0.0001;
 
@@ -26,7 +27,7 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
   match &ars.expr[expr] {
     ExprData::Prim(p) => Ok(Val::Prim(p.clone())),
     ExprData::Object { asserts, fields } => {
-      let mut named_fields = FxHashMap::<Str, (Visibility, Expr)>::default();
+      let mut named_fields = BTreeMap::<Str, (Visibility, Expr)>::default();
       for &(key, hid, val) in fields {
         match get(env, ars, key)? {
           Val::Prim(Prim::String(s)) => {
@@ -44,7 +45,7 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
       let Val::Array(array) = get(env, ars, *ary)? else {
         return mk_error(error::Kind::IncompatibleTypes);
       };
-      let mut fields = FxHashMap::<Str, (Visibility, Expr)>::default();
+      let mut fields = BTreeMap::<Str, (Visibility, Expr)>::default();
       for (part_env, elem) in array.iter() {
         let mut env = env.clone();
         env.insert(*id, part_env.clone(), elem);
