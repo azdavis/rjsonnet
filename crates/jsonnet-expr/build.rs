@@ -21,15 +21,6 @@ impl S {
 
 #[allow(clippy::too_many_lines)]
 fn main() {
-  let identifiers = [
-    S::new("std"),
-    // std_unutterable is the same as std but it has a str that cannot be written in user code as an
-    // id, so it will never be shadowed. it is used in desugaring.
-    S::named("$std", "std_unutterable"),
-    S::named("self", "self_"),
-    S::named("super", "super_"),
-    S::named("$", "dollar"),
-  ];
   // TODO use the arg names
   let std_fns = [
     (S::new("extVar"), &["x"][..]),
@@ -152,6 +143,16 @@ fn main() {
     (S::new("equals"), &["a", "b"]),
     (S::new("objectHasEx"), &["o", "f"]),
   ];
+  let builtin_identifiers = [
+    S::new("std"),
+    // std_unutterable is the same as std but it has a str that cannot be written in user code as an
+    // id, so it will never be shadowed. it is used in desugaring.
+    S::named("$std", "std_unutterable"),
+    S::named("self", "self_"),
+    S::named("super", "super_"),
+    S::named("$", "dollar"),
+  ];
+  let identifiers = || builtin_identifiers.iter().copied();
   let messages = [
     S::named("Assertion failed", "ASSERTION_FAILED"),
     S::named("Parameter not bound", "PARAMETER_NOT_BOUND"),
@@ -161,7 +162,7 @@ fn main() {
       .chain(std_fns.iter().map(|&(s, _)| s))
       .chain(messages.iter().copied())
   };
-  let all = || identifiers.iter().copied().chain(strings());
+  let all = || identifiers().chain(strings());
 
   let mut names = HashSet::<&'static str>::new();
   let mut contents = HashSet::<&'static str>::new();
@@ -174,7 +175,7 @@ fn main() {
 
   let impl_str_idx_and_arena = {
     let str_idx_constants = std::iter::empty()
-      .chain(identifiers.iter().map(|&x| (x, false)))
+      .chain(identifiers().map(|x| (x, false)))
       .chain(strings().map(|x| (x, true)))
       .enumerate()
       .map(|(idx, (S { name, .. }, is_pub))| {
@@ -234,7 +235,7 @@ fn main() {
   };
 
   let impl_id = {
-    let constants = identifiers.iter().map(|S { name, .. }| {
+    let constants = identifiers().map(|S { name, .. }| {
       let name = format_ident!("{name}");
       quote! { pub const #name: Self = Self(StrIdx::#name); }
     });
