@@ -101,6 +101,7 @@ name = "jsonnet-expr"
 version = "0.1.0"
 dependencies = [
  "la-arena",
+ "proc-macro2",
  "quote",
  "rustc-hash",
  "write-rs-tokens",

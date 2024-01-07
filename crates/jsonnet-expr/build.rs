@@ -143,9 +143,13 @@ fn main() {
     (S::new("equals"), &["a", "b"]),
     (S::new("objectHasEx"), &["o", "f"]),
   ];
-  let std_fn_names: HashSet<_> = std_fns.iter().map(|&(S { name, .. }, _)| name).collect();
-  let arg_names: BTreeSet<_> =
-    std_fns.iter().flat_map(|&(_, xs)| xs).copied().filter(|x| !std_fn_names.contains(x)).collect();
+  let arg_names: BTreeSet<_> = std_fns.iter().flat_map(|&(_, xs)| xs).copied().collect();
+  let arg_names_except_std_fn_names = {
+    let std_fn_names: HashSet<_> = std_fns.iter().map(|&(S { name, .. }, _)| name).collect();
+    let mut tmp = arg_names.clone();
+    tmp.retain(|x| !std_fn_names.contains(x));
+    tmp
+  };
   let builtin_identifiers = [
     S::new("std"),
     // std_unutterable is the same as std but it has a str that cannot be written in user code as an
@@ -155,15 +159,19 @@ fn main() {
     S::named("super", "super_"),
     S::named("$", "dollar"),
   ];
-  let identifiers =
-    || builtin_identifiers.iter().copied().chain(arg_names.iter().map(|&x| S::new(x)));
   let messages = [S::named("Assertion failed", "ASSERTION_FAILED")];
   let strings = || {
     std::iter::once(S::new("thisFile"))
       .chain(std_fns.iter().map(|&(s, _)| s))
       .chain(messages.iter().copied())
   };
-  let all = || identifiers().chain(strings());
+
+  let all = || {
+    std::iter::empty()
+      .chain(builtin_identifiers.iter().copied())
+      .chain(arg_names_except_std_fn_names.iter().map(|&x| S::new(x)))
+      .chain(strings())
+  };
 
   let mut names = HashSet::<&'static str>::new();
   let mut contents = HashSet::<&'static str>::new();
@@ -176,7 +184,8 @@ fn main() {
 
   let impl_str_idx_and_arena = {
     let str_idx_constants = std::iter::empty()
-      .chain(identifiers().map(|x| (x, false)))
+      .chain(builtin_identifiers.iter().copied().map(|x| (x, false)))
+      .chain(arg_names_except_std_fn_names.iter().map(|&x| (S::new(x), false)))
       .chain(strings().map(|x| (x, true)))
       .enumerate()
       .map(|(idx, (S { name, .. }, is_pub))| {
@@ -236,10 +245,18 @@ fn main() {
   };
 
   let impl_id = {
-    let constants = identifiers().map(|S { name, .. }| {
-      let name = format_ident!("{name}");
-      quote! { pub const #name: Self = Self(StrIdx::#name); }
-    });
+    let constants = std::iter::empty()
+      .chain(builtin_identifiers.iter().copied().map(|x| (x, true)))
+      .chain(arg_names.iter().map(|&x| (S::new(x), false)))
+      .map(|(S { name, .. }, is_pub)| {
+        let name = format_ident!("{name}");
+        let vis = if is_pub {
+          quote! { pub }
+        } else {
+          quote! {}
+        };
+        quote! { #vis const #name: Self = Self(StrIdx::#name); }
+      });
 
     quote! {
       #[allow(non_upper_case_globals)]
@@ -270,6 +287,7 @@ fn main() {
       let name = format_ident!("{name}");
       quote! { (Str::#name, Self::#name) }
     });
+    let get_args = std_fns.iter().map(|&(S { name, .. }, params)| mk_std_fn_get_args(name, params));
     quote! {
       #[derive(Debug, Clone, Copy)]
       #[allow(non_camel_case_types)]
@@ -283,45 +301,12 @@ fn main() {
         ];
       }
 
+      #[allow(non_camel_case_types, non_snake_case, clippy::self_named_constructors)]
       pub mod std_fn_args {
         use crate::arg::{Result, TooMany, Error, ErrorKind};
         use crate::{Id, Expr, ExprMust};
-        #[doc = "# Errors"]
-        #[doc = "If getting the args failed."]
-        pub fn get_a_b(positional: &[Expr], named: &[(Id, Expr)], expr: ExprMust) -> Result<[Expr; 2]> {
-          if let Some(tma) = TooMany::new(2, positional.len(), named.len()) {
-            return Err(Error { expr, kind: ErrorKind::TooMany(tma) });
-          }
-          let mut positional = positional.iter().copied();
-          let mut a = positional.next();
-          let mut b = positional.next();
-          for &(arg_name, arg) in named {
-            if arg_name == Id::a {
-              match a {
-                None => a = Some(arg),
-                Some(_) => {
-                  return Err(Error { expr: arg.unwrap_or(expr), kind: ErrorKind::Duplicate(arg_name) })
-                }
-              }
-            } else if arg_name == Id::b {
-              match b {
-                None => b = Some(arg),
-                Some(_) => {
-                  return Err(Error { expr: arg.unwrap_or(expr), kind: ErrorKind::Duplicate(arg_name) })
-                }
-              }
-            } else {
-              return Err(Error { expr: arg.unwrap_or(expr), kind: ErrorKind::NotRequested(arg_name) });
-            }
-          }
-          let Some(a) = a else {
-            return Err(Error { expr, kind: ErrorKind::NotDefined(Id::a) });
-          };
-          let Some(b) = b else {
-            return Err(Error { expr, kind: ErrorKind::NotDefined(Id::b) });
-          };
-          Ok([a, b])
-        }
+
+        #(#get_args)*
       }
     }
   };
@@ -344,4 +329,80 @@ fn main() {
     #std_fn
   };
   write_rs_tokens::go(contents, "generated.rs");
+}
+
+fn mk_std_fn_get_args(name: &str, params: &[&str]) -> proc_macro2::TokenStream {
+  let name = format_ident!("{name}");
+  let in_progress = format_ident!("__Tmp_{name}");
+  let num_params = params.len();
+  let fields = params.iter().map(|&param| {
+    let param = format_ident!("{param}");
+    quote! { pub #param: Expr, }
+  });
+  let opt_fields = params.iter().map(|&param| {
+    let param = format_ident!("{param}");
+    quote! { #param: Option<Expr>, }
+  });
+  let init_from_positional = params.iter().map(|&param| {
+    let param = format_ident!("{param}");
+    quote! { #param: positional.next(), }
+  });
+  let set_from_named = params.iter().map(|&param| {
+    let param = format_ident!("{param}");
+    quote! {
+      if arg_name == Id::#param {
+        match in_progress.#param {
+          None => in_progress.#param = Some(arg),
+          Some(_) => return Err(Error { expr: arg.unwrap_or(expr), kind: ErrorKind::Duplicate(arg_name) }),
+        }
+      } else
+    }
+  });
+  let require_vars_set = params.iter().map(|&param| {
+    let param = format_ident!("{param}");
+    quote! {
+      if in_progress.#param.is_none() {
+        return Err(Error { expr, kind: ErrorKind::NotDefined(Id::#param) });
+      }
+    }
+  });
+  let unwraps_unchecked = params.iter().map(|&param| {
+    let param = format_ident!("{param}");
+    quote! { #param: unsafe { in_progress.#param.unwrap_unchecked() }, }
+  });
+  quote! {
+    #[derive(Debug)]
+    pub struct #name {
+      #(#fields)*
+    }
+
+    struct #in_progress {
+      #(#opt_fields)*
+    }
+
+    impl #name {
+      #[doc = "# Errors"]
+      #[doc = "If getting the args failed."]
+      pub fn get(
+        positional: &[Expr],
+        named: &[(Id, Expr)],
+        expr: ExprMust,
+      ) -> Result<#name> {
+        if let Some(tma) = TooMany::new(#num_params, positional.len(), named.len()) {
+          return Err(Error { expr, kind: ErrorKind::TooMany(tma) });
+        }
+        let mut positional = positional.iter().copied();
+        let mut in_progress = #in_progress {
+          #(#init_from_positional)*
+        };
+        for &(arg_name, arg) in named {
+          #(#set_from_named)* {
+            return Err(Error { expr: arg.unwrap_or(expr), kind: ErrorKind::NotRequested(arg_name) });
+          }
+        }
+        #(#require_vars_set)*
+        Ok(Self { #(#unwraps_unchecked)* })
+      }
+    }
+  }
 }
