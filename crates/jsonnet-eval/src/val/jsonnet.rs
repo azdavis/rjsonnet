@@ -72,7 +72,7 @@ pub enum Val {
     /// we'd like to get good performance for lookup by both index for positional arguments and name
     /// for keyword arguments, but to do that we'd need to something like double the memory and
     /// store both a vec and a map. which we could do but we choose to not right now.
-    params: Vec<(Id, Expr)>,
+    params: Vec<(Id, Option<Expr>)>,
     body: Expr,
   },
   StdFn(StdFn),

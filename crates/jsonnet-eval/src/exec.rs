@@ -74,7 +74,7 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
           return mk_error(error::Kind::IncompatibleTypes);
         };
         let Some((_, field)) = object.get_field(&name) else {
-          return mk_error(error::Kind::NoSuchField(name.clone()));
+          return mk_error(error::Kind::FieldNotDefined(name.clone()));
         };
         // TODO do we need all the asserts/do we have to evaluate them to json values?
         for (env, assert) in object.asserts() {
@@ -115,13 +115,12 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
     },
     ExprData::Call { func, positional, named } => match get(env, ars, *func)? {
       Val::Function { env: func_env, mut params, body } => {
-        let tma = error::TooManyArguments::new(params.len(), positional.len(), named.len());
-        if let Some(tma) = tma {
-          return mk_error(error::Kind::TooManyArguments(tma));
+        if let Some(tma) = error::TooManyArgs::new(params.len(), positional.len(), named.len()) {
+          return mk_error(error::Kind::TooManyArgs(tma));
         }
         let mut provided = FxHashSet::<Id>::default();
         for ((id, param), &arg) in params.iter_mut().zip(positional) {
-          *param = arg;
+          *param = Some(arg);
           assert!(provided.insert(*id), "duplicate function param should be forbidden by check");
         }
         for &(arg_name, arg) in named {
@@ -132,15 +131,26 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
           // could find a param whose name matches the arg's name, then this sets the param to that
           // arg and short circuits with true. note `==` with comparing the names and `=` with
           // setting the actual exprs. note the usage of `bool::then` with `find_map` and `is_none`.
-          let failed_to_set_arg = params
+          let arg_not_requested = params
             .iter_mut()
-            .find_map(|(param_name, param)| (*param_name == arg_name).then(|| *param = arg))
+            .find_map(|(param_name, param)| (*param_name == arg_name).then(|| *param = Some(arg)))
             .is_none();
-          if failed_to_set_arg {
-            return mk_error(error::Kind::NoSuchArgument(arg_name));
+          if arg_not_requested {
+            return mk_error(error::Kind::ArgNotRequested(arg_name));
           }
         }
-        let env = add_binds(&func_env, &params);
+        let mut env = func_env.clone();
+        for (id, expr) in params {
+          match expr {
+            // from my (not super close) reading of the spec, it seems like for function parameters
+            // without default values, the default value should be set to `error "Parameter not
+            // bound"`, which will _lazily_ emit the error if the parameter is accessed. but the
+            // behavior of the impl on the website is to _eagerly_ error if a param is not defined.
+            // so we do that here.
+            None => return mk_error(error::Kind::ParamNotDefined(id)),
+            Some(expr) => env.insert(id, func_env.clone(), expr),
+          }
+        }
         get(&env, ars, body)
       }
       Val::StdFn(std_fn) => match std_fn {
@@ -392,9 +402,8 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
 }
 
 fn get_a_b(positional: &[Expr], named: &[(Id, Expr)], expr: ExprMust) -> Result<[Expr; 2]> {
-  let tma = error::TooManyArguments::new(2, positional.len(), named.len());
-  if let Some(tma) = tma {
-    return Err(error::Error::Exec { expr, kind: error::Kind::TooManyArguments(tma) });
+  if let Some(tma) = error::TooManyArgs::new(2, positional.len(), named.len()) {
+    return Err(error::Error::Exec { expr, kind: error::Kind::TooManyArgs(tma) });
   }
   let mut positional = positional.iter().copied();
   let mut a = positional.next().flatten();
@@ -415,7 +424,7 @@ fn get_a_b(positional: &[Expr], named: &[(Id, Expr)], expr: ExprMust) -> Result<
         }
       }
     } else {
-      return Err(error::Error::Exec { expr, kind: error::Kind::NoSuchArgument(arg_name) });
+      return Err(error::Error::Exec { expr, kind: error::Kind::ArgNotRequested(arg_name) });
     }
   }
   Ok([a, b])

@@ -204,9 +204,7 @@ where
         let subscript = Some(st.expr(ptr, ExprData::Subscript { on: arr_expr, idx: idx_expr }));
         let recur_with_subscript = ExprData::Local { binds: vec![(for_var, subscript)], body: ac };
         let recur_with_subscript = Some(st.expr(ptr, recur_with_subscript));
-        let unbound_err = err_param_unbound(st, ptr);
-        let lambda =
-          ExprData::Function { params: vec![(idx, unbound_err)], body: recur_with_subscript };
+        let lambda = ExprData::Function { params: vec![(idx, None)], body: recur_with_subscript };
         let lambda_recur_with_subscript = Some(st.expr(ptr, lambda));
         let make_array =
           call_std_func(st, ptr, Str::makeArray, vec![length, lambda_recur_with_subscript]);
@@ -236,30 +234,17 @@ fn get_bind(st: &mut St, bind: ast::Bind, in_obj: bool) -> Option<(Id, Expr)> {
   Some((lhs, rhs))
 }
 
-#[allow(clippy::unnecessary_wraps)]
-fn err_param_unbound(st: &mut St, ptr: ast::SyntaxNodePtr) -> Expr {
-  let msg = ExprData::Prim(Prim::String(Str::PARAMETER_NOT_BOUND));
-  let msg = Some(st.expr(ptr, msg));
-  Some(st.expr(ptr, ExprData::Error(msg)))
-}
-
 fn get_fn(
   st: &mut St,
   paren_params: Option<ast::ParenParams>,
   body: Option<ast::Expr>,
   in_obj: bool,
 ) -> ExprData {
-  let mut params = Vec::<(Id, Expr)>::new();
+  let mut params = Vec::<(Id, Option<Expr>)>::new();
   for param in paren_params.into_iter().flat_map(|x| x.params()) {
     let Some(lhs) = param.id() else { continue };
     let lhs = st.id(lhs);
-    let rhs = match param.eq_expr() {
-      Some(rhs) => get_expr(st, rhs.expr(), in_obj),
-      None => {
-        let ptr = ast::SyntaxNodePtr::new(param.syntax());
-        err_param_unbound(st, ptr)
-      }
-    };
+    let rhs = param.eq_expr().map(|rhs| get_expr(st, rhs.expr(), in_obj));
     params.push((lhs, rhs));
   }
   let body = get_expr(st, body, in_obj);

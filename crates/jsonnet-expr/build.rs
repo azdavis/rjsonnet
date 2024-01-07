@@ -157,10 +157,7 @@ fn main() {
   ];
   let identifiers =
     || builtin_identifiers.iter().copied().chain(arg_names.iter().map(|&x| S::new(x)));
-  let messages = [
-    S::named("Assertion failed", "ASSERTION_FAILED"),
-    S::named("Parameter not bound", "PARAMETER_NOT_BOUND"),
-  ];
+  let messages = [S::named("Assertion failed", "ASSERTION_FAILED")];
   let strings = || {
     std::iter::once(S::new("thisFile"))
       .chain(std_fns.iter().map(|&(s, _)| s))

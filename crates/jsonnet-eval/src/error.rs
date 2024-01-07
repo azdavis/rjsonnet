@@ -16,13 +16,13 @@ impl Error {
 }
 
 #[derive(Debug)]
-pub struct TooManyArguments {
+pub struct TooManyArgs {
   params: usize,
   positional: usize,
   named: usize,
 }
 
-impl TooManyArguments {
+impl TooManyArgs {
   pub(crate) fn new(params: usize, positional: usize, named: usize) -> Option<Self> {
     (positional + named > params).then_some(Self { params, positional, named })
   }
@@ -35,9 +35,10 @@ pub enum Kind {
   DuplicateArgument(jsonnet_expr::Id),
   DuplicateField(jsonnet_expr::Str),
   IncompatibleTypes,
-  NoSuchArgument(jsonnet_expr::Id),
-  NoSuchField(jsonnet_expr::Str),
-  TooManyArguments(TooManyArguments),
+  TooManyArgs(TooManyArgs),
+  ArgNotRequested(jsonnet_expr::Id),
+  ParamNotDefined(jsonnet_expr::Id),
+  FieldNotDefined(jsonnet_expr::Str),
   Infinite(jsonnet_expr::Infinite),
   User(jsonnet_expr::Str),
 }
@@ -56,13 +57,28 @@ impl fmt::Display for DisplayError<'_> {
         Kind::DuplicateArgument(x) => write!(f, "duplicate argument: {}", x.display(self.ar)),
         Kind::DuplicateField(x) => write!(f, "duplicate field: {}", self.ar.get(x)),
         Kind::IncompatibleTypes => f.write_str("incompatible types"),
-        Kind::NoSuchArgument(arg) => write!(f, "no such argument: {}", arg.display(self.ar)),
-        Kind::NoSuchField(name) => write!(f, "no such field: {}", self.ar.get(name)),
-        Kind::TooManyArguments(tma) => write!(
+        Kind::TooManyArgs(tma) => write!(
           f,
           "too many arguments: have {} parameters, but got {} positional and {} named arguments",
           tma.params, tma.positional, tma.named
         ),
+        Kind::ArgNotRequested(arg) => {
+          write!(
+            f,
+            "argument `{}` was not requested at the function definition site",
+            arg.display(self.ar)
+          )
+        }
+        Kind::ParamNotDefined(arg) => {
+          write!(
+            f,
+            "parameter `{}` was not defined at the function call site",
+            arg.display(self.ar)
+          )
+        }
+        Kind::FieldNotDefined(name) => {
+          write!(f, "field `{}` not defined", self.ar.get(name))
+        }
         Kind::Infinite(inf) => write!(f, "infinite number: {inf}"),
         Kind::User(s) => write!(f, "explicit `error`: {}", self.ar.get(s)),
       },

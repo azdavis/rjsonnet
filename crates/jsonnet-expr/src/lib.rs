@@ -59,7 +59,7 @@ pub enum ExprData {
     inner: Expr,
   },
   Function {
-    params: Vec<(Id, Expr)>,
+    params: Vec<(Id, Option<Expr>)>,
     body: Expr,
   },
   Error(Expr),
