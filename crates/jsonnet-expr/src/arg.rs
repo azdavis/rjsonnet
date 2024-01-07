@@ -1,8 +1,6 @@
 use crate::{ExprMust, Id, StrArena};
 use std::fmt;
 
-pub use crate::generated::std_fn_args as std_fn;
-
 #[derive(Debug)]
 pub struct TooMany {
   params: usize,

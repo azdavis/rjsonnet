@@ -4,7 +4,7 @@ use crate::error::{self, Result};
 use crate::manifest;
 use crate::val::jsonnet::{Array, Env, Field, Get, Object, StdField, Val};
 use jsonnet_expr::{
-  arg, Arenas, BinaryOp, Expr, ExprData, ExprMust, Id, Number, Prim, StdFn, Str, StrArena,
+  arg, std_fn, Arenas, BinaryOp, Expr, ExprData, ExprMust, Id, Number, Prim, StdFn, Str, StrArena,
   Visibility,
 };
 use rustc_hash::FxHashSet;
@@ -278,7 +278,7 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
         StdFn::mergePatch => todo!("std.mergePatch"),
         StdFn::trace => todo!("std.trace"),
         StdFn::cmp => {
-          let arguments = arg::std_fn::cmp::get(positional, named, expr)?;
+          let arguments = std_fn::args::cmp(positional, named, expr)?;
           cmp_op(expr, env, ars, arguments.a, arguments.b, |ord| {
             let num = match ord {
               Ordering::Less => Number::negative_one(),
@@ -289,7 +289,7 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
           })
         }
         StdFn::equals => {
-          let arguments = arg::std_fn::equals::get(positional, named, expr)?;
+          let arguments = std_fn::args::equals(positional, named, expr)?;
           cmp_bool_op(expr, env, ars, arguments.a, arguments.b, Ordering::is_eq)
         }
         StdFn::objectHasEx => todo!("std.objectHasEx"),

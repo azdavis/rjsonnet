@@ -8,7 +8,7 @@ mod generated {
 
 pub mod arg;
 
-pub use generated::StdFn;
+pub use generated::{std_fn, StdFn};
 pub use la_arena::{Arena, ArenaMap, Idx};
 
 use rustc_hash::FxHashMap;

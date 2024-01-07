@@ -3,6 +3,8 @@
 use quote::{format_ident, quote};
 use std::collections::{BTreeSet, HashSet};
 
+const TMP: &str = "__Tmp";
+
 #[derive(Debug, Clone, Copy)]
 struct S {
   name: &'static str,
@@ -178,6 +180,7 @@ fn main() {
   for S { name, content } in all() {
     assert!(names.insert(name), "duplicate name: {name}",);
     assert!(contents.insert(content), "duplicate content: {content}",);
+    assert!(!name.starts_with(TMP));
   }
   drop(names);
   drop(contents);
@@ -287,7 +290,9 @@ fn main() {
       let name = format_ident!("{name}");
       quote! { (Str::#name, Self::#name) }
     });
-    let get_args = std_fns.iter().map(|&(S { name, .. }, params)| mk_std_fn_get_args(name, params));
+    let unique_param_lists: BTreeSet<_> = std_fns.iter().map(|&(_, params)| params).collect();
+    let get_params = unique_param_lists.iter().map(|&params| mk_get_params(params));
+    let get_args = std_fns.iter().map(|&(S { name, .. }, params)| mk_get_args(name, params));
     quote! {
       #[derive(Debug, Clone, Copy)]
       #[allow(non_camel_case_types)]
@@ -301,12 +306,23 @@ fn main() {
         ];
       }
 
-      #[allow(non_camel_case_types, non_snake_case, clippy::self_named_constructors)]
-      pub mod std_fn_args {
-        use crate::arg::{Result, TooMany, Error, ErrorKind};
-        use crate::{Id, Expr, ExprMust};
+      pub mod std_fn {
+        #[allow(non_camel_case_types, non_snake_case)]
+        pub mod params {
+          use crate::arg::{Result, TooMany, Error, ErrorKind};
+          use crate::{Id, Expr, ExprMust};
 
-        #(#get_args)*
+          #(#get_params)*
+        }
+
+        #[allow(non_snake_case)]
+        pub mod args {
+          use crate::arg::{Result};
+          use crate::{Id, Expr, ExprMust};
+          use super::params;
+
+          #(#get_args)*
+        }
       }
     }
   };
@@ -331,9 +347,27 @@ fn main() {
   write_rs_tokens::go(contents, "generated.rs");
 }
 
-fn mk_std_fn_get_args(name: &str, params: &[&str]) -> proc_macro2::TokenStream {
+fn mk_get_args(name: &str, params: &[&str]) -> proc_macro2::TokenStream {
+  let args_struct = params.join("_");
+  let args_struct = format_ident!("{args_struct}");
   let name = format_ident!("{name}");
-  let in_progress = format_ident!("__Tmp_{name}");
+  quote! {
+    #[doc = "# Errors"]
+    #[doc = "If getting the args failed."]
+    pub fn #name(
+      positional: &[Expr],
+      named: &[(Id, Expr)],
+      expr: ExprMust,
+    ) -> Result<params::#args_struct> {
+      params::#args_struct::get(positional, named, expr)
+    }
+  }
+}
+
+fn mk_get_params(params: &[&str]) -> proc_macro2::TokenStream {
+  let name = params.join("_");
+  let name = format_ident!("{name}");
+  let in_progress = format_ident!("{TMP}_{name}");
   let num_params = params.len();
   let fields = params.iter().map(|&param| {
     let param = format_ident!("{param}");
@@ -351,10 +385,10 @@ fn mk_std_fn_get_args(name: &str, params: &[&str]) -> proc_macro2::TokenStream {
     let param = format_ident!("{param}");
     quote! {
       if arg_name == Id::#param {
-        match in_progress.#param {
-          None => in_progress.#param = Some(arg),
-          Some(_) => return Err(Error { expr: arg.unwrap_or(expr), kind: ErrorKind::Duplicate(arg_name) }),
+        if in_progress.#param.is_some() {
+          return Err(Error { expr: arg.unwrap_or(expr), kind: ErrorKind::Duplicate(arg_name) });
         }
+        in_progress.#param = Some(arg);
       } else
     }
   });
@@ -381,13 +415,11 @@ fn mk_std_fn_get_args(name: &str, params: &[&str]) -> proc_macro2::TokenStream {
     }
 
     impl #name {
-      #[doc = "# Errors"]
-      #[doc = "If getting the args failed."]
-      pub fn get(
+      pub(crate) fn get(
         positional: &[Expr],
         named: &[(Id, Expr)],
         expr: ExprMust,
-      ) -> Result<#name> {
+      ) -> Result<Self> {
         if let Some(tma) = TooMany::new(#num_params, positional.len(), named.len()) {
           return Err(Error { expr, kind: ErrorKind::TooMany(tma) });
         }
