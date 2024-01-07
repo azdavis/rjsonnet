@@ -19,6 +19,19 @@ inc(3)
   );
 }
 
+// TODO fix
+#[test]
+#[should_panic = "no error"]
+fn undef_fn_arg() {
+  exec_err(
+    r"
+local f = function(b, x) if b then x else 1;
+f(false)
+",
+    "undefined argument: x",
+  );
+}
+
 #[test]
 #[should_panic = "parse error: expected expression"]
 fn parse_fail() {
