@@ -406,118 +406,454 @@ fn get_std_fn(
   std_fn: StdFn,
 ) -> Result<Val> {
   match std_fn {
-    StdFn::extVar => todo!("std.extVar"),
-    StdFn::type_ => todo!("std.type"),
-    StdFn::length => todo!("std.length"),
-    StdFn::get => todo!("std.get"),
-    StdFn::objectHas => todo!("std.objectHas"),
-    StdFn::objectFields => todo!("std.objectFields"),
-    StdFn::objectValues => todo!("std.objectValues"),
-    StdFn::objectKeysValues => todo!("std.objectKeysValues"),
-    StdFn::objectHasAll => todo!("std.objectHasAll"),
-    StdFn::objectFieldsAll => todo!("std.objectFieldsAll"),
-    StdFn::objectValuesAll => todo!("std.objectValuesAll"),
-    StdFn::objectKeysValuesAll => todo!("std.objectKeysValuesAll"),
-    StdFn::prune => todo!("std.prune"),
-    StdFn::mapWithKey => todo!("std.mapWithKey"),
-    StdFn::abs => todo!("std.abs"),
-    StdFn::sign => todo!("std.sign"),
-    StdFn::max => todo!("std.max"),
-    StdFn::min => todo!("std.min"),
-    StdFn::pow => todo!("std.pow"),
-    StdFn::exp => todo!("std.exp"),
-    StdFn::log => todo!("std.log"),
-    StdFn::exponent => todo!("std.exponent"),
-    StdFn::mantissa => todo!("std.mantissa"),
-    StdFn::floor => todo!("std.floor"),
-    StdFn::ceil => todo!("std.ceil"),
-    StdFn::sqrt => todo!("std.sqrt"),
-    StdFn::sin => todo!("std.sin"),
-    StdFn::cos => todo!("std.cos"),
-    StdFn::tan => todo!("std.tan"),
-    StdFn::asin => todo!("std.asin"),
-    StdFn::acos => todo!("std.acos"),
-    StdFn::atan => todo!("std.atan"),
-    StdFn::round => todo!("std.round"),
-    StdFn::mod_ => todo!("std.mod"),
-    StdFn::clamp => todo!("std.clamp"),
-    StdFn::assertEqual => todo!("std.assertEqual"),
-    StdFn::toString => todo!("std.toString"),
-    StdFn::codepoint => todo!("std.codepoint"),
-    StdFn::char => todo!("std.char"),
-    StdFn::substr => todo!("std.substr"),
-    StdFn::findSubstr => todo!("std.findSubstr"),
-    StdFn::startsWith => todo!("std.startsWith"),
-    StdFn::endsWith => todo!("std.endsWith"),
-    StdFn::stripChars => todo!("std.stripChars"),
-    StdFn::lstripChars => todo!("std.lstripChars"),
-    StdFn::rstripChars => todo!("std.rstripChars"),
-    StdFn::split => todo!("std.split"),
-    StdFn::splitLimit => todo!("std.splitLimit"),
-    StdFn::splitLimitR => todo!("std.splitLimitR"),
-    StdFn::strReplace => todo!("std.strReplace"),
-    StdFn::isEmpty => todo!("std.isEmpty"),
-    StdFn::asciiUpper => todo!("std.asciiUpper"),
-    StdFn::asciiLower => todo!("std.asciiLower"),
-    StdFn::stringChars => todo!("std.stringChars"),
-    StdFn::format => todo!("std.format"),
-    StdFn::escapeStringBash => todo!("std.escapeStringBash"),
-    StdFn::escapeStringDollars => todo!("std.escapeStringDollars"),
-    StdFn::escapeStringJson => todo!("std.escapeStringJson"),
-    StdFn::escapeStringPython => todo!("std.escapeStringPython"),
-    StdFn::escapeStringXml => todo!("std.escapeStringXml"),
-    StdFn::parseInt => todo!("std.parseInt"),
-    StdFn::parseOctal => todo!("std.parseOctal"),
-    StdFn::parseHex => todo!("std.parseHex"),
-    StdFn::parseJson => todo!("std.parseJson"),
-    StdFn::parseYaml => todo!("std.parseYaml"),
-    StdFn::encodeUTF8 => todo!("std.encodeUTF8"),
-    StdFn::decodeUTF8 => todo!("std.decodeUTF8"),
-    StdFn::manifestIni => todo!("std.manifestIni"),
-    StdFn::manifestPython => todo!("std.manifestPython"),
-    StdFn::manifestPythonVars => todo!("std.manifestPythonVars"),
-    StdFn::manifestJsonEx => todo!("std.manifestJsonEx"),
-    StdFn::manifestJsonMinified => todo!("std.manifestJsonMinified"),
-    StdFn::manifestYamlDoc => todo!("std.manifestYamlDoc"),
-    StdFn::manifestYamlStream => todo!("std.manifestYamlStream"),
-    StdFn::manifestXmlJsonml => todo!("std.manifestXmlJsonml"),
-    StdFn::manifestTomlEx => todo!("std.manifestTomlEx"),
-    StdFn::makeArray => todo!("std.makeArray"),
-    StdFn::member => todo!("std.member"),
-    StdFn::count => todo!("std.count"),
-    StdFn::find => todo!("std.find"),
-    StdFn::map => todo!("std.map"),
-    StdFn::mapWithIndex => todo!("std.mapWithIndex"),
-    StdFn::filterMap => todo!("std.filterMap"),
-    StdFn::flatMap => todo!("std.flatMap"),
-    StdFn::filter => todo!("std.filter"),
-    StdFn::foldl => todo!("std.foldl"),
-    StdFn::foldr => todo!("std.foldr"),
-    StdFn::range => todo!("std.range"),
-    StdFn::repeat => todo!("std.repeat"),
-    StdFn::slice => todo!("std.slice"),
-    StdFn::join => todo!("std.join"),
-    StdFn::lines => todo!("std.lines"),
-    StdFn::flattenArrays => todo!("std.flattenArrays"),
-    StdFn::reverse => todo!("std.reverse"),
-    StdFn::sort => todo!("std.sort"),
-    StdFn::uniq => todo!("std.uniq"),
-    StdFn::all => todo!("std.all"),
-    StdFn::any => todo!("std.any"),
-    StdFn::sum => todo!("std.sum"),
-    StdFn::set => todo!("std.set"),
-    StdFn::setInter => todo!("std.setInter"),
-    StdFn::setUnion => todo!("std.setUnion"),
-    StdFn::setDiff => todo!("std.setDiff"),
-    StdFn::setMember => todo!("std.setMember"),
-    StdFn::base64 => todo!("std.base64"),
-    StdFn::base64DecodeBytes => todo!("std.base64DecodeBytes"),
-    StdFn::base64Decode => todo!("std.base64Decode"),
-    StdFn::md5 => todo!("std.md5"),
-    StdFn::xor => todo!("std.xor"),
-    StdFn::xnor => todo!("std.xnor"),
-    StdFn::mergePatch => todo!("std.mergePatch"),
-    StdFn::trace => todo!("std.trace"),
+    StdFn::extVar => {
+      let _ = std_fn::args::extVar(positional, named, expr)?;
+      todo!("std.extVar")
+    }
+    StdFn::type_ => {
+      let _ = std_fn::args::type_(positional, named, expr)?;
+      todo!("std.type")
+    }
+    StdFn::length => {
+      let _ = std_fn::args::length(positional, named, expr)?;
+      todo!("std.length")
+    }
+    StdFn::get => {
+      let _ = std_fn::args::get(positional, named, expr)?;
+      todo!("std.get")
+    }
+    StdFn::objectHas => {
+      let _ = std_fn::args::objectHas(positional, named, expr)?;
+      todo!("std.objectHas")
+    }
+    StdFn::objectFields => {
+      let _ = std_fn::args::objectFields(positional, named, expr)?;
+      todo!("std.objectFields")
+    }
+    StdFn::objectValues => {
+      let _ = std_fn::args::objectValues(positional, named, expr)?;
+      todo!("std.objectValues")
+    }
+    StdFn::objectKeysValues => {
+      let _ = std_fn::args::objectKeysValues(positional, named, expr)?;
+      todo!("std.objectKeysValues")
+    }
+    StdFn::objectHasAll => {
+      let _ = std_fn::args::objectHasAll(positional, named, expr)?;
+      todo!("std.objectHasAll")
+    }
+    StdFn::objectFieldsAll => {
+      let _ = std_fn::args::objectFieldsAll(positional, named, expr)?;
+      todo!("std.objectFieldsAll")
+    }
+    StdFn::objectValuesAll => {
+      let _ = std_fn::args::objectValuesAll(positional, named, expr)?;
+      todo!("std.objectValuesAll")
+    }
+    StdFn::objectKeysValuesAll => {
+      let _ = std_fn::args::objectKeysValuesAll(positional, named, expr)?;
+      todo!("std.objectKeysValuesAll")
+    }
+    StdFn::prune => {
+      let _ = std_fn::args::prune(positional, named, expr)?;
+      todo!("std.prune")
+    }
+    StdFn::mapWithKey => {
+      let _ = std_fn::args::mapWithKey(positional, named, expr)?;
+      todo!("std.mapWithKey")
+    }
+    StdFn::abs => {
+      let _ = std_fn::args::abs(positional, named, expr)?;
+      todo!("std.abs")
+    }
+    StdFn::sign => {
+      let _ = std_fn::args::sign(positional, named, expr)?;
+      todo!("std.sign")
+    }
+    StdFn::max => {
+      let _ = std_fn::args::max(positional, named, expr)?;
+      todo!("std.max")
+    }
+    StdFn::min => {
+      let _ = std_fn::args::min(positional, named, expr)?;
+      todo!("std.min")
+    }
+    StdFn::pow => {
+      let _ = std_fn::args::pow(positional, named, expr)?;
+      todo!("std.pow")
+    }
+    StdFn::exp => {
+      let _ = std_fn::args::exp(positional, named, expr)?;
+      todo!("std.exp")
+    }
+    StdFn::log => {
+      let _ = std_fn::args::log(positional, named, expr)?;
+      todo!("std.log")
+    }
+    StdFn::exponent => {
+      let _ = std_fn::args::exponent(positional, named, expr)?;
+      todo!("std.exponent")
+    }
+    StdFn::mantissa => {
+      let _ = std_fn::args::mantissa(positional, named, expr)?;
+      todo!("std.mantissa")
+    }
+    StdFn::floor => {
+      let _ = std_fn::args::floor(positional, named, expr)?;
+      todo!("std.floor")
+    }
+    StdFn::ceil => {
+      let _ = std_fn::args::ceil(positional, named, expr)?;
+      todo!("std.ceil")
+    }
+    StdFn::sqrt => {
+      let _ = std_fn::args::sqrt(positional, named, expr)?;
+      todo!("std.sqrt")
+    }
+    StdFn::sin => {
+      let _ = std_fn::args::sin(positional, named, expr)?;
+      todo!("std.sin")
+    }
+    StdFn::cos => {
+      let _ = std_fn::args::cos(positional, named, expr)?;
+      todo!("std.cos")
+    }
+    StdFn::tan => {
+      let _ = std_fn::args::tan(positional, named, expr)?;
+      todo!("std.tan")
+    }
+    StdFn::asin => {
+      let _ = std_fn::args::asin(positional, named, expr)?;
+      todo!("std.asin")
+    }
+    StdFn::acos => {
+      let _ = std_fn::args::acos(positional, named, expr)?;
+      todo!("std.acos")
+    }
+    StdFn::atan => {
+      let _ = std_fn::args::atan(positional, named, expr)?;
+      todo!("std.atan")
+    }
+    StdFn::round => {
+      let _ = std_fn::args::round(positional, named, expr)?;
+      todo!("std.round")
+    }
+    StdFn::mod_ => {
+      let _ = std_fn::args::mod_(positional, named, expr)?;
+      todo!("std.mod")
+    }
+    StdFn::clamp => {
+      let _ = std_fn::args::clamp(positional, named, expr)?;
+      todo!("std.clamp")
+    }
+    StdFn::assertEqual => {
+      let _ = std_fn::args::assertEqual(positional, named, expr)?;
+      todo!("std.assertEqual")
+    }
+    StdFn::toString => {
+      let _ = std_fn::args::toString(positional, named, expr)?;
+      todo!("std.toString")
+    }
+    StdFn::codepoint => {
+      let _ = std_fn::args::codepoint(positional, named, expr)?;
+      todo!("std.codepoint")
+    }
+    StdFn::char => {
+      let _ = std_fn::args::char(positional, named, expr)?;
+      todo!("std.char")
+    }
+    StdFn::substr => {
+      let _ = std_fn::args::substr(positional, named, expr)?;
+      todo!("std.substr")
+    }
+    StdFn::findSubstr => {
+      let _ = std_fn::args::findSubstr(positional, named, expr)?;
+      todo!("std.findSubstr")
+    }
+    StdFn::startsWith => {
+      let _ = std_fn::args::startsWith(positional, named, expr)?;
+      todo!("std.startsWith")
+    }
+    StdFn::endsWith => {
+      let _ = std_fn::args::endsWith(positional, named, expr)?;
+      todo!("std.endsWith")
+    }
+    StdFn::stripChars => {
+      let _ = std_fn::args::stripChars(positional, named, expr)?;
+      todo!("std.stripChars")
+    }
+    StdFn::lstripChars => {
+      let _ = std_fn::args::lstripChars(positional, named, expr)?;
+      todo!("std.lstripChars")
+    }
+    StdFn::rstripChars => {
+      let _ = std_fn::args::rstripChars(positional, named, expr)?;
+      todo!("std.rstripChars")
+    }
+    StdFn::split => {
+      let _ = std_fn::args::split(positional, named, expr)?;
+      todo!("std.split")
+    }
+    StdFn::splitLimit => {
+      let _ = std_fn::args::splitLimit(positional, named, expr)?;
+      todo!("std.splitLimit")
+    }
+    StdFn::splitLimitR => {
+      let _ = std_fn::args::splitLimitR(positional, named, expr)?;
+      todo!("std.splitLimitR")
+    }
+    StdFn::strReplace => {
+      let _ = std_fn::args::strReplace(positional, named, expr)?;
+      todo!("std.strReplace")
+    }
+    StdFn::isEmpty => {
+      let _ = std_fn::args::isEmpty(positional, named, expr)?;
+      todo!("std.isEmpty")
+    }
+    StdFn::asciiUpper => {
+      let _ = std_fn::args::asciiUpper(positional, named, expr)?;
+      todo!("std.asciiUpper")
+    }
+    StdFn::asciiLower => {
+      let _ = std_fn::args::asciiLower(positional, named, expr)?;
+      todo!("std.asciiLower")
+    }
+    StdFn::stringChars => {
+      let _ = std_fn::args::stringChars(positional, named, expr)?;
+      todo!("std.stringChars")
+    }
+    StdFn::format => {
+      let _ = std_fn::args::format(positional, named, expr)?;
+      todo!("std.format")
+    }
+    StdFn::escapeStringBash => {
+      let _ = std_fn::args::escapeStringBash(positional, named, expr)?;
+      todo!("std.escapeStringBash")
+    }
+    StdFn::escapeStringDollars => {
+      let _ = std_fn::args::escapeStringDollars(positional, named, expr)?;
+      todo!("std.escapeStringDollars")
+    }
+    StdFn::escapeStringJson => {
+      let _ = std_fn::args::escapeStringJson(positional, named, expr)?;
+      todo!("std.escapeStringJson")
+    }
+    StdFn::escapeStringPython => {
+      let _ = std_fn::args::escapeStringPython(positional, named, expr)?;
+      todo!("std.escapeStringPython")
+    }
+    StdFn::escapeStringXml => {
+      let _ = std_fn::args::escapeStringXml(positional, named, expr)?;
+      todo!("std.escapeStringXml")
+    }
+    StdFn::parseInt => {
+      let _ = std_fn::args::parseInt(positional, named, expr)?;
+      todo!("std.parseInt")
+    }
+    StdFn::parseOctal => {
+      let _ = std_fn::args::parseOctal(positional, named, expr)?;
+      todo!("std.parseOctal")
+    }
+    StdFn::parseHex => {
+      let _ = std_fn::args::parseHex(positional, named, expr)?;
+      todo!("std.parseHex")
+    }
+    StdFn::parseJson => {
+      let _ = std_fn::args::parseJson(positional, named, expr)?;
+      todo!("std.parseJson")
+    }
+    StdFn::parseYaml => {
+      let _ = std_fn::args::parseYaml(positional, named, expr)?;
+      todo!("std.parseYaml")
+    }
+    StdFn::encodeUTF8 => {
+      let _ = std_fn::args::encodeUTF8(positional, named, expr)?;
+      todo!("std.encodeUTF8")
+    }
+    StdFn::decodeUTF8 => {
+      let _ = std_fn::args::decodeUTF8(positional, named, expr)?;
+      todo!("std.decodeUTF8")
+    }
+    StdFn::manifestIni => {
+      let _ = std_fn::args::manifestIni(positional, named, expr)?;
+      todo!("std.manifestIni")
+    }
+    StdFn::manifestPython => {
+      let _ = std_fn::args::manifestPython(positional, named, expr)?;
+      todo!("std.manifestPython")
+    }
+    StdFn::manifestPythonVars => {
+      let _ = std_fn::args::manifestPythonVars(positional, named, expr)?;
+      todo!("std.manifestPythonVars")
+    }
+    StdFn::manifestJsonEx => {
+      let _ = std_fn::args::manifestJsonEx(positional, named, expr)?;
+      todo!("std.manifestJsonEx")
+    }
+    StdFn::manifestJsonMinified => {
+      let _ = std_fn::args::manifestJsonMinified(positional, named, expr)?;
+      todo!("std.manifestJsonMinified")
+    }
+    StdFn::manifestYamlDoc => {
+      let _ = std_fn::args::manifestYamlDoc(positional, named, expr)?;
+      todo!("std.manifestYamlDoc")
+    }
+    StdFn::manifestYamlStream => {
+      let _ = std_fn::args::manifestYamlStream(positional, named, expr)?;
+      todo!("std.manifestYamlStream")
+    }
+    StdFn::manifestXmlJsonml => {
+      let _ = std_fn::args::manifestXmlJsonml(positional, named, expr)?;
+      todo!("std.manifestXmlJsonml")
+    }
+    StdFn::manifestTomlEx => {
+      let _ = std_fn::args::manifestTomlEx(positional, named, expr)?;
+      todo!("std.manifestTomlEx")
+    }
+    StdFn::makeArray => {
+      let _ = std_fn::args::makeArray(positional, named, expr)?;
+      todo!("std.makeArray")
+    }
+    StdFn::member => {
+      let _ = std_fn::args::member(positional, named, expr)?;
+      todo!("std.member")
+    }
+    StdFn::count => {
+      let _ = std_fn::args::count(positional, named, expr)?;
+      todo!("std.count")
+    }
+    StdFn::find => {
+      let _ = std_fn::args::find(positional, named, expr)?;
+      todo!("std.find")
+    }
+    StdFn::map => {
+      let _ = std_fn::args::map(positional, named, expr)?;
+      todo!("std.map")
+    }
+    StdFn::mapWithIndex => {
+      let _ = std_fn::args::mapWithIndex(positional, named, expr)?;
+      todo!("std.mapWithIndex")
+    }
+    StdFn::filterMap => {
+      let _ = std_fn::args::filterMap(positional, named, expr)?;
+      todo!("std.filterMap")
+    }
+    StdFn::flatMap => {
+      let _ = std_fn::args::flatMap(positional, named, expr)?;
+      todo!("std.flatMap")
+    }
+    StdFn::filter => {
+      let _ = std_fn::args::filter(positional, named, expr)?;
+      todo!("std.filter")
+    }
+    StdFn::foldl => {
+      let _ = std_fn::args::foldl(positional, named, expr)?;
+      todo!("std.foldl")
+    }
+    StdFn::foldr => {
+      let _ = std_fn::args::foldr(positional, named, expr)?;
+      todo!("std.foldr")
+    }
+    StdFn::range => {
+      let _ = std_fn::args::range(positional, named, expr)?;
+      todo!("std.range")
+    }
+    StdFn::repeat => {
+      let _ = std_fn::args::repeat(positional, named, expr)?;
+      todo!("std.repeat")
+    }
+    StdFn::slice => {
+      let _ = std_fn::args::slice(positional, named, expr)?;
+      todo!("std.slice")
+    }
+    StdFn::join => {
+      let _ = std_fn::args::join(positional, named, expr)?;
+      todo!("std.join")
+    }
+    StdFn::lines => {
+      let _ = std_fn::args::lines(positional, named, expr)?;
+      todo!("std.lines")
+    }
+    StdFn::flattenArrays => {
+      let _ = std_fn::args::flattenArrays(positional, named, expr)?;
+      todo!("std.flattenArrays")
+    }
+    StdFn::reverse => {
+      let _ = std_fn::args::reverse(positional, named, expr)?;
+      todo!("std.reverse")
+    }
+    StdFn::sort => {
+      let _ = std_fn::args::sort(positional, named, expr)?;
+      todo!("std.sort")
+    }
+    StdFn::uniq => {
+      let _ = std_fn::args::uniq(positional, named, expr)?;
+      todo!("std.uniq")
+    }
+    StdFn::all => {
+      let _ = std_fn::args::all(positional, named, expr)?;
+      todo!("std.all")
+    }
+    StdFn::any => {
+      let _ = std_fn::args::any(positional, named, expr)?;
+      todo!("std.any")
+    }
+    StdFn::sum => {
+      let _ = std_fn::args::sum(positional, named, expr)?;
+      todo!("std.sum")
+    }
+    StdFn::set => {
+      let _ = std_fn::args::set(positional, named, expr)?;
+      todo!("std.set")
+    }
+    StdFn::setInter => {
+      let _ = std_fn::args::setInter(positional, named, expr)?;
+      todo!("std.setInter")
+    }
+    StdFn::setUnion => {
+      let _ = std_fn::args::setUnion(positional, named, expr)?;
+      todo!("std.setUnion")
+    }
+    StdFn::setDiff => {
+      let _ = std_fn::args::setDiff(positional, named, expr)?;
+      todo!("std.setDiff")
+    }
+    StdFn::setMember => {
+      let _ = std_fn::args::setMember(positional, named, expr)?;
+      todo!("std.setMember")
+    }
+    StdFn::base64 => {
+      let _ = std_fn::args::base64(positional, named, expr)?;
+      todo!("std.base64")
+    }
+    StdFn::base64DecodeBytes => {
+      let _ = std_fn::args::base64DecodeBytes(positional, named, expr)?;
+      todo!("std.base64DecodeBytes")
+    }
+    StdFn::base64Decode => {
+      let _ = std_fn::args::base64Decode(positional, named, expr)?;
+      todo!("std.base64Decode")
+    }
+    StdFn::md5 => {
+      let _ = std_fn::args::md5(positional, named, expr)?;
+      todo!("std.md5")
+    }
+    StdFn::xor => {
+      let _ = std_fn::args::xor(positional, named, expr)?;
+      todo!("std.xor")
+    }
+    StdFn::xnor => {
+      let _ = std_fn::args::xnor(positional, named, expr)?;
+      todo!("std.xnor")
+    }
+    StdFn::mergePatch => {
+      let _ = std_fn::args::mergePatch(positional, named, expr)?;
+      todo!("std.mergePatch")
+    }
+    StdFn::trace => {
+      let _ = std_fn::args::trace(positional, named, expr)?;
+      todo!("std.trace")
+    }
     StdFn::cmp => {
       let arguments = std_fn::args::cmp(positional, named, expr)?;
       cmp_op(expr, env, ars, arguments.a, arguments.b, |ord| {
@@ -533,6 +869,9 @@ fn get_std_fn(
       let arguments = std_fn::args::equals(positional, named, expr)?;
       cmp_bool_op(expr, env, ars, arguments.a, arguments.b, Ordering::is_eq)
     }
-    StdFn::objectHasEx => todo!("std.objectHasEx"),
+    StdFn::objectHasEx => {
+      let _ = std_fn::args::objectHasEx(positional, named, expr)?;
+      todo!("std.objectHasEx")
+    }
   }
 }
