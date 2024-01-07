@@ -6,6 +6,8 @@ mod generated {
   include!(concat!(env!("OUT_DIR"), "/generated.rs"));
 }
 
+pub mod arg;
+
 pub use generated::StdFn;
 pub use la_arena::{Arena, ArenaMap, Idx};
 

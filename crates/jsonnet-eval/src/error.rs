@@ -1,4 +1,5 @@
-use std::fmt;
+use jsonnet_expr::arg;
+use std::fmt::{self, Debug};
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;
 
@@ -15,16 +16,9 @@ impl Error {
   }
 }
 
-#[derive(Debug)]
-pub struct TooManyArgs {
-  params: usize,
-  positional: usize,
-  named: usize,
-}
-
-impl TooManyArgs {
-  pub(crate) fn new(params: usize, positional: usize, named: usize) -> Option<Self> {
-    (positional + named > params).then_some(Self { params, positional, named })
+impl From<arg::Error> for Error {
+  fn from(e: arg::Error) -> Self {
+    Error::Exec { expr: e.expr, kind: e.kind.into() }
   }
 }
 
@@ -32,15 +26,18 @@ impl TooManyArgs {
 pub enum Kind {
   ArrayIdxNotInteger,
   ArrayIdxOutOfRange,
-  DuplicateArgument(jsonnet_expr::Id),
   DuplicateField(jsonnet_expr::Str),
   IncompatibleTypes,
-  TooManyArgs(TooManyArgs),
-  ArgNotRequested(jsonnet_expr::Id),
-  ParamNotDefined(jsonnet_expr::Id),
   FieldNotDefined(jsonnet_expr::Str),
+  Arg(arg::ErrorKind),
   Infinite(jsonnet_expr::Infinite),
   User(jsonnet_expr::Str),
+}
+
+impl From<arg::ErrorKind> for Kind {
+  fn from(ek: arg::ErrorKind) -> Self {
+    Self::Arg(ek)
+  }
 }
 
 struct DisplayError<'a> {
@@ -54,31 +51,12 @@ impl fmt::Display for DisplayError<'_> {
       Error::Exec { kind, .. } => match kind {
         Kind::ArrayIdxNotInteger => f.write_str("array index not an integer"),
         Kind::ArrayIdxOutOfRange => f.write_str("array index out of range"),
-        Kind::DuplicateArgument(x) => write!(f, "duplicate argument: {}", x.display(self.ar)),
         Kind::DuplicateField(x) => write!(f, "duplicate field: {}", self.ar.get(x)),
         Kind::IncompatibleTypes => f.write_str("incompatible types"),
-        Kind::TooManyArgs(tma) => write!(
-          f,
-          "too many arguments: have {} parameters, but got {} positional and {} named arguments",
-          tma.params, tma.positional, tma.named
-        ),
-        Kind::ArgNotRequested(arg) => {
-          write!(
-            f,
-            "argument `{}` was not requested at the function definition site",
-            arg.display(self.ar)
-          )
-        }
-        Kind::ParamNotDefined(arg) => {
-          write!(
-            f,
-            "parameter `{}` was not defined at the function call site",
-            arg.display(self.ar)
-          )
-        }
         Kind::FieldNotDefined(name) => {
           write!(f, "field `{}` not defined", self.ar.get(name))
         }
+        Kind::Arg(ek) => ek.display(self.ar).fmt(f),
         Kind::Infinite(inf) => write!(f, "infinite number: {inf}"),
         Kind::User(s) => write!(f, "explicit `error`: {}", self.ar.get(s)),
       },

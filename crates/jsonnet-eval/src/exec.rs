@@ -4,7 +4,8 @@ use crate::error::{self, Result};
 use crate::manifest;
 use crate::val::jsonnet::{Array, Env, Field, Get, Object, StdField, Val};
 use jsonnet_expr::{
-  Arenas, BinaryOp, Expr, ExprData, ExprMust, Id, Number, Prim, StdFn, Str, StrArena, Visibility,
+  arg, Arenas, BinaryOp, Expr, ExprData, ExprMust, Id, Number, Prim, StdFn, Str, StrArena,
+  Visibility,
 };
 use rustc_hash::FxHashSet;
 use std::cmp::Ordering;
@@ -117,8 +118,8 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
     },
     ExprData::Call { func, positional, named } => match get(env, ars, *func)? {
       Val::Function { env: func_env, mut params, body } => {
-        if let Some(tma) = error::TooManyArgs::new(params.len(), positional.len(), named.len()) {
-          return Err(error::Error::Exec { expr, kind: error::Kind::TooManyArgs(tma) });
+        if let Some(tma) = arg::TooMany::new(params.len(), positional.len(), named.len()) {
+          return Err(error::Error::Exec { expr, kind: arg::ErrorKind::TooMany(tma).into() });
         }
         let mut provided = FxHashSet::<Id>::default();
         for ((id, param), &arg) in params.iter_mut().zip(positional) {
@@ -129,7 +130,7 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
           if !provided.insert(arg_name) {
             return Err(error::Error::Exec {
               expr: arg.unwrap_or(expr),
-              kind: error::Kind::DuplicateArgument(arg_name),
+              kind: arg::ErrorKind::Duplicate(arg_name).into(),
             });
           }
           // we're getting a little fancy here. this iterates across the mutable params, and if we
@@ -143,7 +144,7 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
           if arg_not_requested {
             return Err(error::Error::Exec {
               expr: arg.unwrap_or(expr),
-              kind: error::Kind::ArgNotRequested(arg_name),
+              kind: arg::ErrorKind::NotRequested(arg_name).into(),
             });
           }
         }
@@ -156,7 +157,7 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
             // behavior of the impl on the website is to _eagerly_ error if a param is not defined.
             // so we do that here.
             None => {
-              return Err(error::Error::Exec { expr, kind: error::Kind::ParamNotDefined(id) })
+              return Err(error::Error::Exec { expr, kind: arg::ErrorKind::NotDefined(id).into() })
             }
             Some(rhs) => env.insert(id, func_env.clone(), rhs),
           }
@@ -277,7 +278,7 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
         StdFn::mergePatch => todo!("std.mergePatch"),
         StdFn::trace => todo!("std.trace"),
         StdFn::cmp => {
-          let [a, b] = get_a_b(positional, named, expr)?;
+          let [a, b] = arg::get_a_b(positional, named, expr)?;
           cmp_op(expr, env, ars, a, b, |ord| {
             let num = match ord {
               Ordering::Less => Number::negative_one(),
@@ -288,7 +289,7 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
           })
         }
         StdFn::equals => {
-          let [a, b] = get_a_b(positional, named, expr)?;
+          let [a, b] = arg::get_a_b(positional, named, expr)?;
           cmp_bool_op(expr, env, ars, a, b, Ordering::is_eq)
         }
         StdFn::objectHasEx => todo!("std.objectHasEx"),
@@ -408,50 +409,6 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
     }
     ExprData::Import { .. } => todo!("Import"),
   }
-}
-
-fn get_a_b(positional: &[Expr], named: &[(Id, Expr)], expr: ExprMust) -> Result<[Expr; 2]> {
-  if let Some(tma) = error::TooManyArgs::new(2, positional.len(), named.len()) {
-    return Err(error::Error::Exec { expr, kind: error::Kind::TooManyArgs(tma) });
-  }
-  let mut positional = positional.iter().copied();
-  let mut a = positional.next();
-  let mut b = positional.next();
-  for &(arg_name, arg) in named {
-    if arg_name == Id::a {
-      match a {
-        None => a = Some(arg),
-        Some(_) => {
-          return Err(error::Error::Exec {
-            expr: arg.unwrap_or(expr),
-            kind: error::Kind::DuplicateArgument(arg_name),
-          })
-        }
-      }
-    } else if arg_name == Id::b {
-      match b {
-        None => b = Some(arg),
-        Some(_) => {
-          return Err(error::Error::Exec {
-            expr: arg.unwrap_or(expr),
-            kind: error::Kind::DuplicateArgument(arg_name),
-          })
-        }
-      }
-    } else {
-      return Err(error::Error::Exec {
-        expr: arg.unwrap_or(expr),
-        kind: error::Kind::ArgNotRequested(arg_name),
-      });
-    }
-  }
-  let Some(a) = a else {
-    return Err(error::Error::Exec { expr, kind: error::Kind::ParamNotDefined(Id::a) });
-  };
-  let Some(b) = b else {
-    return Err(error::Error::Exec { expr, kind: error::Kind::ParamNotDefined(Id::b) });
-  };
-  Ok([a, b])
 }
 
 fn number_pair(expr: ExprMust, env: &Env, ars: &Arenas, a: Expr, b: Expr) -> Result<[Number; 2]> {
