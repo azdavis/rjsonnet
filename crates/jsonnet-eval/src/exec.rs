@@ -278,7 +278,6 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
         StdFn::trace => todo!("std.trace"),
         StdFn::cmp => {
           let [a, b] = get_a_b(positional, named, expr)?;
-          // named.get(index)
           cmp_op(expr, env, ars, a, b, |ord| {
             let num = match ord {
               Ordering::Less => Number::negative_one(),
