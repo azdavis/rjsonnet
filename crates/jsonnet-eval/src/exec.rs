@@ -128,7 +128,7 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
         for &(arg_name, arg) in named {
           if !provided.insert(arg_name) {
             return Err(error::Error::Exec {
-              expr,
+              expr: arg.unwrap_or(expr),
               kind: error::Kind::DuplicateArgument(arg_name),
             });
           }
@@ -141,7 +141,10 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
             .find_map(|(param_name, param)| (*param_name == arg_name).then(|| *param = Some(arg)))
             .is_none();
           if arg_not_requested {
-            return Err(error::Error::Exec { expr, kind: error::Kind::ArgNotRequested(arg_name) });
+            return Err(error::Error::Exec {
+              expr: arg.unwrap_or(expr),
+              kind: error::Kind::ArgNotRequested(arg_name),
+            });
           }
         }
         let mut env = func_env.clone();
@@ -420,18 +423,27 @@ fn get_a_b(positional: &[Expr], named: &[(Id, Expr)], expr: ExprMust) -> Result<
       match a {
         None => a = Some(arg),
         Some(_) => {
-          return Err(error::Error::Exec { expr, kind: error::Kind::DuplicateArgument(arg_name) })
+          return Err(error::Error::Exec {
+            expr: arg.unwrap_or(expr),
+            kind: error::Kind::DuplicateArgument(arg_name),
+          })
         }
       }
     } else if arg_name == Id::b {
       match b {
         None => b = Some(arg),
         Some(_) => {
-          return Err(error::Error::Exec { expr, kind: error::Kind::DuplicateArgument(arg_name) })
+          return Err(error::Error::Exec {
+            expr: arg.unwrap_or(expr),
+            kind: error::Kind::DuplicateArgument(arg_name),
+          })
         }
       }
     } else {
-      return Err(error::Error::Exec { expr, kind: error::Kind::ArgNotRequested(arg_name) });
+      return Err(error::Error::Exec {
+        expr: arg.unwrap_or(expr),
+        kind: error::Kind::ArgNotRequested(arg_name),
+      });
     }
   }
   let Some(a) = a else {
