@@ -23,7 +23,6 @@ const EPSILON: f64 = 0.0001;
 /// If the expr wasn't checked.
 pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
   let expr = expr.expect("no expr");
-  let mk_error = |kind: error::Kind| Err(error::Error::Exec { expr, kind });
   match &ars.expr[expr] {
     ExprData::Prim(p) => Ok(Val::Prim(p.clone())),
     ExprData::Object { asserts, fields } => {
@@ -32,18 +31,18 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
         match get(env, ars, key)? {
           Val::Prim(Prim::String(s)) => {
             if named_fields.insert(s.clone(), (hid, val)).is_some() {
-              return mk_error(error::Kind::DuplicateField(s));
+              return Err(error::Error::Exec { expr, kind: error::Kind::DuplicateField(s) });
             }
           }
           Val::Prim(Prim::Null) => {}
-          _ => return mk_error(error::Kind::IncompatibleTypes),
+          _ => return Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes }),
         }
       }
       Ok(Val::Object(Object::new(env.clone(), asserts.clone(), named_fields)))
     }
     ExprData::ObjectComp { name, body, id, ary } => {
       let Val::Array(array) = get(env, ars, *ary)? else {
-        return mk_error(error::Kind::IncompatibleTypes);
+        return Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes });
       };
       let mut fields = BTreeMap::<Str, (Visibility, Expr)>::default();
       for (part_env, elem) in array.iter() {
@@ -58,11 +57,11 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
               _ => todo!("subst for object comp"),
             };
             if fields.insert(s.clone(), (Visibility::Default, Some(body))).is_some() {
-              return mk_error(error::Kind::DuplicateField(s));
+              return Err(error::Error::Exec { expr, kind: error::Kind::DuplicateField(s) });
             }
           }
           Val::Prim(Prim::Null) => {}
-          _ => return mk_error(error::Kind::IncompatibleTypes),
+          _ => return Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes }),
         }
       }
       Ok(Val::Object(Object::new(env.clone(), Vec::new(), fields)))
@@ -71,10 +70,13 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
     ExprData::Subscript { on, idx } => match get(env, ars, *on)? {
       Val::Object(object) => {
         let Val::Prim(Prim::String(name)) = get(env, ars, *idx)? else {
-          return mk_error(error::Kind::IncompatibleTypes);
+          return Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes });
         };
         let Some((_, field)) = object.get_field(&name) else {
-          return mk_error(error::Kind::FieldNotDefined(name.clone()));
+          return Err(error::Error::Exec {
+            expr,
+            kind: error::Kind::FieldNotDefined(name.clone()),
+          });
         };
         // TODO do we need all the asserts/do we have to evaluate them to json values?
         for (env, assert) in object.asserts() {
@@ -90,33 +92,33 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
       }
       Val::Array(array) => {
         let Val::Prim(Prim::Number(idx)) = get(env, ars, *idx)? else {
-          return mk_error(error::Kind::IncompatibleTypes);
+          return Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes });
         };
         let idx = idx.value();
         let idx_floor = idx.floor();
         let diff = idx - idx_floor;
         if diff.abs() > EPSILON {
-          return mk_error(error::Kind::ArrayIdxNotInteger);
+          return Err(error::Error::Exec { expr, kind: error::Kind::ArrayIdxNotInteger });
         }
         if idx_floor < 0.0 || idx_floor > f64::from(u32::MAX) {
-          return mk_error(error::Kind::ArrayIdxOutOfRange);
+          return Err(error::Error::Exec { expr, kind: error::Kind::ArrayIdxOutOfRange });
         }
         #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
         let idx = idx_floor as u32;
         let Ok(idx) = usize::try_from(idx) else {
-          return mk_error(error::Kind::ArrayIdxOutOfRange);
+          return Err(error::Error::Exec { expr, kind: error::Kind::ArrayIdxOutOfRange });
         };
         match array.get(idx) {
           Some((env, elem)) => get(env, ars, elem),
-          None => mk_error(error::Kind::ArrayIdxOutOfRange),
+          None => Err(error::Error::Exec { expr, kind: error::Kind::ArrayIdxOutOfRange }),
         }
       }
-      _ => mk_error(error::Kind::IncompatibleTypes),
+      _ => Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes }),
     },
     ExprData::Call { func, positional, named } => match get(env, ars, *func)? {
       Val::Function { env: func_env, mut params, body } => {
         if let Some(tma) = error::TooManyArgs::new(params.len(), positional.len(), named.len()) {
-          return mk_error(error::Kind::TooManyArgs(tma));
+          return Err(error::Error::Exec { expr, kind: error::Kind::TooManyArgs(tma) });
         }
         let mut provided = FxHashSet::<Id>::default();
         for ((id, param), &arg) in params.iter_mut().zip(positional) {
@@ -125,7 +127,10 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
         }
         for &(arg_name, arg) in named {
           if !provided.insert(arg_name) {
-            return mk_error(error::Kind::DuplicateArgument(arg_name));
+            return Err(error::Error::Exec {
+              expr,
+              kind: error::Kind::DuplicateArgument(arg_name),
+            });
           }
           // we're getting a little fancy here. this iterates across the mutable params, and if we
           // could find a param whose name matches the arg's name, then this sets the param to that
@@ -136,19 +141,21 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
             .find_map(|(param_name, param)| (*param_name == arg_name).then(|| *param = Some(arg)))
             .is_none();
           if arg_not_requested {
-            return mk_error(error::Kind::ArgNotRequested(arg_name));
+            return Err(error::Error::Exec { expr, kind: error::Kind::ArgNotRequested(arg_name) });
           }
         }
         let mut env = func_env.clone();
-        for (id, expr) in params {
-          match expr {
+        for (id, rhs) in params {
+          match rhs {
             // from my (not super close) reading of the spec, it seems like for function parameters
             // without default values, the default value should be set to `error "Parameter not
             // bound"`, which will _lazily_ emit the error if the parameter is accessed. but the
             // behavior of the impl on the website is to _eagerly_ error if a param is not defined.
             // so we do that here.
-            None => return mk_error(error::Kind::ParamNotDefined(id)),
-            Some(expr) => env.insert(id, func_env.clone(), expr),
+            None => {
+              return Err(error::Error::Exec { expr, kind: error::Kind::ParamNotDefined(id) })
+            }
+            Some(rhs) => env.insert(id, func_env.clone(), rhs),
           }
         }
         get(&env, ars, body)
@@ -284,7 +291,7 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
         }
         StdFn::objectHasEx => todo!("std.objectHasEx"),
       },
-      _ => mk_error(error::Kind::IncompatibleTypes),
+      _ => Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes }),
     },
     ExprData::Id(id) => match env.get(*id) {
       Get::Self_ => Ok(Val::Object(env.this().clone())),
@@ -298,7 +305,7 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
     }
     ExprData::If { cond, yes, no } => {
       let Val::Prim(Prim::Bool(b)) = get(env, ars, *cond)? else {
-        return mk_error(error::Kind::IncompatibleTypes);
+        return Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes });
       };
       let &expr = if b { yes } else { no };
       get(env, ars, expr)
@@ -317,7 +324,7 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
         (Val::Prim(Prim::Number(lhs)), Val::Prim(Prim::Number(rhs))) => {
           let n = match Number::try_from(lhs.value() + rhs.value()) {
             Ok(n) => n,
-            Err(inf) => return mk_error(error::Kind::Infinite(inf)),
+            Err(inf) => return Err(error::Error::Exec { expr, kind: error::Kind::Infinite(inf) }),
           };
           Ok(Val::Prim(Prim::Number(n)))
         }
@@ -329,7 +336,7 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
           rhs.set_parent_to(lhs);
           Ok(Val::Object(rhs))
         }
-        _ => mk_error(error::Kind::IncompatibleTypes),
+        _ => Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes }),
       },
       // arithmetic
       BinaryOp::Mul => float_op(expr, env, ars, *lhs, *rhs, std::ops::Mul::mul),
@@ -354,21 +361,21 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
           if let Val::Prim(Prim::Number(n)) = inner {
             Ok(Val::Prim(Prim::Number(-n)))
           } else {
-            mk_error(error::Kind::IncompatibleTypes)
+            Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes })
           }
         }
         jsonnet_expr::UnaryOp::Pos => {
           if matches!(inner, Val::Prim(Prim::Number(_))) {
             Ok(inner)
           } else {
-            mk_error(error::Kind::IncompatibleTypes)
+            Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes })
           }
         }
         jsonnet_expr::UnaryOp::LogicalNot => {
           if let Val::Prim(Prim::Bool(b)) = inner {
             Ok(Val::Prim(Prim::Bool(!b)))
           } else {
-            mk_error(error::Kind::IncompatibleTypes)
+            Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes })
           }
         }
         jsonnet_expr::UnaryOp::BitNot => {
@@ -384,7 +391,7 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
             let n = Number::try_from(n).expect("bitwise not failed");
             Ok(Val::Prim(Prim::Number(n)))
           } else {
-            mk_error(error::Kind::IncompatibleTypes)
+            Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes })
           }
         }
       }
@@ -395,7 +402,7 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
     ExprData::Error(inner) => {
       let val = get(env, ars, *inner)?;
       let msg = str_conv(ars, val)?;
-      mk_error(error::Kind::User(msg))
+      Err(error::Error::Exec { expr, kind: error::Kind::User(msg) })
     }
     ExprData::Import { .. } => todo!("Import"),
   }
