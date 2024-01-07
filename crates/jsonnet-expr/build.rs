@@ -185,21 +185,11 @@ fn main() {
   drop(contents);
 
   let impl_str_idx_and_arena = {
-    let str_idx_constants = std::iter::empty()
-      .chain(builtin_identifiers.iter().copied().map(|x| (x, false)))
-      .chain(arg_names_except_std_fn_names.iter().map(|&x| (S::new(x), false)))
-      .chain(strings().map(|x| (x, true)))
-      .enumerate()
-      .map(|(idx, (S { name, .. }, is_pub))| {
-        let name = format_ident!("{name}");
-        let idx = u32::try_from(idx).unwrap();
-        let vis = if is_pub {
-          quote! { pub }
-        } else {
-          quote! {}
-        };
-        quote! { #vis const #name: Self = Self(#idx); }
-      });
+    let str_idx_constants = all().enumerate().map(|(idx, S { name, .. })| {
+      let name = format_ident!("{name}");
+      let idx = u32::try_from(idx).unwrap();
+      quote! { const #name: Self = Self(#idx); }
+    });
     let str_idx_debug_arms = all().enumerate().map(|(idx, S { content, .. })| {
       let idx = u32::try_from(idx).unwrap();
       quote! { #idx => d.field(&#content) }
