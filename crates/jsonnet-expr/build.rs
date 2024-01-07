@@ -3,7 +3,7 @@
 use quote::{format_ident, quote};
 use std::collections::{BTreeSet, HashSet};
 
-const TMP: &str = "__Tmp";
+const JOINER: &str = "__";
 
 #[derive(Debug, Clone, Copy)]
 struct S {
@@ -180,7 +180,7 @@ fn main() {
   for S { name, content } in all() {
     assert!(names.insert(name), "duplicate name: {name}",);
     assert!(contents.insert(content), "duplicate content: {content}",);
-    assert!(!name.starts_with(TMP));
+    assert!(!name.contains(JOINER));
   }
   drop(names);
   drop(contents);
@@ -348,7 +348,7 @@ fn main() {
 }
 
 fn mk_get_args(name: &str, params: &[&str]) -> proc_macro2::TokenStream {
-  let args_struct = params.join("_");
+  let args_struct = params.join(JOINER);
   let args_struct = format_ident!("{args_struct}");
   let name = format_ident!("{name}");
   quote! {
@@ -365,9 +365,9 @@ fn mk_get_args(name: &str, params: &[&str]) -> proc_macro2::TokenStream {
 }
 
 fn mk_get_params(params: &[&str]) -> proc_macro2::TokenStream {
-  let name = params.join("_");
+  let name = params.join(JOINER);
   let name = format_ident!("{name}");
-  let in_progress = format_ident!("{TMP}_{name}");
+  let in_progress = format_ident!("TMP{JOINER}{name}");
   let num_params = params.len();
   let fields = params.iter().map(|&param| {
     let param = format_ident!("{param}");
