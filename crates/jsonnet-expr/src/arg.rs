@@ -1,5 +1,7 @@
-use crate::{Expr, ExprMust, Id, StrArena};
+use crate::{ExprMust, Id, StrArena};
 use std::fmt;
+
+pub use crate::generated::std_fn_args as std_fn;
 
 #[derive(Debug)]
 pub struct TooMany {
@@ -66,41 +68,3 @@ impl fmt::Display for DisplayError<'_> {
 }
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;
-
-/// # Errors
-///
-/// If getting the args failed.
-pub fn get_a_b(positional: &[Expr], named: &[(Id, Expr)], expr: ExprMust) -> Result<[Expr; 2]> {
-  if let Some(tma) = TooMany::new(2, positional.len(), named.len()) {
-    return Err(Error { expr, kind: ErrorKind::TooMany(tma) });
-  }
-  let mut positional = positional.iter().copied();
-  let mut a = positional.next();
-  let mut b = positional.next();
-  for &(arg_name, arg) in named {
-    if arg_name == Id::a {
-      match a {
-        None => a = Some(arg),
-        Some(_) => {
-          return Err(Error { expr: arg.unwrap_or(expr), kind: ErrorKind::Duplicate(arg_name) })
-        }
-      }
-    } else if arg_name == Id::b {
-      match b {
-        None => b = Some(arg),
-        Some(_) => {
-          return Err(Error { expr: arg.unwrap_or(expr), kind: ErrorKind::Duplicate(arg_name) })
-        }
-      }
-    } else {
-      return Err(Error { expr: arg.unwrap_or(expr), kind: ErrorKind::NotRequested(arg_name) });
-    }
-  }
-  let Some(a) = a else {
-    return Err(Error { expr, kind: ErrorKind::NotDefined(Id::a) });
-  };
-  let Some(b) = b else {
-    return Err(Error { expr, kind: ErrorKind::NotDefined(Id::b) });
-  };
-  Ok([a, b])
-}

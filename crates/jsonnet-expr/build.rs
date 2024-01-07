@@ -282,6 +282,47 @@ fn main() {
           #(#str_variant_tuples,)*
         ];
       }
+
+      pub mod std_fn_args {
+        use crate::arg::{Result, TooMany, Error, ErrorKind};
+        use crate::{Id, Expr, ExprMust};
+        #[doc = "# Errors"]
+        #[doc = "If getting the args failed."]
+        pub fn get_a_b(positional: &[Expr], named: &[(Id, Expr)], expr: ExprMust) -> Result<[Expr; 2]> {
+          if let Some(tma) = TooMany::new(2, positional.len(), named.len()) {
+            return Err(Error { expr, kind: ErrorKind::TooMany(tma) });
+          }
+          let mut positional = positional.iter().copied();
+          let mut a = positional.next();
+          let mut b = positional.next();
+          for &(arg_name, arg) in named {
+            if arg_name == Id::a {
+              match a {
+                None => a = Some(arg),
+                Some(_) => {
+                  return Err(Error { expr: arg.unwrap_or(expr), kind: ErrorKind::Duplicate(arg_name) })
+                }
+              }
+            } else if arg_name == Id::b {
+              match b {
+                None => b = Some(arg),
+                Some(_) => {
+                  return Err(Error { expr: arg.unwrap_or(expr), kind: ErrorKind::Duplicate(arg_name) })
+                }
+              }
+            } else {
+              return Err(Error { expr: arg.unwrap_or(expr), kind: ErrorKind::NotRequested(arg_name) });
+            }
+          }
+          let Some(a) = a else {
+            return Err(Error { expr, kind: ErrorKind::NotDefined(Id::a) });
+          };
+          let Some(b) = b else {
+            return Err(Error { expr, kind: ErrorKind::NotDefined(Id::b) });
+          };
+          Ok([a, b])
+        }
+      }
     }
   };
 

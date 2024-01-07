@@ -278,7 +278,7 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
         StdFn::mergePatch => todo!("std.mergePatch"),
         StdFn::trace => todo!("std.trace"),
         StdFn::cmp => {
-          let [a, b] = arg::get_a_b(positional, named, expr)?;
+          let [a, b] = arg::std_fn::get_a_b(positional, named, expr)?;
           cmp_op(expr, env, ars, a, b, |ord| {
             let num = match ord {
               Ordering::Less => Number::negative_one(),
@@ -289,7 +289,7 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
           })
         }
         StdFn::equals => {
-          let [a, b] = arg::get_a_b(positional, named, expr)?;
+          let [a, b] = arg::std_fn::get_a_b(positional, named, expr)?;
           cmp_bool_op(expr, env, ars, a, b, Ordering::is_eq)
         }
         StdFn::objectHasEx => todo!("std.objectHasEx"),
