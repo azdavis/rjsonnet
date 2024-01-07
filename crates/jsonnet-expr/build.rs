@@ -23,7 +23,6 @@ impl S {
 
 #[allow(clippy::too_many_lines)]
 fn main() {
-  // TODO use the arg names
   let std_fns = [
     (S::new("extVar"), &["x"][..]),
     (S::named("type", "type_"), &["x"]),
