@@ -257,13 +257,9 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
         StdFn::mergePatch => todo!("std.mergePatch"),
         StdFn::trace => todo!("std.trace"),
         StdFn::cmp => {
-          if !named.is_empty() {
-            return mk_error(error::Kind::StdFuncNamedArgs);
-          }
-          let [lhs, rhs] = positional[..] else {
-            return mk_error(error::Kind::StdFuncWrongNumArgs(2, positional.len()));
-          };
-          cmp_op(expr, env, ars, lhs, rhs, |ord| {
+          let [a, b] = get_a_b(positional, named, expr)?;
+          // named.get(index)
+          cmp_op(expr, env, ars, a, b, |ord| {
             let num = match ord {
               Ordering::Less => Number::negative_one(),
               Ordering::Equal => Number::positive_zero(),
@@ -273,13 +269,8 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
           })
         }
         StdFn::equals => {
-          if !named.is_empty() {
-            return mk_error(error::Kind::StdFuncNamedArgs);
-          }
-          let [lhs, rhs] = positional[..] else {
-            return mk_error(error::Kind::StdFuncWrongNumArgs(2, positional.len()));
-          };
-          cmp_bool_op(expr, env, ars, lhs, rhs, Ordering::is_eq)
+          let [a, b] = get_a_b(positional, named, expr)?;
+          cmp_bool_op(expr, env, ars, a, b, Ordering::is_eq)
         }
         StdFn::objectHasEx => todo!("std.objectHasEx"),
       },
@@ -398,6 +389,36 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
     }
     ExprData::Import { .. } => todo!("Import"),
   }
+}
+
+fn get_a_b(positional: &[Expr], named: &[(Id, Expr)], expr: ExprMust) -> Result<[Expr; 2]> {
+  let tma = error::TooManyArguments::new(2, positional.len(), named.len());
+  if let Some(tma) = tma {
+    return Err(error::Error::Exec { expr, kind: error::Kind::TooManyArguments(tma) });
+  }
+  let mut positional = positional.iter().copied();
+  let mut a = positional.next().flatten();
+  let mut b = positional.next().flatten();
+  for &(arg_name, arg) in named {
+    if arg_name == Id::a {
+      match a {
+        None => a = arg,
+        Some(_) => {
+          return Err(error::Error::Exec { expr, kind: error::Kind::DuplicateArgument(arg_name) })
+        }
+      }
+    } else if arg_name == Id::b {
+      match b {
+        None => b = arg,
+        Some(_) => {
+          return Err(error::Error::Exec { expr, kind: error::Kind::DuplicateArgument(arg_name) })
+        }
+      }
+    } else {
+      return Err(error::Error::Exec { expr, kind: error::Kind::NoSuchArgument(arg_name) });
+    }
+  }
+  Ok([a, b])
 }
 
 fn number_pair(expr: ExprMust, env: &Env, ars: &Arenas, a: Expr, b: Expr) -> Result<[Number; 2]> {

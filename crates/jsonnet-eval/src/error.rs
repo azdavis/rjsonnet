@@ -40,9 +40,6 @@ pub enum Kind {
   TooManyArguments(TooManyArguments),
   Infinite(jsonnet_expr::Infinite),
   User(jsonnet_expr::Str),
-  /// TODO remove this and allow named args for std fns
-  StdFuncNamedArgs,
-  StdFuncWrongNumArgs(usize, usize),
 }
 
 struct DisplayError<'a> {
@@ -68,10 +65,6 @@ impl fmt::Display for DisplayError<'_> {
         ),
         Kind::Infinite(inf) => write!(f, "infinite number: {inf}"),
         Kind::User(s) => write!(f, "explicit `error`: {}", self.ar.get(s)),
-        Kind::StdFuncNamedArgs => f.write_str("named arguments to a `std` function"),
-        Kind::StdFuncWrongNumArgs(want, got) => {
-          write!(f, "expected {want} but found {got} arguments to a `std` function")
-        }
       },
       Error::ManifestFn => f.write_str("cannot manifest function"),
     }
