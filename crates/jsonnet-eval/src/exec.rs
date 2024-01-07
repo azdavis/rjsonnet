@@ -413,19 +413,19 @@ fn get_a_b(positional: &[Expr], named: &[(Id, Expr)], expr: ExprMust) -> Result<
     return Err(error::Error::Exec { expr, kind: error::Kind::TooManyArgs(tma) });
   }
   let mut positional = positional.iter().copied();
-  let mut a = positional.next().flatten();
-  let mut b = positional.next().flatten();
+  let mut a = positional.next();
+  let mut b = positional.next();
   for &(arg_name, arg) in named {
     if arg_name == Id::a {
       match a {
-        None => a = arg,
+        None => a = Some(arg),
         Some(_) => {
           return Err(error::Error::Exec { expr, kind: error::Kind::DuplicateArgument(arg_name) })
         }
       }
     } else if arg_name == Id::b {
       match b {
-        None => b = arg,
+        None => b = Some(arg),
         Some(_) => {
           return Err(error::Error::Exec { expr, kind: error::Kind::DuplicateArgument(arg_name) })
         }
@@ -434,6 +434,12 @@ fn get_a_b(positional: &[Expr], named: &[(Id, Expr)], expr: ExprMust) -> Result<
       return Err(error::Error::Exec { expr, kind: error::Kind::ArgNotRequested(arg_name) });
     }
   }
+  let Some(a) = a else {
+    return Err(error::Error::Exec { expr, kind: error::Kind::ParamNotDefined(Id::a) });
+  };
+  let Some(b) = b else {
+    return Err(error::Error::Exec { expr, kind: error::Kind::ParamNotDefined(Id::b) });
+  };
   Ok([a, b])
 }
 
