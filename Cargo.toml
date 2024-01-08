@@ -12,6 +12,7 @@ publish = false
 # third party
 drop_bomb = "0.1.5"
 la-arena = "0.3.1"
+pico-args = "0.5.0"
 proc-macro2 = "1.0.70"
 quote = "1.0.33"
 rowan = "0.15.15"
