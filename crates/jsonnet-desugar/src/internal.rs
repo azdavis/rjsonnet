@@ -341,7 +341,10 @@ fn get_object(st: &mut St, inside: ast::Object, in_obj: bool) -> ExprData {
             };
             let mut body = match field.field_extra() {
               None => get_expr(st, field.expr(), true),
-              Some(ast::FieldExtra::FieldPlus(_)) => todo!("FieldPlus"),
+              Some(ast::FieldExtra::FieldPlus(_)) => {
+                // TODO impl FieldPlus
+                None
+              }
               Some(ast::FieldExtra::ParenParams(paren_params)) => {
                 let ptr = ast::SyntaxNodePtr::new(paren_params.syntax());
                 let expr = get_fn(st, Some(paren_params), field.expr(), true);

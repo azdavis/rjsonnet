@@ -55,7 +55,7 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
             // we want to do `[e/x]body` here?
             let body = match ars.expr[body] {
               ExprData::Prim(_) => body,
-              _ => todo!("subst for object comp"),
+              _ => return Err(mk_todo(expr, "subst for object body")),
             };
             if fields.insert(s.clone(), (Visibility::Default, Some(body))).is_some() {
               return Err(error::Error::Exec { expr, kind: error::Kind::DuplicateField(s) });
@@ -85,7 +85,7 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
         }
         match field {
           Field::Std(field) => match field {
-            StdField::ThisFile => todo!("this file"),
+            StdField::ThisFile => Err(mk_todo(expr, "this file")),
             StdField::Fn(f) => Ok(Val::StdFn(f)),
           },
           Field::Expr(env, expr) => get(&env, ars, expr),
@@ -278,7 +278,7 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
       let msg = str_conv(ars, val)?;
       Err(error::Error::Exec { expr, kind: error::Kind::User(msg) })
     }
-    ExprData::Import { .. } => todo!("Import"),
+    ExprData::Import { .. } => Err(mk_todo(expr, "Import")),
   }
 }
 
@@ -408,451 +408,451 @@ fn get_std_fn(
   match std_fn {
     StdFn::extVar => {
       let _ = std_fn::args::extVar(positional, named, expr)?;
-      todo!("std.extVar")
+      Err(mk_todo(expr, "std.extVar"))
     }
     StdFn::type_ => {
       let _ = std_fn::args::type_(positional, named, expr)?;
-      todo!("std.type")
+      Err(mk_todo(expr, "std.type"))
     }
     StdFn::length => {
       let _ = std_fn::args::length(positional, named, expr)?;
-      todo!("std.length")
+      Err(mk_todo(expr, "std.length"))
     }
     StdFn::get => {
       let _ = std_fn::args::get(positional, named, expr)?;
-      todo!("std.get")
+      Err(mk_todo(expr, "std.get"))
     }
     StdFn::objectHas => {
       let _ = std_fn::args::objectHas(positional, named, expr)?;
-      todo!("std.objectHas")
+      Err(mk_todo(expr, "std.objectHas"))
     }
     StdFn::objectFields => {
       let _ = std_fn::args::objectFields(positional, named, expr)?;
-      todo!("std.objectFields")
+      Err(mk_todo(expr, "std.objectFields"))
     }
     StdFn::objectValues => {
       let _ = std_fn::args::objectValues(positional, named, expr)?;
-      todo!("std.objectValues")
+      Err(mk_todo(expr, "std.objectValues"))
     }
     StdFn::objectKeysValues => {
       let _ = std_fn::args::objectKeysValues(positional, named, expr)?;
-      todo!("std.objectKeysValues")
+      Err(mk_todo(expr, "std.objectKeysValues"))
     }
     StdFn::objectHasAll => {
       let _ = std_fn::args::objectHasAll(positional, named, expr)?;
-      todo!("std.objectHasAll")
+      Err(mk_todo(expr, "std.objectHasAll"))
     }
     StdFn::objectFieldsAll => {
       let _ = std_fn::args::objectFieldsAll(positional, named, expr)?;
-      todo!("std.objectFieldsAll")
+      Err(mk_todo(expr, "std.objectFieldsAll"))
     }
     StdFn::objectValuesAll => {
       let _ = std_fn::args::objectValuesAll(positional, named, expr)?;
-      todo!("std.objectValuesAll")
+      Err(mk_todo(expr, "std.objectValuesAll"))
     }
     StdFn::objectKeysValuesAll => {
       let _ = std_fn::args::objectKeysValuesAll(positional, named, expr)?;
-      todo!("std.objectKeysValuesAll")
+      Err(mk_todo(expr, "std.objectKeysValuesAll"))
     }
     StdFn::prune => {
       let _ = std_fn::args::prune(positional, named, expr)?;
-      todo!("std.prune")
+      Err(mk_todo(expr, "std.prune"))
     }
     StdFn::mapWithKey => {
       let _ = std_fn::args::mapWithKey(positional, named, expr)?;
-      todo!("std.mapWithKey")
+      Err(mk_todo(expr, "std.mapWithKey"))
     }
     StdFn::abs => {
       let _ = std_fn::args::abs(positional, named, expr)?;
-      todo!("std.abs")
+      Err(mk_todo(expr, "std.abs"))
     }
     StdFn::sign => {
       let _ = std_fn::args::sign(positional, named, expr)?;
-      todo!("std.sign")
+      Err(mk_todo(expr, "std.sign"))
     }
     StdFn::max => {
       let _ = std_fn::args::max(positional, named, expr)?;
-      todo!("std.max")
+      Err(mk_todo(expr, "std.max"))
     }
     StdFn::min => {
       let _ = std_fn::args::min(positional, named, expr)?;
-      todo!("std.min")
+      Err(mk_todo(expr, "std.min"))
     }
     StdFn::pow => {
       let _ = std_fn::args::pow(positional, named, expr)?;
-      todo!("std.pow")
+      Err(mk_todo(expr, "std.pow"))
     }
     StdFn::exp => {
       let _ = std_fn::args::exp(positional, named, expr)?;
-      todo!("std.exp")
+      Err(mk_todo(expr, "std.exp"))
     }
     StdFn::log => {
       let _ = std_fn::args::log(positional, named, expr)?;
-      todo!("std.log")
+      Err(mk_todo(expr, "std.log"))
     }
     StdFn::exponent => {
       let _ = std_fn::args::exponent(positional, named, expr)?;
-      todo!("std.exponent")
+      Err(mk_todo(expr, "std.exponent"))
     }
     StdFn::mantissa => {
       let _ = std_fn::args::mantissa(positional, named, expr)?;
-      todo!("std.mantissa")
+      Err(mk_todo(expr, "std.mantissa"))
     }
     StdFn::floor => {
       let _ = std_fn::args::floor(positional, named, expr)?;
-      todo!("std.floor")
+      Err(mk_todo(expr, "std.floor"))
     }
     StdFn::ceil => {
       let _ = std_fn::args::ceil(positional, named, expr)?;
-      todo!("std.ceil")
+      Err(mk_todo(expr, "std.ceil"))
     }
     StdFn::sqrt => {
       let _ = std_fn::args::sqrt(positional, named, expr)?;
-      todo!("std.sqrt")
+      Err(mk_todo(expr, "std.sqrt"))
     }
     StdFn::sin => {
       let _ = std_fn::args::sin(positional, named, expr)?;
-      todo!("std.sin")
+      Err(mk_todo(expr, "std.sin"))
     }
     StdFn::cos => {
       let _ = std_fn::args::cos(positional, named, expr)?;
-      todo!("std.cos")
+      Err(mk_todo(expr, "std.cos"))
     }
     StdFn::tan => {
       let _ = std_fn::args::tan(positional, named, expr)?;
-      todo!("std.tan")
+      Err(mk_todo(expr, "std.tan"))
     }
     StdFn::asin => {
       let _ = std_fn::args::asin(positional, named, expr)?;
-      todo!("std.asin")
+      Err(mk_todo(expr, "std.asin"))
     }
     StdFn::acos => {
       let _ = std_fn::args::acos(positional, named, expr)?;
-      todo!("std.acos")
+      Err(mk_todo(expr, "std.acos"))
     }
     StdFn::atan => {
       let _ = std_fn::args::atan(positional, named, expr)?;
-      todo!("std.atan")
+      Err(mk_todo(expr, "std.atan"))
     }
     StdFn::round => {
       let _ = std_fn::args::round(positional, named, expr)?;
-      todo!("std.round")
+      Err(mk_todo(expr, "std.round"))
     }
     StdFn::mod_ => {
       let _ = std_fn::args::mod_(positional, named, expr)?;
-      todo!("std.mod")
+      Err(mk_todo(expr, "std.mod"))
     }
     StdFn::clamp => {
       let _ = std_fn::args::clamp(positional, named, expr)?;
-      todo!("std.clamp")
+      Err(mk_todo(expr, "std.clamp"))
     }
     StdFn::assertEqual => {
       let _ = std_fn::args::assertEqual(positional, named, expr)?;
-      todo!("std.assertEqual")
+      Err(mk_todo(expr, "std.assertEqual"))
     }
     StdFn::toString => {
       let _ = std_fn::args::toString(positional, named, expr)?;
-      todo!("std.toString")
+      Err(mk_todo(expr, "std.toString"))
     }
     StdFn::codepoint => {
       let _ = std_fn::args::codepoint(positional, named, expr)?;
-      todo!("std.codepoint")
+      Err(mk_todo(expr, "std.codepoint"))
     }
     StdFn::char => {
       let _ = std_fn::args::char(positional, named, expr)?;
-      todo!("std.char")
+      Err(mk_todo(expr, "std.char"))
     }
     StdFn::substr => {
       let _ = std_fn::args::substr(positional, named, expr)?;
-      todo!("std.substr")
+      Err(mk_todo(expr, "std.substr"))
     }
     StdFn::findSubstr => {
       let _ = std_fn::args::findSubstr(positional, named, expr)?;
-      todo!("std.findSubstr")
+      Err(mk_todo(expr, "std.findSubstr"))
     }
     StdFn::startsWith => {
       let _ = std_fn::args::startsWith(positional, named, expr)?;
-      todo!("std.startsWith")
+      Err(mk_todo(expr, "std.startsWith"))
     }
     StdFn::endsWith => {
       let _ = std_fn::args::endsWith(positional, named, expr)?;
-      todo!("std.endsWith")
+      Err(mk_todo(expr, "std.endsWith"))
     }
     StdFn::stripChars => {
       let _ = std_fn::args::stripChars(positional, named, expr)?;
-      todo!("std.stripChars")
+      Err(mk_todo(expr, "std.stripChars"))
     }
     StdFn::lstripChars => {
       let _ = std_fn::args::lstripChars(positional, named, expr)?;
-      todo!("std.lstripChars")
+      Err(mk_todo(expr, "std.lstripChars"))
     }
     StdFn::rstripChars => {
       let _ = std_fn::args::rstripChars(positional, named, expr)?;
-      todo!("std.rstripChars")
+      Err(mk_todo(expr, "std.rstripChars"))
     }
     StdFn::split => {
       let _ = std_fn::args::split(positional, named, expr)?;
-      todo!("std.split")
+      Err(mk_todo(expr, "std.split"))
     }
     StdFn::splitLimit => {
       let _ = std_fn::args::splitLimit(positional, named, expr)?;
-      todo!("std.splitLimit")
+      Err(mk_todo(expr, "std.splitLimit"))
     }
     StdFn::splitLimitR => {
       let _ = std_fn::args::splitLimitR(positional, named, expr)?;
-      todo!("std.splitLimitR")
+      Err(mk_todo(expr, "std.splitLimitR"))
     }
     StdFn::strReplace => {
       let _ = std_fn::args::strReplace(positional, named, expr)?;
-      todo!("std.strReplace")
+      Err(mk_todo(expr, "std.strReplace"))
     }
     StdFn::isEmpty => {
       let _ = std_fn::args::isEmpty(positional, named, expr)?;
-      todo!("std.isEmpty")
+      Err(mk_todo(expr, "std.isEmpty"))
     }
     StdFn::asciiUpper => {
       let _ = std_fn::args::asciiUpper(positional, named, expr)?;
-      todo!("std.asciiUpper")
+      Err(mk_todo(expr, "std.asciiUpper"))
     }
     StdFn::asciiLower => {
       let _ = std_fn::args::asciiLower(positional, named, expr)?;
-      todo!("std.asciiLower")
+      Err(mk_todo(expr, "std.asciiLower"))
     }
     StdFn::stringChars => {
       let _ = std_fn::args::stringChars(positional, named, expr)?;
-      todo!("std.stringChars")
+      Err(mk_todo(expr, "std.stringChars"))
     }
     StdFn::format => {
       let _ = std_fn::args::format(positional, named, expr)?;
-      todo!("std.format")
+      Err(mk_todo(expr, "std.format"))
     }
     StdFn::escapeStringBash => {
       let _ = std_fn::args::escapeStringBash(positional, named, expr)?;
-      todo!("std.escapeStringBash")
+      Err(mk_todo(expr, "std.escapeStringBash"))
     }
     StdFn::escapeStringDollars => {
       let _ = std_fn::args::escapeStringDollars(positional, named, expr)?;
-      todo!("std.escapeStringDollars")
+      Err(mk_todo(expr, "std.escapeStringDollars"))
     }
     StdFn::escapeStringJson => {
       let _ = std_fn::args::escapeStringJson(positional, named, expr)?;
-      todo!("std.escapeStringJson")
+      Err(mk_todo(expr, "std.escapeStringJson"))
     }
     StdFn::escapeStringPython => {
       let _ = std_fn::args::escapeStringPython(positional, named, expr)?;
-      todo!("std.escapeStringPython")
+      Err(mk_todo(expr, "std.escapeStringPython"))
     }
     StdFn::escapeStringXml => {
       let _ = std_fn::args::escapeStringXml(positional, named, expr)?;
-      todo!("std.escapeStringXml")
+      Err(mk_todo(expr, "std.escapeStringXml"))
     }
     StdFn::parseInt => {
       let _ = std_fn::args::parseInt(positional, named, expr)?;
-      todo!("std.parseInt")
+      Err(mk_todo(expr, "std.parseInt"))
     }
     StdFn::parseOctal => {
       let _ = std_fn::args::parseOctal(positional, named, expr)?;
-      todo!("std.parseOctal")
+      Err(mk_todo(expr, "std.parseOctal"))
     }
     StdFn::parseHex => {
       let _ = std_fn::args::parseHex(positional, named, expr)?;
-      todo!("std.parseHex")
+      Err(mk_todo(expr, "std.parseHex"))
     }
     StdFn::parseJson => {
       let _ = std_fn::args::parseJson(positional, named, expr)?;
-      todo!("std.parseJson")
+      Err(mk_todo(expr, "std.parseJson"))
     }
     StdFn::parseYaml => {
       let _ = std_fn::args::parseYaml(positional, named, expr)?;
-      todo!("std.parseYaml")
+      Err(mk_todo(expr, "std.parseYaml"))
     }
     StdFn::encodeUTF8 => {
       let _ = std_fn::args::encodeUTF8(positional, named, expr)?;
-      todo!("std.encodeUTF8")
+      Err(mk_todo(expr, "std.encodeUTF8"))
     }
     StdFn::decodeUTF8 => {
       let _ = std_fn::args::decodeUTF8(positional, named, expr)?;
-      todo!("std.decodeUTF8")
+      Err(mk_todo(expr, "std.decodeUTF8"))
     }
     StdFn::manifestIni => {
       let _ = std_fn::args::manifestIni(positional, named, expr)?;
-      todo!("std.manifestIni")
+      Err(mk_todo(expr, "std.manifestIni"))
     }
     StdFn::manifestPython => {
       let _ = std_fn::args::manifestPython(positional, named, expr)?;
-      todo!("std.manifestPython")
+      Err(mk_todo(expr, "std.manifestPython"))
     }
     StdFn::manifestPythonVars => {
       let _ = std_fn::args::manifestPythonVars(positional, named, expr)?;
-      todo!("std.manifestPythonVars")
+      Err(mk_todo(expr, "std.manifestPythonVars"))
     }
     StdFn::manifestJsonEx => {
       let _ = std_fn::args::manifestJsonEx(positional, named, expr)?;
-      todo!("std.manifestJsonEx")
+      Err(mk_todo(expr, "std.manifestJsonEx"))
     }
     StdFn::manifestJsonMinified => {
       let _ = std_fn::args::manifestJsonMinified(positional, named, expr)?;
-      todo!("std.manifestJsonMinified")
+      Err(mk_todo(expr, "std.manifestJsonMinified"))
     }
     StdFn::manifestYamlDoc => {
       let _ = std_fn::args::manifestYamlDoc(positional, named, expr)?;
-      todo!("std.manifestYamlDoc")
+      Err(mk_todo(expr, "std.manifestYamlDoc"))
     }
     StdFn::manifestYamlStream => {
       let _ = std_fn::args::manifestYamlStream(positional, named, expr)?;
-      todo!("std.manifestYamlStream")
+      Err(mk_todo(expr, "std.manifestYamlStream"))
     }
     StdFn::manifestXmlJsonml => {
       let _ = std_fn::args::manifestXmlJsonml(positional, named, expr)?;
-      todo!("std.manifestXmlJsonml")
+      Err(mk_todo(expr, "std.manifestXmlJsonml"))
     }
     StdFn::manifestTomlEx => {
       let _ = std_fn::args::manifestTomlEx(positional, named, expr)?;
-      todo!("std.manifestTomlEx")
+      Err(mk_todo(expr, "std.manifestTomlEx"))
     }
     StdFn::makeArray => {
       let _ = std_fn::args::makeArray(positional, named, expr)?;
-      todo!("std.makeArray")
+      Err(mk_todo(expr, "std.makeArray"))
     }
     StdFn::member => {
       let _ = std_fn::args::member(positional, named, expr)?;
-      todo!("std.member")
+      Err(mk_todo(expr, "std.member"))
     }
     StdFn::count => {
       let _ = std_fn::args::count(positional, named, expr)?;
-      todo!("std.count")
+      Err(mk_todo(expr, "std.count"))
     }
     StdFn::find => {
       let _ = std_fn::args::find(positional, named, expr)?;
-      todo!("std.find")
+      Err(mk_todo(expr, "std.find"))
     }
     StdFn::map => {
       let _ = std_fn::args::map(positional, named, expr)?;
-      todo!("std.map")
+      Err(mk_todo(expr, "std.map"))
     }
     StdFn::mapWithIndex => {
       let _ = std_fn::args::mapWithIndex(positional, named, expr)?;
-      todo!("std.mapWithIndex")
+      Err(mk_todo(expr, "std.mapWithIndex"))
     }
     StdFn::filterMap => {
       let _ = std_fn::args::filterMap(positional, named, expr)?;
-      todo!("std.filterMap")
+      Err(mk_todo(expr, "std.filterMap"))
     }
     StdFn::flatMap => {
       let _ = std_fn::args::flatMap(positional, named, expr)?;
-      todo!("std.flatMap")
+      Err(mk_todo(expr, "std.flatMap"))
     }
     StdFn::filter => {
       let _ = std_fn::args::filter(positional, named, expr)?;
-      todo!("std.filter")
+      Err(mk_todo(expr, "std.filter"))
     }
     StdFn::foldl => {
       let _ = std_fn::args::foldl(positional, named, expr)?;
-      todo!("std.foldl")
+      Err(mk_todo(expr, "std.foldl"))
     }
     StdFn::foldr => {
       let _ = std_fn::args::foldr(positional, named, expr)?;
-      todo!("std.foldr")
+      Err(mk_todo(expr, "std.foldr"))
     }
     StdFn::range => {
       let _ = std_fn::args::range(positional, named, expr)?;
-      todo!("std.range")
+      Err(mk_todo(expr, "std.range"))
     }
     StdFn::repeat => {
       let _ = std_fn::args::repeat(positional, named, expr)?;
-      todo!("std.repeat")
+      Err(mk_todo(expr, "std.repeat"))
     }
     StdFn::slice => {
       let _ = std_fn::args::slice(positional, named, expr)?;
-      todo!("std.slice")
+      Err(mk_todo(expr, "std.slice"))
     }
     StdFn::join => {
       let _ = std_fn::args::join(positional, named, expr)?;
-      todo!("std.join")
+      Err(mk_todo(expr, "std.join"))
     }
     StdFn::lines => {
       let _ = std_fn::args::lines(positional, named, expr)?;
-      todo!("std.lines")
+      Err(mk_todo(expr, "std.lines"))
     }
     StdFn::flattenArrays => {
       let _ = std_fn::args::flattenArrays(positional, named, expr)?;
-      todo!("std.flattenArrays")
+      Err(mk_todo(expr, "std.flattenArrays"))
     }
     StdFn::reverse => {
       let _ = std_fn::args::reverse(positional, named, expr)?;
-      todo!("std.reverse")
+      Err(mk_todo(expr, "std.reverse"))
     }
     StdFn::sort => {
       let _ = std_fn::args::sort(positional, named, expr)?;
-      todo!("std.sort")
+      Err(mk_todo(expr, "std.sort"))
     }
     StdFn::uniq => {
       let _ = std_fn::args::uniq(positional, named, expr)?;
-      todo!("std.uniq")
+      Err(mk_todo(expr, "std.uniq"))
     }
     StdFn::all => {
       let _ = std_fn::args::all(positional, named, expr)?;
-      todo!("std.all")
+      Err(mk_todo(expr, "std.all"))
     }
     StdFn::any => {
       let _ = std_fn::args::any(positional, named, expr)?;
-      todo!("std.any")
+      Err(mk_todo(expr, "std.any"))
     }
     StdFn::sum => {
       let _ = std_fn::args::sum(positional, named, expr)?;
-      todo!("std.sum")
+      Err(mk_todo(expr, "std.sum"))
     }
     StdFn::set => {
       let _ = std_fn::args::set(positional, named, expr)?;
-      todo!("std.set")
+      Err(mk_todo(expr, "std.set"))
     }
     StdFn::setInter => {
       let _ = std_fn::args::setInter(positional, named, expr)?;
-      todo!("std.setInter")
+      Err(mk_todo(expr, "std.setInter"))
     }
     StdFn::setUnion => {
       let _ = std_fn::args::setUnion(positional, named, expr)?;
-      todo!("std.setUnion")
+      Err(mk_todo(expr, "std.setUnion"))
     }
     StdFn::setDiff => {
       let _ = std_fn::args::setDiff(positional, named, expr)?;
-      todo!("std.setDiff")
+      Err(mk_todo(expr, "std.setDiff"))
     }
     StdFn::setMember => {
       let _ = std_fn::args::setMember(positional, named, expr)?;
-      todo!("std.setMember")
+      Err(mk_todo(expr, "std.setMember"))
     }
     StdFn::base64 => {
       let _ = std_fn::args::base64(positional, named, expr)?;
-      todo!("std.base64")
+      Err(mk_todo(expr, "std.base64"))
     }
     StdFn::base64DecodeBytes => {
       let _ = std_fn::args::base64DecodeBytes(positional, named, expr)?;
-      todo!("std.base64DecodeBytes")
+      Err(mk_todo(expr, "std.base64DecodeBytes"))
     }
     StdFn::base64Decode => {
       let _ = std_fn::args::base64Decode(positional, named, expr)?;
-      todo!("std.base64Decode")
+      Err(mk_todo(expr, "std.base64Decode"))
     }
     StdFn::md5 => {
       let _ = std_fn::args::md5(positional, named, expr)?;
-      todo!("std.md5")
+      Err(mk_todo(expr, "std.md5"))
     }
     StdFn::xor => {
       let _ = std_fn::args::xor(positional, named, expr)?;
-      todo!("std.xor")
+      Err(mk_todo(expr, "std.xor"))
     }
     StdFn::xnor => {
       let _ = std_fn::args::xnor(positional, named, expr)?;
-      todo!("std.xnor")
+      Err(mk_todo(expr, "std.xnor"))
     }
     StdFn::mergePatch => {
       let _ = std_fn::args::mergePatch(positional, named, expr)?;
-      todo!("std.mergePatch")
+      Err(mk_todo(expr, "std.mergePatch"))
     }
     StdFn::trace => {
       let _ = std_fn::args::trace(positional, named, expr)?;
-      todo!("std.trace")
+      Err(mk_todo(expr, "std.trace"))
     }
     StdFn::cmp => {
       let arguments = std_fn::args::cmp(positional, named, expr)?;
@@ -871,7 +871,11 @@ fn get_std_fn(
     }
     StdFn::objectHasEx => {
       let _ = std_fn::args::objectHasEx(positional, named, expr)?;
-      todo!("std.objectHasEx")
+      Err(mk_todo(expr, "std.objectHasEx"))
     }
   }
+}
+
+fn mk_todo(expr: ExprMust, msg: &'static str) -> error::Error {
+  error::Error::Exec { expr, kind: error::Kind::Todo(msg) }
 }

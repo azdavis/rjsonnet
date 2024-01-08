@@ -24,6 +24,7 @@ impl From<arg::Error> for Error {
 
 #[derive(Debug)]
 pub enum Kind {
+  Todo(&'static str),
   ArrayIdxNotInteger,
   ArrayIdxOutOfRange,
   DuplicateField(jsonnet_expr::Str),
@@ -49,6 +50,7 @@ impl fmt::Display for DisplayError<'_> {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     match self.error {
       Error::Exec { kind, .. } => match kind {
+        Kind::Todo(s) => write!(f, "not yet implemented: {s}"),
         Kind::ArrayIdxNotInteger => f.write_str("array index not an integer"),
         Kind::ArrayIdxOutOfRange => f.write_str("array index out of range"),
         Kind::DuplicateField(x) => write!(f, "duplicate field: {}", self.ar.get(x)),
