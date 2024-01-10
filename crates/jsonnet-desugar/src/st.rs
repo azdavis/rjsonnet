@@ -73,8 +73,14 @@ impl St {
     self.errors.push(Error { range, kind });
   }
 
-  pub(crate) fn finish(self) -> (Arenas, Pointers, Vec<Error>) {
-    (self.arenas, self.pointers, self.errors)
+  pub(crate) fn finish(self, top: jsonnet_expr::Expr) -> crate::Desugar {
+    crate::Desugar {
+      top,
+      arenas: self.arenas,
+      pointers: self.pointers,
+      ps: self.ps,
+      errors: self.errors,
+    }
   }
 
   /// Returns a fresh identifier.

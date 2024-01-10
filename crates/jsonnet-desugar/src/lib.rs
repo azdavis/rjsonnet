@@ -23,8 +23,7 @@ pub fn get(
   let mut st = st::St::default();
   let cx = cx::Cx { current_dir, other_dirs, fs };
   let top = internal::get_root(&mut st, cx, root);
-  let (arenas, pointers, errors) = st.finish();
-  Desugar { top, arenas, pointers, errors }
+  st.finish(top)
 }
 
 /// The result of desugaring.
@@ -36,6 +35,8 @@ pub struct Desugar {
   pub arenas: jsonnet_expr::Arenas,
   /// Pointers between arena indices and concrete syntax.
   pub pointers: Pointers,
+  /// The paths store.
+  pub ps: paths::Store,
   /// Errors when desugaring.
   pub errors: Vec<Error>,
 }
