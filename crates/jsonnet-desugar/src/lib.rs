@@ -10,7 +10,7 @@ mod st;
 
 pub use cx::FileSystem;
 pub use error::Error;
-pub use st::Pointers;
+pub use st::Desugar;
 
 /// Transforms CST into desugared core.
 #[must_use]
@@ -24,19 +24,4 @@ pub fn get(
   let cx = cx::Cx { current_dir, other_dirs, fs };
   let top = internal::get_root(&mut st, cx, root);
   st.finish(top)
-}
-
-/// The result of desugaring.
-#[derive(Debug)]
-pub struct Desugar {
-  /// The single top-level expression.
-  pub top: jsonnet_expr::Expr,
-  /// The arenas holding the allocations.
-  pub arenas: jsonnet_expr::Arenas,
-  /// Pointers between arena indices and concrete syntax.
-  pub pointers: Pointers,
-  /// The paths store.
-  pub ps: paths::Store,
-  /// Errors when desugaring.
-  pub errors: Vec<Error>,
 }

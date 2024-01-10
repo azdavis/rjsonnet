@@ -1,5 +1,5 @@
 [package]
-name = "jsonnet-desugar"
+name = "jsonnet-pointers"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -8,17 +8,8 @@ publish.workspace = true
 [lints]
 workspace = true
 
-[lib]
-test = false
-doctest = false
-
 [dependencies]
-paths.workspace = true
 rustc-hash.workspace = true
-text-size.workspace = true
 
-jsonnet-escape.path = "../jsonnet-escape"
 jsonnet-expr.path = "../jsonnet-expr"
 jsonnet-syntax.path = "../jsonnet-syntax"
-jsonnet-pointers.path = "../jsonnet-pointers"
-str-process.path = "../str-process"
