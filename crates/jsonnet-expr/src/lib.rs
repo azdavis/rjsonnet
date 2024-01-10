@@ -73,8 +73,7 @@ pub enum ExprData {
   /// file to a jsonnet value and cache that instead of the whole expression.
   Import {
     kind: ImportKind,
-    /// TODO make this a Path/PathBuf/PathId/Str?
-    path: String,
+    path: paths::PathId,
   },
 }
 

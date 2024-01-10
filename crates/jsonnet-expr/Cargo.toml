@@ -14,6 +14,7 @@ doctest = false
 
 [dependencies]
 la-arena.workspace = true
+paths.workspace = true
 rustc-hash.workspace = true
 
 [build-dependencies]

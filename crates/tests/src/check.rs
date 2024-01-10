@@ -1,5 +1,15 @@
 use jsonnet_eval::val::{json, jsonnet};
 use jsonnet_expr::{Number, Prim};
+use paths::FileSystem;
+
+#[derive(Debug, Default)]
+struct MemoryFs(paths::MemoryFileSystem);
+
+impl jsonnet_desugar::FileSystem for MemoryFs {
+  fn canonicalize(&self, p: &std::path::Path) -> std::io::Result<paths::CanonicalPathBuf> {
+    self.0.canonicalize(p)
+  }
+}
 
 struct Artifacts {
   lex_errors: Vec<jsonnet_lex::Error>,
@@ -12,7 +22,8 @@ impl Artifacts {
   fn get(s: &str) -> Self {
     let lex = jsonnet_lex::get(s);
     let parse = jsonnet_parse::get(&lex.tokens);
-    let desugar = jsonnet_desugar::get(parse.root.clone());
+    let fs = MemoryFs::default();
+    let desugar = jsonnet_desugar::get(std::path::Path::new("/"), &[], &fs, parse.root.clone());
     let mut st = jsonnet_statics::St::default();
     let cx = jsonnet_statics::Cx::default();
     jsonnet_statics::check(&mut st, &cx, &desugar.arenas, desugar.top);

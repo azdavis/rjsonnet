@@ -26,6 +26,7 @@ pub(crate) enum Kind {
   ObjectCompFieldExtra,
   ObjectCompVisibility,
   Escape(jsonnet_escape::Error),
+  PathNotFound(String),
 }
 
 impl fmt::Display for Error {
@@ -46,6 +47,7 @@ impl fmt::Display for Error {
       }
       Kind::ObjectCompVisibility => f.write_str("object comprehension field must use `:`"),
       Kind::Escape(e) => e.fmt(f),
+      Kind::PathNotFound(p) => write!(f, "path not found: {p}"),
     }
   }
 }

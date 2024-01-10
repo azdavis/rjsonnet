@@ -36,6 +36,7 @@ pub(crate) struct St {
   errors: Vec<Error>,
   pointers: Pointers,
   fresh_idx: usize,
+  ps: paths::Store,
 }
 
 impl St {
@@ -81,5 +82,9 @@ impl St {
     let s = format!("${}", self.fresh_idx);
     self.fresh_idx += 1;
     self.arenas.str.id(s.into_boxed_str())
+  }
+
+  pub(crate) fn path_id(&mut self, p: &paths::CanonicalPathBuf) -> paths::PathId {
+    self.ps.get_id(p)
   }
 }

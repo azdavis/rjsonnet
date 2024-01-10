@@ -34,6 +34,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9bda8e21c04aca2ae33ffc2fd8c23134f3cac46db123ba97bd9d3f3b8a4a85e1"
 
 [[package]]
+name = "dunce"
+version = "1.0.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "56ce8c6da7551ec6c462cbaf3bfbc75131ebbfa1c944aeaa9dab51ca1c5f0c3b"
+
+[[package]]
 name = "event-parse"
 version = "0.1.0"
 source = "git+https://github.com/azdavis/language-util.git#be4590cc04b12775612ccbdf1d07ef4ff26956d7"
@@ -52,6 +58,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "glob"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d2fabcfbdc87f4758337ca535fb41a6d701b65693ce38287d856d1674551ec9b"
+
+[[package]]
 name = "hashbrown"
 version = "0.14.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -61,6 +73,14 @@ checksum = "290f1a1d9242c78d09ce40a5e87e7554ee637af1351968159f4952f028f75604"
 name = "identifier-case"
 version = "0.1.0"
 source = "git+https://github.com/azdavis/language-util.git#be4590cc04b12775612ccbdf1d07ef4ff26956d7"
+
+[[package]]
+name = "idx"
+version = "0.1.0"
+source = "git+https://github.com/azdavis/language-util.git#be4590cc04b12775612ccbdf1d07ef4ff26956d7"
+dependencies = [
+ "nohash-hasher",
+]
 
 [[package]]
 name = "itoa"
@@ -75,6 +95,7 @@ dependencies = [
  "jsonnet-escape",
  "jsonnet-expr",
  "jsonnet-syntax",
+ "paths",
  "rustc-hash",
  "str-process",
  "text-size",
@@ -93,6 +114,7 @@ name = "jsonnet-eval"
 version = "0.1.0"
 dependencies = [
  "jsonnet-expr",
+ "paths",
  "rustc-hash",
 ]
 
@@ -101,6 +123,7 @@ name = "jsonnet-expr"
 version = "0.1.0"
 dependencies = [
  "la-arena",
+ "paths",
  "proc-macro2",
  "quote",
  "rustc-hash",
@@ -164,6 +187,25 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5a634b1c61a95585bd15607c6ab0c4e5b226e695ff2800ba0cdccddf208c406c"
 dependencies = [
  "autocfg",
+]
+
+[[package]]
+name = "nohash-hasher"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2bf50223579dc7cdcfb3bfcacf7069ff68243f8c363f62ffa99cf000a6b9c451"
+
+[[package]]
+name = "paths"
+version = "0.1.0"
+source = "git+https://github.com/azdavis/language-util.git#be4590cc04b12775612ccbdf1d07ef4ff26956d7"
+dependencies = [
+ "dunce",
+ "fast-hash",
+ "glob",
+ "idx",
+ "nohash-hasher",
+ "str-util",
 ]
 
 [[package]]
@@ -257,10 +299,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "smol_str"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "74212e6bbe9a4352329b2f68ba3130c15a3f26fe88ff22dbdc6cdd58fa85e99c"
+dependencies = [
+ "serde",
+]
+
+[[package]]
 name = "str-process"
 version = "0.1.0"
 dependencies = [
  "drop_bomb",
+]
+
+[[package]]
+name = "str-util"
+version = "0.1.0"
+source = "git+https://github.com/azdavis/language-util.git#be4590cc04b12775612ccbdf1d07ef4ff26956d7"
+dependencies = [
+ "smol_str",
 ]
 
 [[package]]
@@ -298,6 +357,7 @@ dependencies = [
  "jsonnet-lex",
  "jsonnet-parse",
  "jsonnet-statics",
+ "paths",
  "rustc-hash",
  "serde_json",
 ]
