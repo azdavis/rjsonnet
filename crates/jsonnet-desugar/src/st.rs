@@ -1,13 +1,41 @@
 use crate::error::{self, Error};
 use jsonnet_expr::Arenas;
 use jsonnet_syntax::{ast, kind::SyntaxToken};
+use rustc_hash::FxHashMap;
 use text_size::TextRange;
+
+/// Pointers between arena indices and concrete syntax.
+#[derive(Debug, Default)]
+pub struct Pointers {
+  ptr_to_idx: FxHashMap<ast::SyntaxNodePtr, jsonnet_expr::ExprMust>,
+  idx_to_ptr: jsonnet_expr::ArenaMap<jsonnet_expr::ExprMust, ast::SyntaxNodePtr>,
+}
+
+impl Pointers {
+  /// Inserts a new pointer.
+  pub(crate) fn insert(&mut self, ptr: ast::SyntaxNodePtr, e: jsonnet_expr::ExprMust) {
+    self.ptr_to_idx.insert(ptr, e);
+    self.idx_to_ptr.insert(e, ptr);
+  }
+
+  /// Gets the syntax node pointer for the expr. Both must exist.
+  #[must_use]
+  pub fn get_ptr(&self, e: jsonnet_expr::ExprMust) -> ast::SyntaxNodePtr {
+    self.idx_to_ptr[e]
+  }
+
+  /// Maybe gets an expression for a syntax node pointer.
+  #[must_use]
+  pub fn get_idx(&self, ptr: ast::SyntaxNodePtr) -> jsonnet_expr::Expr {
+    self.ptr_to_idx.get(&ptr).copied()
+  }
+}
 
 #[derive(Debug, Default)]
 pub(crate) struct St {
   arenas: Arenas,
   errors: Vec<Error>,
-  pointers: jsonnet_pointers::Pointers,
+  pointers: Pointers,
   fresh_idx: usize,
   ps: paths::Store,
 }
@@ -70,7 +98,7 @@ pub struct Desugar {
   /// The arenas holding the allocations.
   pub arenas: jsonnet_expr::Arenas,
   /// Pointers between arena indices and concrete syntax.
-  pub pointers: jsonnet_pointers::Pointers,
+  pub pointers: Pointers,
   /// The paths store.
   pub ps: paths::Store,
   /// Errors when desugaring.

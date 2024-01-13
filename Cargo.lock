@@ -94,7 +94,6 @@ version = "0.1.0"
 dependencies = [
  "jsonnet-escape",
  "jsonnet-expr",
- "jsonnet-pointers",
  "jsonnet-syntax",
  "paths",
  "rustc-hash",
@@ -154,15 +153,6 @@ dependencies = [
  "jsonnet-syntax",
  "text-size",
  "token",
-]
-
-[[package]]
-name = "jsonnet-pointers"
-version = "0.1.0"
-dependencies = [
- "jsonnet-expr",
- "jsonnet-syntax",
- "rustc-hash",
 ]
 
 [[package]]

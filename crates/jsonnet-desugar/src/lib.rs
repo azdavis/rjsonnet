@@ -10,7 +10,7 @@ mod st;
 
 pub use cx::FileSystem;
 pub use error::Error;
-pub use st::Desugar;
+pub use st::{Desugar, Pointers};
 
 /// Transforms CST into desugared core.
 #[must_use]

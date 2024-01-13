@@ -20,5 +20,4 @@ text-size.workspace = true
 jsonnet-escape.path = "../jsonnet-escape"
 jsonnet-expr.path = "../jsonnet-expr"
 jsonnet-syntax.path = "../jsonnet-syntax"
-jsonnet-pointers.path = "../jsonnet-pointers"
 str-process.path = "../str-process"
