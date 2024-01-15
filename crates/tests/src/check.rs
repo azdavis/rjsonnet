@@ -51,8 +51,7 @@ impl Artifacts {
 fn exec(s: &str) -> (Artifacts, jsonnet_eval::error::Result<jsonnet::Val>) {
   let art = Artifacts::get(s);
   art.check();
-  let env = jsonnet::Env::default();
-  let val = jsonnet_eval::exec::get(&env, &art.desugar.arenas, art.desugar.top);
+  let val = jsonnet_eval::exec::get_top(&art.desugar.arenas, art.desugar.top);
   (art, val)
 }
 

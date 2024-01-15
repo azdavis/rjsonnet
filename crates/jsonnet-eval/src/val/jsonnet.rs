@@ -5,7 +5,7 @@ use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::BTreeMap;
 
 #[derive(Debug, Default, Clone)]
-pub struct Env {
+pub(crate) struct Env {
   store: FxHashMap<Id, (Env, Expr)>,
   this: Option<Box<Object>>,
 }
@@ -67,14 +67,7 @@ pub enum Val {
   Prim(Prim),
   Object(Object),
   Array(Array),
-  Function {
-    env: Env,
-    /// we'd like to get good performance for lookup by both index for positional arguments and name
-    /// for keyword arguments, but to do that we'd need to something like double the memory and
-    /// store both a vec and a map. which we could do but we choose to not right now.
-    params: Vec<(Id, Option<Expr>)>,
-    body: Expr,
-  },
+  Function(Function),
   StdFn(StdFn),
 }
 
@@ -204,13 +197,13 @@ struct RegularObjectKind {
 }
 
 #[derive(Debug)]
-pub enum Field {
+pub(crate) enum Field {
   Std(StdField),
   Expr(Env, Expr),
 }
 
 #[derive(Debug, Clone, Copy)]
-pub enum StdField {
+pub(crate) enum StdField {
   ThisFile,
   Fn(StdFn),
 }
@@ -273,4 +266,14 @@ impl Array {
 struct ArrayPart {
   env: Env,
   elems: Vec<Expr>,
+}
+
+#[derive(Debug, Clone)]
+pub struct Function {
+  pub(crate) env: Env,
+  /// we'd like to get good performance for lookup by both index for positional arguments and name
+  /// for keyword arguments, but to do that we'd need to something like double the memory and
+  /// store both a vec and a map. which we could do but we choose to not right now.
+  pub(crate) params: Vec<(Id, Option<Expr>)>,
+  pub(crate) body: Expr,
 }

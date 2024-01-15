@@ -2,7 +2,7 @@
 
 use crate::error::{self, Result};
 use crate::manifest;
-use crate::val::jsonnet::{Array, Env, Field, Get, Object, StdField, Val};
+use crate::val::jsonnet::{Array, Env, Field, Function, Get, Object, StdField, Val};
 use jsonnet_expr::{
   arg, std_fn, Arenas, BinaryOp, Expr, ExprData, ExprMust, Id, Number, Prim, StdFn, Str, StrArena,
   Visibility,
@@ -22,7 +22,11 @@ const EPSILON: f64 = 0.0001;
 /// # Panics
 ///
 /// If the expr wasn't checked.
-pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
+pub fn get_top(ars: &Arenas, expr: Expr) -> Result<Val> {
+  get(&Env::default(), ars, expr)
+}
+
+pub(crate) fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
   let expr = expr.expect("no expr");
   match &ars.expr[expr] {
     ExprData::Prim(p) => Ok(Val::Prim(p.clone())),
@@ -117,12 +121,12 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
       _ => Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes }),
     },
     ExprData::Call { func, positional, named } => match get(env, ars, *func)? {
-      Val::Function { env: func_env, mut params, body } => {
-        if let Some(tma) = arg::TooMany::new(params.len(), positional.len(), named.len()) {
+      Val::Function(mut func) => {
+        if let Some(tma) = arg::TooMany::new(func.params.len(), positional.len(), named.len()) {
           return Err(error::Error::Exec { expr, kind: arg::ErrorKind::TooMany(tma).into() });
         }
         let mut provided = FxHashSet::<Id>::default();
-        for ((id, param), &arg) in params.iter_mut().zip(positional) {
+        for ((id, param), &arg) in func.params.iter_mut().zip(positional) {
           *param = Some(arg);
           assert!(provided.insert(*id), "duplicate function param should be forbidden by check");
         }
@@ -137,7 +141,8 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
           // could find a param whose name matches the arg's name, then this sets the param to that
           // arg and short circuits with true. note `==` with comparing the names and `=` with
           // setting the actual exprs. note the usage of `bool::then` with `find_map` and `is_none`.
-          let arg_not_requested = params
+          let arg_not_requested = func
+            .params
             .iter_mut()
             .find_map(|(param_name, param)| (*param_name == arg_name).then(|| *param = Some(arg)))
             .is_none();
@@ -148,8 +153,8 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
             });
           }
         }
-        let mut env = func_env.clone();
-        for (id, rhs) in params {
+        let mut env = func.env.clone();
+        for (id, rhs) in func.params {
           match rhs {
             // from my (not super close) reading of the spec, it seems like for function parameters
             // without default values, the default value should be set to `error "Parameter not
@@ -159,10 +164,10 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
             None => {
               return Err(error::Error::Exec { expr, kind: arg::ErrorKind::NotDefined(id).into() })
             }
-            Some(rhs) => env.insert(id, func_env.clone(), rhs),
+            Some(rhs) => env.insert(id, func.env.clone(), rhs),
           }
         }
-        get(&env, ars, body)
+        get(&env, ars, func.body)
       }
       Val::StdFn(std_fn) => get_std_fn(env, ars, positional, named, expr, std_fn),
       _ => Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes }),
@@ -271,7 +276,7 @@ pub fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
       }
     }
     ExprData::Function { params, body } => {
-      Ok(Val::Function { env: env.clone(), params: params.clone(), body: *body })
+      Ok(Val::Function(Function { env: env.clone(), params: params.clone(), body: *body }))
     }
     ExprData::Error(inner) => {
       let val = get(env, ars, *inner)?;
