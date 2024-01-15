@@ -13,19 +13,6 @@ use std::collections::BTreeMap;
 
 const EPSILON: f64 = 0.0001;
 
-/// Executes the Jsonnet expression to produce a Jsonnet value.
-///
-/// # Errors
-///
-/// If execution failed.
-///
-/// # Panics
-///
-/// If the expr wasn't checked.
-pub fn get_top(ars: &Arenas, expr: Expr) -> Result<Val> {
-  get(&Env::default(), ars, expr)
-}
-
 pub(crate) fn get(env: &Env, ars: &Arenas, expr: Expr) -> Result<Val> {
   let expr = expr.expect("no expr");
   match &ars.expr[expr] {

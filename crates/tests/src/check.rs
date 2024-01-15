@@ -1,5 +1,3 @@
-use jsonnet_eval::val::{json, jsonnet};
-use jsonnet_expr::{Number, Prim};
 use paths::FileSystem;
 
 #[derive(Debug, Default)]
@@ -48,52 +46,24 @@ impl Artifacts {
   }
 }
 
-fn exec(s: &str) -> (Artifacts, jsonnet_eval::error::Result<jsonnet::Val>) {
+fn exec(s: &str) -> (Artifacts, jsonnet_eval::error::Result<jsonnet_eval::Jsonnet>) {
   let art = Artifacts::get(s);
   art.check();
-  let val = jsonnet_eval::exec::get_top(&art.desugar.arenas, art.desugar.top);
+  let val = jsonnet_eval::exec(&art.desugar.arenas, art.desugar.top);
   (art, val)
 }
 
-fn manifest_raw(s: &str) -> (Artifacts, json::Val) {
+fn manifest_raw(s: &str) -> (Artifacts, jsonnet_eval::Json) {
   let (art, val) = exec(s);
   let val = match val {
     Ok(x) => x,
     Err(e) => panic!("exec error: {}", e.display(&art.desugar.arenas.str)),
   };
-  let val = match jsonnet_eval::manifest::get(&art.desugar.arenas, val) {
+  let val = match jsonnet_eval::manifest(&art.desugar.arenas, val) {
     Ok(x) => x,
     Err(e) => panic!("manifest error: {}", e.display(&art.desugar.arenas.str)),
   };
   (art, val)
-}
-
-fn from_serde(ar: &jsonnet_expr::StrArena, serde: serde_json::Value) -> json::Val {
-  match serde {
-    serde_json::Value::Null => json::Val::Prim(Prim::Null),
-    serde_json::Value::Bool(b) => json::Val::Prim(Prim::Bool(b)),
-    serde_json::Value::Number(num) => {
-      let num = num.as_f64().unwrap();
-      let num = Number::try_from(num).unwrap();
-      json::Val::Prim(Prim::Number(num))
-    }
-    serde_json::Value::String(str) => {
-      let str = ar.str_shared(str.into_boxed_str());
-      json::Val::Prim(Prim::String(str))
-    }
-    serde_json::Value::Array(vs) => {
-      let iter = vs.into_iter().map(|v| from_serde(ar, v));
-      json::Val::Array(iter.collect())
-    }
-    serde_json::Value::Object(map) => {
-      let iter = map.into_iter().map(|(k, v)| {
-        let k = ar.str_shared(k.into_boxed_str());
-        let v = from_serde(ar, v);
-        (k, v)
-      });
-      json::Val::Object(iter.collect())
-    }
-  }
 }
 
 /// tests that `jsonnet` execution results in an error whose message is `want`.
@@ -108,7 +78,7 @@ pub(crate) fn exec_err(jsonnet: &str, want: &str) {
 pub(crate) fn manifest(jsonnet: &str, json: &str) {
   let want: serde_json::Value = serde_json::from_str(json).unwrap();
   let (art, got) = manifest_raw(jsonnet);
-  let want = from_serde(&art.desugar.arenas.str, want);
+  let want = jsonnet_eval::Json::from_serde(&art.desugar.arenas.str, want);
   if want != got {
     let want = want.display(&art.desugar.arenas.str);
     let got = got.display(&art.desugar.arenas.str);
@@ -127,10 +97,5 @@ pub(crate) fn manifest_self(s: &str) {
 pub(crate) fn manifest_str(jsonnet: &str, want: &str) {
   let (mut art, got) = manifest_raw(jsonnet);
   let want = art.desugar.arenas.str.str(want.to_owned().into_boxed_str());
-  let json::Val::Prim(Prim::String(got)) = got else { panic!("did not get a String") };
-  if want != got {
-    let want = art.desugar.arenas.str.get(&want);
-    let got = art.desugar.arenas.str.get(&got);
-    panic!("want: {want:?}\ngot:  {got:?}")
-  }
+  got.assert_is_str(&art.desugar.arenas.str, &want);
 }

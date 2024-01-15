@@ -116,6 +116,7 @@ dependencies = [
  "jsonnet-expr",
  "paths",
  "rustc-hash",
+ "serde_json",
 ]
 
 [[package]]

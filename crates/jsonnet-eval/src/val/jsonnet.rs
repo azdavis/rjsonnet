@@ -63,7 +63,7 @@ pub(crate) enum Get<'a> {
 /// Note that implementing substitution lazily is not meant to break with the spec. The execution
 /// should be semantically equivalent.
 #[derive(Debug, Clone)]
-pub enum Val {
+pub(crate) enum Val {
   Prim(Prim),
   Object(Object),
   Array(Array),
@@ -72,7 +72,7 @@ pub enum Val {
 }
 
 #[derive(Debug, Clone)]
-pub struct Object {
+pub(crate) struct Object {
   parent: Option<Box<Object>>,
   kind: ObjectKind,
   /// skip fields directly on this. used to implement super. kind of strange. maybe we could
@@ -230,7 +230,7 @@ impl TryFrom<&Str> for StdField {
 }
 
 #[derive(Debug, Default, Clone)]
-pub struct Array {
+pub(crate) struct Array {
   /// arranging it in this way allows for different elements of the array to be lazy under different
   /// environments. this allows us to implement append
   parts: Vec<ArrayPart>,
@@ -269,7 +269,7 @@ struct ArrayPart {
 }
 
 #[derive(Debug, Clone)]
-pub struct Function {
+pub(crate) struct Function {
   pub(crate) env: Env,
   /// we'd like to get good performance for lookup by both index for positional arguments and name
   /// for keyword arguments, but to do that we'd need to something like double the memory and
