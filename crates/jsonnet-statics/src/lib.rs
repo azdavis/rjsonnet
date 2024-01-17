@@ -7,7 +7,7 @@ use rustc_hash::FxHashSet;
 
 /// The state when checking statics.
 #[derive(Debug, Default)]
-pub struct St {
+struct St {
   errors: Vec<error::Error>,
 }
 
@@ -18,14 +18,14 @@ impl St {
 
   /// Returns all the errors accumulated in the state.
   #[must_use]
-  pub fn finish(self) -> Vec<error::Error> {
+  fn finish(self) -> Vec<error::Error> {
     self.errors
   }
 }
 
 /// The context. Stores the identifiers currently in scope.
 #[derive(Debug, Clone)]
-pub struct Cx {
+struct Cx {
   store: FxHashSet<Id>,
 }
 
@@ -49,8 +49,16 @@ impl Cx {
 }
 
 /// Performs the checks.
+#[must_use]
+pub fn get(ars: &Arenas, expr: Expr) -> Vec<error::Error> {
+  let mut st = St::default();
+  let cx = Cx::default();
+  check(&mut st, &cx, ars, expr);
+  st.finish()
+}
+
 #[allow(clippy::too_many_lines)]
-pub fn check(st: &mut St, cx: &Cx, ars: &Arenas, expr: Expr) {
+fn check(st: &mut St, cx: &Cx, ars: &Arenas, expr: Expr) {
   let Some(expr) = expr else { return };
   match &ars.expr[expr] {
     ExprData::Prim(_) | ExprData::Import { .. } => {}

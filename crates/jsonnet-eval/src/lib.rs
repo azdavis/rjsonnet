@@ -21,13 +21,13 @@ mod val;
 
 #[derive(Debug, Clone, Copy)]
 pub struct Cx<'a> {
-  pub jsonnet_files: &'a paths::PathMap<JsonnetFile<'a>>,
+  pub jsonnet_files: &'a paths::PathMap<JsonnetFile>,
   pub str_ar: &'a jsonnet_expr::StrArena,
 }
 
-#[derive(Debug, Clone, Copy)]
-pub struct JsonnetFile<'a> {
-  pub expr_ar: &'a jsonnet_expr::ExprArena,
+#[derive(Debug)]
+pub struct JsonnetFile {
+  pub expr_ar: jsonnet_expr::ExprArena,
   pub top: jsonnet_expr::Expr,
 }
 

@@ -16,7 +16,7 @@ const EPSILON: f64 = 0.0001;
 pub(crate) fn get(cx: Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
   let expr = expr.expect("no expr");
   // TODO cache lookups across calls to this fn?
-  let expr_ar = cx.jsonnet_files[&env.path].expr_ar;
+  let expr_ar = &cx.jsonnet_files[&env.path].expr_ar;
   match &expr_ar[expr] {
     ExprData::Prim(p) => Ok(Val::Prim(p.clone())),
     ExprData::Object { asserts, fields } => {

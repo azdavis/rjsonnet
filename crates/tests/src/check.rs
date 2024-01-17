@@ -1,53 +1,33 @@
 use jsonnet_desugar::FileSystem;
 use paths::FileSystem as _;
 use rustc_hash::FxHashMap;
+use std::path::Path;
 
 #[derive(Debug, Default)]
 struct MemoryFs(paths::MemoryFileSystem);
 
 impl FileSystem for MemoryFs {
-  fn canonicalize(&self, p: &std::path::Path) -> std::io::Result<paths::CanonicalPathBuf> {
+  fn canonicalize(&self, p: &Path) -> std::io::Result<paths::CanonicalPathBuf> {
     self.0.canonicalize(p)
   }
 }
 
-struct Artifacts {
+struct FileArtifacts {
   lex_errors: Vec<jsonnet_lex::Error>,
   parse: jsonnet_parse::Parse,
   statics_errors: Vec<jsonnet_statics::error::Error>,
   desugar: jsonnet_desugar::Desugar,
-  path: paths::PathId,
 }
 
-impl Artifacts {
-  fn get(s: &str) -> Self {
-    let lex = jsonnet_lex::get(s);
+impl FileArtifacts {
+  fn get(fs: &MemoryFs, path: &Path) -> Self {
+    let s = fs.0.read_to_string(path).expect("io error");
+    let lex = jsonnet_lex::get(s.as_str());
     let parse = jsonnet_parse::get(&lex.tokens);
-    let p = std::path::Path::new("/f.jsonnet");
-    let fs =
-      MemoryFs(paths::MemoryFileSystem::new(FxHashMap::from_iter([(p.to_owned(), s.to_owned())])));
-    let mut desugar = jsonnet_desugar::get(std::path::Path::new("/"), &[], &fs, parse.root.clone());
-    let p = fs.canonicalize(p).expect("canonicalize");
-    let p = desugar.ps.get_id(&p);
-    let mut st = jsonnet_statics::St::default();
-    let cx = jsonnet_statics::Cx::default();
-    jsonnet_statics::check(&mut st, &cx, &desugar.arenas, desugar.top);
-    let statics_errors = st.finish();
-    Self { lex_errors: lex.errors, parse, statics_errors, desugar, path: p }
-  }
-
-  fn jsonnet_files(&self) -> paths::PathMap<jsonnet_eval::JsonnetFile<'_>> {
-    paths::PathMap::from_iter([(
-      self.path,
-      jsonnet_eval::JsonnetFile { expr_ar: &self.desugar.arenas.expr, top: self.desugar.top },
-    )])
-  }
-
-  fn cx<'a>(
-    &'a self,
-    jsonnet_files: &'a paths::PathMap<jsonnet_eval::JsonnetFile<'a>>,
-  ) -> jsonnet_eval::Cx<'a> {
-    jsonnet_eval::Cx { jsonnet_files, str_ar: &self.desugar.arenas.str }
+    let p = path.parent().expect("no parent");
+    let desugar = jsonnet_desugar::get(p, &[], fs, parse.root.clone());
+    let statics_errors = jsonnet_statics::get(&desugar.arenas, desugar.top);
+    Self { lex_errors: lex.errors, parse, statics_errors, desugar }
   }
 
   fn check(&self) {
@@ -67,44 +47,82 @@ impl Artifacts {
   }
 }
 
-fn exec(s: &str) -> (Artifacts, jsonnet_eval::error::Result<jsonnet_eval::Jsonnet>) {
-  let art = Artifacts::get(s);
-  art.check();
-  let jf = art.jsonnet_files();
-  let val = jsonnet_eval::get_exec(art.cx(&jf), art.path);
-  (art, val)
+struct Files {
+  fs: MemoryFs,
+  artifacts: jsonnet_combine::Artifacts,
+  map: paths::PathMap<jsonnet_eval::JsonnetFile>,
 }
 
-fn manifest_raw(s: &str) -> (Artifacts, jsonnet_eval::Json) {
-  let (art, val) = exec(s);
+impl Files {
+  fn get(ss: &[(&str, &str)]) -> Self {
+    let m: FxHashMap<_, _> =
+      ss.iter().map(|&(p, s)| (Path::new(p).to_owned(), s.to_owned())).collect();
+    let mut ret = Self {
+      fs: MemoryFs(paths::MemoryFileSystem::new(m)),
+      artifacts: jsonnet_combine::Artifacts::default(),
+      map: paths::PathMap::default(),
+    };
+    for &(p, _) in ss {
+      let p = Path::new(p);
+      let a = FileArtifacts::get(&ret.fs, p);
+      a.check();
+      let mut f = jsonnet_eval::JsonnetFile { expr_ar: a.desugar.arenas.expr, top: a.desugar.top };
+      let a = jsonnet_combine::Artifacts { paths: a.desugar.ps, strings: a.desugar.arenas.str };
+      jsonnet_combine::get(&mut ret.artifacts, a, &mut f.expr_ar, f.top);
+      let p = ret.path_id(p);
+      ret.map.insert(p, f);
+    }
+    ret
+  }
+
+  fn cx(&self) -> jsonnet_eval::Cx<'_> {
+    jsonnet_eval::Cx { jsonnet_files: &self.map, str_ar: &self.artifacts.strings }
+  }
+
+  fn path_id(&mut self, path: &Path) -> paths::PathId {
+    let p = self.fs.canonicalize(path).expect("canonicalize");
+    self.artifacts.paths.get_id(&p)
+  }
+}
+
+const DEFAULT_FILE_NAME: &str = "f.jsonnet";
+
+fn exec(s: &str) -> (Files, jsonnet_eval::error::Result<jsonnet_eval::Jsonnet>) {
+  let mut files = Files::get(&[(DEFAULT_FILE_NAME, s)]);
+  let p = files.path_id(Path::new(DEFAULT_FILE_NAME));
+  let val = jsonnet_eval::get_exec(files.cx(), p);
+  (files, val)
+}
+
+fn manifest_raw(s: &str) -> (Files, jsonnet_eval::Json) {
+  let (files, val) = exec(s);
   let val = match val {
     Ok(x) => x,
-    Err(e) => panic!("exec error: {}", e.display(&art.desugar.arenas.str)),
+    Err(e) => panic!("exec error: {}", e.display(&files.artifacts.strings)),
   };
-  let jf = art.jsonnet_files();
-  let val = match jsonnet_eval::get_manifest(art.cx(&jf), val) {
+  let val = match jsonnet_eval::get_manifest(files.cx(), val) {
     Ok(x) => x,
-    Err(e) => panic!("manifest error: {}", e.display(&art.desugar.arenas.str)),
+    Err(e) => panic!("manifest error: {}", e.display(&files.artifacts.strings)),
   };
-  (art, val)
+  (files, val)
 }
 
 /// tests that `jsonnet` execution results in an error whose message is `want`.
 pub(crate) fn exec_err(jsonnet: &str, want: &str) {
-  let (art, a) = exec(jsonnet);
+  let (files, a) = exec(jsonnet);
   let err = a.expect_err("no error");
-  let got = err.display(&art.desugar.arenas.str).to_string();
+  let got = err.display(&files.artifacts.strings).to_string();
   assert_eq!(want, got.as_str());
 }
 
 /// tests that `jsonnet` manifests to the `json`.
 pub(crate) fn manifest(jsonnet: &str, json: &str) {
   let want: serde_json::Value = serde_json::from_str(json).unwrap();
-  let (art, got) = manifest_raw(jsonnet);
-  let want = jsonnet_eval::Json::from_serde(&art.desugar.arenas.str, want);
+  let (files, got) = manifest_raw(jsonnet);
+  let want = jsonnet_eval::Json::from_serde(&files.artifacts.strings, want);
   if want != got {
-    let want = want.display(&art.desugar.arenas.str);
-    let got = got.display(&art.desugar.arenas.str);
+    let want = want.display(&files.artifacts.strings);
+    let got = got.display(&files.artifacts.strings);
     panic!("want: {want}\ngot:  {got}");
   }
 }
@@ -118,7 +136,7 @@ pub(crate) fn manifest_self(s: &str) {
 ///
 /// NOTE: `want` is NOT interpreted as JSON.
 pub(crate) fn manifest_str(jsonnet: &str, want: &str) {
-  let (mut art, got) = manifest_raw(jsonnet);
-  let want = art.desugar.arenas.str.str(want.to_owned().into_boxed_str());
-  got.assert_is_str(&art.desugar.arenas.str, &want);
+  let (mut files, got) = manifest_raw(jsonnet);
+  let want = files.artifacts.strings.str(want.to_owned().into_boxed_str());
+  got.assert_is_str(&files.artifacts.strings, &want);
 }

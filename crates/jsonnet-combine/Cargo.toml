@@ -1,0 +1,14 @@
+[package]
+name = "jsonnet-combine"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+paths.workspace = true
+
+jsonnet-expr.path = "../jsonnet-expr"
