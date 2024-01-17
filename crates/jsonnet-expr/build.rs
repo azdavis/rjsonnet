@@ -201,6 +201,8 @@ fn main() {
     });
 
     quote! {
+      // TODO use a Static variant of StrIdx/Str for compile time known strings? might also want to
+      // use phf for lookup
       #[allow(non_upper_case_globals)]
       impl StrIdx {
         #(#str_idx_constants)*
