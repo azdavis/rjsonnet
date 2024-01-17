@@ -4,13 +4,19 @@ use jsonnet_expr::{Expr, Id, Prim, StdFn, Str, Visibility};
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::BTreeMap;
 
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Clone)]
 pub(crate) struct Env {
+  /// TODO make priv?
+  pub(crate) path: paths::PathId,
   store: FxHashMap<Id, (Env, Expr)>,
   this: Option<Box<Object>>,
 }
 
 impl Env {
+  pub(crate) fn new(path: paths::PathId) -> Self {
+    Self { path, store: FxHashMap::default(), this: None }
+  }
+
   pub(crate) fn insert(&mut self, id: Id, env: Env, expr: Expr) {
     self.store.insert(id, (env, expr));
   }

@@ -14,9 +14,22 @@
 #![allow(missing_docs, clippy::too_many_lines)]
 
 pub mod error;
+
 mod exec;
 mod manifest;
 mod val;
+
+#[derive(Debug, Clone, Copy)]
+pub struct Cx<'a> {
+  pub jsonnet_files: &'a paths::PathMap<JsonnetFile<'a>>,
+  pub str_ar: &'a jsonnet_expr::StrArena,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct JsonnetFile<'a> {
+  pub expr_ar: &'a jsonnet_expr::ExprArena,
+  pub top: jsonnet_expr::Expr,
+}
 
 #[derive(Debug)]
 pub struct Jsonnet(val::jsonnet::Val);
@@ -30,8 +43,10 @@ pub struct Jsonnet(val::jsonnet::Val);
 /// # Panics
 ///
 /// If the expr wasn't checked.
-pub fn exec(ars: &jsonnet_expr::Arenas, expr: jsonnet_expr::Expr) -> error::Result<Jsonnet> {
-  exec::get(&val::jsonnet::Env::default(), ars, expr).map(Jsonnet)
+pub fn get_exec(cx: Cx<'_>, path: paths::PathId) -> error::Result<Jsonnet> {
+  let file = cx.jsonnet_files.get(&path).expect("no path");
+  let env = val::jsonnet::Env::new(path);
+  exec::get(cx, &env, file.top).map(Jsonnet)
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -75,6 +90,6 @@ impl Json {
 /// # Panics
 ///
 /// Upon internal error.
-pub fn manifest(ars: &jsonnet_expr::Arenas, val: Jsonnet) -> error::Result<Json> {
-  manifest::get(ars, val.0).map(Json)
+pub fn get_manifest(cx: Cx<'_>, val: Jsonnet) -> error::Result<Json> {
+  manifest::get(cx, val.0).map(Json)
 }

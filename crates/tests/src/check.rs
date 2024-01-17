@@ -1,9 +1,11 @@
-use paths::FileSystem;
+use jsonnet_desugar::FileSystem;
+use paths::FileSystem as _;
+use rustc_hash::FxHashMap;
 
 #[derive(Debug, Default)]
 struct MemoryFs(paths::MemoryFileSystem);
 
-impl jsonnet_desugar::FileSystem for MemoryFs {
+impl FileSystem for MemoryFs {
   fn canonicalize(&self, p: &std::path::Path) -> std::io::Result<paths::CanonicalPathBuf> {
     self.0.canonicalize(p)
   }
@@ -14,19 +16,38 @@ struct Artifacts {
   parse: jsonnet_parse::Parse,
   statics_errors: Vec<jsonnet_statics::error::Error>,
   desugar: jsonnet_desugar::Desugar,
+  path: paths::PathId,
 }
 
 impl Artifacts {
   fn get(s: &str) -> Self {
     let lex = jsonnet_lex::get(s);
     let parse = jsonnet_parse::get(&lex.tokens);
-    let fs = MemoryFs::default();
-    let desugar = jsonnet_desugar::get(std::path::Path::new("/"), &[], &fs, parse.root.clone());
+    let p = std::path::Path::new("/f.jsonnet");
+    let fs =
+      MemoryFs(paths::MemoryFileSystem::new(FxHashMap::from_iter([(p.to_owned(), s.to_owned())])));
+    let mut desugar = jsonnet_desugar::get(std::path::Path::new("/"), &[], &fs, parse.root.clone());
+    let p = fs.canonicalize(p).expect("canonicalize");
+    let p = desugar.ps.get_id(&p);
     let mut st = jsonnet_statics::St::default();
     let cx = jsonnet_statics::Cx::default();
     jsonnet_statics::check(&mut st, &cx, &desugar.arenas, desugar.top);
     let statics_errors = st.finish();
-    Self { lex_errors: lex.errors, parse, statics_errors, desugar }
+    Self { lex_errors: lex.errors, parse, statics_errors, desugar, path: p }
+  }
+
+  fn jsonnet_files(&self) -> paths::PathMap<jsonnet_eval::JsonnetFile<'_>> {
+    paths::PathMap::from_iter([(
+      self.path,
+      jsonnet_eval::JsonnetFile { expr_ar: &self.desugar.arenas.expr, top: self.desugar.top },
+    )])
+  }
+
+  fn cx<'a>(
+    &'a self,
+    jsonnet_files: &'a paths::PathMap<jsonnet_eval::JsonnetFile<'a>>,
+  ) -> jsonnet_eval::Cx<'a> {
+    jsonnet_eval::Cx { jsonnet_files, str_ar: &self.desugar.arenas.str }
   }
 
   fn check(&self) {
@@ -49,7 +70,8 @@ impl Artifacts {
 fn exec(s: &str) -> (Artifacts, jsonnet_eval::error::Result<jsonnet_eval::Jsonnet>) {
   let art = Artifacts::get(s);
   art.check();
-  let val = jsonnet_eval::exec(&art.desugar.arenas, art.desugar.top);
+  let jf = art.jsonnet_files();
+  let val = jsonnet_eval::get_exec(art.cx(&jf), art.path);
   (art, val)
 }
 
@@ -59,7 +81,8 @@ fn manifest_raw(s: &str) -> (Artifacts, jsonnet_eval::Json) {
     Ok(x) => x,
     Err(e) => panic!("exec error: {}", e.display(&art.desugar.arenas.str)),
   };
-  let val = match jsonnet_eval::manifest(&art.desugar.arenas, val) {
+  let jf = art.jsonnet_files();
+  let val = match jsonnet_eval::get_manifest(art.cx(&jf), val) {
     Ok(x) => x,
     Err(e) => panic!("manifest error: {}", e.display(&art.desugar.arenas.str)),
   };
