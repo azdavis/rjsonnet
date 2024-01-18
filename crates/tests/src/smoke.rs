@@ -3,6 +3,7 @@ mod comment;
 mod keyword_lit;
 mod number;
 mod object;
+mod op;
 mod std_lib;
 mod string;
 
