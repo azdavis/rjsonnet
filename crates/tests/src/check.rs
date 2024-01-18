@@ -87,29 +87,24 @@ impl Files {
 
 const DEFAULT_FILE_NAME: &str = "f.jsonnet";
 
-fn exec(s: &str) -> (Files, jsonnet_eval::error::Result<jsonnet_eval::Jsonnet>) {
-  let mut files = Files::get(vec![(DEFAULT_FILE_NAME, s)]);
-  let p = files.path_id(Path::new(DEFAULT_FILE_NAME));
+fn manifest_raw(files: &mut Files, name: &str) -> jsonnet_eval::Json {
+  let p = files.path_id(Path::new(name));
   let val = jsonnet_eval::get_exec(files.cx(), p);
-  (files, val)
-}
-
-fn manifest_raw(s: &str) -> (Files, jsonnet_eval::Json) {
-  let (files, val) = exec(s);
   let val = match val {
     Ok(x) => x,
     Err(e) => panic!("exec error: {}", e.display(&files.artifacts.strings)),
   };
-  let val = match jsonnet_eval::get_manifest(files.cx(), val) {
+  match jsonnet_eval::get_manifest(files.cx(), val) {
     Ok(x) => x,
     Err(e) => panic!("manifest error: {}", e.display(&files.artifacts.strings)),
-  };
-  (files, val)
+  }
 }
 
 /// tests that `jsonnet` execution results in an error whose message is `want`.
 pub(crate) fn exec_err(jsonnet: &str, want: &str) {
-  let (files, a) = exec(jsonnet);
+  let mut files = Files::get(vec![(DEFAULT_FILE_NAME, jsonnet)]);
+  let p = files.path_id(Path::new(DEFAULT_FILE_NAME));
+  let a = jsonnet_eval::get_exec(files.cx(), p);
   let err = a.expect_err("no error");
   let got = err.display(&files.artifacts.strings).to_string();
   assert_eq!(want, got.as_str());
@@ -117,23 +112,14 @@ pub(crate) fn exec_err(jsonnet: &str, want: &str) {
 
 /// tests that `jsonnet` manifests to the `json`.
 pub(crate) fn manifest(jsonnet: &str, json: &str) {
-  manifest_many(&[("a.jsonnet", jsonnet, json)]);
+  manifest_many(&[(DEFAULT_FILE_NAME, jsonnet, json)]);
 }
 
 /// tests that for each triple of (filename, jsonnet, json), each jsonnet manifests to its json.
 pub(crate) fn manifest_many(input: &[(&str, &str, &str)]) {
   let mut files = Files::get(input.iter().map(|&(p, jsonnet, _)| (p, jsonnet)).collect());
   for &(p, _, json) in input {
-    let p = files.path_id(Path::new(p));
-    let got = jsonnet_eval::get_exec(files.cx(), p);
-    let got = match got {
-      Ok(x) => x,
-      Err(e) => panic!("exec error: {}", e.display(&files.artifacts.strings)),
-    };
-    let got = match jsonnet_eval::get_manifest(files.cx(), got) {
-      Ok(x) => x,
-      Err(e) => panic!("manifest error: {}", e.display(&files.artifacts.strings)),
-    };
+    let got = manifest_raw(&mut files, p);
     let want: serde_json::Value = serde_json::from_str(json).unwrap();
     let want = jsonnet_eval::Json::from_serde(&files.artifacts.strings, want);
     if want != got {
@@ -153,7 +139,8 @@ pub(crate) fn manifest_self(s: &str) {
 ///
 /// NOTE: `want` is NOT interpreted as JSON.
 pub(crate) fn manifest_str(jsonnet: &str, want: &str) {
-  let (mut files, got) = manifest_raw(jsonnet);
+  let mut files = Files::get(vec![(DEFAULT_FILE_NAME, jsonnet)]);
+  let got = manifest_raw(&mut files, DEFAULT_FILE_NAME);
   let want = files.artifacts.strings.str(want.to_owned().into_boxed_str());
   got.assert_is_str(&files.artifacts.strings, &want);
 }
