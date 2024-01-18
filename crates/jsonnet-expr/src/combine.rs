@@ -11,6 +11,10 @@ pub fn get(art: &mut Artifacts, other: Artifacts, ar: &mut ExprArena) {
   art.strings.combine(other.strings, &mut |old, new| {
     assert!(strings.insert(old, new).is_none());
   });
+  let mut paths = FxHashMap::<paths::PathId, paths::PathId>::default();
+  art.paths.combine(other.paths, &mut |old, new| {
+    assert!(paths.insert(old, new).is_none());
+  });
   for (_, expr) in ar.iter_mut() {
     match expr {
       ExprData::Prim(prim) => match prim {
@@ -31,7 +35,7 @@ pub fn get(art: &mut Artifacts, other: Artifacts, ar: &mut ExprArena) {
           id.0 = strings[&id.0];
         }
       }
-      ExprData::Import { .. } => todo!("combine Import"),
+      ExprData::Import { path, .. } => *path = paths[path],
       ExprData::Object { .. }
       | ExprData::Array(_)
       | ExprData::Subscript { .. }
