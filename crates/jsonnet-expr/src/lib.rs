@@ -347,6 +347,17 @@ impl StrArena {
       StrRepr::Alloc(s) => s.as_ref(),
     }
   }
+
+  fn combine<F>(&mut self, other: Self, f: &mut F)
+  where
+    F: FnMut(StrIdx, StrIdx),
+  {
+    for (idx, s) in other.idx_to_contents.into_iter().enumerate() {
+      let old = StrIdx::from_usize(idx);
+      let new = self.mk_idx(s);
+      f(old, new);
+    }
+  }
 }
 
 /// An identifier.
