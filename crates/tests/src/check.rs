@@ -54,7 +54,7 @@ struct Files {
 }
 
 impl Files {
-  fn get(ss: &[(&str, &str)]) -> Self {
+  fn get(ss: Vec<(&str, &str)>) -> Self {
     let m: FxHashMap<_, _> =
       ss.iter().map(|&(p, s)| (Path::new(p).to_owned(), s.to_owned())).collect();
     let mut ret = Self {
@@ -62,7 +62,7 @@ impl Files {
       artifacts: jsonnet_expr::Artifacts::default(),
       map: paths::PathMap::default(),
     };
-    for &(p, _) in ss {
+    for (p, _) in ss {
       let p = Path::new(p);
       let a = FileArtifacts::get(&ret.fs, p);
       a.check();
@@ -88,7 +88,7 @@ impl Files {
 const DEFAULT_FILE_NAME: &str = "f.jsonnet";
 
 fn exec(s: &str) -> (Files, jsonnet_eval::error::Result<jsonnet_eval::Jsonnet>) {
-  let mut files = Files::get(&[(DEFAULT_FILE_NAME, s)]);
+  let mut files = Files::get(vec![(DEFAULT_FILE_NAME, s)]);
   let p = files.path_id(Path::new(DEFAULT_FILE_NAME));
   let val = jsonnet_eval::get_exec(files.cx(), p);
   (files, val)
@@ -117,13 +117,37 @@ pub(crate) fn exec_err(jsonnet: &str, want: &str) {
 
 /// tests that `jsonnet` manifests to the `json`.
 pub(crate) fn manifest(jsonnet: &str, json: &str) {
-  let want: serde_json::Value = serde_json::from_str(json).unwrap();
   let (files, got) = manifest_raw(jsonnet);
+  let want: serde_json::Value = serde_json::from_str(json).unwrap();
   let want = jsonnet_eval::Json::from_serde(&files.artifacts.strings, want);
   if want != got {
     let want = want.display(&files.artifacts.strings);
     let got = got.display(&files.artifacts.strings);
     panic!("want: {want}\ngot:  {got}");
+  }
+}
+
+/// tests that for each triple of (filename, jsonnet, json), each jsonnet manifests to its json.
+pub(crate) fn manifest_many(input: &[(&str, &str, &str)]) {
+  let mut files = Files::get(input.iter().map(|&(p, jsonnet, _)| (p, jsonnet)).collect());
+  for &(p, _, json) in input {
+    let p = files.path_id(Path::new(p));
+    let got = jsonnet_eval::get_exec(files.cx(), p);
+    let got = match got {
+      Ok(x) => x,
+      Err(e) => panic!("exec error: {}", e.display(&files.artifacts.strings)),
+    };
+    let got = match jsonnet_eval::get_manifest(files.cx(), got) {
+      Ok(x) => x,
+      Err(e) => panic!("manifest error: {}", e.display(&files.artifacts.strings)),
+    };
+    let want: serde_json::Value = serde_json::from_str(json).unwrap();
+    let want = jsonnet_eval::Json::from_serde(&files.artifacts.strings, want);
+    if want != got {
+      let want = want.display(&files.artifacts.strings);
+      let got = got.display(&files.artifacts.strings);
+      panic!("want: {want}\ngot:  {got}");
+    }
   }
 }
 

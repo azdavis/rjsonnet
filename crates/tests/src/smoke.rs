@@ -6,7 +6,7 @@ mod object;
 mod std_lib;
 mod string;
 
-use crate::check::{exec_err, manifest};
+use crate::check::{exec_err, manifest, manifest_many};
 
 #[test]
 fn function() {
@@ -93,4 +93,18 @@ fn bool_op() {
 [true, false, false]
 ",
   );
+}
+
+#[test]
+fn import() {
+  manifest_many(&[
+    ("a.jsonnet", "1 + 2", "3"),
+    (
+      "b.jsonnet",
+      r"
+(import 'a.jsonnet') + 4
+",
+      "7",
+    ),
+  ]);
 }
