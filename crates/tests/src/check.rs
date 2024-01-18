@@ -49,7 +49,7 @@ impl FileArtifacts {
 
 struct Files {
   fs: MemoryFs,
-  artifacts: jsonnet_combine::Artifacts,
+  artifacts: jsonnet_expr::Artifacts,
   map: paths::PathMap<jsonnet_eval::JsonnetFile>,
 }
 
@@ -59,7 +59,7 @@ impl Files {
       ss.iter().map(|&(p, s)| (Path::new(p).to_owned(), s.to_owned())).collect();
     let mut ret = Self {
       fs: MemoryFs(paths::MemoryFileSystem::new(m)),
-      artifacts: jsonnet_combine::Artifacts::default(),
+      artifacts: jsonnet_expr::Artifacts::default(),
       map: paths::PathMap::default(),
     };
     for &(p, _) in ss {
@@ -67,8 +67,8 @@ impl Files {
       let a = FileArtifacts::get(&ret.fs, p);
       a.check();
       let mut f = jsonnet_eval::JsonnetFile { expr_ar: a.desugar.arenas.expr, top: a.desugar.top };
-      let a = jsonnet_combine::Artifacts { paths: a.desugar.ps, strings: a.desugar.arenas.str };
-      jsonnet_combine::get(&mut ret.artifacts, a, &mut f.expr_ar, f.top);
+      let a = jsonnet_expr::Artifacts { paths: a.desugar.ps, strings: a.desugar.arenas.str };
+      jsonnet_expr::combine::get(&mut ret.artifacts, a, &mut f.expr_ar);
       let p = ret.path_id(p);
       ret.map.insert(p, f);
     }

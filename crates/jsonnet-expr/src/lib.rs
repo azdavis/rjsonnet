@@ -7,6 +7,7 @@ mod generated {
 }
 
 pub mod arg;
+pub mod combine;
 
 pub use generated::{std_fn, StdFn};
 pub use la_arena::{Arena, ArenaMap, Idx};
@@ -17,6 +18,15 @@ use std::{collections::hash_map::Entry, fmt};
 pub type ExprMust = Idx<ExprData>;
 pub type Expr = Option<ExprMust>;
 pub type ExprArena = Arena<ExprData>;
+
+/// Artifacts for combining.
+#[derive(Debug, Default)]
+pub struct Artifacts {
+  /// The paths.
+  pub paths: paths::Store,
+  /// The strings.
+  pub strings: StrArena,
+}
 
 #[derive(Debug)]
 pub enum ExprData {
