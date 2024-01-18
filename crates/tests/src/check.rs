@@ -100,21 +100,6 @@ fn manifest_raw(files: &mut Files, name: &str) -> jsonnet_eval::Json {
   }
 }
 
-/// tests that `jsonnet` execution results in an error whose message is `want`.
-pub(crate) fn exec_err(jsonnet: &str, want: &str) {
-  let mut files = Files::get(vec![(DEFAULT_FILE_NAME, jsonnet)]);
-  let p = files.path_id(Path::new(DEFAULT_FILE_NAME));
-  let a = jsonnet_eval::get_exec(files.cx(), p);
-  let err = a.expect_err("no error");
-  let got = err.display(&files.artifacts.strings).to_string();
-  assert_eq!(want, got.as_str());
-}
-
-/// tests that `jsonnet` manifests to the `json`.
-pub(crate) fn manifest(jsonnet: &str, json: &str) {
-  manifest_many(&[(DEFAULT_FILE_NAME, jsonnet, json)]);
-}
-
 /// tests that for each triple of (filename, jsonnet, json), each jsonnet manifests to its json.
 pub(crate) fn manifest_many(input: &[(&str, &str, &str)]) {
   let mut files = Files::get(input.iter().map(|&(p, jsonnet, _)| (p, jsonnet)).collect());
@@ -130,6 +115,11 @@ pub(crate) fn manifest_many(input: &[(&str, &str, &str)]) {
   }
 }
 
+/// tests that `jsonnet` manifests to the `json`.
+pub(crate) fn manifest(jsonnet: &str, json: &str) {
+  manifest_many(&[(DEFAULT_FILE_NAME, jsonnet, json)]);
+}
+
 /// tests that `s`, when treated as either jsonnet or json, manifests to the same thing.
 pub(crate) fn manifest_self(s: &str) {
   manifest(s, s);
@@ -143,4 +133,14 @@ pub(crate) fn manifest_str(jsonnet: &str, want: &str) {
   let got = manifest_raw(&mut files, DEFAULT_FILE_NAME);
   let want = files.artifacts.strings.str(want.to_owned().into_boxed_str());
   got.assert_is_str(&files.artifacts.strings, &want);
+}
+
+/// tests that `jsonnet` execution results in an error whose message is `want`.
+pub(crate) fn exec_err(jsonnet: &str, want: &str) {
+  let mut files = Files::get(vec![(DEFAULT_FILE_NAME, jsonnet)]);
+  let p = files.path_id(Path::new(DEFAULT_FILE_NAME));
+  let a = jsonnet_eval::get_exec(files.cx(), p);
+  let err = a.expect_err("no error");
+  let got = err.display(&files.artifacts.strings).to_string();
+  assert_eq!(want, got.as_str());
 }
