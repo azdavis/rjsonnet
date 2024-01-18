@@ -117,14 +117,7 @@ pub(crate) fn exec_err(jsonnet: &str, want: &str) {
 
 /// tests that `jsonnet` manifests to the `json`.
 pub(crate) fn manifest(jsonnet: &str, json: &str) {
-  let (files, got) = manifest_raw(jsonnet);
-  let want: serde_json::Value = serde_json::from_str(json).unwrap();
-  let want = jsonnet_eval::Json::from_serde(&files.artifacts.strings, want);
-  if want != got {
-    let want = want.display(&files.artifacts.strings);
-    let got = got.display(&files.artifacts.strings);
-    panic!("want: {want}\ngot:  {got}");
-  }
+  manifest_many(&[("a.jsonnet", jsonnet, json)]);
 }
 
 /// tests that for each triple of (filename, jsonnet, json), each jsonnet manifests to its json.
