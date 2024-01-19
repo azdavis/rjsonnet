@@ -373,6 +373,35 @@ fn cmp_val(expr: ExprMust, cx: Cx<'_>, lhs: &Val, rhs: &Val) -> Result<Ordering>
   }
 }
 
+/// TODO could this call manifest?
+fn eq_val(expr: ExprMust, cx: Cx<'_>, lhs: &Val, rhs: &Val) -> Result<bool> {
+  match (lhs, rhs) {
+    (Val::Prim(lhs), Val::Prim(rhs)) => Ok(lhs == rhs),
+    (Val::Array(lhs), Val::Array(rhs)) => {
+      if lhs.len() != rhs.len() {
+        return Ok(false);
+      }
+      for ((le, lhs), (re, rhs)) in lhs.iter().zip(rhs.iter()) {
+        let lhs = get(cx, le, lhs)?;
+        let rhs = get(cx, re, rhs)?;
+        let eq = eq_val(expr, cx, &lhs, &rhs)?;
+        if !eq {
+          return Ok(false);
+        }
+      }
+      Ok(true)
+    }
+    (Val::Object(_), Val::Object(_)) => {
+      Err(error::Error::Exec { expr, kind: error::Kind::Todo("object-object equality") })
+    }
+    (Val::Prim(_), Val::Object(_) | Val::Array(_))
+    | (Val::Object(_), Val::Prim(_) | Val::Array(_))
+    | (Val::Array(_), Val::Prim(_) | Val::Object(_))
+    | (Val::Function(_) | Val::StdFn(_), _)
+    | (_, Val::Function(_) | Val::StdFn(_)) => Ok(false),
+  }
+}
+
 fn add_binds(env: &Env, binds: &[(Id, Expr)]) -> Env {
   let mut ret = env.clone();
   for &(id, expr) in binds {
@@ -868,7 +897,9 @@ fn get_std_fn(
     }
     StdFn::equals => {
       let arguments = std_fn::args::equals(positional, named, expr)?;
-      cmp_bool_op(expr, cx, env, arguments.a, arguments.b, Ordering::is_eq)
+      let lhs = get(cx, env, arguments.a)?;
+      let rhs = get(cx, env, arguments.b)?;
+      Ok(Val::Prim(Prim::Bool(eq_val(expr, cx, &lhs, &rhs)?)))
     }
     StdFn::objectHasEx => {
       let _ = std_fn::args::objectHasEx(positional, named, expr)?;

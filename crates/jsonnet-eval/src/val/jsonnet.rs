@@ -266,6 +266,10 @@ impl Array {
   pub(crate) fn append(&mut self, other: &mut Self) {
     self.parts.append(&mut other.parts);
   }
+
+  pub(crate) fn len(&self) -> usize {
+    self.parts.iter().map(|x| x.elems.len()).sum()
+  }
 }
 
 #[derive(Debug, Clone)]

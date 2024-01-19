@@ -318,7 +318,7 @@ fn t4() {
 }
 
 #[test]
-#[should_panic = "manifest error: incompatible types"]
+#[should_panic = "not yet implemented: object-object equality"]
 fn t5() {
   manifest(
     r"
