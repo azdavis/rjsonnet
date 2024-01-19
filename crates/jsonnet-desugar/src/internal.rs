@@ -356,8 +356,8 @@ fn get_object(st: &mut St, cx: Cx<'_>, inside: ast::Object, in_obj: bool) -> Exp
             };
             let mut body = match field.field_extra() {
               None => get_expr(st, cx, field.expr(), true),
-              Some(ast::FieldExtra::FieldPlus(_)) => {
-                // TODO impl FieldPlus
+              Some(ast::FieldExtra::FieldPlus(fp)) => {
+                st.err(&fp, error::Kind::Todo("FieldPlus"));
                 None
               }
               Some(ast::FieldExtra::ParenParams(paren_params)) => {
