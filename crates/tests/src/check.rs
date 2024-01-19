@@ -76,7 +76,11 @@ impl Files {
   }
 
   fn cx(&self) -> jsonnet_eval::Cx<'_> {
-    jsonnet_eval::Cx { jsonnet_files: &self.map, str_ar: &self.artifacts.strings }
+    jsonnet_eval::Cx {
+      jsonnet_files: &self.map,
+      paths: &self.artifacts.paths,
+      str_ar: &self.artifacts.strings,
+    }
   }
 
   fn path_id(&mut self, path: &Path) -> paths::PathId {

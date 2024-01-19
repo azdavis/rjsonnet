@@ -72,13 +72,18 @@ pub(crate) fn get(cx: Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
             kind: error::Kind::FieldNotDefined(name.clone()),
           });
         };
-        // TODO do we need all the asserts/do we have to evaluate them to json values?
         for (env, assert) in object.asserts() {
           get(cx, &env, assert)?;
         }
         match field {
           Field::Std(field) => match field {
-            StdField::ThisFile => Err(mk_todo(expr, "this file")),
+            StdField::ThisFile => match cx.paths.get_path(env.path).as_path().to_str() {
+              Some(s) => {
+                let s = s.to_owned().into_boxed_str();
+                Ok(Val::Prim(Prim::String(cx.str_ar.str_shared(s))))
+              }
+              None => Err(error::Error::Exec { expr, kind: error::Kind::Todo("path not str") }),
+            },
             StdField::Fn(f) => Ok(Val::StdFn(f)),
           },
           Field::Expr(env, expr) => get(cx, &env, expr),
