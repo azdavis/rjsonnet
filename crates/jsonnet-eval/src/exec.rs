@@ -45,7 +45,9 @@ pub(crate) fn get(cx: Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
         match get(cx, &env, *name)? {
           Val::Prim(Prim::String(s)) => {
             let Some(body) = *body else { continue };
-            // we want to do `[e/x]body` here?
+            // TODO the spec says to do `[e/x]body` here. we'd rather not substitute eagerly. we
+            // should do something like put the e and x on the object literal and update the env
+            // when we would evaluate the field.
             let body = match expr_ar[body] {
               ExprData::Prim(_) => body,
               _ => return Err(mk_todo(expr, "subst for object body")),
