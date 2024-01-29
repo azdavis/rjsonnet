@@ -38,7 +38,7 @@ fn main() -> Result<()> {
 
 fn capabilities() -> lsp_types::ServerCapabilities {
   lsp_types::ServerCapabilities {
-    definition_provider: Some(lsp_types::OneOf::Left(true)),
+    hover_provider: Some(lsp_types::HoverProviderCapability::Simple(true)),
     ..Default::default()
   }
 }
@@ -53,9 +53,15 @@ fn main_loop(conn: &lsp_server::Connection, _: &lsp_types::InitializeParams) -> 
           return Ok(());
         }
         log::info!("got request: {req:?}");
-        let out = try_req::<lsp_types::request::GotoDefinition, _>(req, |id, params| {
-          log::info!("got gotoDefinition request #{id}: {params:?}");
-          let result = Some(lsp_types::GotoDefinitionResponse::Array(Vec::new()));
+        let out = try_req::<lsp_types::request::HoverRequest, _>(req, |id, params| {
+          log::info!("got hover request #{id}: {params:?}");
+          let result = lsp_types::Hover {
+            contents: lsp_types::HoverContents::Markup(lsp_types::MarkupContent {
+              kind: lsp_types::MarkupKind::Markdown,
+              value: "hi there".to_owned(),
+            }),
+            range: None,
+          };
           let result = serde_json::to_value(result).unwrap();
           let resp = lsp_server::Response { id, result: Some(result), error: None };
           conn.sender.send(lsp_server::Message::Response(resp))?;
