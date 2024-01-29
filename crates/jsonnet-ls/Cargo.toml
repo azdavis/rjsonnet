@@ -13,3 +13,10 @@ test = false
 workspace = true
 
 [dependencies]
+anyhow.workspace = true
+better-panic.workspace = true
+env_logger.workspace = true
+log.workspace = true
+lsp-server.workspace = true
+lsp-types.workspace = true
+serde_json.workspace = true
