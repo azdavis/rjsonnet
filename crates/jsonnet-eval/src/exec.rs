@@ -415,7 +415,7 @@ fn str_conv(cx: Cx<'_>, val: Val) -> Result<Str> {
     Ok(s)
   } else {
     let json = manifest::get(cx, val)?;
-    let string = json.display(cx.str_ar).to_string();
+    let string = json.display(cx.str_ar, 0).to_string();
     Ok(cx.str_ar.str_shared(string.into_boxed_str()))
   }
 }

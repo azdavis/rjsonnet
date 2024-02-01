@@ -30,11 +30,11 @@ fn go(
       Ok(x) => x,
       Err(e) => bail!("couldn't get json: {}", e.display(srv.st.strings())),
     };
-    let value = json.display(srv.st.strings()).to_string();
+    let json = json.display(srv.st.strings());
     let result = lsp_types::Hover {
       contents: lsp_types::HoverContents::Markup(lsp_types::MarkupContent {
         kind: lsp_types::MarkupKind::Markdown,
-        value,
+        value: format!("```json\n{json}\n```"),
       }),
       range: None,
     };

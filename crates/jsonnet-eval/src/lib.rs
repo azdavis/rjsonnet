@@ -62,7 +62,7 @@ impl Json {
 
   #[must_use]
   pub fn display<'a>(&'a self, ar: &'a jsonnet_expr::StrArena) -> impl std::fmt::Display + 'a {
-    self.0.display(ar)
+    self.0.display(ar, 0)
   }
 
   /// Asserts this is a string.
