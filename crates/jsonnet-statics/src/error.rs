@@ -24,6 +24,7 @@ impl Error {
   }
 }
 
+/// TODO apply the combination of ids/str to this
 #[derive(Debug)]
 pub(crate) enum Kind {
   NotInScope(Id),
