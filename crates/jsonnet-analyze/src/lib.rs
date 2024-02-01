@@ -13,6 +13,7 @@ use std::path::{Path, PathBuf};
 pub struct St {
   artifacts: jsonnet_expr::Artifacts,
   files: PathMap<jsonnet_eval::JsonnetFile>,
+  files_extra: PathMap<FileArtifacts>,
   json: PathMap<jsonnet_eval::error::Result<jsonnet_eval::Json>>,
   /// a map from path ids *p* to the set of path ids that **depend on** *p*
   dependents: BTreeMap<PathId, BTreeSet<PathId>>,
@@ -33,6 +34,7 @@ impl St {
     let updated = remove.into_iter().flat_map(|path| {
       let path_id = self.path_id(fs, path.as_path());
       self.files.remove(&path_id);
+      self.files_extra.remove(&path_id);
       let dependents = self.dependents.remove(&path_id);
       dependents.into_iter().flatten()
     });
@@ -42,26 +44,19 @@ impl St {
     let get_file_artifacts = add.into_par_iter().map(|path| {
       let contents = fs.read_to_string(path.as_path()).expect("read to string");
       let parent = path.parent().expect("no parent");
-      let artifacts = FileArtifacts::new(contents.as_str(), parent, &FsAdapter(fs));
+      let artifacts = IsolatedFileArtifacts::new(contents.as_str(), parent, &FsAdapter(fs));
       (path, artifacts)
     });
-    let mut file_artifacts = Vec::<(PathBuf, FileArtifacts)>::default();
+    let mut file_artifacts = Vec::<(PathBuf, IsolatedFileArtifacts)>::default();
     get_file_artifacts.collect_into_vec(&mut file_artifacts);
 
     // combine the file artifacts in sequence, and note which files were added.
-    let added = file_artifacts.into_iter().map(|(path, artifacts)| {
-      artifacts.panic_if_any_errors();
-      let mut file = jsonnet_eval::JsonnetFile {
-        expr_ar: artifacts.desugar.arenas.expr,
-        top: artifacts.desugar.top,
-      };
-      let artifacts = jsonnet_expr::Artifacts {
-        paths: artifacts.desugar.ps,
-        strings: artifacts.desugar.arenas.str,
-      };
-      jsonnet_expr::combine::get(&mut self.artifacts, artifacts, &mut file.expr_ar);
+    let added = file_artifacts.into_iter().map(|(path, mut art)| {
+      art.panic_if_any_errors();
+      jsonnet_expr::combine::get(&mut self.artifacts, art.combine, &mut art.eval.expr_ar);
       let path_id = self.path_id(fs, path.as_path());
-      self.files.insert(path_id, file);
+      self.files.insert(path_id, art.eval);
+      self.files_extra.insert(path_id, art.extra);
       path_id
     });
     let added: BTreeSet<_> = added.collect();
@@ -170,38 +165,68 @@ impl St {
   }
 }
 
-/// Artifacts from a file analyzed in isolation.
+/// Artifacts from a file whose shared artifacts have been combined into the global ones.
 #[derive(Debug)]
+#[allow(dead_code)]
 struct FileArtifacts {
-  lex_errors: Vec<jsonnet_lex::Error>,
-  parse: jsonnet_parse::Parse,
-  desugar: jsonnet_desugar::Desugar,
-  statics_errors: Vec<jsonnet_statics::error::Error>,
+  syntax: jsonnet_syntax::Root,
+  pointers: jsonnet_desugar::Pointers,
+  errors: FileErrors,
 }
 
-impl FileArtifacts {
+/// Errors from a file analyzed in isolation.
+#[derive(Debug)]
+#[allow(dead_code)]
+struct FileErrors {
+  lex: Vec<jsonnet_lex::Error>,
+  parse: Vec<jsonnet_parse::Error>,
+  desugar: Vec<jsonnet_desugar::Error>,
+  statics: Vec<jsonnet_statics::error::Error>,
+}
+
+/// Artifacts from a file analyzed in isolation.
+#[derive(Debug)]
+struct IsolatedFileArtifacts {
+  eval: jsonnet_eval::JsonnetFile,
+  combine: jsonnet_expr::Artifacts,
+  extra: FileArtifacts,
+}
+
+impl IsolatedFileArtifacts {
   /// Returns artifacts for a file contained in the given directory.
   fn new(contents: &str, current_dir: &Path, fs: &dyn jsonnet_desugar::FileSystem) -> Self {
     let lex = jsonnet_lex::get(contents);
     let parse = jsonnet_parse::get(&lex.tokens);
     let desugar = jsonnet_desugar::get(current_dir, &[], fs, parse.root.clone().into_ast());
     let statics_errors = jsonnet_statics::get(&desugar.arenas, desugar.top);
-    Self { lex_errors: lex.errors, parse, desugar, statics_errors }
+    Self {
+      eval: jsonnet_eval::JsonnetFile { expr_ar: desugar.arenas.expr, top: desugar.top },
+      combine: jsonnet_expr::Artifacts { paths: desugar.ps, strings: desugar.arenas.str },
+      extra: FileArtifacts {
+        syntax: parse.root,
+        pointers: desugar.pointers,
+        errors: FileErrors {
+          lex: lex.errors,
+          parse: parse.errors,
+          desugar: desugar.errors,
+          statics: statics_errors,
+        },
+      },
+    }
   }
 
   fn panic_if_any_errors(&self) {
-    if let Some(e) = self.lex_errors.first() {
+    if let Some(e) = self.extra.errors.lex.first() {
       panic!("lex error: {e}");
     }
-    if let Some(e) = self.parse.errors.first() {
+    if let Some(e) = self.extra.errors.parse.first() {
       panic!("parse error: {e}");
     }
-    if let Some(e) = self.desugar.errors.first() {
+    if let Some(e) = self.extra.errors.desugar.first() {
       panic!("desugar error: {e}");
     }
-    if let Some(e) = self.statics_errors.first() {
-      let e = e.display(&self.desugar.arenas.str);
-      panic!("statics error: {e}");
+    if let Some(e) = self.extra.errors.statics.first() {
+      panic!("statics error: {}", e.display(&self.combine.strings));
     }
   }
 }
