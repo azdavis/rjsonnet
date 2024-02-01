@@ -41,6 +41,7 @@
     "Ungrammar",
     "unparse",
     "vals",
+    "walkdir",
     "xnor",
     "xtask"
   ]

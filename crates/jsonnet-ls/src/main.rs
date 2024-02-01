@@ -4,9 +4,11 @@
 #![allow(clippy::pedantic)]
 
 mod capabilities;
+mod convert;
 mod notification;
 mod request;
 mod response;
+mod server;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 const ISSUES_URL: &str = "https://github.com/azdavis/rjsonnet/issues";
@@ -33,22 +35,22 @@ fn main() -> anyhow::Result<()> {
     }
   };
   let init: lsp_types::InitializeParams = serde_json::from_value(init).unwrap();
-
-  main_loop(&conn, &init)?;
+  let srv = server::Server::init(init).expect("init server");
+  main_loop(srv, &conn)?;
 
   io_threads.join()?;
   log::info!("shut down lsp server");
   Ok(())
 }
 
-fn main_loop(conn: &lsp_server::Connection, _: &lsp_types::InitializeParams) -> anyhow::Result<()> {
+fn main_loop(mut srv: server::Server, conn: &lsp_server::Connection) -> anyhow::Result<()> {
   for msg in &conn.receiver {
     match msg {
       lsp_server::Message::Request(req) => {
         if conn.handle_shutdown(&req)? {
           return Ok(());
         }
-        request::handle(conn, req)?;
+        request::handle(&mut srv, conn, req)?;
       }
       lsp_server::Message::Response(res) => response::handle(res)?,
       lsp_server::Message::Notification(notif) => notification::handle(notif)?,
