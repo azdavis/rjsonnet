@@ -15,9 +15,9 @@ doctest = false
 [dependencies]
 paths.workspace = true
 rustc-hash.workspace = true
+str-process.workspace = true
 text-size.workspace = true
 
 jsonnet-escape.path = "../jsonnet-escape"
 jsonnet-expr.path = "../jsonnet-expr"
 jsonnet-syntax.path = "../jsonnet-syntax"
-str-process.path = "../str-process"

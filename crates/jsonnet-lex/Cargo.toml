@@ -13,9 +13,9 @@ test = false
 doctest = false
 
 [dependencies]
-token.workspace = true
+str-process.workspace = true
 text-size.workspace = true
+token.workspace = true
 
 jsonnet-escape.path = "../jsonnet-escape"
 jsonnet-syntax.path = "../jsonnet-syntax"
-str-process.path = "../str-process"
