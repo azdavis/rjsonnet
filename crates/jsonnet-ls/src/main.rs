@@ -1,12 +1,17 @@
 //! A language server for Jsonnet.
 
-use anyhow::{anyhow, Result};
-use std::ops::ControlFlow;
+// TODO remove
+#![allow(clippy::pedantic)]
+
+mod capabilities;
+mod notification;
+mod request;
+mod response;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 const ISSUES_URL: &str = "https://github.com/azdavis/rjsonnet/issues";
 
-fn main() -> Result<()> {
+fn main() -> anyhow::Result<()> {
   let msg =
     format!("jsonnet-ls ({VERSION}) crashed. We would appreciate a bug report: {ISSUES_URL}");
   better_panic::Settings::new().message(msg).verbosity(better_panic::Verbosity::Medium).install();
@@ -17,7 +22,7 @@ fn main() -> Result<()> {
   log::info!("start up lsp server");
   let (conn, io_threads) = lsp_server::Connection::stdio();
 
-  let server_capabilities = serde_json::to_value(capabilities()).unwrap();
+  let server_capabilities = serde_json::to_value(capabilities::get()).unwrap();
   let init = match conn.initialize(server_capabilities) {
     Ok(x) => x,
     Err(e) => {
@@ -36,14 +41,7 @@ fn main() -> Result<()> {
   Ok(())
 }
 
-fn capabilities() -> lsp_types::ServerCapabilities {
-  lsp_types::ServerCapabilities {
-    hover_provider: Some(lsp_types::HoverProviderCapability::Simple(true)),
-    ..Default::default()
-  }
-}
-
-fn main_loop(conn: &lsp_server::Connection, _: &lsp_types::InitializeParams) -> Result<()> {
+fn main_loop(conn: &lsp_server::Connection, _: &lsp_types::InitializeParams) -> anyhow::Result<()> {
   log::info!("starting example main loop");
   for msg in &conn.receiver {
     log::info!("got msg: {msg:?}");
@@ -52,54 +50,11 @@ fn main_loop(conn: &lsp_server::Connection, _: &lsp_types::InitializeParams) -> 
         if conn.handle_shutdown(&req)? {
           return Ok(());
         }
-        log::info!("got request: {req:?}");
-        let out = try_req::<lsp_types::request::HoverRequest, _>(req, |id, params| {
-          log::info!("got hover request #{id}: {params:?}");
-          let result = lsp_types::Hover {
-            contents: lsp_types::HoverContents::Markup(lsp_types::MarkupContent {
-              kind: lsp_types::MarkupKind::Markdown,
-              value: "hi there".to_owned(),
-            }),
-            range: None,
-          };
-          let result = serde_json::to_value(result).unwrap();
-          let resp = lsp_server::Response { id, result: Some(result), error: None };
-          conn.sender.send(lsp_server::Message::Response(resp))?;
-          Ok(())
-        });
-        match out {
-          ControlFlow::Continue(x) => log::error!("unhandled request: {x:?}"),
-          ControlFlow::Break(Ok(())) => {}
-          ControlFlow::Break(Err(e)) => log::error!("error: {e:?}"),
-        }
+        request::handle(conn, req)?;
       }
-      lsp_server::Message::Response(resp) => {
-        log::info!("got response: {resp:?}");
-      }
-      lsp_server::Message::Notification(not) => {
-        log::info!("got notification: {not:?}");
-      }
+      lsp_server::Message::Response(res) => response::handle(res)?,
+      lsp_server::Message::Notification(notif) => notification::handle(notif)?,
     }
   }
   Ok(())
-}
-
-fn try_req<R, F>(req: lsp_server::Request, f: F) -> ControlFlow<Result<()>, lsp_server::Request>
-where
-  R: lsp_types::request::Request,
-  F: FnOnce(lsp_server::RequestId, R::Params) -> Result<()>,
-{
-  match req.extract::<R::Params>(R::METHOD) {
-    Ok((id, params)) => ControlFlow::Break(f(id, params)),
-    Err(e) => extract_error(e),
-  }
-}
-
-fn extract_error<T>(e: lsp_server::ExtractError<T>) -> ControlFlow<Result<()>, T> {
-  match e {
-    lsp_server::ExtractError::MethodMismatch(x) => ControlFlow::Continue(x),
-    lsp_server::ExtractError::JsonError { method, error } => {
-      ControlFlow::Break(Err(anyhow!("couldn't deserialize for {method}: {error}")))
-    }
-  }
 }

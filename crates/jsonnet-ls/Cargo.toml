@@ -20,3 +20,5 @@ log.workspace = true
 lsp-server.workspace = true
 lsp-types.workspace = true
 serde_json.workspace = true
+
+jsonnet-analyze.path = "../jsonnet-analyze"

@@ -407,6 +407,7 @@ dependencies = [
  "anyhow",
  "better-panic",
  "env_logger",
+ "jsonnet-analyze",
  "log",
  "lsp-server",
  "lsp-types",
