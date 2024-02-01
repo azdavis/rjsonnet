@@ -16,9 +16,5 @@ paths.workspace = true
 rustc-hash.workspace = true
 serde_json.workspace = true
 
-jsonnet-desugar.path = "../jsonnet-desugar"
+jsonnet-analyze.path = "../jsonnet-analyze"
 jsonnet-eval.path = "../jsonnet-eval"
-jsonnet-expr.path = "../jsonnet-expr"
-jsonnet-lex.path = "../jsonnet-lex"
-jsonnet-parse.path = "../jsonnet-parse"
-jsonnet-statics.path = "../jsonnet-statics"

@@ -2,7 +2,7 @@
 
 mod internal;
 
-use jsonnet_syntax::{ast::AstNode as _, kind::SyntaxKind as SK};
+use jsonnet_syntax::kind::SyntaxKind as SK;
 use std::fmt;
 
 /// # Panics
@@ -21,8 +21,10 @@ pub fn get(tokens: &[token::Token<'_, SK>]) -> Parse {
   let mut sink = event_parse::rowan_sink::RowanSink::default();
   p.finish(&mut sink);
   let (node, errors) = sink.finish::<jsonnet_syntax::kind::Jsonnet>();
-  let root = jsonnet_syntax::ast::Root::cast(node).expect("root should be Root");
-  Parse { root, errors: errors.into_iter().map(Error).collect() }
+  Parse {
+    root: jsonnet_syntax::Root::new(node.green().into_owned()),
+    errors: errors.into_iter().map(Error).collect(),
+  }
 }
 
 type Parser<'a> = event_parse::Parser<'a, SK, ErrorKind>;
@@ -31,7 +33,7 @@ type Parser<'a> = event_parse::Parser<'a, SK, ErrorKind>;
 #[derive(Debug)]
 pub struct Parse {
   /// The parsed concrete syntax tree.
-  pub root: jsonnet_syntax::ast::Root,
+  pub root: jsonnet_syntax::Root,
   /// Errors when parsing.
   pub errors: Vec<Error>,
 }

@@ -1,119 +1,46 @@
-use jsonnet_desugar::FileSystem;
-use paths::FileSystem as _;
 use rustc_hash::FxHashMap;
-use std::path::Path;
-
-#[derive(Debug, Default)]
-struct MemoryFs(paths::MemoryFileSystem);
-
-impl FileSystem for MemoryFs {
-  fn canonicalize(&self, p: &Path) -> std::io::Result<paths::CanonicalPathBuf> {
-    self.0.canonicalize(p)
-  }
-}
-
-struct FileArtifacts {
-  lex_errors: Vec<jsonnet_lex::Error>,
-  parse: jsonnet_parse::Parse,
-  statics_errors: Vec<jsonnet_statics::error::Error>,
-  desugar: jsonnet_desugar::Desugar,
-}
-
-impl FileArtifacts {
-  fn get(fs: &MemoryFs, path: &Path) -> Self {
-    let s = fs.0.read_to_string(path).expect("io error");
-    let lex = jsonnet_lex::get(s.as_str());
-    let parse = jsonnet_parse::get(&lex.tokens);
-    let p = path.parent().expect("no parent");
-    let desugar = jsonnet_desugar::get(p, &[], fs, parse.root.clone());
-    let statics_errors = jsonnet_statics::get(&desugar.arenas, desugar.top);
-    Self { lex_errors: lex.errors, parse, statics_errors, desugar }
-  }
-
-  fn check(&self) {
-    if let Some(e) = self.lex_errors.first() {
-      panic!("lex error: {e}");
-    }
-    if let Some(e) = self.parse.errors.first() {
-      panic!("parse error: {e}");
-    }
-    if let Some(e) = self.desugar.errors.first() {
-      panic!("desugar error: {e}");
-    }
-    if let Some(e) = self.statics_errors.first() {
-      let e = e.display(&self.desugar.arenas.str);
-      panic!("statics error: {e}");
-    }
-  }
-}
-
-struct Files {
-  fs: MemoryFs,
-  artifacts: jsonnet_expr::Artifacts,
-  map: paths::PathMap<jsonnet_eval::JsonnetFile>,
-}
-
-impl Files {
-  fn get(ss: Vec<(&str, &str)>) -> Self {
-    let m: FxHashMap<_, _> =
-      ss.iter().map(|&(p, s)| (Path::new(p).to_owned(), s.to_owned())).collect();
-    let mut ret = Self {
-      fs: MemoryFs(paths::MemoryFileSystem::new(m)),
-      artifacts: jsonnet_expr::Artifacts::default(),
-      map: paths::PathMap::default(),
-    };
-    for (p, _) in ss {
-      let p = Path::new(p);
-      let a = FileArtifacts::get(&ret.fs, p);
-      a.check();
-      let mut f = jsonnet_eval::JsonnetFile { expr_ar: a.desugar.arenas.expr, top: a.desugar.top };
-      let a = jsonnet_expr::Artifacts { paths: a.desugar.ps, strings: a.desugar.arenas.str };
-      jsonnet_expr::combine::get(&mut ret.artifacts, a, &mut f.expr_ar);
-      let p = ret.path_id(p);
-      ret.map.insert(p, f);
-    }
-    ret
-  }
-
-  fn cx(&self) -> jsonnet_eval::Cx<'_> {
-    jsonnet_eval::Cx {
-      jsonnet_files: &self.map,
-      paths: &self.artifacts.paths,
-      str_ar: &self.artifacts.strings,
-    }
-  }
-
-  fn path_id(&mut self, path: &Path) -> paths::PathId {
-    let p = self.fs.canonicalize(path).expect("canonicalize");
-    self.artifacts.paths.get_id(&p)
-  }
-}
+use std::path::{Path, PathBuf};
 
 const DEFAULT_FILE_NAME: &str = "f.jsonnet";
 
-fn manifest_raw(files: &mut Files, name: &str) -> jsonnet_eval::Json {
-  let p = files.path_id(Path::new(name));
-  let val = jsonnet_eval::get_exec(files.cx(), p);
+pub(crate) type St = jsonnet_analyze::St<paths::MemoryFileSystem>;
+
+fn mk_st<'a, I>(iter: I) -> St
+where
+  I: Iterator<Item = (&'a str, &'a str)> + Clone,
+{
+  let map: FxHashMap<_, _> =
+    iter.clone().map(|(path, contents)| (PathBuf::from(path), contents.to_owned())).collect();
+  let fs = paths::MemoryFileSystem::new(map);
+  let mut ret = St::new(fs);
+  let add = iter.map(|(path, _)| PathBuf::from(path)).collect();
+  ret.update_many(Vec::new(), add);
+  ret
+}
+
+fn manifest_raw(st: &mut St, name: &str) -> jsonnet_eval::Json {
+  let p = st.path_id(Path::new(name));
+  let val = jsonnet_eval::get_exec(st.cx(), p);
   let val = match val {
     Ok(x) => x,
-    Err(e) => panic!("exec error: {}", e.display(&files.artifacts.strings)),
+    Err(e) => panic!("exec error: {}", e.display(st.strings())),
   };
-  match jsonnet_eval::get_manifest(files.cx(), val) {
+  match jsonnet_eval::get_manifest(st.cx(), val) {
     Ok(x) => x,
-    Err(e) => panic!("manifest error: {}", e.display(&files.artifacts.strings)),
+    Err(e) => panic!("manifest error: {}", e.display(st.strings())),
   }
 }
 
 /// tests that for each triple of (filename, jsonnet, json), each jsonnet manifests to its json.
 pub(crate) fn manifest_many(input: &[(&str, &str, &str)]) {
-  let mut files = Files::get(input.iter().map(|&(p, jsonnet, _)| (p, jsonnet)).collect());
+  let mut st = mk_st(input.iter().map(|&(path, jsonnet, _)| (path, jsonnet)));
   for &(p, _, json) in input {
-    let got = manifest_raw(&mut files, p);
+    let got = manifest_raw(&mut st, p);
     let want: serde_json::Value = serde_json::from_str(json).unwrap();
-    let want = jsonnet_eval::Json::from_serde(&files.artifacts.strings, want);
+    let want = jsonnet_eval::Json::from_serde(st.strings(), want);
     if want != got {
-      let want = want.display(&files.artifacts.strings);
-      let got = got.display(&files.artifacts.strings);
+      let want = want.display(st.strings());
+      let got = got.display(st.strings());
       panic!("want: {want}\ngot:  {got}");
     }
   }
@@ -133,18 +60,18 @@ pub(crate) fn manifest_self(s: &str) {
 ///
 /// NOTE: `want` is NOT interpreted as JSON.
 pub(crate) fn manifest_str(jsonnet: &str, want: &str) {
-  let mut files = Files::get(vec![(DEFAULT_FILE_NAME, jsonnet)]);
-  let got = manifest_raw(&mut files, DEFAULT_FILE_NAME);
-  let want = files.artifacts.strings.str(want.to_owned().into_boxed_str());
-  got.assert_is_str(&files.artifacts.strings, &want);
+  let mut st = mk_st(std::iter::once((DEFAULT_FILE_NAME, jsonnet)));
+  let got = manifest_raw(&mut st, DEFAULT_FILE_NAME);
+  let want = st.strings_mut().str(want.to_owned().into_boxed_str());
+  got.assert_is_str(st.strings(), &want);
 }
 
 /// tests that `jsonnet` execution results in an error whose message is `want`.
 pub(crate) fn exec_err(jsonnet: &str, want: &str) {
-  let mut files = Files::get(vec![(DEFAULT_FILE_NAME, jsonnet)]);
-  let p = files.path_id(Path::new(DEFAULT_FILE_NAME));
-  let a = jsonnet_eval::get_exec(files.cx(), p);
+  let mut st = mk_st(std::iter::once((DEFAULT_FILE_NAME, jsonnet)));
+  let p = st.path_id(Path::new(DEFAULT_FILE_NAME));
+  let a = jsonnet_eval::get_exec(st.cx(), p);
   let err = a.expect_err("no error");
-  let got = err.display(&files.artifacts.strings).to_string();
+  let got = err.display(st.strings()).to_string();
   assert_eq!(want, got.as_str());
 }

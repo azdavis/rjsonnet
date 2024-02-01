@@ -1,0 +1,22 @@
+[package]
+name = "jsonnet-analyze"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+paths.workspace = true
+rayon.workspace = true
+
+jsonnet-desugar.path = "../jsonnet-desugar"
+jsonnet-escape.path = "../jsonnet-escape"
+jsonnet-eval.path = "../jsonnet-eval"
+jsonnet-expr.path = "../jsonnet-expr"
+jsonnet-lex.path = "../jsonnet-lex"
+jsonnet-parse.path = "../jsonnet-parse"
+jsonnet-statics.path = "../jsonnet-statics"
+jsonnet-syntax.path = "../jsonnet-syntax"
