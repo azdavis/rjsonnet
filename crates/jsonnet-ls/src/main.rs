@@ -42,9 +42,7 @@ fn main() -> anyhow::Result<()> {
 }
 
 fn main_loop(conn: &lsp_server::Connection, _: &lsp_types::InitializeParams) -> anyhow::Result<()> {
-  log::info!("starting example main loop");
   for msg in &conn.receiver {
-    log::info!("got msg: {msg:?}");
     match msg {
       lsp_server::Message::Request(req) => {
         if conn.handle_shutdown(&req)? {
