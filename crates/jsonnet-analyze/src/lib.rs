@@ -1,7 +1,11 @@
 //! Analyze jsonnet files.
 
-use paths::PathId;
-use rayon::iter::{IndexedParallelIterator as _, IntoParallelIterator as _, ParallelIterator as _};
+use paths::{PathId, PathMap};
+use rayon::iter::{
+  IndexedParallelIterator as _, IntoParallelIterator as _, IntoParallelRefIterator,
+  ParallelIterator as _,
+};
+use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 
 /// The state of analysis.
@@ -9,7 +13,10 @@ use std::path::{Path, PathBuf};
 pub struct St<F> {
   fs: F,
   artifacts: jsonnet_expr::Artifacts,
-  files: paths::PathMap<jsonnet_eval::JsonnetFile>,
+  files: PathMap<jsonnet_eval::JsonnetFile>,
+  json: PathMap<jsonnet_eval::error::Result<jsonnet_eval::Json>>,
+  /// a map from path ids *p* to the set of path ids that **depend on** *p*
+  dependents: BTreeMap<PathId, BTreeSet<PathId>>,
 }
 
 impl<F> St<F>
@@ -18,7 +25,13 @@ where
 {
   /// Returns a new state.
   pub fn new(fs: F) -> Self {
-    Self { fs, artifacts: jsonnet_expr::Artifacts::default(), files: paths::PathMap::default() }
+    Self {
+      fs,
+      artifacts: jsonnet_expr::Artifacts::default(),
+      files: PathMap::default(),
+      json: PathMap::default(),
+      dependents: BTreeMap::default(),
+    }
   }
 
   /// Updates the state with added and removed Jsonnet paths.
@@ -28,21 +41,27 @@ where
   /// If the paths couldn't be read, or weren't file paths, or couldn't canonicalize, or if they had
   /// any jsonnet errors.
   pub fn update_many(&mut self, remove: Vec<PathBuf>, add: Vec<PathBuf>) {
-    for path in remove {
+    // first remove files, and start keeping track of what remaining files were updated.
+    let updated = remove.into_iter().flat_map(|path| {
       let path_id = self.path_id(path.as_path());
       self.files.remove(&path_id);
-    }
+      let dependents = self.dependents.remove(&path_id);
+      dependents.into_iter().flatten()
+    });
+    let mut updated: BTreeSet<_> = updated.collect();
 
-    let par_iter = add.into_par_iter().map(|path| {
+    // get the file artifacts for each added file in parallel.
+    let get_file_artifacts = add.into_par_iter().map(|path| {
       let contents = self.fs.read_to_string(path.as_path()).expect("read to string");
       let parent = path.parent().expect("no parent");
       let artifacts = FileArtifacts::new(contents.as_str(), parent, &FsAdapter(&self.fs));
       (path, artifacts)
     });
     let mut file_artifacts = Vec::<(PathBuf, FileArtifacts)>::default();
-    par_iter.collect_into_vec(&mut file_artifacts);
+    get_file_artifacts.collect_into_vec(&mut file_artifacts);
 
-    for (path, artifacts) in file_artifacts {
+    // combine the file artifacts in sequence, and note which files were added.
+    let added = file_artifacts.into_iter().map(|(path, artifacts)| {
       artifacts.panic_if_any_errors();
       let mut file = jsonnet_eval::JsonnetFile {
         expr_ar: artifacts.desugar.arenas.expr,
@@ -55,11 +74,64 @@ where
       jsonnet_expr::combine::get(&mut self.artifacts, artifacts, &mut file.expr_ar);
       let path_id = self.path_id(path.as_path());
       self.files.insert(path_id, file);
+      path_id
+    });
+    let added: BTreeSet<_> = added.collect();
+
+    // compute a mapping from path id p to non-empty set of path ids S, s.t. for all q in S, q was
+    // just added, and p depends on q.
+    let added_deps = self.files.par_iter().filter_map(|(&path_id, file)| {
+      let deps: BTreeSet<_> = file
+        .expr_ar
+        .iter()
+        .filter_map(|(_, expr)| {
+          if let jsonnet_expr::ExprData::Import { path, .. } = *expr {
+            added.contains(&path).then_some(path)
+          } else {
+            None
+          }
+        })
+        .collect();
+      if deps.is_empty() {
+        None
+      } else {
+        Some((path_id, deps))
+      }
+    });
+    let added_deps: PathMap<_> = added_deps.collect();
+
+    // using that mapping, update the dependents.
+    for (&path, deps) in &added_deps {
+      for &dep in deps {
+        self.dependents.entry(dep).or_default().insert(path);
+      }
+    }
+
+    // added files were updated.
+    updated.extend(added);
+
+    // repeatedly update files until they don't need updating anymore.
+    while !updated.is_empty() {
+      let cx = self.cx();
+      // manifest in parallel for all updated files.
+      let updated_vals = updated.par_iter().map(|&path| {
+        let val = jsonnet_eval::get_exec(cx, path);
+        let val = val.and_then(|val| jsonnet_eval::get_manifest(cx, val));
+        (path, val)
+      });
+      let updated_vals: PathMap<_> = updated_vals.collect();
+      updated.clear();
+      for (path_id, json) in updated_vals {
+        // TODO could check if new json == old json and not add dependents if same
+        self.json.insert(path_id, json);
+        let dependents = self.dependents.get(&path_id);
+        updated.extend(dependents.into_iter().flatten());
+      }
     }
   }
 
   /// Return an evaluation context from this.
-  pub fn cx(&self) -> jsonnet_eval::Cx<'_> {
+  fn cx(&self) -> jsonnet_eval::Cx<'_> {
     jsonnet_eval::Cx {
       jsonnet_files: &self.files,
       paths: &self.artifacts.paths,
@@ -85,6 +157,19 @@ where
   /// Returns the mutable string arena for this.
   pub fn strings_mut(&mut self) -> &mut jsonnet_expr::StrArena {
     &mut self.artifacts.strings
+  }
+
+  /// Returns the json for this path.
+  ///
+  /// # Errors
+  ///
+  /// If this path couldn't be evaluated to json.
+  ///
+  /// # Panics
+  ///
+  /// If there was no json for this path.
+  pub fn get_json(&self, path_id: PathId) -> &jsonnet_eval::error::Result<jsonnet_eval::Json> {
+    self.json.get(&path_id).expect("get json")
   }
 }
 
