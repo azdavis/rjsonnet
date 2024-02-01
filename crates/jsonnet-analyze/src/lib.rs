@@ -9,9 +9,8 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 
 /// The state of analysis.
-#[derive(Debug)]
-pub struct St<F> {
-  fs: F,
+#[derive(Debug, Default)]
+pub struct St {
   artifacts: jsonnet_expr::Artifacts,
   files: PathMap<jsonnet_eval::JsonnetFile>,
   json: PathMap<jsonnet_eval::error::Result<jsonnet_eval::Json>>,
@@ -19,31 +18,20 @@ pub struct St<F> {
   dependents: BTreeMap<PathId, BTreeSet<PathId>>,
 }
 
-impl<F> St<F>
-where
-  F: Sync + Send + paths::FileSystem,
-{
-  /// Returns a new state.
-  pub fn new(fs: F) -> Self {
-    Self {
-      fs,
-      artifacts: jsonnet_expr::Artifacts::default(),
-      files: PathMap::default(),
-      json: PathMap::default(),
-      dependents: BTreeMap::default(),
-    }
-  }
-
+impl St {
   /// Updates the state with added and removed Jsonnet paths.
   ///
   /// # Panics
   ///
   /// If the paths couldn't be read, or weren't file paths, or couldn't canonicalize, or if they had
   /// any jsonnet errors.
-  pub fn update_many(&mut self, remove: Vec<PathBuf>, add: Vec<PathBuf>) {
+  pub fn update_many<F>(&mut self, fs: &F, remove: Vec<PathBuf>, add: Vec<PathBuf>)
+  where
+    F: Sync + Send + paths::FileSystem,
+  {
     // first remove files, and start keeping track of what remaining files were updated.
     let updated = remove.into_iter().flat_map(|path| {
-      let path_id = self.path_id(path.as_path());
+      let path_id = self.path_id(fs, path.as_path());
       self.files.remove(&path_id);
       let dependents = self.dependents.remove(&path_id);
       dependents.into_iter().flatten()
@@ -52,9 +40,9 @@ where
 
     // get the file artifacts for each added file in parallel.
     let get_file_artifacts = add.into_par_iter().map(|path| {
-      let contents = self.fs.read_to_string(path.as_path()).expect("read to string");
+      let contents = fs.read_to_string(path.as_path()).expect("read to string");
       let parent = path.parent().expect("no parent");
-      let artifacts = FileArtifacts::new(contents.as_str(), parent, &FsAdapter(&self.fs));
+      let artifacts = FileArtifacts::new(contents.as_str(), parent, &FsAdapter(fs));
       (path, artifacts)
     });
     let mut file_artifacts = Vec::<(PathBuf, FileArtifacts)>::default();
@@ -72,7 +60,7 @@ where
         strings: artifacts.desugar.arenas.str,
       };
       jsonnet_expr::combine::get(&mut self.artifacts, artifacts, &mut file.expr_ar);
-      let path_id = self.path_id(path.as_path());
+      let path_id = self.path_id(fs, path.as_path());
       self.files.insert(path_id, file);
       path_id
     });
@@ -144,12 +132,16 @@ where
   /// # Panics
   ///
   /// If we could not canonicalize the path.
-  pub fn path_id(&mut self, path: &Path) -> PathId {
-    let canonical = self.fs.canonicalize(path).expect("canonicalize");
-    self.artifacts.paths.get_id(&canonical)
+  pub fn path_id<F>(&mut self, fs: &F, path: &Path) -> PathId
+  where
+    F: paths::FileSystem,
+  {
+    let canonical = fs.canonicalize(path).expect("canonicalize");
+    self.artifacts.paths.get_id_owned(canonical)
   }
 
   /// Returns the string arena for this.
+  #[must_use]
   pub fn strings(&self) -> &jsonnet_expr::StrArena {
     &self.artifacts.strings
   }
