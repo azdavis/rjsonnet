@@ -7,8 +7,7 @@ pub(crate) struct Server {
 
 impl Server {
   pub(crate) fn init(init: lsp_types::InitializeParams) -> Self {
-    let fs = paths::RealFileSystem::default();
-    let mut st = jsonnet_analyze::St::default();
+    let mut ret = Self { st: jsonnet_analyze::St::default(), fs: paths::RealFileSystem::default() };
     let url = init.root_uri.expect("root uri");
     let root_path = convert::path_buf(&url).expect("root path");
     let wd = walkdir::WalkDir::new(root_path.as_path());
@@ -17,7 +16,7 @@ impl Server {
       entry.path().extension().is_some_and(|x| x == "jsonnet").then(|| entry.into_path())
     });
     let paths = paths.collect();
-    st.update_many(&fs, Vec::new(), paths);
-    Self { st, fs }
+    ret.st.update_many(&ret.fs, Vec::new(), paths);
+    ret
   }
 }
