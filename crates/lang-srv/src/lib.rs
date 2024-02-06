@@ -8,12 +8,16 @@ mod response;
 mod server;
 mod state;
 
+pub use state::State;
+
 /// # Panics
 ///
 /// If fatal stuff failed.
-pub fn run<S: state::State>(name: &str, issues: &str, st: &mut S) {
-  let msg = format!("{name} crashed. We would appreciate a bug report: {issues}");
-  better_panic::Settings::new().message(msg).verbosity(better_panic::Verbosity::Medium).install();
+pub fn run<S: State>(st: &mut S) {
+  better_panic::Settings::new()
+    .message(st.crash_msg())
+    .verbosity(better_panic::Verbosity::Medium)
+    .install();
 
   let logger_env = env_logger::Env::default().default_filter_or("info");
   env_logger::try_init_from_env(logger_env).expect("init logger");
@@ -38,7 +42,7 @@ pub fn run<S: state::State>(name: &str, issues: &str, st: &mut S) {
     let watchers = vec![lsp_types::FileSystemWatcher {
       glob_pattern: lsp_types::GlobPattern::Relative(lsp_types::RelativePattern {
         base_uri: lsp_types::OneOf::Right(root_url),
-        pattern: S::ALL_EXTS.to_owned(),
+        pattern: S::GLOB.to_owned(),
       }),
       kind: None,
     }];

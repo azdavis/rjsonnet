@@ -1,0 +1,21 @@
+[package]
+name = "jsonnet-ls"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[[bin]]
+name = "jsonnet-ls"
+test = false
+doctest = false
+
+[dependencies]
+anyhow.workspace = true
+paths.workspace = true
+
+jsonnet-analyze.path = "../jsonnet-analyze"
+lang-srv.path = "../lang-srv"

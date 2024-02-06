@@ -401,6 +401,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "jsonnet-ls"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "jsonnet-analyze",
+ "lang-srv",
+ "paths",
+]
+
+[[package]]
 name = "jsonnet-parse"
 version = "0.1.0"
 dependencies = [
