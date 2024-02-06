@@ -11,6 +11,7 @@ pub(crate) fn handle<S: State>(
   req: lsp_server::Request,
 ) -> Result<lsp_server::Response> {
   log::info!("got request: {req:?}");
+  srv.queue.incoming.register(req.id.clone(), ());
   match go(srv, st, req) {
     ControlFlow::Continue(x) => bail!("unhandled request: {x:?}"),
     ControlFlow::Break(Ok(response)) => Ok(response),
