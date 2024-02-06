@@ -54,12 +54,8 @@ fn main() {
     let wd = walkdir::WalkDir::new(root_path.as_path());
     let iter = wd.into_iter().filter_map(|entry| {
       let entry = entry.ok()?;
-      entry
-        .path()
-        .extension()
-        .and_then(std::ffi::OsStr::to_str)
-        .is_some_and(|x| matches!(x, "jsonnet" | "libsonnet" | "TEMPLATE"))
-        .then(|| entry.into_path())
+      let ext = entry.path().extension()?.to_str()?;
+      matches!(ext, "jsonnet" | "libsonnet" | "TEMPLATE").then(|| entry.into_path())
     });
     iter.collect()
   };
