@@ -66,6 +66,7 @@ pub fn run<S: State>(st: &mut S) {
   st.update_many(&srv.fs, Vec::new(), paths);
 
   for msg in &conn.receiver {
+    log::info!("recv {msg:?}");
     match msg {
       lsp_server::Message::Request(req) => {
         if conn.handle_shutdown(&req).expect("handle shutdown") {
