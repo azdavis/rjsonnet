@@ -6,16 +6,13 @@ pub(crate) type ControlFlowResult<T, C = lsp_server::Request> = ControlFlow<Resu
 
 pub(crate) fn handle(
   srv: &mut server::Server,
-  conn: &lsp_server::Connection,
   req: lsp_server::Request,
-) {
+) -> Result<lsp_server::Response> {
   log::info!("got request: {req:?}");
   match go(srv, req) {
-    ControlFlow::Continue(x) => log::error!("unhandled request: {x:?}"),
-    ControlFlow::Break(Ok(response)) => {
-      conn.sender.send(lsp_server::Message::Response(response)).expect("send");
-    }
-    ControlFlow::Break(Err(e)) => log::error!("error: {e:?}"),
+    ControlFlow::Continue(x) => bail!("unhandled request: {x:?}"),
+    ControlFlow::Break(Ok(response)) => Ok(response),
+    ControlFlow::Break(Err(e)) => bail!("couldn't handle request: {e:?}"),
   }
 }
 

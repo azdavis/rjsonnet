@@ -51,7 +51,10 @@ fn main_loop(mut srv: server::Server, conn: &lsp_server::Connection) {
         if conn.handle_shutdown(&req).expect("handle shutdown") {
           return;
         }
-        request::handle(&mut srv, conn, req);
+        match request::handle(&mut srv, req) {
+          Ok(r) => srv.respond(conn, r).expect("respond"),
+          Err(e) => log::error!("error: {e}"),
+        }
       }
       lsp_server::Message::Response(res) => response::handle(res),
       lsp_server::Message::Notification(notif) => notification::handle(notif),
