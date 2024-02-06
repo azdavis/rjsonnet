@@ -1,16 +1,13 @@
-use crate::{convert, server, state::State};
-use anyhow::{anyhow, bail, Result};
+use crate::{convert, server::Server, state::State, util};
+use anyhow::{bail, Result};
 use paths::FileSystem;
 use std::ops::ControlFlow;
 
-pub(crate) type ControlFlowResult<T, C = lsp_server::Request> = ControlFlow<Result<T>, C>;
-
 pub(crate) fn handle<S: State>(
-  srv: &mut server::Server,
+  srv: &mut Server,
   st: &mut S,
   req: lsp_server::Request,
 ) -> Result<lsp_server::Response> {
-  log::info!("got request: {req:?}");
   srv.queue.incoming.register(req.id.clone(), ());
   match go(srv, st, req) {
     ControlFlow::Continue(x) => bail!("unhandled request: {x:?}"),
@@ -19,8 +16,10 @@ pub(crate) fn handle<S: State>(
   }
 }
 
+type ControlFlowResult<T, C = lsp_server::Request> = ControlFlow<Result<T>, C>;
+
 fn go<S: State>(
-  srv: &mut server::Server,
+  srv: &mut Server,
   st: &mut S,
   req: lsp_server::Request,
 ) -> ControlFlowResult<lsp_server::Response> {
@@ -48,16 +47,7 @@ where
 {
   match req.extract::<R::Params>(R::METHOD) {
     Ok((id, params)) => ControlFlow::Break(f(id, params)),
-    Err(e) => extract_error(e),
-  }
-}
-
-fn extract_error<T, C>(e: lsp_server::ExtractError<C>) -> ControlFlow<Result<T>, C> {
-  match e {
-    lsp_server::ExtractError::MethodMismatch(x) => ControlFlow::Continue(x),
-    lsp_server::ExtractError::JsonError { method, error } => {
-      ControlFlow::Break(Err(anyhow!("couldn't deserialize for {method}: {error}")))
-    }
+    Err(e) => util::extract_error(e),
   }
 }
 

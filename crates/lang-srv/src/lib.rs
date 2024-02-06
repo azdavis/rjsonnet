@@ -7,6 +7,7 @@ mod request;
 mod response;
 mod server;
 mod state;
+mod util;
 
 pub use state::State;
 
