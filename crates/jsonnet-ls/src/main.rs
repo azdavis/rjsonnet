@@ -26,9 +26,9 @@ fn main() {
   let init: lsp_types::InitializeParams = serde_json::from_value(init).expect("get init");
   let mut srv = server::Server::default();
 
+  let root_url = init.root_uri.expect("root url");
+  let root_path = convert::path_buf(&root_url).expect("root path");
   let paths: Vec<_> = {
-    let url = init.root_uri.expect("root uri");
-    let root_path = convert::path_buf(&url).expect("root path");
     let wd = walkdir::WalkDir::new(root_path.as_path());
     let iter = wd.into_iter().filter_map(|entry| {
       let entry = entry.ok()?;
