@@ -8,14 +8,15 @@ pub(crate) fn handle(
   srv: &mut server::Server,
   conn: &lsp_server::Connection,
   req: lsp_server::Request,
-) -> Result<()> {
+) {
   log::info!("got request: {req:?}");
   match go(srv, req) {
     ControlFlow::Continue(x) => log::error!("unhandled request: {x:?}"),
-    ControlFlow::Break(Ok(res)) => conn.sender.send(lsp_server::Message::Response(res))?,
+    ControlFlow::Break(Ok(res)) => {
+      conn.sender.send(lsp_server::Message::Response(res)).expect("send")
+    }
     ControlFlow::Break(Err(e)) => log::error!("error: {e:?}"),
   }
-  Ok(())
 }
 
 fn go(
