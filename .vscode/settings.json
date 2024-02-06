@@ -22,6 +22,7 @@
     "Importstr",
     "Jsonml",
     "jsonnet",
+    "libsonnet",
     "lstrip",
     "maxsplits",
     "Mojito",
