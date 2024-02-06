@@ -5,6 +5,7 @@ pub(crate) struct Server {
   pub(crate) st: jsonnet_analyze::St,
   pub(crate) fs: paths::RealFileSystem,
   pub(crate) queue: lsp_server::ReqQueue<(), ()>,
+  pub(crate) file_watch: bool,
 }
 
 impl Server {

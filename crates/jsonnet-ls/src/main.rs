@@ -28,6 +28,28 @@ fn main() {
 
   let root_url = init.root_uri.expect("root url");
   let root_path = convert::path_buf(&root_url).expect("root path");
+  srv.file_watch = init
+    .capabilities
+    .workspace
+    .and_then(|x| x.file_operations?.dynamic_registration)
+    .unwrap_or_default();
+
+  if srv.file_watch {
+    let watchers = vec![lsp_types::FileSystemWatcher {
+      glob_pattern: lsp_types::GlobPattern::Relative(lsp_types::RelativePattern {
+        base_uri: lsp_types::OneOf::Right(root_url),
+        pattern: "**/*.{jsonnet,libsonnet,TEMPLATE}".to_owned(),
+      }),
+      kind: None,
+    }];
+    let options = lsp_types::DidChangeWatchedFilesRegistrationOptions { watchers };
+    let options = serde_json::to_value(options).expect("get registration options");
+    let registration =
+      convert::registration::<lsp_types::notification::DidChangeWatchedFiles>(options);
+    let params = lsp_types::RegistrationParams { registrations: vec![registration] };
+    srv.request::<lsp_types::request::RegisterCapability>(&conn, params);
+  }
+
   let paths: Vec<_> = {
     let wd = walkdir::WalkDir::new(root_path.as_path());
     let iter = wd.into_iter().filter_map(|entry| {

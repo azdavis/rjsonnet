@@ -16,3 +16,14 @@ pub(crate) fn path_id(srv: &mut Server, url: &Url) -> Result<paths::PathId> {
   let path = path_buf(url)?;
   Ok(srv.st.path_id(&srv.fs, &path))
 }
+
+pub(crate) fn registration<N>(options: serde_json::Value) -> lsp_types::Registration
+where
+  N: lsp_types::notification::Notification,
+{
+  lsp_types::Registration {
+    id: N::METHOD.to_owned(),
+    method: N::METHOD.to_owned(),
+    register_options: Some(options),
+  }
+}
