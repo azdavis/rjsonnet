@@ -19,14 +19,14 @@ fn main() -> anyhow::Result<()> {
   better_panic::Settings::new().message(msg).verbosity(better_panic::Verbosity::Medium).install();
 
   let logger_env = env_logger::Env::default().default_filter_or("info");
-  env_logger::try_init_from_env(logger_env).expect("couldn't set up env logger");
+  env_logger::try_init_from_env(logger_env)?;
 
   log::info!("start up lsp server");
   let (conn, io_threads) = lsp_server::Connection::stdio();
 
-  let server_capabilities = serde_json::to_value(capabilities::get()).unwrap();
-  let init = match conn.initialize(server_capabilities) {
-    Ok(x) => x,
+  let server_capabilities = serde_json::to_value(capabilities::get())?;
+  let init: lsp_types::InitializeParams = match conn.initialize(server_capabilities) {
+    Ok(x) => serde_json::from_value(x)?,
     Err(e) => {
       if e.channel_is_disconnected() {
         io_threads.join()?;
@@ -34,8 +34,7 @@ fn main() -> anyhow::Result<()> {
       return Err(e.into());
     }
   };
-  let init: lsp_types::InitializeParams = serde_json::from_value(init).unwrap();
-  let srv = server::Server::init(init).expect("init server");
+  let srv = server::Server::init(init)?;
   main_loop(srv, &conn)?;
 
   io_threads.join()?;
