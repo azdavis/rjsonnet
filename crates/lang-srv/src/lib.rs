@@ -1,4 +1,4 @@
-//! A language server for Jsonnet.
+//! A generic language server.
 
 mod capabilities;
 mod convert;
@@ -8,12 +8,11 @@ mod response;
 mod server;
 mod state;
 
-const VERSION: &str = env!("CARGO_PKG_VERSION");
-const ISSUES_URL: &str = "https://github.com/azdavis/rjsonnet/issues";
-
-fn run<S: state::State>(st: &mut S) {
-  let msg =
-    format!("jsonnet-ls ({VERSION}) crashed. We would appreciate a bug report: {ISSUES_URL}");
+/// # Panics
+///
+/// If fatal stuff failed.
+pub fn run<S: state::State>(name: &str, issues: &str, st: &mut S) {
+  let msg = format!("{name} crashed. We would appreciate a bug report: {issues}");
   better_panic::Settings::new().message(msg).verbosity(better_panic::Verbosity::Medium).install();
 
   let logger_env = env_logger::Env::default().default_filter_or("info");
@@ -39,7 +38,7 @@ fn run<S: state::State>(st: &mut S) {
     let watchers = vec![lsp_types::FileSystemWatcher {
       glob_pattern: lsp_types::GlobPattern::Relative(lsp_types::RelativePattern {
         base_uri: lsp_types::OneOf::Right(root_url),
-        pattern: "**/*.{jsonnet,libsonnet,TEMPLATE}".to_owned(),
+        pattern: S::ALL_EXTS.to_owned(),
       }),
       kind: None,
     }];
@@ -56,7 +55,7 @@ fn run<S: state::State>(st: &mut S) {
     let iter = wd.into_iter().filter_map(|entry| {
       let entry = entry.ok()?;
       let ext = entry.path().extension()?.to_str()?;
-      matches!(ext, "jsonnet" | "libsonnet" | "TEMPLATE").then(|| entry.into_path())
+      st.is_ext(ext).then(|| entry.into_path())
     });
     iter.collect()
   };
@@ -80,9 +79,4 @@ fn run<S: state::State>(st: &mut S) {
 
   io_threads.join().expect("join io threads");
   log::info!("shut down lsp server");
-}
-
-fn main() {
-  let mut st = jsonnet_analyze::St::default();
-  run(&mut st);
 }
