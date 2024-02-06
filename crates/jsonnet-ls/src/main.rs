@@ -1,8 +1,5 @@
 //! A language server for Jsonnet.
 
-// TODO remove
-#![allow(clippy::pedantic)]
-
 mod capabilities;
 mod convert;
 mod notification;

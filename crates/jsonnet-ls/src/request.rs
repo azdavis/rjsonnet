@@ -12,8 +12,8 @@ pub(crate) fn handle(
   log::info!("got request: {req:?}");
   match go(srv, req) {
     ControlFlow::Continue(x) => log::error!("unhandled request: {x:?}"),
-    ControlFlow::Break(Ok(res)) => {
-      conn.sender.send(lsp_server::Message::Response(res)).expect("send")
+    ControlFlow::Break(Ok(response)) => {
+      conn.sender.send(lsp_server::Message::Response(response)).expect("send");
     }
     ControlFlow::Break(Err(e)) => log::error!("error: {e:?}"),
   }
