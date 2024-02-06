@@ -1,4 +1,3 @@
-use crate::server::Server;
 use anyhow::{bail, Result};
 use lsp_types::Url;
 
@@ -10,11 +9,6 @@ pub(crate) fn path_buf(url: &Url) -> Result<std::path::PathBuf> {
     Ok(pb) => Ok(pb),
     Err(()) => bail!("couldn't make a URL into a file path: {url}"),
   }
-}
-
-pub(crate) fn path_id(srv: &mut Server, url: &Url) -> Result<paths::PathId> {
-  let path = path_buf(url)?;
-  Ok(srv.st.path_id(&srv.fs, &path))
 }
 
 pub(crate) fn registration<N>(options: serde_json::Value) -> lsp_types::Registration

@@ -32,7 +32,8 @@ impl St {
   {
     // first remove files, and start keeping track of what remaining files were updated.
     let updated = remove.into_iter().flat_map(|path| {
-      let path_id = self.path_id(fs, path.as_path());
+      let path = fs.canonicalize(path.as_path()).expect("canonicalize");
+      let path_id = self.path_id(path);
       self.files.remove(&path_id);
       self.files_extra.remove(&path_id);
       let dependents = self.dependents.remove(&path_id);
@@ -54,7 +55,8 @@ impl St {
     let added = file_artifacts.into_iter().map(|(path, mut art)| {
       art.panic_if_any_errors();
       jsonnet_expr::combine::get(&mut self.artifacts, art.combine, &mut art.eval.expr_ar);
-      let path_id = self.path_id(fs, path.as_path());
+      let path = fs.canonicalize(path.as_path()).expect("canonicalize");
+      let path_id = self.path_id(path);
       self.files.insert(path_id, art.eval);
       self.files_extra.insert(path_id, art.extra);
       path_id
@@ -123,16 +125,8 @@ impl St {
   }
 
   /// Returns a path id for this path.
-  ///
-  /// # Panics
-  ///
-  /// If we could not canonicalize the path.
-  pub fn path_id<F>(&mut self, fs: &F, path: &Path) -> PathId
-  where
-    F: paths::FileSystem,
-  {
-    let canonical = fs.canonicalize(path).expect("canonicalize");
-    self.artifacts.paths.get_id_owned(canonical)
+  pub fn path_id(&mut self, path: paths::CanonicalPathBuf) -> PathId {
+    self.artifacts.paths.get_id_owned(path)
   }
 
   /// Returns the string arena for this.

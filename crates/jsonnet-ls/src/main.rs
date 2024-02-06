@@ -6,11 +6,12 @@ mod notification;
 mod request;
 mod response;
 mod server;
+mod state;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 const ISSUES_URL: &str = "https://github.com/azdavis/rjsonnet/issues";
 
-fn main() {
+fn run<S: state::State>(st: &mut S) {
   let msg =
     format!("jsonnet-ls ({VERSION}) crashed. We would appreciate a bug report: {ISSUES_URL}");
   better_panic::Settings::new().message(msg).verbosity(better_panic::Verbosity::Medium).install();
@@ -59,23 +60,16 @@ fn main() {
     });
     iter.collect()
   };
-  srv.st.update_many(&srv.fs, Vec::new(), paths);
+  st.update_many(&srv.fs, Vec::new(), paths);
 
-  main_loop(srv, &conn);
-
-  io_threads.join().expect("join io threads");
-  log::info!("shut down lsp server");
-}
-
-fn main_loop(mut srv: server::Server, conn: &lsp_server::Connection) {
   for msg in &conn.receiver {
     match msg {
       lsp_server::Message::Request(req) => {
         if conn.handle_shutdown(&req).expect("handle shutdown") {
           return;
         }
-        match request::handle(&mut srv, req) {
-          Ok(r) => srv.respond(conn, r).expect("respond"),
+        match request::handle(&mut srv, st, req) {
+          Ok(r) => srv.respond(&conn, r).expect("respond"),
           Err(e) => log::error!("error: {e}"),
         }
       }
@@ -83,4 +77,12 @@ fn main_loop(mut srv: server::Server, conn: &lsp_server::Connection) {
       lsp_server::Message::Notification(notif) => notification::handle(notif),
     }
   }
+
+  io_threads.join().expect("join io threads");
+  log::info!("shut down lsp server");
+}
+
+fn main() {
+  let mut st = jsonnet_analyze::St::default();
+  run(&mut st);
 }
