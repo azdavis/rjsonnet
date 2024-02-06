@@ -68,6 +68,6 @@ fn mk_res<R>(id: lsp_server::RequestId, res: R::Result) -> lsp_server::Response
 where
   R: lsp_types::request::Request,
 {
-  let result = serde_json::to_value(res).unwrap();
+  let result = serde_json::to_value(res).expect("convert response to json");
   lsp_server::Response { id, result: Some(result), error: None }
 }

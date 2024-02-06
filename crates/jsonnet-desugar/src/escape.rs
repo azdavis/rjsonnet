@@ -46,7 +46,7 @@ pub(crate) fn get(st: &mut St, string: ast::String) -> String {
 fn slash(st: &mut St, token: SyntaxToken, delim: u8) -> String {
   let mut sp_st = str_process::St::new(token.text());
   let mut out = EscapeOutput::new(token.clone(), st);
-  assert_eq!(sp_st.cur().unwrap(), delim);
+  assert_eq!(sp_st.cur().expect("no delim"), delim);
   sp_st.bump();
   jsonnet_escape::slash(&mut sp_st, &mut out, delim);
   String::from_utf8(out.bytes).expect("invalid utf-8 in str")
@@ -55,9 +55,9 @@ fn slash(st: &mut St, token: SyntaxToken, delim: u8) -> String {
 fn verbatim(st: &mut St, token: SyntaxToken, delim: u8) -> String {
   let mut sp_st = str_process::St::new(token.text());
   let mut out = EscapeOutput::new(token.clone(), st);
-  assert_eq!(sp_st.cur().unwrap(), b'@');
+  assert_eq!(sp_st.cur().expect("no @"), b'@');
   sp_st.bump();
-  assert_eq!(sp_st.cur().unwrap(), delim);
+  assert_eq!(sp_st.cur().expect("no delim"), delim);
   sp_st.bump();
   jsonnet_escape::verbatim(&mut sp_st, &mut out, delim);
   String::from_utf8(out.bytes).expect("invalid utf-8 in str")
