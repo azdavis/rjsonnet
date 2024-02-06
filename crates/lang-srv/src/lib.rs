@@ -71,8 +71,8 @@ pub fn run<S: State>(st: &mut S) {
         if conn.handle_shutdown(&req).expect("handle shutdown") {
           return;
         }
-        match request::handle(&mut srv, st, req) {
-          Ok(r) => srv.respond(&conn, r).expect("respond"),
+        match request::handle(&mut srv, st, req).and_then(|r| srv.respond(&conn, r)) {
+          Ok(()) => {}
           Err(e) => log::error!("error: {e}"),
         }
       }
