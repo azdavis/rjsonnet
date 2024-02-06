@@ -24,7 +24,20 @@ fn main() {
   let server_capabilities = serde_json::to_value(capabilities::get()).expect("get capabilities");
   let init = conn.initialize(server_capabilities).expect("init conn");
   let init: lsp_types::InitializeParams = serde_json::from_value(init).expect("get init");
-  let srv = server::Server::init(init);
+  let mut srv = server::Server::default();
+
+  let paths: Vec<_> = {
+    let url = init.root_uri.expect("root uri");
+    let root_path = convert::path_buf(&url).expect("root path");
+    let wd = walkdir::WalkDir::new(root_path.as_path());
+    let iter = wd.into_iter().filter_map(|entry| {
+      let entry = entry.ok()?;
+      entry.path().extension().is_some_and(|x| x == "jsonnet").then(|| entry.into_path())
+    });
+    iter.collect()
+  };
+  srv.st.update_many(&srv.fs, Vec::new(), paths);
+
   main_loop(srv, &conn);
 
   io_threads.join().expect("join io threads");
