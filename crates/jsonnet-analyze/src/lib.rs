@@ -1,5 +1,7 @@
 //! Analyze jsonnet files.
 
+#![allow(clippy::too_many_lines)]
+
 use diagnostic::Diagnostic;
 use paths::{PathId, PathMap};
 use rayon::iter::{
@@ -61,7 +63,13 @@ impl St {
 
     // combine the file artifacts in sequence, and note which files were added.
     let added = file_artifacts.into_iter().map(|(path, mut art)| {
-      jsonnet_expr::combine::get(&mut self.artifacts, art.combine, &mut art.eval.expr_ar);
+      let subst = jsonnet_expr::Subst::get(&mut self.artifacts, art.combine);
+      for (_, ed) in art.eval.expr_ar.iter_mut() {
+        ed.apply(&subst);
+      }
+      for err in &mut art.extra.errors.statics {
+        err.apply(&subst);
+      }
       let path = fs.canonicalize(path.as_path()).expect("canonicalize");
       let path_id = self.path_id(path);
       self.files.insert(path_id, art.eval);

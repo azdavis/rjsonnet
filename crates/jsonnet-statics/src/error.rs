@@ -1,6 +1,6 @@
 //! Errors.
 
-use jsonnet_expr::{ExprMust, Id, Str};
+use jsonnet_expr::{ExprMust, Id, Str, Subst};
 use std::fmt;
 
 /// An error.
@@ -22,9 +22,18 @@ impl Error {
   pub fn expr(&self) -> ExprMust {
     self.expr
   }
+
+  /// Apply a subst.
+  pub fn apply(&mut self, subst: &Subst) {
+    match &mut self.kind {
+      Kind::NotInScope(id) | Kind::DuplicateNamedArg(id) | Kind::DuplicateBinding(id) => {
+        id.apply(subst);
+      }
+      Kind::DuplicateFieldName(str) => str.apply(subst),
+    }
+  }
 }
 
-/// TODO apply the combination of ids/str to this
 #[derive(Debug)]
 pub(crate) enum Kind {
   NotInScope(Id),

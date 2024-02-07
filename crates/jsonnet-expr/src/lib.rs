@@ -7,7 +7,6 @@ mod generated {
 }
 
 pub mod arg;
-pub mod combine;
 
 pub use generated::{std_fn, StdFn};
 pub use la_arena::{Arena, ArenaMap, Idx};
@@ -85,6 +84,36 @@ pub enum ExprData {
     kind: ImportKind,
     path: paths::PathId,
   },
+}
+
+impl ExprData {
+  pub fn apply(&mut self, subst: &Subst) {
+    match self {
+      ExprData::Prim(prim) => match prim {
+        Prim::String(s) => s.apply(subst),
+        Prim::Null | Prim::Bool(_) | Prim::Number(_) => {}
+      },
+      ExprData::ObjectComp { id, .. } | ExprData::Id(id) => id.apply(subst),
+      ExprData::Local { binds, .. } | ExprData::Call { named: binds, .. } => {
+        for (id, _) in binds {
+          id.apply(subst);
+        }
+      }
+      ExprData::Function { params, .. } => {
+        for (id, _) in params {
+          id.apply(subst);
+        }
+      }
+      ExprData::Import { path, .. } => *path = subst.paths[path],
+      ExprData::Object { .. }
+      | ExprData::Array(_)
+      | ExprData::Subscript { .. }
+      | ExprData::If { .. }
+      | ExprData::BinaryOp { .. }
+      | ExprData::UnaryOp { .. }
+      | ExprData::Error(_) => {}
+    }
+  }
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -257,6 +286,15 @@ impl fmt::Display for Infinite {
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Str(StrRepr);
 
+impl Str {
+  pub fn apply(&mut self, subst: &Subst) {
+    match &mut self.0 {
+      StrRepr::Idx(idx) => *idx = subst.strings[idx],
+      StrRepr::Alloc(_) => {}
+    }
+  }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 enum StrRepr {
   Idx(StrIdx),
@@ -358,10 +396,41 @@ impl Id {
   pub fn display(self, ar: &StrArena) -> impl fmt::Display + '_ {
     DisplayStrIdx { idx: self.0, ar }
   }
+
+  pub fn apply(&mut self, subst: &Subst) {
+    self.0 = subst.strings[&self.0];
+  }
 }
 
 #[derive(Debug, Default)]
 pub struct Arenas {
   pub str: StrArena,
   pub expr: ExprArena,
+}
+
+/// A substitution, from combining artifacts.
+#[derive(Debug, Default)]
+pub struct Subst {
+  strings: FxHashMap<StrIdx, StrIdx>,
+  paths: FxHashMap<paths::PathId, paths::PathId>,
+}
+
+impl Subst {
+  /// Combine artifacts and produce a substitution to apply to other things.
+  ///
+  /// # Panics
+  ///
+  /// Upon internal error.
+  pub fn get(art: &mut Artifacts, other: Artifacts) -> Self {
+    let mut ret = Subst::default();
+    for (idx, s) in other.strings.idx_to_contents.into_iter().enumerate() {
+      let old = StrIdx::from_usize(idx);
+      let new = art.strings.mk_idx(s);
+      assert!(ret.strings.insert(old, new).is_none());
+    }
+    art.paths.combine(other.paths, &mut |old, new| {
+      assert!(ret.paths.insert(old, new).is_none());
+    });
+    ret
+  }
 }
