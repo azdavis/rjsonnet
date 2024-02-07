@@ -282,7 +282,7 @@ pub(crate) fn get(cx: Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
     ExprData::Import { kind, path } => match kind {
       jsonnet_expr::ImportKind::Code => match cx.jsonnet_files.get(path) {
         Some(file) => get(cx, &Env::new(*path), file.top),
-        None => Err(mk_todo(expr, "NoExprAr")),
+        None => Err(mk_todo(expr, "no import")),
       },
       jsonnet_expr::ImportKind::String => Err(mk_todo(expr, "ImportKind::String")),
       jsonnet_expr::ImportKind::Binary => Err(mk_todo(expr, "ImportKind::Binary")),
