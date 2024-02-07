@@ -15,6 +15,7 @@ doctest = false
 [dependencies]
 paths.workspace = true
 rayon.workspace = true
+text-pos.workspace = true
 
 jsonnet-desugar.path = "../jsonnet-desugar"
 jsonnet-escape.path = "../jsonnet-escape"

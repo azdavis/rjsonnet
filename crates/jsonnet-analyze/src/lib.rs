@@ -26,7 +26,12 @@ impl St {
   ///
   /// If the paths couldn't be read, or weren't file paths, or couldn't canonicalize, or if they had
   /// any jsonnet errors.
-  pub fn update_many<F>(&mut self, fs: &F, remove: Vec<PathBuf>, add: Vec<PathBuf>)
+  pub fn update_many<F>(
+    &mut self,
+    fs: &F,
+    remove: Vec<PathBuf>,
+    add: Vec<PathBuf>,
+  ) -> PathMap<Vec<Diagnostic>>
   where
     F: Sync + Send + paths::FileSystem,
   {
@@ -55,7 +60,6 @@ impl St {
 
     // combine the file artifacts in sequence, and note which files were added.
     let added = file_artifacts.into_iter().map(|(path, mut art)| {
-      art.extra.panic_if_any_errors(&art.combine.strings);
       jsonnet_expr::combine::get(&mut self.artifacts, art.combine, &mut art.eval.expr_ar);
       let path = fs.canonicalize(path.as_path()).expect("canonicalize");
       let path_id = self.path_id(path);
@@ -98,16 +102,46 @@ impl St {
     updated.extend(added);
 
     // repeatedly update files until they don't need updating anymore.
+    let mut ret = PathMap::<Vec<Diagnostic>>::default();
     while !updated.is_empty() {
       let cx = self.cx();
-      // manifest in parallel for all updated files.
-      let updated_vals = updated.par_iter().map(|&path| {
-        eprintln!("exec {}", self.artifacts.paths.get_path(path).as_path().display());
-        let val = jsonnet_eval::get_exec(cx, path);
-        let val = val.and_then(|val| jsonnet_eval::get_manifest(cx, val));
-        (path, val)
+      // manifest in parallel for all updated files. TODO this probably doesn't respect ordering
+      // requirements among the updated. what if one updated file depends on another updated file?
+      let updated_vals = updated.par_iter().flat_map(|&path| {
+        // only exec if no errors in the file so far.
+        self.files_extra[&path].errors.is_empty().then(|| {
+          let val = jsonnet_eval::get_exec(cx, path);
+          let val = val.and_then(|val| jsonnet_eval::get_manifest(cx, val));
+          (path, val)
+        })
       });
       let updated_vals: PathMap<_> = updated_vals.collect();
+      let iter = updated.iter().map(|&path| {
+        let art = &self.files_extra[&path];
+        let ds: Vec<_> = std::iter::empty()
+          .chain(art.errors.lex.iter().map(|err| {
+            let range = art.pos_db.range_utf16(err.range()).expect("range");
+            Diagnostic { range, message: err.to_string() }
+          }))
+          .chain(art.errors.parse.iter().map(|err| {
+            let range = art.pos_db.range_utf16(err.range()).expect("range");
+            Diagnostic { range, message: err.to_string() }
+          }))
+          .chain(art.errors.desugar.iter().map(|err| {
+            let range = art.pos_db.range_utf16(err.range()).expect("range");
+            Diagnostic { range, message: err.to_string() }
+          }))
+          .chain(art.errors.statics.iter().map(|err| {
+            let expr = err.expr();
+            let ptr = art.pointers.get_ptr(expr);
+            let range = art.pos_db.range_utf16(ptr.text_range()).expect("range");
+            let err = err.display(&self.artifacts.strings);
+            Diagnostic { range, message: err.to_string() }
+          }))
+          .collect();
+        (path, ds)
+      });
+      ret.extend(iter);
       updated.clear();
       for (path_id, json) in updated_vals {
         // TODO could check if new json == old json and not add dependents if same
@@ -116,6 +150,7 @@ impl St {
         updated.extend(dependents.into_iter().flatten());
       }
     }
+    ret
   }
 
   /// Return an evaluation context from this.
@@ -162,30 +197,23 @@ impl St {
   }
 }
 
+/// A diagnostic message about a bit of code.
+#[derive(Debug)]
+pub struct Diagnostic {
+  /// The range of the file this diagnostic applies to.
+  pub range: text_pos::RangeUtf16,
+  /// The message of the diagnostic.
+  pub message: String,
+}
+
 /// Artifacts from a file whose shared artifacts have been combined into the global ones.
 #[derive(Debug)]
 #[allow(dead_code)]
 struct FileArtifacts {
+  pos_db: text_pos::PositionDb,
   syntax: jsonnet_syntax::Root,
   pointers: jsonnet_desugar::Pointers,
   errors: FileErrors,
-}
-
-impl FileArtifacts {
-  fn panic_if_any_errors(&self, strings: &jsonnet_expr::StrArena) {
-    if let Some(e) = self.errors.lex.first() {
-      panic!("lex error: {e}");
-    }
-    if let Some(e) = self.errors.parse.first() {
-      panic!("parse error: {e}");
-    }
-    if let Some(e) = self.errors.desugar.first() {
-      panic!("desugar error: {e}");
-    }
-    if let Some(e) = self.errors.statics.first() {
-      panic!("statics error: {}", e.display(strings));
-    }
-  }
 }
 
 /// Errors from a file analyzed in isolation.
@@ -196,6 +224,15 @@ struct FileErrors {
   parse: Vec<jsonnet_parse::Error>,
   desugar: Vec<jsonnet_desugar::Error>,
   statics: Vec<jsonnet_statics::error::Error>,
+}
+
+impl FileErrors {
+  fn is_empty(&self) -> bool {
+    self.lex.is_empty()
+      && self.parse.is_empty()
+      && self.desugar.is_empty()
+      && self.statics.is_empty()
+  }
 }
 
 /// Artifacts from a file analyzed in isolation.
@@ -217,6 +254,7 @@ impl IsolatedFileArtifacts {
       eval: jsonnet_eval::JsonnetFile { expr_ar: desugar.arenas.expr, top: desugar.top },
       combine: jsonnet_expr::Artifacts { paths: desugar.ps, strings: desugar.arenas.str },
       extra: FileArtifacts {
+        pos_db: text_pos::PositionDb::new(contents),
         syntax: parse.root,
         pointers: desugar.pointers,
         errors: FileErrors {

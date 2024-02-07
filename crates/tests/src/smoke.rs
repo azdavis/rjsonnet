@@ -32,7 +32,7 @@ f(false)
 }
 
 #[test]
-#[should_panic = "parse error: expected expression"]
+#[should_panic = "expected expression"]
 fn parse_fail() {
   manifest("if else", "0");
 }

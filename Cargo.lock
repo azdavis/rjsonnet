@@ -344,6 +344,7 @@ dependencies = [
  "jsonnet-syntax",
  "paths",
  "rayon",
+ "text-pos",
 ]
 
 [[package]]
@@ -471,6 +472,16 @@ name = "libc"
 version = "0.2.152"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "13e3bf6590cbc649f4d1a3eefc9d5d6eb746f5200ffb04e5e142700b8faa56e7"
+
+[[package]]
+name = "line-index"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "67d61795376ae2683928c218fda7d7d7db136fd38c06b7552904667f0d55580a"
+dependencies = [
+ "nohash-hasher",
+ "text-size",
+]
 
 [[package]]
 name = "log"
@@ -788,10 +799,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "text-pos"
+version = "0.1.0"
+source = "git+https://github.com/azdavis/language-util.git#65807c40cd874514e97392e35d25b788b1a706d8"
+dependencies = [
+ "line-index",
+ "text-size-util",
+]
+
+[[package]]
 name = "text-size"
 version = "1.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f18aa187839b2bdb1ad2fa35ead8c4c2976b64e4363c386d45ac0f7ee85c9233"
+
+[[package]]
+name = "text-size-util"
+version = "0.1.0"
+source = "git+https://github.com/azdavis/language-util.git#65807c40cd874514e97392e35d25b788b1a706d8"
+dependencies = [
+ "text-size",
+]
 
 [[package]]
 name = "tinyvec"

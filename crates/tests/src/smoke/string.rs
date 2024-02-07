@@ -65,7 +65,7 @@ fn double_verbatim_escape() {
 }
 
 #[test]
-#[should_panic = "lex error: unclosed string"]
+#[should_panic = "unclosed string"]
 fn unclosed() {
   manifest_str("'", "");
 }

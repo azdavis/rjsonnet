@@ -19,7 +19,7 @@ impl Error {
 
   /// Returns the expr this error is for.
   #[must_use]
-  pub fn expr(self) -> ExprMust {
+  pub fn expr(&self) -> ExprMust {
     self.expr
   }
 }
