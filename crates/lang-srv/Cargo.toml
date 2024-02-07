@@ -14,7 +14,6 @@ doctest = false
 
 [dependencies]
 anyhow.workspace = true
-walkdir.workspace = true
 better-panic.workspace = true
 env_logger.workspace = true
 log.workspace = true
@@ -22,3 +21,4 @@ lsp-server.workspace = true
 lsp-types.workspace = true
 paths.workspace = true
 serde_json.workspace = true
+walkdir.workspace = true
