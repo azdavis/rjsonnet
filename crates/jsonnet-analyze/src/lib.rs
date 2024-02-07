@@ -146,6 +146,7 @@ impl St {
       for (path_id, json) in updated_vals {
         // TODO could check if new json == old json and not add dependents if same
         self.json.insert(path_id, json);
+        // TODO doesn't skip dependents that were already updated
         let dependents = self.dependents.get(&path_id);
         updated.extend(dependents.into_iter().flatten());
       }
