@@ -26,11 +26,16 @@ impl lang_srv::State for State {
     matches!(s, "jsonnet" | "libsonnet" | "TEMPLATE")
   }
 
-  fn update_many<F>(&mut self, fs: &F, remove: Vec<PathBuf>, add: Vec<PathBuf>)
+  fn update_many<F>(
+    &mut self,
+    fs: &F,
+    remove: Vec<PathBuf>,
+    add: Vec<PathBuf>,
+  ) -> paths::PathMap<Vec<diagnostic::Diagnostic>>
   where
     F: Sync + Send + paths::FileSystem,
   {
-    self.0.update_many(fs, remove, add);
+    self.0.update_many(fs, remove, add)
   }
 
   fn hover(&mut self, path: paths::CanonicalPathBuf) -> Result<String> {

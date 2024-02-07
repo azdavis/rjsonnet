@@ -204,6 +204,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "248e3bacc7dc6baa3b21e405ee045c3047101a49145e7e9eca583ab4c2ca5345"
 
 [[package]]
+name = "diagnostic"
+version = "0.1.0"
+dependencies = [
+ "text-pos",
+]
+
+[[package]]
 name = "drop_bomb"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -334,6 +341,7 @@ checksum = "b1a46d1a171d865aa5f83f92695765caa047a9b4cbae2cbf37dbd613a793fd4c"
 name = "jsonnet-analyze"
 version = "0.1.0"
 dependencies = [
+ "diagnostic",
  "jsonnet-desugar",
  "jsonnet-escape",
  "jsonnet-eval",
@@ -406,6 +414,7 @@ name = "jsonnet-ls"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "diagnostic",
  "jsonnet-analyze",
  "lang-srv",
  "paths",
@@ -452,6 +461,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "better-panic",
+ "diagnostic",
  "env_logger",
  "log",
  "lsp-server",

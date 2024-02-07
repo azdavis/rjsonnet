@@ -1,5 +1,6 @@
 //! Analyze jsonnet files.
 
+use diagnostic::Diagnostic;
 use paths::{PathId, PathMap};
 use rayon::iter::{
   IndexedParallelIterator as _, IntoParallelIterator as _, IntoParallelRefIterator,
@@ -196,15 +197,6 @@ impl St {
   pub fn get_json(&self, path_id: PathId) -> &jsonnet_eval::error::Result<jsonnet_eval::Json> {
     self.json.get(&path_id).expect("get json")
   }
-}
-
-/// A diagnostic message about a bit of code.
-#[derive(Debug)]
-pub struct Diagnostic {
-  /// The range of the file this diagnostic applies to.
-  pub range: text_pos::RangeUtf16,
-  /// The message of the diagnostic.
-  pub message: String,
 }
 
 /// Artifacts from a file whose shared artifacts have been combined into the global ones.

@@ -13,7 +13,12 @@ pub trait State {
   fn is_ext(&self, s: &str) -> bool;
 
   /// Update many files at once.
-  fn update_many<F>(&mut self, fs: &F, remove: Vec<PathBuf>, add: Vec<PathBuf>)
+  fn update_many<F>(
+    &mut self,
+    fs: &F,
+    remove: Vec<PathBuf>,
+    add: Vec<PathBuf>,
+  ) -> paths::PathMap<Vec<diagnostic::Diagnostic>>
   where
     F: Sync + Send + paths::FileSystem;
 

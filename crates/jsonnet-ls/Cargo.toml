@@ -17,5 +17,6 @@ doctest = false
 anyhow.workspace = true
 paths.workspace = true
 
+diagnostic.path = "../diagnostic"
 jsonnet-analyze.path = "../jsonnet-analyze"
 lang-srv.path = "../lang-srv"
