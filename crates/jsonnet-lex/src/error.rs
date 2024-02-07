@@ -11,7 +11,6 @@ impl Error {
   /// Returns the range of this.
   #[must_use]
   pub fn range(&self) -> text_size::TextRange {
-    // let idx = u32::try_from(self.idx).unwrap();
     let ts = text_size::TextSize::new(self.idx);
     text_size::TextRange::empty(ts)
   }
