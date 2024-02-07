@@ -31,6 +31,8 @@ impl St {
     F: Sync + Send + paths::FileSystem,
   {
     // first remove files, and start keeping track of what remaining files were updated.
+    //
+    // NOTE: for each r in remove, we DO NOT bother removing r from s for any (_, s) in dependents.
     let updated = remove.into_iter().flat_map(|path| {
       let path = fs.canonicalize(path.as_path()).expect("canonicalize");
       let path_id = self.path_id(path);
@@ -53,7 +55,7 @@ impl St {
 
     // combine the file artifacts in sequence, and note which files were added.
     let added = file_artifacts.into_iter().map(|(path, mut art)| {
-      art.panic_if_any_errors();
+      art.extra.panic_if_any_errors(&art.combine.strings);
       jsonnet_expr::combine::get(&mut self.artifacts, art.combine, &mut art.eval.expr_ar);
       let path = fs.canonicalize(path.as_path()).expect("canonicalize");
       let path_id = self.path_id(path);
@@ -100,6 +102,7 @@ impl St {
       let cx = self.cx();
       // manifest in parallel for all updated files.
       let updated_vals = updated.par_iter().map(|&path| {
+        eprintln!("exec {}", self.artifacts.paths.get_path(path).as_path().display());
         let val = jsonnet_eval::get_exec(cx, path);
         let val = val.and_then(|val| jsonnet_eval::get_manifest(cx, val));
         (path, val)
@@ -168,6 +171,23 @@ struct FileArtifacts {
   errors: FileErrors,
 }
 
+impl FileArtifacts {
+  fn panic_if_any_errors(&self, strings: &jsonnet_expr::StrArena) {
+    if let Some(e) = self.errors.lex.first() {
+      panic!("lex error: {e}");
+    }
+    if let Some(e) = self.errors.parse.first() {
+      panic!("parse error: {e}");
+    }
+    if let Some(e) = self.errors.desugar.first() {
+      panic!("desugar error: {e}");
+    }
+    if let Some(e) = self.errors.statics.first() {
+      panic!("statics error: {}", e.display(strings));
+    }
+  }
+}
+
 /// Errors from a file analyzed in isolation.
 #[derive(Debug)]
 #[allow(dead_code)]
@@ -206,21 +226,6 @@ impl IsolatedFileArtifacts {
           statics: statics_errors,
         },
       },
-    }
-  }
-
-  fn panic_if_any_errors(&self) {
-    if let Some(e) = self.extra.errors.lex.first() {
-      panic!("lex error: {e}");
-    }
-    if let Some(e) = self.extra.errors.parse.first() {
-      panic!("parse error: {e}");
-    }
-    if let Some(e) = self.extra.errors.desugar.first() {
-      panic!("desugar error: {e}");
-    }
-    if let Some(e) = self.extra.errors.statics.first() {
-      panic!("statics error: {}", e.display(&self.combine.strings));
     }
   }
 }
