@@ -76,6 +76,7 @@ fn run_ci() {
   run(Command::new("cargo").args(["build", "--locked"]));
   run(Command::new("cargo").args(["fmt", "--", "--check"]));
   run(Command::new("cargo").args(["clippy", "--locked"]));
+  run(Command::new("cargo").args(["clippy", "--locked", "--tests"]));
   run(Command::new("cargo").args(["test", "--locked"]));
 }
 
