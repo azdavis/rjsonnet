@@ -8,9 +8,11 @@ use rustc_hash::FxHashMap;
 /// Upon internal error.
 pub fn get(art: &mut Artifacts, other: Artifacts, ar: &mut ExprArena) {
   let mut strings = FxHashMap::<StrIdx, StrIdx>::default();
-  art.strings.combine(other.strings, &mut |old, new| {
+  for (idx, s) in other.strings.idx_to_contents.into_iter().enumerate() {
+    let old = StrIdx::from_usize(idx);
+    let new = art.strings.mk_idx(s);
     assert!(strings.insert(old, new).is_none());
-  });
+  }
   let mut paths = FxHashMap::<paths::PathId, paths::PathId>::default();
   art.paths.combine(other.paths, &mut |old, new| {
     assert!(paths.insert(old, new).is_none());
