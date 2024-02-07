@@ -310,14 +310,14 @@ impl StrIdx {
   ///
   /// On failure (i.e. overflow).
   fn from_usize(u: usize) -> Self {
-    Self(u.try_into().unwrap())
+    Self(u.try_into().expect("convert usize to u32"))
   }
 
   /// # Panics
   ///
   /// On failure (i.e. overflow).
   fn to_usize(self) -> usize {
-    self.0.try_into().unwrap()
+    self.0.try_into().expect("convert usize to u32")
   }
 
   fn to_u32(self) -> u32 {

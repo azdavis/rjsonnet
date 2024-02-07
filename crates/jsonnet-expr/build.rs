@@ -187,11 +187,11 @@ fn main() {
   let impl_str_idx_and_arena = {
     let str_idx_constants = all().enumerate().map(|(idx, S { name, .. })| {
       let name = format_ident!("{name}");
-      let idx = u32::try_from(idx).unwrap();
+      let idx = u32::try_from(idx).expect("convert usize to u32");
       quote! { const #name: Self = Self(#idx); }
     });
     let str_idx_debug_arms = all().enumerate().map(|(idx, S { content, .. })| {
-      let idx = u32::try_from(idx).unwrap();
+      let idx = u32::try_from(idx).expect("convert usize to u32");
       quote! { #idx => d.field(&#content) }
     });
     let capacity = all().count();

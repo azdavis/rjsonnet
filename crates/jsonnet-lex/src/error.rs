@@ -49,7 +49,7 @@ impl Output {
   ///
   /// If a usize overflows a u32.
   pub(crate) fn err(&mut self, idx: usize, kind: Kind) {
-    self.errors.push(Error { idx: u32::try_from(idx).unwrap(), kind });
+    self.errors.push(Error { idx: u32::try_from(idx).expect("convert usize to u32"), kind });
   }
 
   pub(crate) fn finish(self) -> Vec<Error> {
