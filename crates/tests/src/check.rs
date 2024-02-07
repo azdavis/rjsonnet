@@ -36,7 +36,7 @@ pub(crate) fn manifest_many(input: &[(&str, &str, &str)]) {
     let p = fs.canonicalize(Path::new(p)).expect("canonicalize");
     let p = st.path_id(p);
     let got = get_json(&st, p);
-    let want: serde_json::Value = serde_json::from_str(json).unwrap();
+    let want: serde_json::Value = serde_json::from_str(json).expect("test input json");
     let want = jsonnet_eval::Json::from_serde(st.strings(), want);
     if want != *got {
       let want = want.display(st.strings());
