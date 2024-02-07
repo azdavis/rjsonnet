@@ -79,10 +79,12 @@ pub fn run<S: State>(st: &mut S) {
         }
       }
       lsp_server::Message::Response(res) => response::handle(res),
-      lsp_server::Message::Notification(notif) => match notification::handle(&mut srv, st, notif) {
-        Ok(()) => {}
-        Err(e) => log::error!("error: {e}"),
-      },
+      lsp_server::Message::Notification(notif) => {
+        match notification::handle(&mut srv, st, &conn, notif) {
+          Ok(()) => {}
+          Err(e) => log::error!("error: {e}"),
+        }
+      }
     }
   }
 

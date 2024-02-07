@@ -21,3 +21,25 @@ where
     register_options: Some(options),
   }
 }
+
+pub(crate) fn diagnostic(d: diagnostic::Diagnostic) -> lsp_types::Diagnostic {
+  lsp_types::Diagnostic {
+    range: range(d.range),
+    severity: Some(lsp_types::DiagnosticSeverity::ERROR),
+    code: None,
+    code_description: None,
+    source: None,
+    message: d.message,
+    related_information: None,
+    tags: None,
+    data: None,
+  }
+}
+
+fn range(r: text_pos::RangeUtf16) -> lsp_types::Range {
+  lsp_types::Range { start: position(r.start), end: position(r.end) }
+}
+
+fn position(p: text_pos::PositionUtf16) -> lsp_types::Position {
+  lsp_types::Position { line: p.line, character: p.col }
+}

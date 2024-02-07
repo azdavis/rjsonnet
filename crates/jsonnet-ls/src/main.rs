@@ -46,4 +46,8 @@ impl lang_srv::State for State {
     };
     Ok(json.display(self.0.strings()).to_string())
   }
+
+  fn paths(&mut self) -> &paths::Store {
+    self.0.paths()
+  }
 }

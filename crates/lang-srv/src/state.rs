@@ -28,4 +28,7 @@ pub trait State {
   ///
   /// If nothing was there to hover.
   fn hover(&mut self, path: paths::CanonicalPathBuf) -> Result<String>;
+
+  /// Returns the paths store for this.
+  fn paths(&mut self) -> &paths::Store;
 }

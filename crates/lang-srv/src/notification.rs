@@ -5,9 +5,10 @@ use std::{ops::ControlFlow, path::PathBuf};
 pub(crate) fn handle<S: State>(
   srv: &mut Server,
   st: &mut S,
+  conn: &lsp_server::Connection,
   notif: lsp_server::Notification,
 ) -> Result<()> {
-  match go(srv, st, notif) {
+  match go(srv, st, conn, notif) {
     ControlFlow::Continue(x) => bail!("unhandled notification: {x:?}"),
     ControlFlow::Break(Ok(())) => Ok(()),
     ControlFlow::Break(Err(e)) => bail!("couldn't handle notification: {e:?}"),
@@ -19,6 +20,7 @@ type ControlFlowResult = ControlFlow<Result<()>, lsp_server::Notification>;
 fn go<S: State>(
   srv: &mut Server,
   st: &mut S,
+  conn: &lsp_server::Connection,
   notif: lsp_server::Notification,
 ) -> ControlFlowResult {
   let notif = try_notif::<lsp_types::notification::DidChangeWatchedFiles, _>(notif, |params| {
@@ -34,7 +36,14 @@ fn go<S: State>(
         remove.push(path);
       }
     }
-    st.update_many(&srv.fs, remove, add);
+    let ds_map = st.update_many(&srv.fs, remove, add);
+    for (path, ds) in ds_map {
+      let path = st.paths().get_path(path);
+      let uri = lsp_types::Url::from_file_path(path.as_path()).expect("path to url");
+      let diagnostics: Vec<_> = ds.into_iter().map(convert::diagnostic).collect();
+      let params = lsp_types::PublishDiagnosticsParams { uri, diagnostics, version: None };
+      Server::notify::<lsp_types::notification::PublishDiagnostics>(conn, params);
+    }
     Ok(())
   })?;
   ControlFlow::Continue(notif)

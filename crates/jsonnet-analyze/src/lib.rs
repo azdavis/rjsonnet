@@ -180,9 +180,10 @@ impl St {
     &mut self.artifacts.strings
   }
 
-  /// Returns the mutable paths store for this.
-  pub fn paths_mut(&mut self) -> &mut paths::Store {
-    &mut self.artifacts.paths
+  /// Returns the paths store for this.
+  #[must_use]
+  pub fn paths(&self) -> &paths::Store {
+    &self.artifacts.paths
   }
 
   /// Returns the json for this path.

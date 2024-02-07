@@ -15,7 +15,7 @@ where
   let add = iter.map(|(path, _)| PathBuf::from(path)).collect();
   for (path, ds) in ret.update_many(&fs, Vec::new(), add) {
     if let Some(d) = ds.first() {
-      let p = ret.paths_mut().get_path(path);
+      let p = ret.paths().get_path(path);
       panic!("{} at {}: diagnostic: {}", p.as_path().display(), d.range, d.message)
     }
   }

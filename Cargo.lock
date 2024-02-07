@@ -468,6 +468,7 @@ dependencies = [
  "lsp-types",
  "paths",
  "serde_json",
+ "text-pos",
  "walkdir",
 ]
 
