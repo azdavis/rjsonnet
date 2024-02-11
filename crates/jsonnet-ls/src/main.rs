@@ -1,5 +1,6 @@
 //! A language server for Jsonnet.
 
+use always::BUG_REPORT_MSG;
 use anyhow::{bail, Result};
 use std::path::PathBuf;
 
@@ -8,16 +9,12 @@ fn main() {
   lang_srv::run(&mut st);
 }
 
-const NAME: &str = "jsonnet-ls";
-const VERSION: &str = env!("CARGO_PKG_VERSION");
-const ISSUES_URL: &str = "https://github.com/azdavis/rjsonnet/issues";
-
 #[derive(Default)]
 struct State(jsonnet_analyze::St);
 
 impl lang_srv::State for State {
   fn crash_msg(&self) -> String {
-    format!("{NAME} ({VERSION}) crashed. We would appreciate a bug report: {ISSUES_URL}")
+    BUG_REPORT_MSG.to_owned()
   }
 
   const GLOB: &'static str = "**/*.{jsonnet,libsonnet,TEMPLATE}";

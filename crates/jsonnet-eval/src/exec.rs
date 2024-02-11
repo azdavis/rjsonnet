@@ -3,6 +3,7 @@
 use crate::error::{self, Result};
 use crate::val::jsonnet::{Array, Env, Field, Function, Get, Object, StdField, Val};
 use crate::{manifest, Cx};
+use always::always;
 use jsonnet_expr::{
   arg, std_fn, BinaryOp, Expr, ExprData, ExprMust, Id, Number, Prim, StdFn, Str, StrArena,
   Visibility,
@@ -124,7 +125,7 @@ pub(crate) fn get(cx: Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
         let mut provided = FxHashSet::<Id>::default();
         for ((id, param), &arg) in func.params.iter_mut().zip(positional) {
           *param = Some(arg);
-          assert!(provided.insert(*id), "duplicate function param should be forbidden by check");
+          always!(provided.insert(*id), "duplicate function param should be forbidden by check");
         }
         for &(arg_name, arg) in named {
           if !provided.insert(arg_name) {

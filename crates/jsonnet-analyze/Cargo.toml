@@ -17,6 +17,7 @@ paths.workspace = true
 rayon.workspace = true
 text-pos.workspace = true
 
+always.path = "../always"
 diagnostic.path = "../diagnostic"
 jsonnet-desugar.path = "../jsonnet-desugar"
 jsonnet-escape.path = "../jsonnet-escape"

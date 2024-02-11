@@ -2,6 +2,8 @@
 
 #![allow(missing_docs)]
 
+use always::always;
+
 mod generated {
   include!(concat!(env!("OUT_DIR"), "/generated.rs"));
 }
@@ -238,7 +240,12 @@ impl PartialOrd for Number {
 
 impl Ord for Number {
   fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-    self.value().partial_cmp(&other.value()).expect("should not be NaN")
+    if let Some(x) = self.value().partial_cmp(&other.value()) {
+      x
+    } else {
+      always!(false, "should not be NaN");
+      std::cmp::Ordering::Equal
+    }
   }
 }
 
@@ -265,7 +272,7 @@ impl std::ops::Neg for Number {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum Infinite {
   Nan,
   Pos,

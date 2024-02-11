@@ -73,7 +73,7 @@ pub(crate) fn exec_err(jsonnet: &str, want: &str) {
   let (fs, mut st) = mk_st(std::iter::once((DEFAULT_FILE_NAME, jsonnet)));
   let p = fs.canonicalize(Path::new(DEFAULT_FILE_NAME)).expect("canonicalize");
   let p = st.path_id(p);
-  let err = st.get_json(p).as_ref().expect_err("no error");
+  let err = st.get_json(p).expect_err("no error");
   let got = err.display(st.strings(), st.paths()).to_string();
   assert_eq!(want, got.as_str());
 }

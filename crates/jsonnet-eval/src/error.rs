@@ -3,7 +3,7 @@ use std::fmt::{self, Debug};
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Error {
   Exec { expr: jsonnet_expr::ExprMust, kind: Kind },
   ManifestFn,
@@ -28,7 +28,7 @@ impl From<arg::Error> for Error {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Kind {
   Todo(&'static str),
   ArrayIdxNotInteger,

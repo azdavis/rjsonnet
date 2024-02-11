@@ -17,6 +17,8 @@ la-arena.workspace = true
 paths.workspace = true
 rustc-hash.workspace = true
 
+always.path = "../always"
+
 [build-dependencies]
 proc-macro2.workspace = true
 quote.workspace = true

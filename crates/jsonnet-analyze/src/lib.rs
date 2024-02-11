@@ -2,12 +2,10 @@
 
 #![allow(clippy::too_many_lines)]
 
+use always::always;
 use diagnostic::Diagnostic;
 use paths::{PathId, PathMap};
-use rayon::iter::{
-  IndexedParallelIterator as _, IntoParallelIterator as _, IntoParallelRefIterator,
-  ParallelIterator as _,
-};
+use rayon::iter::{IntoParallelIterator as _, IntoParallelRefIterator, ParallelIterator as _};
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 
@@ -52,14 +50,22 @@ impl St {
     let mut updated: BTreeSet<_> = updated.collect();
 
     // get the file artifacts for each added file in parallel.
-    let get_file_artifacts = add.into_par_iter().map(|path| {
-      let contents = fs.read_to_string(path.as_path()).expect("read to string");
-      let parent = path.parent().expect("no parent");
+    let get_file_artifacts = add.into_par_iter().filter_map(|path| {
+      let contents = match fs.read_to_string(path.as_path()) {
+        Ok(x) => x,
+        Err(e) => {
+          always!(false, "read to string error: {e}");
+          return None;
+        }
+      };
+      let Some(parent) = path.parent() else {
+        always!(false, "no parent for {}", path.display());
+        return None;
+      };
       let artifacts = IsolatedFileArtifacts::new(contents.as_str(), parent, &FsAdapter(fs));
-      (path, artifacts)
+      Some((path, artifacts))
     });
-    let mut file_artifacts = Vec::<(PathBuf, IsolatedFileArtifacts)>::default();
-    get_file_artifacts.collect_into_vec(&mut file_artifacts);
+    let file_artifacts: Vec<_> = get_file_artifacts.collect();
 
     // combine the file artifacts in sequence, and note which files were added.
     let added = file_artifacts.into_iter().map(|(path, mut art)| {
@@ -128,24 +134,40 @@ impl St {
       let iter = updated.iter().map(|&path| {
         let art = &self.files_extra[&path];
         let ds: Vec<_> = std::iter::empty()
-          .chain(art.errors.lex.iter().map(|err| {
-            let range = art.pos_db.range_utf16(err.range()).expect("range");
-            Diagnostic { range, message: err.to_string() }
+          .chain(art.errors.lex.iter().filter_map(|err| {
+            let range = err.range();
+            let Some(range) = art.pos_db.range_utf16(range) else {
+              always!(false, "bad range: {range:?}");
+              return None;
+            };
+            Some(Diagnostic { range, message: err.to_string() })
           }))
-          .chain(art.errors.parse.iter().map(|err| {
-            let range = art.pos_db.range_utf16(err.range()).expect("range");
-            Diagnostic { range, message: err.to_string() }
+          .chain(art.errors.parse.iter().filter_map(|err| {
+            let range = err.range();
+            let Some(range) = art.pos_db.range_utf16(range) else {
+              always!(false, "bad range: {range:?}");
+              return None;
+            };
+            Some(Diagnostic { range, message: err.to_string() })
           }))
-          .chain(art.errors.desugar.iter().map(|err| {
-            let range = art.pos_db.range_utf16(err.range()).expect("range");
-            Diagnostic { range, message: err.to_string() }
+          .chain(art.errors.desugar.iter().filter_map(|err| {
+            let range = err.range();
+            let Some(range) = art.pos_db.range_utf16(range) else {
+              always!(false, "bad range: {range:?}");
+              return None;
+            };
+            Some(Diagnostic { range, message: err.to_string() })
           }))
-          .chain(art.errors.statics.iter().map(|err| {
+          .chain(art.errors.statics.iter().filter_map(|err| {
             let expr = err.expr();
             let ptr = art.pointers.get_ptr(expr);
-            let range = art.pos_db.range_utf16(ptr.text_range()).expect("range");
+            let range = ptr.text_range();
+            let Some(range) = art.pos_db.range_utf16(range) else {
+              always!(false, "bad range: {range:?}");
+              return None;
+            };
             let err = err.display(&self.artifacts.strings);
-            Diagnostic { range, message: err.to_string() }
+            Some(Diagnostic { range, message: err.to_string() })
           }))
           .collect();
         (path, ds)
@@ -199,12 +221,14 @@ impl St {
   /// # Errors
   ///
   /// If this path couldn't be evaluated to json.
-  ///
-  /// # Panics
-  ///
-  /// If there was no json for this path.
-  pub fn get_json(&self, path_id: PathId) -> &jsonnet_eval::error::Result<jsonnet_eval::Json> {
-    self.json.get(&path_id).expect("get json")
+  pub fn get_json(&self, path_id: PathId) -> jsonnet_eval::error::Result<&jsonnet_eval::Json> {
+    match self.json.get(&path_id) {
+      Some(x) => match x {
+        Ok(x) => Ok(x),
+        Err(e) => Err(e.clone()),
+      },
+      None => Err(jsonnet_eval::error::Error::NoPath(path_id)),
+    }
   }
 }
 

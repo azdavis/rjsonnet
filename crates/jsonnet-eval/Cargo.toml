@@ -17,4 +17,5 @@ rustc-hash.workspace = true
 paths.workspace = true
 serde_json.workspace = true
 
+always.path = "../always"
 jsonnet-expr.path = "../jsonnet-expr"

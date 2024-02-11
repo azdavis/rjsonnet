@@ -37,7 +37,7 @@ pub(crate) fn get(st: &mut St, string: ast::String) -> String {
     ast::StringKind::TextBlock => {
       let mut sp_st = str_process::St::new(string.token.text());
       let mut out = EscapeOutput::new(string.token.clone(), st);
-      assert!(sp_st.eat_prefix(b"|||"));
+      always!(sp_st.eat_prefix(b"|||"));
       jsonnet_escape::text_block(&mut sp_st, &mut out);
       String::from_utf8(out.bytes).expect("invalid utf-8 in str")
     }

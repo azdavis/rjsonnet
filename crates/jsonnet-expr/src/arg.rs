@@ -1,7 +1,7 @@
 use crate::{ExprMust, Id, StrArena};
 use std::fmt;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct TooMany {
   params: usize,
   positional: usize,
@@ -21,7 +21,7 @@ pub struct Error {
   pub kind: ErrorKind,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum ErrorKind {
   TooMany(TooMany),
   Duplicate(Id),
