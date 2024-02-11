@@ -40,10 +40,6 @@ pub struct Jsonnet(val::jsonnet::Val);
 /// # Errors
 ///
 /// If execution failed.
-///
-/// # Panics
-///
-/// If the expr wasn't checked.
 pub fn get_exec(cx: Cx<'_>, path: paths::PathId) -> error::Result<Jsonnet> {
   let Some(file) = cx.jsonnet_files.get(&path) else { return Err(error::Error::NoPath(path)) };
   let env = val::jsonnet::Env::new(path);
@@ -87,10 +83,6 @@ impl Json {
 /// # Errors
 ///
 /// If manifestation failed.
-///
-/// # Panics
-///
-/// Upon internal error.
 pub fn get_manifest(cx: Cx<'_>, val: Jsonnet) -> error::Result<Json> {
   manifest::get(cx, val.0).map(Json)
 }

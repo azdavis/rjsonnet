@@ -23,11 +23,7 @@ impl Root {
   pub fn new(green: rowan::GreenNode) -> Self {
     Self { green }
   }
-  /// Turns this into an ast root.
-  ///
-  /// # Panics
-  ///
-  /// If this wasn't a root.
+  /// Turns this into an ast root and gets its expr out.
   #[must_use]
   pub fn expr(self) -> Option<ast::Expr> {
     use ast::AstNode as _;

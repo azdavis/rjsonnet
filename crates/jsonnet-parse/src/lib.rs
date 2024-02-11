@@ -5,9 +5,7 @@ mod internal;
 use jsonnet_syntax::kind::SyntaxKind as SK;
 use std::fmt;
 
-/// # Panics
-///
-/// Upon internal error.
+/// Does the parsing.
 #[must_use]
 pub fn get(tokens: &[token::Token<'_, SK>]) -> Parse {
   let mut p = Parser::new(tokens);
