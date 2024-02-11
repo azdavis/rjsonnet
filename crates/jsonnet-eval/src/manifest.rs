@@ -2,6 +2,7 @@
 
 use crate::val::{json, jsonnet};
 use crate::{error, exec, Cx};
+use always::always;
 use std::collections::BTreeMap;
 
 /// Manifests the Jsonnet value into a JSON value.
@@ -25,9 +26,12 @@ pub fn get(cx: Cx<'_>, val: jsonnet::Val) -> error::Result<json::Val> {
         if matches!(vis, jsonnet_expr::Visibility::Hidden) {
           continue;
         }
-        let jsonnet::Field::Expr(env, expr) = field else { unreachable!("non-hidden std field") };
+        let jsonnet::Field::Expr(env, expr) = field else {
+          always!(false, "non-hidden std field");
+          continue;
+        };
         let val = get_(cx, &env, expr)?;
-        assert!(val_fields.insert(name, val).is_none());
+        always!(val_fields.insert(name, val).is_none());
       }
       Ok(json::Val::Object(val_fields))
     }

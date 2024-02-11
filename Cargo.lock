@@ -436,6 +436,7 @@ dependencies = [
 name = "jsonnet-parse"
 version = "0.1.0"
 dependencies = [
+ "always",
  "event-parse",
  "jsonnet-syntax",
  "text-size",

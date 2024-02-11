@@ -17,4 +17,5 @@ event-parse.workspace = true
 text-size.workspace = true
 token.workspace = true
 
+always.path = "../always"
 jsonnet-syntax.path = "../jsonnet-syntax"

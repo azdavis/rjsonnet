@@ -3,6 +3,7 @@
 //! TODO forbid no comma between members, expr commas, params, etc. maybe do it in lowering?
 
 use crate::{ErrorKind, Expected, Parser};
+use always::always;
 use event_parse::Exited;
 use jsonnet_syntax::kind::SyntaxKind as SK;
 
@@ -229,7 +230,7 @@ fn string(p: &mut Parser<'_>) -> bool {
 }
 
 fn object(p: &mut Parser<'_>) -> Exited {
-  assert!(p.at(SK::LCurly));
+  always!(p.at(SK::LCurly));
   let en = p.enter();
   p.bump();
   while member(p).is_some() {}
@@ -452,7 +453,7 @@ fn eq_expr(p: &mut Parser<'_>) -> Option<Exited> {
 /// requires we are at `AssertKw`. does NOT produce an `Exited`.
 #[must_use]
 fn assert_(p: &mut Parser<'_>) -> SK {
-  assert!(p.at(SK::AssertKw));
+  always!(p.at(SK::AssertKw));
   p.bump();
   expr_must(p);
   if p.at(SK::Colon) {

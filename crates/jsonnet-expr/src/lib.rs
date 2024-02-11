@@ -424,19 +424,15 @@ pub struct Subst {
 
 impl Subst {
   /// Combine artifacts and produce a substitution to apply to other things.
-  ///
-  /// # Panics
-  ///
-  /// Upon internal error.
   pub fn get(art: &mut Artifacts, other: Artifacts) -> Self {
     let mut ret = Subst::default();
     for (idx, s) in other.strings.idx_to_contents.into_iter().enumerate() {
       let old = StrIdx::from_usize(idx);
       let new = art.strings.mk_idx(s);
-      assert!(ret.strings.insert(old, new).is_none());
+      always!(ret.strings.insert(old, new).is_none());
     }
     art.paths.combine(other.paths, &mut |old, new| {
-      assert!(ret.paths.insert(old, new).is_none());
+      always!(ret.paths.insert(old, new).is_none());
     });
     ret
   }
