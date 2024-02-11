@@ -18,6 +18,7 @@ rustc-hash.workspace = true
 str-process.workspace = true
 text-size.workspace = true
 
+always.path = "../always"
 jsonnet-escape.path = "../jsonnet-escape"
 jsonnet-expr.path = "../jsonnet-expr"
 jsonnet-syntax.path = "../jsonnet-syntax"

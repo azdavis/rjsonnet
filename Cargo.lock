@@ -27,6 +27,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "always"
+version = "0.1.0"
+dependencies = [
+ "log",
+]
+
+[[package]]
 name = "anstream"
 version = "0.6.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -359,6 +366,7 @@ dependencies = [
 name = "jsonnet-desugar"
 version = "0.1.0"
 dependencies = [
+ "always",
  "jsonnet-escape",
  "jsonnet-expr",
  "jsonnet-syntax",

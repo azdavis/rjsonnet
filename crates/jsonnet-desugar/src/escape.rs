@@ -1,4 +1,5 @@
 use crate::{error, st::St};
+use always::always;
 use jsonnet_escape::Output;
 use jsonnet_syntax::{ast, kind::SyntaxToken};
 
@@ -46,19 +47,39 @@ pub(crate) fn get(st: &mut St, string: ast::String) -> String {
 fn slash(st: &mut St, token: SyntaxToken, delim: u8) -> String {
   let mut sp_st = str_process::St::new(token.text());
   let mut out = EscapeOutput::new(token.clone(), st);
-  assert_eq!(sp_st.cur().expect("no delim"), delim);
-  sp_st.bump();
+  if sp_st.cur().is_some_and(|x| x == delim) {
+    sp_st.bump();
+  } else {
+    let delim = delim.escape_ascii();
+    always!(false, "no {delim} present");
+    return String::new();
+  }
   jsonnet_escape::slash(&mut sp_st, &mut out, delim);
-  String::from_utf8(out.bytes).expect("invalid utf-8 in str")
+  match String::from_utf8(out.bytes) {
+    Ok(x) => x,
+    Err(e) => {
+      always!(false, "invalid utf-8 {e}");
+      String::new()
+    }
+  }
 }
 
 fn verbatim(st: &mut St, token: SyntaxToken, delim: u8) -> String {
   let mut sp_st = str_process::St::new(token.text());
   let mut out = EscapeOutput::new(token.clone(), st);
-  assert_eq!(sp_st.cur().expect("no @"), b'@');
-  sp_st.bump();
-  assert_eq!(sp_st.cur().expect("no delim"), delim);
-  sp_st.bump();
+  if sp_st.cur().is_some_and(|x| x == b'@') {
+    sp_st.bump();
+  } else {
+    always!(false, "no @ present");
+    return String::new();
+  }
+  if sp_st.cur().is_some_and(|x| x == delim) {
+    sp_st.bump();
+  } else {
+    let delim = delim.escape_ascii();
+    always!(false, "no {delim} present");
+    return String::new();
+  }
   jsonnet_escape::verbatim(&mut sp_st, &mut out, delim);
   String::from_utf8(out.bytes).expect("invalid utf-8 in str")
 }
