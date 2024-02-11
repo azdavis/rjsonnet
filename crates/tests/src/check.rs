@@ -25,7 +25,7 @@ where
 fn get_json(st: &jsonnet_analyze::St, p: paths::PathId) -> &jsonnet_eval::Json {
   match st.get_json(p) {
     Ok(x) => x,
-    Err(e) => panic!("exec/manifest error: {}", e.display(st.strings())),
+    Err(e) => panic!("exec/manifest error: {}", e.display(st.strings(), st.paths())),
   }
 }
 
@@ -74,6 +74,6 @@ pub(crate) fn exec_err(jsonnet: &str, want: &str) {
   let p = fs.canonicalize(Path::new(DEFAULT_FILE_NAME)).expect("canonicalize");
   let p = st.path_id(p);
   let err = st.get_json(p).as_ref().expect_err("no error");
-  let got = err.display(st.strings()).to_string();
+  let got = err.display(st.strings(), st.paths()).to_string();
   assert_eq!(want, got.as_str());
 }

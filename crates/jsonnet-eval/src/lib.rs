@@ -45,7 +45,7 @@ pub struct Jsonnet(val::jsonnet::Val);
 ///
 /// If the expr wasn't checked.
 pub fn get_exec(cx: Cx<'_>, path: paths::PathId) -> error::Result<Jsonnet> {
-  let file = cx.jsonnet_files.get(&path).expect("no path");
+  let Some(file) = cx.jsonnet_files.get(&path) else { return Err(error::Error::NoPath(path)) };
   let env = val::jsonnet::Env::new(path);
   exec::get(cx, &env, file.top).map(Jsonnet)
 }

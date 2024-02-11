@@ -7,12 +7,18 @@ pub type Result<T, E = Error> = std::result::Result<T, E>;
 pub enum Error {
   Exec { expr: jsonnet_expr::ExprMust, kind: Kind },
   ManifestFn,
+  NoPath(paths::PathId),
+  NoExpr,
 }
 
 impl Error {
   #[must_use]
-  pub fn display<'a>(&'a self, ar: &'a jsonnet_expr::StrArena) -> impl fmt::Display + 'a {
-    DisplayError { error: self, ar }
+  pub fn display<'a>(
+    &'a self,
+    ar: &'a jsonnet_expr::StrArena,
+    paths: &'a paths::Store,
+  ) -> impl fmt::Display + 'a {
+    DisplayError { error: self, ar, paths }
   }
 }
 
@@ -44,6 +50,7 @@ impl From<arg::ErrorKind> for Kind {
 struct DisplayError<'a> {
   error: &'a Error,
   ar: &'a jsonnet_expr::StrArena,
+  paths: &'a paths::Store,
 }
 
 impl fmt::Display for DisplayError<'_> {
@@ -63,6 +70,10 @@ impl fmt::Display for DisplayError<'_> {
         Kind::User(s) => write!(f, "explicit `error`: {}", self.ar.get(s)),
       },
       Error::ManifestFn => f.write_str("cannot manifest function"),
+      Error::NoPath(p) => {
+        write!(f, "no such path: {}", self.paths.get_path(*p).as_path().display())
+      }
+      Error::NoExpr => write!(f, "no expr"),
     }
   }
 }

@@ -14,7 +14,7 @@ use std::collections::BTreeMap;
 const EPSILON: f64 = 0.0001;
 
 pub(crate) fn get(cx: Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
-  let expr = expr.expect("no expr");
+  let Some(expr) = expr else { return Err(error::Error::NoExpr) };
   // TODO cache lookups across calls to this fn?
   let expr_ar = &cx.jsonnet_files[&env.path].expr_ar;
   match &expr_ar[expr] {

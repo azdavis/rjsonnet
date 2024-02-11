@@ -29,9 +29,9 @@ impl Root {
   ///
   /// If this wasn't a root.
   #[must_use]
-  pub fn into_ast(self) -> ast::Root {
+  pub fn expr(self) -> Option<ast::Expr> {
     use ast::AstNode as _;
     let node = rowan::SyntaxNode::new_root(self.green.clone());
-    ast::Root::cast(node).expect("must be a Root")
+    ast::Root::cast(node).and_then(|x| x.expr())
   }
 }

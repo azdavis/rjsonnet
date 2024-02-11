@@ -6,12 +6,8 @@ use jsonnet_expr::{
 };
 use jsonnet_syntax::ast::{self, AstNode as _};
 
-pub(crate) fn get_root(st: &mut St, cx: Cx<'_>, r: ast::Root) -> Expr {
-  get_expr(st, cx, r.expr(), false)
-}
-
 /// TODO only allow super/$/tailstrict sometimes?
-fn get_expr(st: &mut St, cx: Cx<'_>, expr: Option<ast::Expr>, in_obj: bool) -> Expr {
+pub(crate) fn get_expr(st: &mut St, cx: Cx<'_>, expr: Option<ast::Expr>, in_obj: bool) -> Expr {
   let expr = expr?;
   let ptr = ast::SyntaxNodePtr::new(expr.syntax());
   let data = match expr {

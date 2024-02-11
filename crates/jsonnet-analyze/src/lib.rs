@@ -250,7 +250,7 @@ impl IsolatedFileArtifacts {
   fn new(contents: &str, current_dir: &Path, fs: &dyn jsonnet_desugar::FileSystem) -> Self {
     let lex = jsonnet_lex::get(contents);
     let parse = jsonnet_parse::get(&lex.tokens);
-    let desugar = jsonnet_desugar::get(current_dir, &[], fs, parse.root.clone().into_ast());
+    let desugar = jsonnet_desugar::get(current_dir, &[], fs, parse.root.clone().expr());
     let statics_errors = jsonnet_statics::get(&desugar.arenas, desugar.top);
     Self {
       eval: jsonnet_eval::JsonnetFile { expr_ar: desugar.arenas.expr, top: desugar.top },

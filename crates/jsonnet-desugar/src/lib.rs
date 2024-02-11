@@ -18,10 +18,10 @@ pub fn get(
   current_dir: &std::path::Path,
   other_dirs: &[&std::path::Path],
   fs: &dyn FileSystem,
-  root: jsonnet_syntax::ast::Root,
+  root: Option<jsonnet_syntax::ast::Expr>,
 ) -> Desugar {
   let mut st = st::St::default();
   let cx = cx::Cx { current_dir, other_dirs, fs };
-  let top = internal::get_root(&mut st, cx, root);
+  let top = internal::get_expr(&mut st, cx, root, false);
   st.finish(top)
 }

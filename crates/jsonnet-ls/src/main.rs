@@ -42,7 +42,9 @@ impl lang_srv::State for State {
     let path_id = self.0.path_id(path);
     let json = match self.0.get_json(path_id) {
       Ok(x) => x,
-      Err(e) => bail!("couldn't get json: {}", e.display(self.0.strings())),
+      Err(e) => {
+        bail!("couldn't get json: {}", e.display(self.0.strings(), self.paths()))
+      }
     };
     Ok(json.display(self.0.strings()).to_string())
   }
