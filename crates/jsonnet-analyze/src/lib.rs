@@ -59,7 +59,7 @@ impl St {
         }
       };
       let Some(parent) = path.parent() else {
-        always!(false, "no parent for {}", path.display());
+        always!(false, "no parent: {}", path.display());
         return None;
       };
       let artifacts = IsolatedFileArtifacts::new(contents.as_str(), parent, &FsAdapter(fs));
