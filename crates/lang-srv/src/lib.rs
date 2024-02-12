@@ -31,7 +31,8 @@ pub fn run<S: State>(st: &mut S) {
   let init: lsp_types::InitializeParams = serde_json::from_value(init).expect("get init");
   let mut srv = server::Server::default();
 
-  let root_url = init.root_uri.expect("root url");
+  #[allow(clippy::disallowed_methods)]
+  let root_url = init.root_uri.expect("no root url");
   let root_path = convert::path_buf(&root_url).expect("root path");
   srv.file_watch = init
     .capabilities

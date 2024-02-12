@@ -1,4 +1,4 @@
-use jsonnet_expr::{arg, Str};
+use jsonnet_expr::{arg, Id, Str};
 use std::fmt::{self, Debug};
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;
@@ -39,6 +39,8 @@ pub enum Kind {
   Arg(arg::ErrorKind),
   Infinite(jsonnet_expr::Infinite),
   User(Str),
+  /// should be caught in statics
+  NotInScope(Id),
 }
 
 impl From<arg::ErrorKind> for Kind {
@@ -68,6 +70,7 @@ impl fmt::Display for DisplayError<'_> {
         Kind::Arg(ek) => ek.display(self.ar).fmt(f),
         Kind::Infinite(inf) => write!(f, "infinite number: {inf}"),
         Kind::User(s) => write!(f, "explicit `error`: {}", self.ar.get(s)),
+        Kind::NotInScope(id) => write!(f, "not in scope: {}", id.display(self.ar)),
       },
       Error::ManifestFn => f.write_str("cannot manifest function"),
       Error::NoPath(p) => {

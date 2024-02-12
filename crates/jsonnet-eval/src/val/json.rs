@@ -1,5 +1,6 @@
 //! JSON values.
 
+use always::always;
 use jsonnet_expr::{Number, Prim, Str};
 use std::{collections::BTreeMap, fmt};
 
@@ -17,7 +18,12 @@ impl Val {
       serde_json::Value::Null => Self::Prim(Prim::Null),
       serde_json::Value::Bool(b) => Self::Prim(Prim::Bool(b)),
       serde_json::Value::Number(num) => {
-        let num = num.as_f64().expect("convert json number to f64");
+        let num = if let Some(x) = num.as_f64() {
+          x
+        } else {
+          always!(false, "infinite f64");
+          0.0
+        };
         let num = Number::try_from(num).expect("json cannot have NaN or inf");
         Self::Prim(Prim::Number(num))
       }

@@ -22,30 +22,28 @@ impl Env {
   }
 
   #[must_use]
-  pub(crate) fn get(&self, id: Id) -> Get<'_> {
+  pub(crate) fn get(&self, id: Id) -> Option<Get<'_>> {
     if id == Id::self_ {
-      return Get::Self_;
+      return Some(Get::Self_);
     }
     if id == Id::super_ {
-      return Get::Super;
+      return Some(Get::Super);
     }
     if id == Id::std_unutterable {
-      return Get::Std;
+      return Some(Get::Std);
     }
     if let Some(&(ref env, expr)) = self.store.get(&id) {
-      Get::Expr(env, expr)
+      Some(Get::Expr(env, expr))
+    } else if id == Id::std {
+      Some(Get::Std)
     } else {
-      assert_eq!(id, Id::std, "get failed: {id:?}");
-      Get::Std
+      None
     }
   }
 
-  /// # Panics
-  ///
-  /// If this was not in scope.
   #[must_use]
-  pub(crate) fn this(&self) -> &Object {
-    self.this.as_deref().expect("`self` not in scope")
+  pub(crate) fn this(&self) -> Option<&Object> {
+    self.this.as_deref()
   }
 }
 

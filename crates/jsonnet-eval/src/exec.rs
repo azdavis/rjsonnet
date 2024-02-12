@@ -170,10 +170,19 @@ pub(crate) fn get(cx: Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
       _ => Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes }),
     },
     ExprData::Id(id) => match env.get(*id) {
-      Get::Self_ => Ok(Val::Object(env.this().clone())),
-      Get::Super => Ok(Val::Object(env.this().parent())),
-      Get::Std => Ok(Val::Object(Object::std_lib())),
-      Get::Expr(env, expr) => get(cx, env, expr),
+      None => Err(error::Error::Exec { expr, kind: error::Kind::NotInScope(*id) }),
+      Some(got) => match got {
+        Get::Self_ => match env.this() {
+          Some(this) => Ok(Val::Object(this.clone())),
+          None => Err(error::Error::Exec { expr, kind: error::Kind::NotInScope(*id) }),
+        },
+        Get::Super => match env.this() {
+          Some(this) => Ok(Val::Object(this.parent())),
+          None => Err(error::Error::Exec { expr, kind: error::Kind::NotInScope(*id) }),
+        },
+        Get::Std => Ok(Val::Object(Object::std_lib())),
+        Get::Expr(env, expr) => get(cx, env, expr),
+      },
     },
     ExprData::Local { binds, body } => {
       let env = add_binds(env, binds);
