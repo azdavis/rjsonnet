@@ -39,7 +39,13 @@ pub(crate) fn get(st: &mut St, string: ast::String) -> String {
       let mut out = EscapeOutput::new(string.token.clone(), st);
       always!(sp_st.eat_prefix(b"|||"));
       jsonnet_escape::text_block(&mut sp_st, &mut out);
-      String::from_utf8(out.bytes).expect("invalid utf-8 in str")
+      match String::from_utf8(out.bytes) {
+        Ok(x) => x,
+        Err(e) => {
+          always!(false, "invalid utf-8: {e}");
+          String::new()
+        }
+      }
     }
   }
 }
@@ -81,5 +87,11 @@ fn verbatim(st: &mut St, token: SyntaxToken, delim: u8) -> String {
     return String::new();
   }
   jsonnet_escape::verbatim(&mut sp_st, &mut out, delim);
-  String::from_utf8(out.bytes).expect("invalid utf-8 in str")
+  match String::from_utf8(out.bytes) {
+    Ok(x) => x,
+    Err(e) => {
+      always!(false, "invalid utf-8: {e}");
+      String::new()
+    }
+  }
 }

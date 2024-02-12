@@ -39,15 +39,20 @@ impl St {
     // first remove files, and start keeping track of what remaining files were updated.
     //
     // NOTE: for each r in remove, we DO NOT bother removing r from s for any (_, s) in dependents.
-    let updated = remove.into_iter().flat_map(|path| {
-      let path = fs.canonicalize(path.as_path()).expect("canonicalize");
+    let updated = remove.into_iter().filter_map(|path| {
+      let path = match fs.canonicalize(path.as_path()) {
+        Ok(x) => x,
+        Err(e) => {
+          always!(false, "canonicalize error: {e}");
+          return None;
+        }
+      };
       let path_id = self.path_id(path);
       self.files.remove(&path_id);
       self.files_extra.remove(&path_id);
-      let dependents = self.dependents.remove(&path_id);
-      dependents.into_iter().flatten()
+      self.dependents.remove(&path_id)
     });
-    let mut updated: BTreeSet<_> = updated.collect();
+    let mut updated: BTreeSet<_> = updated.flatten().collect();
 
     // get the file artifacts for each added file in parallel.
     let get_file_artifacts = add.into_par_iter().filter_map(|path| {
@@ -68,7 +73,7 @@ impl St {
     let file_artifacts: Vec<_> = get_file_artifacts.collect();
 
     // combine the file artifacts in sequence, and note which files were added.
-    let added = file_artifacts.into_iter().map(|(path, mut art)| {
+    let added = file_artifacts.into_iter().filter_map(|(path, mut art)| {
       let subst = jsonnet_expr::Subst::get(&mut self.artifacts, art.combine);
       for (_, ed) in art.eval.expr_ar.iter_mut() {
         ed.apply(&subst);
@@ -76,11 +81,17 @@ impl St {
       for err in &mut art.extra.errors.statics {
         err.apply(&subst);
       }
-      let path = fs.canonicalize(path.as_path()).expect("canonicalize");
+      let path = match fs.canonicalize(path.as_path()) {
+        Ok(x) => x,
+        Err(e) => {
+          always!(false, "canonicalize error: {e}");
+          return None;
+        }
+      };
       let path_id = self.path_id(path);
       self.files.insert(path_id, art.eval);
       self.files_extra.insert(path_id, art.extra);
-      path_id
+      Some(path_id)
     });
     let added: BTreeSet<_> = added.collect();
 
