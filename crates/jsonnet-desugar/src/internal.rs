@@ -434,9 +434,9 @@ fn get_object(st: &mut St, cx: Cx<'_>, inside: ast::Object, in_obj: bool) -> Exp
           let arr = st.fresh();
           let on = Some(st.expr(ptr, ExprData::Id(arr)));
           let name_binds = vars.iter().enumerate().map(|(idx, (ptr, id))| {
-            let idx = u32::try_from(idx).expect("convert usize to u32");
+            let idx = always::convert::usize_to_u32(idx);
             let idx = f64::from(idx);
-            let idx = Number::try_from(idx).expect("infinite array idx");
+            let idx = Number::always_from_f64(idx);
             let idx = Some(st.expr(*ptr, ExprData::Prim(Prim::Number(idx))));
             let subscript = Some(st.expr(*ptr, ExprData::Subscript { on, idx }));
             (*id, subscript)

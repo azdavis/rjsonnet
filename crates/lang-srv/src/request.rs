@@ -1,4 +1,5 @@
 use crate::{convert, server::Server, state::State, util};
+use always::always;
 use anyhow::{bail, Result};
 use paths::FileSystem;
 use std::ops::ControlFlow;
@@ -55,6 +56,12 @@ fn mk_res<R>(id: lsp_server::RequestId, res: R::Result) -> lsp_server::Response
 where
   R: lsp_types::request::Request,
 {
-  let result = serde_json::to_value(res).expect("convert response to json");
-  lsp_server::Response { id, result: Some(result), error: None }
+  let result = match serde_json::to_value(res) {
+    Ok(x) => Some(x),
+    Err(e) => {
+      always!(false, "convert response to json error: {e}");
+      None
+    }
+  };
+  lsp_server::Response { id, result, error: None }
 }

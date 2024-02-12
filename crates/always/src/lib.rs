@@ -6,6 +6,8 @@
 //! - no `FORCE`
 //! - asks the user to report an issue
 
+pub mod convert;
+
 #[doc(hidden)]
 pub use log::error as __log_error;
 

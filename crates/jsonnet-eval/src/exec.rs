@@ -273,7 +273,7 @@ pub(crate) fn get(cx: Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
             let n = !n;
             #[allow(clippy::cast_precision_loss)]
             let n = n as f64;
-            let n = Number::try_from(n).expect("bitwise not failed");
+            let n = Number::always_from_f64(n);
             Ok(Val::Prim(Prim::Number(n)))
           } else {
             Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes })

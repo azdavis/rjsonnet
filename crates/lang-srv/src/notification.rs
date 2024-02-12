@@ -1,4 +1,5 @@
 use crate::{convert, server::Server, state::State, util};
+use always::always;
 use anyhow::{bail, Result};
 use std::{ops::ControlFlow, path::PathBuf};
 
@@ -37,9 +38,19 @@ fn go<S: State>(
       }
     }
     let ds_map = st.update_many(&srv.fs, remove, add);
+    // we want to fail if the Err type stops being () inside the match. however oddly putting the
+    // `allow` directly on that `let` doesn't work. so we put it a bit further out on this `for`.
+    #[allow(clippy::single_match_else, clippy::manual_let_else)]
     for (path, ds) in ds_map {
       let path = st.paths().get_path(path);
-      let uri = lsp_types::Url::from_file_path(path.as_path()).expect("path to url");
+      // the `allow`s above should really be right here.
+      let uri = match lsp_types::Url::from_file_path(path.as_path()) {
+        Ok(x) => x,
+        Err(()) => {
+          always!(false, "file path to url error");
+          continue;
+        }
+      };
       let diagnostics: Vec<_> = ds.into_iter().map(convert::diagnostic).collect();
       let params = lsp_types::PublishDiagnosticsParams { uri, diagnostics, version: None };
       Server::notify::<lsp_types::notification::PublishDiagnostics>(conn, params);

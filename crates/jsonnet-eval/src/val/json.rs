@@ -24,7 +24,7 @@ impl Val {
           always!(false, "infinite f64");
           0.0
         };
-        let num = Number::try_from(num).expect("json cannot have NaN or inf");
+        let num = Number::always_from_f64(num);
         Self::Prim(Prim::Number(num))
       }
       serde_json::Value::String(str) => {

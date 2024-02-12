@@ -14,6 +14,7 @@ pub use state::State;
 /// # Panics
 ///
 /// If fatal stuff failed.
+#[allow(clippy::disallowed_methods)]
 pub fn run<S: State>(st: &mut S) {
   better_panic::Settings::new()
     .message(st.crash_msg())
@@ -31,7 +32,6 @@ pub fn run<S: State>(st: &mut S) {
   let init: lsp_types::InitializeParams = serde_json::from_value(init).expect("get init");
   let mut srv = server::Server::default();
 
-  #[allow(clippy::disallowed_methods)]
   let root_url = init.root_uri.expect("no root url");
   let root_path = convert::path_buf(&root_url).expect("root path");
   srv.file_watch = init

@@ -45,11 +45,8 @@ pub(crate) struct Output {
 }
 
 impl Output {
-  /// # Panics
-  ///
-  /// If a usize overflows a u32.
   pub(crate) fn err(&mut self, idx: usize, kind: Kind) {
-    self.errors.push(Error { idx: u32::try_from(idx).expect("convert usize to u32"), kind });
+    self.errors.push(Error { idx: always::convert::usize_to_u32(idx), kind });
   }
 
   pub(crate) fn finish(self) -> Vec<Error> {

@@ -3,6 +3,7 @@
 mod error;
 mod internal;
 
+use always::always;
 use jsonnet_syntax::kind::SyntaxKind as SK;
 
 pub use error::Error;
@@ -30,7 +31,13 @@ pub fn get(s: &str) -> Lex<'_> {
     let start = st.mark();
     let kind = internal::token(&mut st, &mut out, b);
     let bs = st.non_empty_since(start);
-    let text = std::str::from_utf8(bs).expect("each token should be a str");
+    let text = match std::str::from_utf8(bs) {
+      Ok(x) => x,
+      Err(e) => {
+        always!(false, "token not a str: {e}");
+        "<ERROR>"
+      }
+    };
     ret.tokens.push(token::Token { kind, text });
   }
   ret.errors = out.finish();

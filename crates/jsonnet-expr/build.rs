@@ -1,5 +1,7 @@
 //! Generate some string/identifier names.
 
+#![allow(clippy::disallowed_methods)]
+
 use quote::{format_ident, quote};
 use std::collections::{BTreeSet, HashSet};
 

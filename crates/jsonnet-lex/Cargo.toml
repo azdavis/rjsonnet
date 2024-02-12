@@ -17,5 +17,6 @@ str-process.workspace = true
 text-size.workspace = true
 token.workspace = true
 
+always.path = "../always"
 jsonnet-escape.path = "../jsonnet-escape"
 jsonnet-syntax.path = "../jsonnet-syntax"

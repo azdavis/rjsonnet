@@ -1,3 +1,4 @@
+use always::always;
 use anyhow::{bail, Result};
 
 #[derive(Debug, Default)]
@@ -40,5 +41,10 @@ impl Server {
 }
 
 fn send(conn: &lsp_server::Connection, m: lsp_server::Message) {
-  conn.sender.send(m).expect("send");
+  match conn.sender.send(m) {
+    Ok(()) => {}
+    Err(e) => {
+      always!(false, "send failure: {e}");
+    }
+  }
 }

@@ -24,4 +24,5 @@ serde_json.workspace = true
 text-pos.workspace = true
 walkdir.workspace = true
 
+always.path = "../always"
 diagnostic.path = "../diagnostic"

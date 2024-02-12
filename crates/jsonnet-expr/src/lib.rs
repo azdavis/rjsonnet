@@ -2,8 +2,6 @@
 
 #![allow(missing_docs)]
 
-use always::always;
-
 mod generated {
   include!(concat!(env!("OUT_DIR"), "/generated.rs"));
 }
@@ -13,6 +11,7 @@ pub mod arg;
 pub use generated::{std_fn, StdFn};
 pub use la_arena::{Arena, ArenaMap, Idx};
 
+use always::always;
 use rustc_hash::FxHashMap;
 use std::{collections::hash_map::Entry, fmt};
 
@@ -227,6 +226,19 @@ impl Number {
   pub fn value(&self) -> f64 {
     self.0
   }
+
+  /// Delegates to `try_from`, and uses always! to assert the Err case is not hit. But if it is, use
+  /// `0.0` instead.
+  #[must_use]
+  pub fn always_from_f64(n: f64) -> Self {
+    match Self::try_from(n) {
+      Ok(n) => n,
+      Err(e) => {
+        always!(false, "infinite: {e}");
+        Self(0.0)
+      }
+    }
+  }
 }
 
 /// OK because NaN is not allowed
@@ -313,18 +325,12 @@ enum StrRepr {
 struct StrIdx(u32);
 
 impl StrIdx {
-  /// # Panics
-  ///
-  /// On failure (i.e. overflow).
-  fn from_usize(u: usize) -> Self {
-    Self(u.try_into().expect("convert usize to u32"))
+  fn from_usize(n: usize) -> Self {
+    Self(always::convert::usize_to_u32(n))
   }
 
-  /// # Panics
-  ///
-  /// On failure (i.e. overflow).
   fn to_usize(self) -> usize {
-    self.0.try_into().expect("convert usize to u32")
+    always::convert::u32_to_usize(self.0)
   }
 
   fn to_u32(self) -> u32 {
