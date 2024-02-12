@@ -1,4 +1,4 @@
 disallowed-methods = [
-  { path = "std::option::Option::unwrap", reason = "use expect instead" },
-  { path = "std::result::Result::unwrap", reason = "use expect instead" },
+  { path = "std::option::Option::unwrap", reason = "avoid panicking" },
+  { path = "std::result::Result::unwrap", reason = "avoid panicking" },
 ]
