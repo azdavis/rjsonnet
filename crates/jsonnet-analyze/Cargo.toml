@@ -27,3 +27,6 @@ jsonnet-lex.path = "../jsonnet-lex"
 jsonnet-parse.path = "../jsonnet-parse"
 jsonnet-statics.path = "../jsonnet-statics"
 jsonnet-syntax.path = "../jsonnet-syntax"
+
+[features]
+testing = ["jsonnet-eval/testing"]

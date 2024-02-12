@@ -16,5 +16,5 @@ paths.workspace = true
 rustc-hash.workspace = true
 serde_json.workspace = true
 
-jsonnet-analyze.path = "../jsonnet-analyze"
+jsonnet-analyze = { path = "../jsonnet-analyze", features = ["testing"] }
 jsonnet-eval.path = "../jsonnet-eval"

@@ -19,3 +19,6 @@ serde_json.workspace = true
 
 always.path = "../always"
 jsonnet-expr.path = "../jsonnet-expr"
+
+[features]
+testing = []

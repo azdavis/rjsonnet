@@ -66,6 +66,7 @@ impl Json {
   /// # Panics
   ///
   /// If it wasn't.
+  #[cfg(feature = "testing")]
   pub fn assert_is_str(&self, ar: &jsonnet_expr::StrArena, want: &jsonnet_expr::Str) {
     let val::json::Val::Prim(jsonnet_expr::Prim::String(got)) = &self.0 else {
       panic!("did not get a String")
