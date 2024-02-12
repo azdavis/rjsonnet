@@ -1,4 +1,4 @@
-use jsonnet_expr::arg;
+use jsonnet_expr::{arg, Str};
 use std::fmt::{self, Debug};
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;
@@ -33,12 +33,12 @@ pub enum Kind {
   Todo(&'static str),
   ArrayIdxNotInteger,
   ArrayIdxOutOfRange,
-  DuplicateField(jsonnet_expr::Str),
+  DuplicateField(Str),
   IncompatibleTypes,
-  FieldNotDefined(jsonnet_expr::Str),
+  FieldNotDefined(Str),
   Arg(arg::ErrorKind),
   Infinite(jsonnet_expr::Infinite),
-  User(jsonnet_expr::Str),
+  User(Str),
 }
 
 impl From<arg::ErrorKind> for Kind {
