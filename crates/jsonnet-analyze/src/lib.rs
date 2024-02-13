@@ -61,7 +61,7 @@ impl St {
     let mut updated: BTreeSet<_> = updated.flatten().collect();
 
     // get the file artifacts for each added file in parallel.
-    let get_file_artifacts = add.into_par_iter().filter_map(|path| {
+    let file_artifacts = add.into_par_iter().filter_map(|path| {
       let contents = match fs.read_to_string(path.as_path()) {
         Ok(x) => x,
         Err(e) => {
@@ -76,7 +76,7 @@ impl St {
       let artifacts = IsolatedFileArtifacts::new(contents.as_str(), parent, &FsAdapter(fs));
       Some((path, artifacts))
     });
-    let file_artifacts: Vec<_> = get_file_artifacts.collect();
+    let file_artifacts: Vec<_> = file_artifacts.collect();
 
     // combine the file artifacts in sequence, and note which files were added.
     let added = file_artifacts.into_iter().filter_map(|(path, mut art)| {
@@ -103,8 +103,8 @@ impl St {
 
     // compute a mapping from path id p to non-empty set of path ids S, s.t. for all q in S, q was
     // just added, and p depends on q.
-    let added_deps = self.files.par_iter().filter_map(|(&path_id, file)| {
-      let deps: BTreeSet<_> = file
+    let added_dependencies = self.files.par_iter().filter_map(|(&path_id, file)| {
+      let dependencies: BTreeSet<_> = file
         .expr_ar
         .iter()
         .filter_map(|(_, expr)| {
@@ -115,18 +115,18 @@ impl St {
           }
         })
         .collect();
-      if deps.is_empty() {
+      if dependencies.is_empty() {
         None
       } else {
-        Some((path_id, deps))
+        Some((path_id, dependencies))
       }
     });
-    let added_deps: PathMap<_> = added_deps.collect();
+    let added_dependencies: PathMap<_> = added_dependencies.collect();
 
     // using that mapping, update the dependents.
-    for (&path, deps) in &added_deps {
-      for &dep in deps {
-        self.dependents.entry(dep).or_default().insert(path);
+    for (&dependent, dependencies) in &added_dependencies {
+      for &dependency in dependencies {
+        self.dependents.entry(dependency).or_default().insert(dependent);
       }
     }
 
