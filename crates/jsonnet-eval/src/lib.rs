@@ -17,6 +17,7 @@ pub mod error;
 
 mod exec;
 mod manifest;
+mod std_lib;
 mod val;
 
 #[derive(Debug, Clone, Copy)]
@@ -86,4 +87,8 @@ impl Json {
 /// If manifestation failed.
 pub fn get_manifest(cx: Cx<'_>, val: Jsonnet) -> error::Result<Json> {
   manifest::get(cx, val.0).map(Json)
+}
+
+pub(crate) fn mk_todo(expr: jsonnet_expr::ExprMust, msg: &'static str) -> error::Error {
+  error::Error::Exec { expr, kind: error::Kind::Todo(msg) }
 }
