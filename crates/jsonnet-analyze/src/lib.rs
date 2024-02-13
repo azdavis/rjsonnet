@@ -14,9 +14,15 @@ use std::path::{Path, PathBuf};
 pub struct St {
   artifacts: jsonnet_expr::Artifacts,
   files: PathMap<jsonnet_eval::JsonnetFile>,
+  /// invariant: x in files iff x in files_extra.
   files_extra: PathMap<FileArtifacts>,
+  /// invariant: if x in json, then x in files.
   json: PathMap<jsonnet_eval::error::Result<jsonnet_eval::Json>>,
-  /// a map from path ids *p* to the set of path ids that **depend on** *p*
+  /// invariants:
+  /// - if x in dependents, x in files.
+  /// - if a depends on b, a in dependents[b]. (note: NOT a bi-implication)
+  /// NON-invariants:
+  /// - for all (_, s) in dependents, for all x in s, x in files.
   dependents: BTreeMap<PathId, BTreeSet<PathId>>,
 }
 
