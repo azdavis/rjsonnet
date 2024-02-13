@@ -74,13 +74,6 @@ impl St {
 
     // combine the file artifacts in sequence, and note which files were added.
     let added = file_artifacts.into_iter().filter_map(|(path, mut art)| {
-      let subst = jsonnet_expr::Subst::get(&mut self.artifacts, art.combine);
-      for (_, ed) in art.eval.expr_ar.iter_mut() {
-        ed.apply(&subst);
-      }
-      for err in &mut art.extra.errors.statics {
-        err.apply(&subst);
-      }
       let path = match fs.canonicalize(path.as_path()) {
         Ok(x) => x,
         Err(e) => {
@@ -88,6 +81,13 @@ impl St {
           return None;
         }
       };
+      let subst = jsonnet_expr::Subst::get(&mut self.artifacts, art.combine);
+      for (_, ed) in art.eval.expr_ar.iter_mut() {
+        ed.apply(&subst);
+      }
+      for err in &mut art.extra.errors.statics {
+        err.apply(&subst);
+      }
       let path_id = self.path_id(path);
       self.files.insert(path_id, art.eval);
       self.files_extra.insert(path_id, art.extra);
