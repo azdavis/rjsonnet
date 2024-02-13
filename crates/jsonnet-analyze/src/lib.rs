@@ -151,41 +151,22 @@ impl St {
       let iter = updated.iter().map(|&path| {
         let art = &self.files_extra[&path];
         let ds: Vec<_> = std::iter::empty()
-          .chain(art.errors.lex.iter().filter_map(|err| {
-            let range = err.range();
-            let Some(range) = art.pos_db.range_utf16(range) else {
-              always!(false, "bad range: {range:?}");
-              return None;
-            };
-            Some(Diagnostic { range, message: err.to_string() })
-          }))
-          .chain(art.errors.parse.iter().filter_map(|err| {
-            let range = err.range();
-            let Some(range) = art.pos_db.range_utf16(range) else {
-              always!(false, "bad range: {range:?}");
-              return None;
-            };
-            Some(Diagnostic { range, message: err.to_string() })
-          }))
-          .chain(art.errors.desugar.iter().filter_map(|err| {
-            let range = err.range();
-            let Some(range) = art.pos_db.range_utf16(range) else {
-              always!(false, "bad range: {range:?}");
-              return None;
-            };
-            Some(Diagnostic { range, message: err.to_string() })
-          }))
-          .chain(art.errors.statics.iter().filter_map(|err| {
+          .chain(art.errors.lex.iter().map(|err| (err.range(), err.to_string())))
+          .chain(art.errors.parse.iter().map(|err| (err.range(), err.to_string())))
+          .chain(art.errors.desugar.iter().map(|err| (err.range(), err.to_string())))
+          .chain(art.errors.statics.iter().map(|err| {
             let expr = err.expr();
             let ptr = art.pointers.get_ptr(expr);
-            let range = ptr.text_range();
+            let err = err.display(&self.artifacts.strings);
+            (ptr.text_range(), err.to_string())
+          }))
+          .filter_map(|(range, message)| {
             let Some(range) = art.pos_db.range_utf16(range) else {
               always!(false, "bad range: {range:?}");
               return None;
             };
-            let err = err.display(&self.artifacts.strings);
-            Some(Diagnostic { range, message: err.to_string() })
-          }))
+            Some(Diagnostic { range, message })
+          })
           .collect();
         (path, ds)
       });
