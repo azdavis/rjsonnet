@@ -11,9 +11,12 @@ mod util;
 
 pub use state::State;
 
+/// Sets up and runs the LSP.
+///
 /// # Panics
 ///
-/// If fatal stuff failed.
+/// If things failed that it wouldn't make sense to try to  ecover from, like starting up the LSP or
+/// joining I/O threads.
 #[allow(clippy::disallowed_methods)]
 pub fn run<S: State>(st: &mut S) {
   better_panic::Settings::new()

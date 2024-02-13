@@ -18,10 +18,6 @@ pub struct Lex<'a> {
 }
 
 /// Transforms a string into tokens.
-///
-/// # Panics
-///
-/// Upon internal error.
 #[must_use]
 pub fn get(s: &str) -> Lex<'_> {
   let mut ret = Lex::default();

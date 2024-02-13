@@ -28,11 +28,6 @@ pub struct St {
 
 impl St {
   /// Updates the state with added and removed Jsonnet paths.
-  ///
-  /// # Panics
-  ///
-  /// If the paths couldn't be read, or weren't file paths, or couldn't canonicalize, or if they had
-  /// any jsonnet errors.
   pub fn update_many<F>(
     &mut self,
     fs: &F,

@@ -10,10 +10,6 @@ use std::collections::BTreeMap;
 /// # Errors
 ///
 /// If manifestation failed.
-///
-/// # Panics
-///
-/// Upon internal error.
 pub fn get(cx: Cx<'_>, val: jsonnet::Val) -> error::Result<json::Val> {
   match val {
     jsonnet::Val::Prim(prim) => Ok(json::Val::Prim(prim)),
