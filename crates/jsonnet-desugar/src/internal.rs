@@ -353,11 +353,11 @@ fn get_object(st: &mut St, cx: Cx<'_>, inside: ast::Object, in_obj: bool) -> Exp
             let mut body = match field.field_extra() {
               None => get_expr(st, cx, field.expr(), true),
               Some(ast::FieldExtra::FieldPlus(fp)) => {
-                // TODO the spec says to self and super to outerself and outersuper. maybe something
-                // with the same effect would be to have the env have another 'this' field for the
-                // 'outer this', and we could set that up correctly in the corresponding place in
-                // the spec where we set outerself and outersuper. then here we could replace this
-                // with that 'outer this'.
+                // TODO the spec says do substitution with self and super and outerself and
+                // outersuper. maybe something with the same effect would be to have the env have
+                // another 'this' field for the 'outer this', and we could set that up correctly in
+                // the corresponding place in the spec where we set outerself and outersuper. then
+                // here we could replace the regular 'this' with that 'outer this'.
                 st.err(&fp, error::Kind::Todo("FieldPlus"));
                 None
               }
