@@ -68,7 +68,8 @@ pub fn run<S: State>(st: &mut S) {
     });
     iter.collect()
   };
-  st.update_many(&srv.fs, Vec::new(), paths);
+  let ds = st.update_many(&srv.fs, Vec::new(), paths);
+  server::Server::diagnose(&conn, st.paths(), ds);
 
   for msg in &conn.receiver {
     log::info!("recv {msg:?}");

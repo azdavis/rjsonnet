@@ -1,5 +1,4 @@
 use crate::{convert, server::Server, state::State, util};
-use always::always;
 use anyhow::{bail, Result};
 use std::{ops::ControlFlow, path::PathBuf};
 
@@ -48,30 +47,15 @@ fn go<S: State>(
         remove.push(path);
       }
     }
-    let ds_map = st.update_many(&srv.fs, remove, add);
-    // we want to fail if the Err type stops being () inside the match. however oddly putting the
-    // `allow` directly on that `let` doesn't work. so we put it a bit further out on this `for`.
-    #[allow(clippy::single_match_else, clippy::manual_let_else)]
-    for (path, ds) in ds_map {
-      let path = st.paths().get_path(path);
-      // the `allow`s above should really be right here.
-      let uri = match lsp_types::Url::from_file_path(path.as_path()) {
-        Ok(x) => x,
-        Err(()) => {
-          always!(false, "file path to url error");
-          continue;
-        }
-      };
-      let diagnostics: Vec<_> = ds.into_iter().map(convert::diagnostic).collect();
-      let params = lsp_types::PublishDiagnosticsParams { uri, diagnostics, version: None };
-      Server::notify::<lsp_types::notification::PublishDiagnostics>(conn, params);
-    }
+    let ds = st.update_many(&srv.fs, remove, add);
+    Server::diagnose(conn, st.paths(), ds);
     Ok(())
   })?;
   notif = try_notif::<lsp_types::notification::DidOpenTextDocument, _>(notif, |params| {
     let path = srv.canonical_path(&params.text_document.uri)?;
     let id = st.path_id(path.clone());
-    st.update_one(&srv.fs, path, &params.text_document.text);
+    let ds = st.update_one(&srv.fs, path, &params.text_document.text);
+    Server::diagnose(conn, st.paths(), ds);
     srv.open_files.insert(id, params.text_document.text);
     Ok(())
   })?;
@@ -93,7 +77,8 @@ fn go<S: State>(
       bail!("got DidChangeTextDocument for non-open file: {path}");
     };
     apply_changes(contents, params.content_changes);
-    st.update_one(&srv.fs, path, contents);
+    let ds = st.update_one(&srv.fs, path, contents);
+    Server::diagnose(conn, st.paths(), ds);
     Ok(())
   })?;
   ControlFlow::Continue(notif)

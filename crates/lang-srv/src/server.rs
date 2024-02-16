@@ -47,6 +47,30 @@ impl Server {
     let path = convert::path_buf(url)?;
     Ok(self.fs.canonicalize(path.as_path())?)
   }
+
+  pub(crate) fn diagnose(
+    conn: &lsp_server::Connection,
+    paths: &paths::Store,
+    ds_map: paths::PathMap<Vec<diagnostic::Diagnostic>>,
+  ) {
+    // we want to fail if the Err type stops being () inside the match. however oddly putting the
+    // `allow` directly on that `let` doesn't work. so we put it a bit further out on this `for`.
+    #[allow(clippy::single_match_else, clippy::manual_let_else)]
+    for (path, ds) in ds_map {
+      let path = paths.get_path(path);
+      // the `allow`s above should really be right here.
+      let uri = match lsp_types::Url::from_file_path(path.as_path()) {
+        Ok(x) => x,
+        Err(()) => {
+          always!(false, "file path to url error");
+          continue;
+        }
+      };
+      let diagnostics: Vec<_> = ds.into_iter().map(convert::diagnostic).collect();
+      let params = lsp_types::PublishDiagnosticsParams { uri, diagnostics, version: None };
+      Self::notify::<lsp_types::notification::PublishDiagnostics>(conn, params);
+    }
+  }
 }
 
 fn send(conn: &lsp_server::Connection, m: lsp_server::Message) {

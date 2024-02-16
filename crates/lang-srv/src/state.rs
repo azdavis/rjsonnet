@@ -13,6 +13,7 @@ pub trait State {
   fn is_ext(&self, s: &str) -> bool;
 
   /// Update many files at once.
+  #[must_use]
   fn update_many<F>(
     &mut self,
     fs: &F,
@@ -23,6 +24,7 @@ pub trait State {
     F: Sync + Send + paths::FileSystem;
 
   /// Updates one file.
+  #[must_use]
   fn update_one<F>(
     &mut self,
     fs: &F,
