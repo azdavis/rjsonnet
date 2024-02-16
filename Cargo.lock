@@ -482,6 +482,7 @@ dependencies = [
  "lsp-server",
  "lsp-types",
  "paths",
+ "rustc-hash",
  "serde_json",
  "text-pos",
  "walkdir",

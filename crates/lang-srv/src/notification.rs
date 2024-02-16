@@ -57,6 +57,19 @@ fn go<S: State>(
     }
     Ok(())
   })?;
+  notif = try_notif::<lsp_types::notification::DidOpenTextDocument, _>(notif, |params| {
+    let path = srv.canonical_path(&params.text_document.uri)?;
+    let id = st.path_id(path);
+    st.update_one(id, &params.text_document.text);
+    srv.open_files.insert(id, params.text_document.text);
+    Ok(())
+  })?;
+  notif = try_notif::<lsp_types::notification::DidCloseTextDocument, _>(notif, |params| {
+    let path = srv.canonical_path(&params.text_document.uri)?;
+    let id = st.path_id(path);
+    srv.open_files.remove(&id);
+    Ok(())
+  })?;
   ControlFlow::Continue(notif)
 }
 

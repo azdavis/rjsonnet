@@ -3,12 +3,14 @@ use always::always;
 use anyhow::{bail, Result};
 use lsp_types::Url;
 use paths::FileSystem as _;
+use rustc_hash::FxHashMap;
 
 #[derive(Debug, Default)]
 pub(crate) struct Server {
   pub(crate) fs: paths::RealFileSystem,
   pub(crate) queue: lsp_server::ReqQueue<(), ()>,
   pub(crate) file_watch: bool,
+  pub(crate) open_files: FxHashMap<paths::PathId, String>,
 }
 
 impl Server {
