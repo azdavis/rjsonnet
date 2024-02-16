@@ -1,5 +1,8 @@
+use crate::convert;
 use always::always;
 use anyhow::{bail, Result};
+use lsp_types::Url;
+use paths::FileSystem as _;
 
 #[derive(Debug, Default)]
 pub(crate) struct Server {
@@ -37,6 +40,11 @@ impl Server {
   {
     let notif = lsp_server::Notification::new(N::METHOD.to_owned(), params);
     send(conn, notif.into());
+  }
+
+  pub(crate) fn canonical_path(&self, url: &Url) -> Result<paths::CanonicalPathBuf> {
+    let path = convert::path_buf(url)?;
+    Ok(self.fs.canonicalize(path.as_path())?)
   }
 }
 

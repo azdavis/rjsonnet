@@ -1,7 +1,6 @@
-use crate::{convert, server::Server, state::State, util};
+use crate::{server::Server, state::State, util};
 use always::always;
 use anyhow::{bail, Result};
-use paths::FileSystem;
 use std::ops::ControlFlow;
 
 pub(crate) fn handle<S: State>(
@@ -25,9 +24,7 @@ fn go<S: State>(
   mut req: lsp_server::Request,
 ) -> ControlFlowResult<lsp_server::Response> {
   req = try_req::<lsp_types::request::HoverRequest, _, _>(req, |id, params| {
-    let url = &params.text_document_position_params.text_document.uri;
-    let path = convert::path_buf(url)?;
-    let path = srv.fs.canonicalize(path.as_path())?;
+    let path = srv.canonical_path(&params.text_document_position_params.text_document.uri)?;
     let json = st.hover(path)?;
     let result = lsp_types::Hover {
       contents: lsp_types::HoverContents::Markup(lsp_types::MarkupContent {
