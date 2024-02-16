@@ -28,6 +28,7 @@ pub struct St {
 
 impl St {
   /// Updates the state with added and removed Jsonnet paths.
+  #[must_use]
   pub fn update_many<F>(
     &mut self,
     fs: &F,
@@ -84,6 +85,7 @@ impl St {
   }
 
   /// Updates one file.
+  #[must_use]
   pub fn update_one<F>(
     &mut self,
     fs: &F,
