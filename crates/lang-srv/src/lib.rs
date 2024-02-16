@@ -15,7 +15,7 @@ pub use state::State;
 ///
 /// # Panics
 ///
-/// If things failed that it wouldn't make sense to try to  ecover from, like starting up the LSP or
+/// If things failed that it wouldn't make sense to try to recover from, like starting up the LSP or
 /// joining I/O threads.
 #[allow(clippy::disallowed_methods)]
 pub fn run<S: State>(st: &mut S) {
