@@ -83,6 +83,24 @@ impl St {
     self.update(updated, file_artifacts)
   }
 
+  /// Updates one file.
+  pub fn update_one<F>(
+    &mut self,
+    fs: &F,
+    path: paths::CanonicalPathBuf,
+    contents: &str,
+  ) -> PathMap<Vec<Diagnostic>>
+  where
+    F: paths::FileSystem,
+  {
+    let Some(parent) = path.as_path().parent() else {
+      always!(false, "no parent: {}", path.as_path().display());
+      return PathMap::default();
+    };
+    let artifacts = IsolatedFileArtifacts::new(contents, parent, &FsAdapter(fs));
+    self.update(BTreeSet::new(), vec![(path, artifacts)])
+  }
+
   fn update(
     &mut self,
     mut updated: BTreeSet<paths::PathId>,

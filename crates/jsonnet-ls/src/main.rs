@@ -35,6 +35,18 @@ impl lang_srv::State for State {
     self.0.update_many(fs, remove, add)
   }
 
+  fn update_one<F>(
+    &mut self,
+    fs: &F,
+    path: paths::CanonicalPathBuf,
+    contents: &str,
+  ) -> paths::PathMap<Vec<diagnostic::Diagnostic>>
+  where
+    F: paths::FileSystem,
+  {
+    self.0.update_one(fs, path, contents)
+  }
+
   fn hover(&mut self, path: paths::CanonicalPathBuf) -> Result<String> {
     let path_id = self.0.path_id(path);
     let json = match self.0.get_json(path_id) {
@@ -48,5 +60,9 @@ impl lang_srv::State for State {
 
   fn paths(&self) -> &paths::Store {
     self.0.paths()
+  }
+
+  fn path_id(&mut self, path: paths::CanonicalPathBuf) -> paths::PathId {
+    self.0.path_id(path)
   }
 }

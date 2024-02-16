@@ -3,10 +3,12 @@ pub(crate) fn get() -> lsp_types::ServerCapabilities {
     text_document_sync: Some(lsp_types::TextDocumentSyncCapability::Options(
       lsp_types::TextDocumentSyncOptions {
         open_close: Some(true),
-        change: None,
+        change: Some(lsp_types::TextDocumentSyncKind::INCREMENTAL),
         will_save: Some(false),
         will_save_wait_until: Some(false),
-        save: None,
+        save: Some(lsp_types::TextDocumentSyncSaveOptions::SaveOptions(lsp_types::SaveOptions {
+          include_text: Some(false),
+        })),
       },
     )),
     hover_provider: Some(lsp_types::HoverProviderCapability::Simple(true)),

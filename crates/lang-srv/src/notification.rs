@@ -70,8 +70,8 @@ fn go<S: State>(
   })?;
   notif = try_notif::<lsp_types::notification::DidOpenTextDocument, _>(notif, |params| {
     let path = srv.canonical_path(&params.text_document.uri)?;
-    let id = st.path_id(path);
-    st.update_one(id, &params.text_document.text);
+    let id = st.path_id(path.clone());
+    st.update_one(&srv.fs, path, &params.text_document.text);
     srv.open_files.insert(id, params.text_document.text);
     Ok(())
   })?;
@@ -81,7 +81,60 @@ fn go<S: State>(
     srv.open_files.remove(&id);
     Ok(())
   })?;
+  notif = try_notif::<lsp_types::notification::DidSaveTextDocument, _>(notif, |_| {
+    // we should have already gotten content changes from DidChangeTextDocument
+    Ok(())
+  })?;
+  notif = try_notif::<lsp_types::notification::DidChangeTextDocument, _>(notif, |params| {
+    let path = srv.canonical_path(&params.text_document.uri)?;
+    let id = st.path_id(path.clone());
+    let Some(contents) = srv.open_files.get_mut(&id) else {
+      let path = path.as_path().display();
+      bail!("got DidChangeTextDocument for non-open file: {path}");
+    };
+    apply_changes(contents, params.content_changes);
+    st.update_one(&srv.fs, path, contents);
+    Ok(())
+  })?;
   ControlFlow::Continue(notif)
+}
+
+/// adapted from rust-analyzer.
+fn apply_changes(
+  contents: &mut String,
+  mut content_changes: Vec<lsp_types::TextDocumentContentChangeEvent>,
+) {
+  // If at least one of the changes is a full document change, use the last of them as the starting
+  // point and ignore all previous changes.
+  let content_changes = match content_changes.iter().rposition(|change| change.range.is_none()) {
+    Some(idx) => {
+      *contents = std::mem::take(&mut content_changes[idx].text);
+      &content_changes[idx + 1..]
+    }
+    None => &content_changes[..],
+  };
+  if content_changes.is_empty() {
+    return;
+  }
+
+  let mut pos_db = text_pos::PositionDb::new(contents);
+
+  // The changes we got must be applied sequentially, but can cross lines so we have to keep our
+  // line index updated. Some clients (e.g. Code) sort the ranges in reverse. As an optimization, we
+  // remember the last valid line in the index and only rebuild it if needed. The VFS will normalize
+  // the end of lines to `\n`.
+  let mut index_valid = u32::MAX;
+  for change in content_changes {
+    // The None case can't happen as we have handled it above already
+    let Some(range) = change.range else { continue };
+    if index_valid <= range.end.line {
+      pos_db = text_pos::PositionDb::new(contents);
+    }
+    index_valid = range.start.line;
+    if let Some(range) = pos_db.text_range_utf16(convert::text_pos_range(range)) {
+      contents.replace_range(std::ops::Range::<usize>::from(range), &change.text);
+    }
+  }
 }
 
 fn try_notif<N, F>(notif: lsp_server::Notification, f: F) -> ControlFlowResult

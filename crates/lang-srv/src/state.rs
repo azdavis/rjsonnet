@@ -22,6 +22,16 @@ pub trait State {
   where
     F: Sync + Send + paths::FileSystem;
 
+  /// Updates one file.
+  fn update_one<F>(
+    &mut self,
+    fs: &F,
+    path: paths::CanonicalPathBuf,
+    contents: &str,
+  ) -> paths::PathMap<Vec<diagnostic::Diagnostic>>
+  where
+    F: paths::FileSystem;
+
   /// Hover over a part of a file.
   ///
   /// # Errors
@@ -31,4 +41,7 @@ pub trait State {
 
   /// Returns the paths store for this.
   fn paths(&self) -> &paths::Store;
+
+  /// Returns a path id for this path.
+  fn path_id(&mut self, path: paths::CanonicalPathBuf) -> paths::PathId;
 }

@@ -43,3 +43,11 @@ fn lsp_range(r: text_pos::RangeUtf16) -> lsp_types::Range {
 fn lsp_position(p: text_pos::PositionUtf16) -> lsp_types::Position {
   lsp_types::Position { line: p.line, character: p.col }
 }
+
+pub(crate) fn text_pos_range(r: lsp_types::Range) -> text_pos::RangeUtf16 {
+  text_pos::RangeUtf16 { start: text_pos_position(r.start), end: text_pos_position(r.end) }
+}
+
+fn text_pos_position(p: lsp_types::Position) -> text_pos::PositionUtf16 {
+  text_pos::PositionUtf16 { line: p.line, col: p.character }
+}
