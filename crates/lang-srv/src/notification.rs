@@ -28,7 +28,18 @@ fn go<S: State>(
     let mut add = Vec::<PathBuf>::new();
     let mut remove = Vec::<PathBuf>::new();
     for change in params.changes {
-      let path = convert::path_buf(&change.uri)?;
+      let pb = srv.canonical_path(&change.uri)?;
+      let id = st.path_id(pb.clone());
+      if srv.open_files.contains_key(&id) {
+        // per docs for DidOpenTextDocument:
+        //
+        // > The document's truth is now managed by the client and the server must not try to read
+        // > the document's truth using the document's uri.
+        continue;
+      }
+      // TODO cut down on converting back into path buf just to then pass to update_many which
+      // re-converts back into path id?
+      let path = pb.into_path_buf();
       if change.typ == lsp_types::FileChangeType::CREATED
         || change.typ == lsp_types::FileChangeType::CHANGED
       {
