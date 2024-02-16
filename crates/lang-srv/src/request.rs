@@ -22,9 +22,9 @@ type ControlFlowResult<T, C = lsp_server::Request> = ControlFlow<Result<T>, C>;
 fn go<S: State>(
   srv: &mut Server,
   st: &mut S,
-  req: lsp_server::Request,
+  mut req: lsp_server::Request,
 ) -> ControlFlowResult<lsp_server::Response> {
-  let req = try_req::<lsp_types::request::HoverRequest, _, _>(req, |id, params| {
+  req = try_req::<lsp_types::request::HoverRequest, _, _>(req, |id, params| {
     let url = &params.text_document_position_params.text_document.uri;
     let path = convert::path_buf(url)?;
     let path = srv.fs.canonicalize(path.as_path())?;

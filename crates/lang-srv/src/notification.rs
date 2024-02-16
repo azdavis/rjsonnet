@@ -22,9 +22,9 @@ fn go<S: State>(
   srv: &mut Server,
   st: &mut S,
   conn: &lsp_server::Connection,
-  notif: lsp_server::Notification,
+  mut notif: lsp_server::Notification,
 ) -> ControlFlowResult {
-  let notif = try_notif::<lsp_types::notification::DidChangeWatchedFiles, _>(notif, |params| {
+  notif = try_notif::<lsp_types::notification::DidChangeWatchedFiles, _>(notif, |params| {
     let mut add = Vec::<PathBuf>::new();
     let mut remove = Vec::<PathBuf>::new();
     for change in params.changes {
