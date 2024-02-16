@@ -364,6 +364,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "jsonnet-cli"
+version = "0.1.0"
+dependencies = [
+ "jsonnet-analyze",
+ "paths",
+]
+
+[[package]]
 name = "jsonnet-desugar"
 version = "0.1.0"
 dependencies = [
