@@ -80,10 +80,10 @@ impl St {
     });
     let file_artifacts: Vec<_> = file_artifacts.collect();
 
-    self.update_many_inner(updated, file_artifacts)
+    self.update(updated, file_artifacts)
   }
 
-  fn update_many_inner(
+  fn update(
     &mut self,
     mut updated: BTreeSet<paths::PathId>,
     file_artifacts: Vec<(paths::CanonicalPathBuf, IsolatedFileArtifacts)>,
