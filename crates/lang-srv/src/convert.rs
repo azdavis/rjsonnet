@@ -24,7 +24,7 @@ where
 
 pub(crate) fn diagnostic(d: diagnostic::Diagnostic) -> lsp_types::Diagnostic {
   lsp_types::Diagnostic {
-    range: range(d.range),
+    range: lsp_range(d.range),
     severity: Some(lsp_types::DiagnosticSeverity::ERROR),
     code: None,
     code_description: None,
@@ -36,10 +36,10 @@ pub(crate) fn diagnostic(d: diagnostic::Diagnostic) -> lsp_types::Diagnostic {
   }
 }
 
-fn range(r: text_pos::RangeUtf16) -> lsp_types::Range {
-  lsp_types::Range { start: position(r.start), end: position(r.end) }
+fn lsp_range(r: text_pos::RangeUtf16) -> lsp_types::Range {
+  lsp_types::Range { start: lsp_position(r.start), end: lsp_position(r.end) }
 }
 
-fn position(p: text_pos::PositionUtf16) -> lsp_types::Position {
+fn lsp_position(p: text_pos::PositionUtf16) -> lsp_types::Position {
   lsp_types::Position { line: p.line, character: p.col }
 }
