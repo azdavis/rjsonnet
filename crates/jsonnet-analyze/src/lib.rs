@@ -53,7 +53,7 @@ impl St {
       self.files_extra.remove(&path_id);
       self.dependents.remove(&path_id)
     });
-    let mut updated: BTreeSet<_> = updated.flatten().collect();
+    let updated: BTreeSet<_> = updated.flatten().collect();
 
     // get the file artifacts for each added file in parallel.
     let file_artifacts = add.into_par_iter().filter_map(|path| {
@@ -68,13 +68,6 @@ impl St {
         always!(false, "no parent: {}", path.display());
         return None;
       };
-      let artifacts = IsolatedFileArtifacts::new(contents.as_str(), parent, &FsAdapter(fs));
-      Some((path, artifacts))
-    });
-    let file_artifacts: Vec<_> = file_artifacts.collect();
-
-    // combine the file artifacts in sequence, and note which files were added.
-    let added = file_artifacts.into_iter().filter_map(|(path, mut art)| {
       let path = match fs.canonicalize(path.as_path()) {
         Ok(x) => x,
         Err(e) => {
@@ -82,6 +75,21 @@ impl St {
           return None;
         }
       };
+      let artifacts = IsolatedFileArtifacts::new(contents.as_str(), parent, &FsAdapter(fs));
+      Some((path, artifacts))
+    });
+    let file_artifacts: Vec<_> = file_artifacts.collect();
+
+    self.update_many_inner(updated, file_artifacts)
+  }
+
+  fn update_many_inner(
+    &mut self,
+    mut updated: BTreeSet<paths::PathId>,
+    file_artifacts: Vec<(paths::CanonicalPathBuf, IsolatedFileArtifacts)>,
+  ) -> PathMap<Vec<Diagnostic>> {
+    // combine the file artifacts in sequence, and note which files were added.
+    let added = file_artifacts.into_iter().map(|(path, mut art)| {
       let subst = jsonnet_expr::Subst::get(&mut self.artifacts, art.combine);
       for (_, ed) in art.eval.expr_ar.iter_mut() {
         ed.apply(&subst);
@@ -92,7 +100,7 @@ impl St {
       let path_id = self.path_id(path);
       self.files.insert(path_id, art.eval);
       self.files_extra.insert(path_id, art.extra);
-      Some(path_id)
+      path_id
     });
     let added: BTreeSet<_> = added.collect();
 
