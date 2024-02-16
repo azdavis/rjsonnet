@@ -47,6 +47,9 @@ impl lang_srv::State for State {
     self.0.update_one(fs, path, contents)
   }
 
+  /// - TODO take a text range thing
+  /// - TODO have this return an option instead? logs are chatty with 'could not show json' when
+  ///   there is even just a simple syntax error
   fn hover(&mut self, path: paths::CanonicalPathBuf) -> Result<String> {
     let path_id = self.0.path_id(path);
     let json = match self.0.get_json(path_id) {

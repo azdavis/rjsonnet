@@ -34,11 +34,11 @@ pub trait State {
   where
     F: paths::FileSystem;
 
-  /// Hover over a part of a file.
+  /// Hover over a file.
   ///
   /// # Errors
   ///
-  /// If nothing was there to hover.
+  /// If we couldn't show more info about the hovered file.
   fn hover(&mut self, path: paths::CanonicalPathBuf) -> Result<String>;
 
   /// Returns the paths store for this.
