@@ -124,20 +124,13 @@ impl St {
     });
     let added: BTreeSet<_> = added.collect();
 
+    // added.it
+
     // compute a mapping from path id p to non-empty set of path ids S, s.t. for all q in S, q was
     // just added, and p depends on q.
     let added_dependencies = self.files.par_iter().filter_map(|(&path_id, file)| {
-      let dependencies: BTreeSet<_> = file
-        .expr_ar
-        .iter()
-        .filter_map(|(_, expr)| {
-          if let jsonnet_expr::ExprData::Import { path, .. } = *expr {
-            added.contains(&path).then_some(path)
-          } else {
-            None
-          }
-        })
-        .collect();
+      let dependencies: BTreeSet<_> =
+        file.imports().filter_map(|(_, path)| added.contains(&path).then_some(path)).collect();
       if dependencies.is_empty() {
         None
       } else {
