@@ -85,7 +85,7 @@ impl St {
     self.arenas.str.id(s.into_boxed_str())
   }
 
-  pub(crate) fn path_id(&mut self, p: &paths::AbsPath) -> paths::PathId {
+  pub(crate) fn path_id(&mut self, p: &paths::CanonicalPath) -> paths::PathId {
     self.ps.get_id(p)
   }
 }

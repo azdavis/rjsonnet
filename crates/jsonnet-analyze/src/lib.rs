@@ -31,8 +31,8 @@ impl St {
   pub fn update_many<F>(
     &mut self,
     fs: &F,
-    remove: Vec<paths::AbsPathBuf>,
-    add: Vec<paths::AbsPathBuf>,
+    remove: Vec<paths::CanonicalPathBuf>,
+    add: Vec<paths::CanonicalPathBuf>,
   ) -> PathMap<Vec<Diagnostic>>
   where
     F: Sync + Send + paths::FileSystem,
@@ -50,8 +50,9 @@ impl St {
 
     // get the initial file artifacts in parallel.
     let file_artifacts = add.into_par_iter().filter_map(|path| {
-      let mut art = get_isolated_fs(path.as_abs_path(), fs)?;
-      let path = art.combine.paths.get_id(path.as_abs_path());
+      let path = path.as_canonical_path();
+      let mut art = get_isolated_fs(path, fs)?;
+      let path = art.combine.paths.get_id(path);
       Some((path, art))
     });
     let file_artifacts: Vec<_> = file_artifacts.collect();
@@ -64,13 +65,13 @@ impl St {
   pub fn update_one<F>(
     &mut self,
     fs: &F,
-    path: paths::AbsPathBuf,
+    path: paths::CanonicalPathBuf,
     contents: &str,
   ) -> PathMap<Vec<Diagnostic>>
   where
     F: Sync + Send + paths::FileSystem,
   {
-    let Some(art) = get_isolated_str(path.as_abs_path(), contents, fs) else {
+    let Some(art) = get_isolated_str(path.as_canonical_path(), contents, fs) else {
       return PathMap::default();
     };
     let path = self.path_id(path);
@@ -214,7 +215,7 @@ impl St {
   }
 
   /// Returns a path id for this path.
-  pub fn path_id(&mut self, path: paths::AbsPathBuf) -> PathId {
+  pub fn path_id(&mut self, path: paths::CanonicalPathBuf) -> PathId {
     self.artifacts.paths.get_id_owned(path)
   }
 
@@ -292,7 +293,7 @@ impl IsolatedFileArtifacts {
   /// Returns artifacts for a file contained in the given directory.
   fn new(
     contents: &str,
-    current_dir: &paths::AbsPath,
+    current_dir: &paths::CanonicalPath,
     fs: &dyn jsonnet_desugar::FileSystem,
   ) -> Self {
     let lex = jsonnet_lex::get(contents);
@@ -324,12 +325,12 @@ impl<'a, F> jsonnet_desugar::FileSystem for FsAdapter<'a, F>
 where
   F: paths::FileSystem,
 {
-  fn is_file(&self, p: &std::path::Path) -> bool {
-    paths::FileSystem::is_file(self.0, p)
+  fn canonical(&self, p: &std::path::Path) -> std::io::Result<paths::CanonicalPathBuf> {
+    paths::FileSystem::canonical(self.0, p)
   }
 }
 
-fn get_isolated_fs<F>(path: &paths::AbsPath, fs: &F) -> Option<IsolatedFileArtifacts>
+fn get_isolated_fs<F>(path: &paths::CanonicalPath, fs: &F) -> Option<IsolatedFileArtifacts>
 where
   F: paths::FileSystem,
 {
@@ -344,7 +345,7 @@ where
 }
 
 fn get_isolated_str<F>(
-  path: &paths::AbsPath,
+  path: &paths::CanonicalPath,
   contents: &str,
   fs: &F,
 ) -> Option<IsolatedFileArtifacts>

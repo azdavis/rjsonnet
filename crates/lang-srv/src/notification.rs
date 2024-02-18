@@ -1,6 +1,5 @@
 use crate::{convert, server::Server, state::State, util};
 use anyhow::{bail, Result};
-use paths::AbsPathBuf;
 use std::ops::ControlFlow;
 
 pub(crate) fn handle<S: State>(
@@ -25,10 +24,10 @@ fn go<S: State>(
   mut notif: lsp_server::Notification,
 ) -> ControlFlowResult {
   notif = try_notif::<lsp_types::notification::DidChangeWatchedFiles, _>(notif, |params| {
-    let mut add = Vec::<AbsPathBuf>::new();
-    let mut remove = Vec::<AbsPathBuf>::new();
+    let mut add = Vec::<paths::CanonicalPathBuf>::new();
+    let mut remove = Vec::<paths::CanonicalPathBuf>::new();
     for change in params.changes {
-      let path = convert::abs_path_buf(&change.uri)?;
+      let path = srv.canonical_path_buf(&change.uri)?;
       let id = st.path_id(path.clone());
       if srv.open_files.contains_key(&id) {
         // per docs for DidOpenTextDocument:
@@ -53,7 +52,7 @@ fn go<S: State>(
     Ok(())
   })?;
   notif = try_notif::<lsp_types::notification::DidOpenTextDocument, _>(notif, |params| {
-    let path = convert::abs_path_buf(&params.text_document.uri)?;
+    let path = srv.canonical_path_buf(&params.text_document.uri)?;
     let id = st.path_id(path.clone());
     let ds = st.update_one(&srv.fs, path, &params.text_document.text);
     Server::diagnose(conn, st.paths(), ds);
@@ -61,7 +60,7 @@ fn go<S: State>(
     Ok(())
   })?;
   notif = try_notif::<lsp_types::notification::DidCloseTextDocument, _>(notif, |params| {
-    let path = convert::abs_path_buf(&params.text_document.uri)?;
+    let path = srv.canonical_path_buf(&params.text_document.uri)?;
     let id = st.path_id(path);
     srv.open_files.remove(&id);
     Ok(())
@@ -71,10 +70,10 @@ fn go<S: State>(
     Ok(())
   })?;
   notif = try_notif::<lsp_types::notification::DidChangeTextDocument, _>(notif, |params| {
-    let path = convert::abs_path_buf(&params.text_document.uri)?;
+    let path = srv.canonical_path_buf(&params.text_document.uri)?;
     let id = st.path_id(path.clone());
     let Some(contents) = srv.open_files.get_mut(&id) else {
-      let path = path.as_abs_path().as_path().display();
+      let path = path.as_path().display();
       bail!("got DidChangeTextDocument for non-open file: {path}");
     };
     apply_changes(contents, params.content_changes);

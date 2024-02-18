@@ -16,8 +16,8 @@ pub trait State {
   fn update_many<F>(
     &mut self,
     fs: &F,
-    remove: Vec<paths::AbsPathBuf>,
-    add: Vec<paths::AbsPathBuf>,
+    remove: Vec<paths::CanonicalPathBuf>,
+    add: Vec<paths::CanonicalPathBuf>,
   ) -> paths::PathMap<Vec<diagnostic::Diagnostic>>
   where
     F: Sync + Send + paths::FileSystem;
@@ -27,7 +27,7 @@ pub trait State {
   fn update_one<F>(
     &mut self,
     fs: &F,
-    path: paths::AbsPathBuf,
+    path: paths::CanonicalPathBuf,
     contents: &str,
   ) -> paths::PathMap<Vec<diagnostic::Diagnostic>>
   where
@@ -38,11 +38,11 @@ pub trait State {
   /// # Errors
   ///
   /// If we couldn't show more info about the hovered file.
-  fn hover(&mut self, path: paths::AbsPathBuf) -> Result<String>;
+  fn hover(&mut self, path: paths::CanonicalPathBuf) -> Result<String>;
 
   /// Returns the paths store for this.
   fn paths(&self) -> &paths::Store;
 
   /// Returns a path id for this path.
-  fn path_id(&mut self, path: paths::AbsPathBuf) -> paths::PathId;
+  fn path_id(&mut self, path: paths::CanonicalPathBuf) -> paths::PathId;
 }

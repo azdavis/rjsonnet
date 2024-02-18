@@ -25,8 +25,8 @@ impl lang_srv::State for State {
   fn update_many<F>(
     &mut self,
     fs: &F,
-    remove: Vec<paths::AbsPathBuf>,
-    add: Vec<paths::AbsPathBuf>,
+    remove: Vec<paths::CanonicalPathBuf>,
+    add: Vec<paths::CanonicalPathBuf>,
   ) -> paths::PathMap<Vec<diagnostic::Diagnostic>>
   where
     F: Sync + Send + paths::FileSystem,
@@ -37,7 +37,7 @@ impl lang_srv::State for State {
   fn update_one<F>(
     &mut self,
     fs: &F,
-    path: paths::AbsPathBuf,
+    path: paths::CanonicalPathBuf,
     contents: &str,
   ) -> paths::PathMap<Vec<diagnostic::Diagnostic>>
   where
@@ -49,7 +49,7 @@ impl lang_srv::State for State {
   /// - TODO take a text range thing
   /// - TODO have this return an option instead? logs are chatty with 'could not show json' when
   ///   there is even just a simple syntax error
-  fn hover(&mut self, path: paths::AbsPathBuf) -> Result<String> {
+  fn hover(&mut self, path: paths::CanonicalPathBuf) -> Result<String> {
     let path_id = self.0.path_id(path);
     let json = match self.0.get_json(path_id) {
       Ok(x) => x,
@@ -64,7 +64,7 @@ impl lang_srv::State for State {
     self.0.paths()
   }
 
-  fn path_id(&mut self, path: paths::AbsPathBuf) -> paths::PathId {
+  fn path_id(&mut self, path: paths::CanonicalPathBuf) -> paths::PathId {
     self.0.path_id(path)
   }
 }

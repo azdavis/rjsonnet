@@ -1,4 +1,4 @@
-use crate::{convert, server::Server, state::State, util};
+use crate::{server::Server, state::State, util};
 use always::always;
 use anyhow::{bail, Result};
 use std::ops::ControlFlow;
@@ -9,7 +9,7 @@ pub(crate) fn handle<S: State>(
   req: lsp_server::Request,
 ) -> Result<lsp_server::Response> {
   srv.queue.incoming.register(req.id.clone(), ());
-  match go(st, req) {
+  match go(srv, st, req) {
     ControlFlow::Continue(x) => bail!("unhandled request: {x:?}"),
     ControlFlow::Break(Ok(response)) => Ok(response),
     ControlFlow::Break(Err(e)) => bail!("couldn't handle request: {e:?}"),
@@ -19,11 +19,12 @@ pub(crate) fn handle<S: State>(
 type ControlFlowResult<T, C = lsp_server::Request> = ControlFlow<Result<T>, C>;
 
 fn go<S: State>(
+  srv: &mut Server,
   st: &mut S,
   mut req: lsp_server::Request,
 ) -> ControlFlowResult<lsp_server::Response> {
   req = try_req::<lsp_types::request::HoverRequest, _, _>(req, |id, params| {
-    let path = convert::abs_path_buf(&params.text_document_position_params.text_document.uri)?;
+    let path = srv.canonical_path_buf(&params.text_document_position_params.text_document.uri)?;
     let json = st.hover(path)?;
     let result = lsp_types::Hover {
       contents: lsp_types::HoverContents::Markup(lsp_types::MarkupContent {

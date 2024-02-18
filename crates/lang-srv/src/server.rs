@@ -1,6 +1,7 @@
 use crate::convert;
 use always::always;
 use anyhow::{bail, Result};
+use paths::FileSystem as _;
 
 #[derive(Debug, Default)]
 pub(crate) struct Server {
@@ -11,6 +12,11 @@ pub(crate) struct Server {
 }
 
 impl Server {
+  pub(crate) fn canonical_path_buf(&self, url: &lsp_types::Url) -> Result<paths::CanonicalPathBuf> {
+    let path = convert::path_buf(url)?;
+    Ok(self.fs.canonical(path.as_path())?)
+  }
+
   #[allow(dead_code)]
   pub(crate) fn request<R>(&mut self, conn: &lsp_server::Connection, params: R::Params)
   where
