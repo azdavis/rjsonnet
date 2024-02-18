@@ -5,7 +5,7 @@
 use always::always;
 use diagnostic::Diagnostic;
 use paths::{PathId, PathMap};
-use rayon::iter::{IntoParallelIterator as _, IntoParallelRefIterator, ParallelIterator as _};
+use rayon::iter::{IntoParallelIterator as _, IntoParallelRefIterator as _, ParallelIterator as _};
 use std::collections::{BTreeMap, BTreeSet};
 
 /// The state of analysis.
@@ -48,8 +48,7 @@ impl St {
     });
     let updated: BTreeSet<_> = updated.flatten().collect();
 
-    // get the file artifacts for each added file in parallel.
-    let file_artifacts = add.into_par_iter().filter_map(|path| {
+    let file_artifacts = add.into_iter().filter_map(|path| {
       let contents = match fs.read_to_string(path.as_abs_path().as_path()) {
         Ok(x) => x,
         Err(e) => {
@@ -63,11 +62,12 @@ impl St {
         return None;
       };
       let artifacts = IsolatedFileArtifacts::new(contents.as_str(), parent, &FsAdapter(fs));
+      let path = self.path_id(path);
       Some((path, artifacts))
     });
     let file_artifacts: Vec<_> = file_artifacts.collect();
 
-    self.update(updated, file_artifacts)
+    self.update(fs, updated, file_artifacts)
   }
 
   /// Updates one file.
@@ -79,7 +79,7 @@ impl St {
     contents: &str,
   ) -> PathMap<Vec<Diagnostic>>
   where
-    F: paths::FileSystem,
+    F: Sync + Send + paths::FileSystem,
   {
     let Some(parent) = path.as_abs_path().parent() else {
       let path = path.as_abs_path().as_path().display();
@@ -87,31 +87,69 @@ impl St {
       return PathMap::default();
     };
     let artifacts = IsolatedFileArtifacts::new(contents, parent, &FsAdapter(fs));
-    self.update(BTreeSet::new(), vec![(path, artifacts)])
+    let path = self.path_id(path);
+
+    self.update(fs, BTreeSet::new(), vec![(path, artifacts)])
   }
 
-  fn update(
+  fn update<F>(
     &mut self,
+    fs: &F,
     mut updated: BTreeSet<paths::PathId>,
-    file_artifacts: Vec<(paths::AbsPathBuf, IsolatedFileArtifacts)>,
-  ) -> PathMap<Vec<Diagnostic>> {
-    // combine the file artifacts in sequence, and note which files were added.
-    let added = file_artifacts.into_iter().map(|(path, mut art)| {
-      let subst = jsonnet_expr::Subst::get(&mut self.artifacts, art.combine);
-      for (_, ed) in art.eval.expr_ar.iter_mut() {
-        ed.apply(&subst);
-      }
-      for err in &mut art.extra.errors.statics {
-        err.apply(&subst);
-      }
-      let path_id = self.path_id(path);
-      self.files.insert(path_id, art.eval);
-      self.files_extra.insert(path_id, art.extra);
-      path_id
-    });
-    let added: BTreeSet<_> = added.collect();
+    mut to_add: Vec<(paths::PathId, IsolatedFileArtifacts)>,
+  ) -> PathMap<Vec<Diagnostic>>
+  where
+    F: Sync + Send + paths::FileSystem,
+  {
+    let mut added = BTreeSet::<PathId>::new();
 
-    // added.it
+    // repeatedly add the new files and any relevant imports.
+    while !to_add.is_empty() {
+      added.extend(to_add.iter().map(|&(path, _)| path));
+      let mut new_to_add = BTreeSet::<PathId>::new();
+
+      // combine the file artifacts in sequence.
+      for (path_id, mut art) in to_add {
+        let subst = jsonnet_expr::Subst::get(&mut self.artifacts, art.combine);
+        for (_, ed) in art.eval.expr_ar.iter_mut() {
+          ed.apply(&subst);
+        }
+        for err in &mut art.extra.errors.statics {
+          err.apply(&subst);
+        }
+
+        // the next set of things to add: imports from the added files that do not exist and were
+        // not themselves already added.
+        new_to_add.extend(art.eval.imports().filter_map(|(_, path)| {
+          (!added.contains(&path) && !self.files.contains_key(&path)).then_some(path)
+        }));
+
+        self.files.insert(path_id, art.eval);
+        self.files_extra.insert(path_id, art.extra);
+      }
+
+      // get the file artifacts for each added file in parallel.
+      to_add = new_to_add
+        .into_par_iter()
+        .filter_map(|path_id| {
+          let path = self.paths().get_path(path_id);
+          let contents = match fs.read_to_string(path.as_path()) {
+            Ok(x) => x,
+            Err(e) => {
+              always!(false, "read to string error: {e}");
+              return None;
+            }
+          };
+          let Some(parent) = path.parent() else {
+            let path = path.as_path().display();
+            always!(false, "no parent: {path}");
+            return None;
+          };
+          let artifacts = IsolatedFileArtifacts::new(contents.as_str(), parent, &FsAdapter(fs));
+          Some((path_id, artifacts))
+        })
+        .collect();
+    }
 
     // compute a mapping from path id p to non-empty set of path ids S, s.t. for all q in S, q was
     // just added, and p depends on q.

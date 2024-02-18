@@ -41,7 +41,7 @@ impl lang_srv::State for State {
     contents: &str,
   ) -> paths::PathMap<Vec<diagnostic::Diagnostic>>
   where
-    F: paths::FileSystem,
+    F: Sync + Send + paths::FileSystem,
   {
     self.0.update_one(fs, path, contents)
   }

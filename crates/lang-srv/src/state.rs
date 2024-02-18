@@ -31,7 +31,7 @@ pub trait State {
     contents: &str,
   ) -> paths::PathMap<Vec<diagnostic::Diagnostic>>
   where
-    F: paths::FileSystem;
+    F: Sync + Send + paths::FileSystem;
 
   /// Hover over a file.
   ///
