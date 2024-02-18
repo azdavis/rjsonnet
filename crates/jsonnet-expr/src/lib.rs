@@ -442,4 +442,10 @@ impl Subst {
     });
     ret
   }
+
+  /// Get the path id from the subst.
+  #[must_use]
+  pub fn get_path_id(&self, path: paths::PathId) -> paths::PathId {
+    self.paths.get(&path).copied().unwrap_or(path)
+  }
 }

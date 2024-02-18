@@ -48,22 +48,11 @@ impl St {
     });
     let updated: BTreeSet<_> = updated.flatten().collect();
 
-    let file_artifacts = add.into_iter().filter_map(|path| {
-      let contents = match fs.read_to_string(path.as_abs_path().as_path()) {
-        Ok(x) => x,
-        Err(e) => {
-          always!(false, "read to string error: {e}");
-          return None;
-        }
-      };
-      let Some(parent) = path.as_abs_path().parent() else {
-        let path = path.as_abs_path().as_path().display();
-        always!(false, "no parent: {path}");
-        return None;
-      };
-      let artifacts = IsolatedFileArtifacts::new(contents.as_str(), parent, &FsAdapter(fs));
-      let path = self.path_id(path);
-      Some((path, artifacts))
+    // get the initial file artifacts in parallel.
+    let file_artifacts = add.into_par_iter().filter_map(|path| {
+      let mut art = get_isolated_fs(path.as_abs_path(), fs)?;
+      let path = art.combine.paths.get_id(path.as_abs_path());
+      Some((path, art))
     });
     let file_artifacts: Vec<_> = file_artifacts.collect();
 
@@ -81,15 +70,11 @@ impl St {
   where
     F: Sync + Send + paths::FileSystem,
   {
-    let Some(parent) = path.as_abs_path().parent() else {
-      let path = path.as_abs_path().as_path().display();
-      always!(false, "no parent: {path}");
+    let Some(art) = get_isolated_str(path.as_abs_path(), contents, fs) else {
       return PathMap::default();
     };
-    let artifacts = IsolatedFileArtifacts::new(contents, parent, &FsAdapter(fs));
     let path = self.path_id(path);
-
-    self.update(fs, BTreeSet::new(), vec![(path, artifacts)])
+    self.update(fs, BTreeSet::new(), vec![(path, art)])
   }
 
   fn update<F>(
@@ -105,50 +90,45 @@ impl St {
 
     // repeatedly add the new files and any relevant imports.
     while !to_add.is_empty() {
-      added.extend(to_add.iter().map(|&(path, _)| path));
-      let mut new_to_add = BTreeSet::<PathId>::new();
-
       // combine the file artifacts in sequence.
-      for (path_id, mut art) in to_add {
+      let did_add = to_add.into_iter().map(|(mut path_id, mut art)| {
         let subst = jsonnet_expr::Subst::get(&mut self.artifacts, art.combine);
+
         for (_, ed) in art.eval.expr_ar.iter_mut() {
           ed.apply(&subst);
         }
         for err in &mut art.extra.errors.statics {
           err.apply(&subst);
         }
-
-        // the next set of things to add: imports from the added files that do not exist and were
-        // not themselves already added.
-        new_to_add.extend(art.eval.imports().filter_map(|(_, path)| {
-          (!added.contains(&path) && !self.files.contains_key(&path)).then_some(path)
-        }));
+        path_id = subst.get_path_id(path_id);
 
         self.files.insert(path_id, art.eval);
         self.files_extra.insert(path_id, art.extra);
-      }
+        added.insert(path_id);
+
+        path_id
+      });
+      let did_add: BTreeSet<_> = did_add.collect();
+
+      // the next set of things to add: imports from the added files that do not exist and were not
+      // themselves already added.
+      let new_to_add = did_add.iter().flat_map(|path| self.files[path].imports());
+      let new_to_add = new_to_add.filter_map(|(_, path)| {
+        if added.contains(&path) || self.files.contains_key(&path) {
+          None
+        } else {
+          Some(path)
+        }
+      });
+      let new_to_add: BTreeSet<_> = new_to_add.collect();
 
       // get the file artifacts for each added file in parallel.
-      to_add = new_to_add
-        .into_par_iter()
-        .filter_map(|path_id| {
-          let path = self.paths().get_path(path_id);
-          let contents = match fs.read_to_string(path.as_path()) {
-            Ok(x) => x,
-            Err(e) => {
-              always!(false, "read to string error: {e}");
-              return None;
-            }
-          };
-          let Some(parent) = path.parent() else {
-            let path = path.as_path().display();
-            always!(false, "no parent: {path}");
-            return None;
-          };
-          let artifacts = IsolatedFileArtifacts::new(contents.as_str(), parent, &FsAdapter(fs));
-          Some((path_id, artifacts))
-        })
-        .collect();
+      let iter = new_to_add.into_par_iter().filter_map(|path_id| {
+        let path = self.paths().get_path(path_id);
+        let art = get_isolated_fs(path, fs)?;
+        Some((path_id, art))
+      });
+      to_add = iter.collect();
     }
 
     // compute a mapping from path id p to non-empty set of path ids S, s.t. for all q in S, q was
@@ -347,4 +327,34 @@ where
   fn is_file(&self, p: &std::path::Path) -> bool {
     paths::FileSystem::is_file(self.0, p)
   }
+}
+
+fn get_isolated_fs<F>(path: &paths::AbsPath, fs: &F) -> Option<IsolatedFileArtifacts>
+where
+  F: paths::FileSystem,
+{
+  let contents = match fs.read_to_string(path.as_path()) {
+    Ok(x) => x,
+    Err(e) => {
+      always!(false, "read to string error: {e}");
+      return None;
+    }
+  };
+  get_isolated_str(path, contents.as_str(), fs)
+}
+
+fn get_isolated_str<F>(
+  path: &paths::AbsPath,
+  contents: &str,
+  fs: &F,
+) -> Option<IsolatedFileArtifacts>
+where
+  F: paths::FileSystem,
+{
+  let Some(parent) = path.parent() else {
+    let path = path.as_path().display();
+    always!(false, "no parent: {path}");
+    return None;
+  };
+  Some(IsolatedFileArtifacts::new(contents, parent, &FsAdapter(fs)))
 }
