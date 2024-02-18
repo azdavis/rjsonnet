@@ -3,12 +3,12 @@
 use always::always;
 use paths::FileSystem;
 
-fn main() {
+fn run() -> usize {
   #[allow(clippy::disallowed_methods)]
   let pwd = std::env::current_dir().expect("current dir");
   let mut st = jsonnet_analyze::St::default();
   let fs = paths::RealFileSystem::default();
-  let mut num_errors = 0usize;
+  let mut ret = 0usize;
   for arg in std::env::args_os().skip(1) {
     let p = std::path::PathBuf::from(arg);
     let p = match fs.canonical(p.as_path()) {
@@ -24,15 +24,21 @@ fn main() {
       let path = path.strip_prefix(pwd.as_path()).unwrap_or(path);
       let path = path.display();
       for d in ds {
-        num_errors += 1;
+        ret += 1;
         eprintln!("{path}:{}: {}", d.range, d.message);
       }
     }
   }
+  ret
+}
+
+fn main() {
+  let num_errors = run();
   if num_errors == 0 {
     eprintln!("no errors!");
   } else {
     let s = if num_errors == 1 { "" } else { "s" };
     eprintln!("{num_errors} error{s}");
+    std::process::exit(1)
   }
 }
