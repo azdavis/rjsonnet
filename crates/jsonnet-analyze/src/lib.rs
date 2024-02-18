@@ -7,7 +7,6 @@ use diagnostic::Diagnostic;
 use paths::{PathId, PathMap};
 use rayon::iter::{IntoParallelIterator as _, IntoParallelRefIterator, ParallelIterator as _};
 use std::collections::{BTreeMap, BTreeSet};
-use std::path::{Path, PathBuf};
 
 /// The state of analysis.
 #[derive(Debug, Default)]
@@ -32,8 +31,8 @@ impl St {
   pub fn update_many<F>(
     &mut self,
     fs: &F,
-    remove: Vec<PathBuf>,
-    add: Vec<PathBuf>,
+    remove: Vec<paths::AbsPathBuf>,
+    add: Vec<paths::AbsPathBuf>,
   ) -> PathMap<Vec<Diagnostic>>
   where
     F: Sync + Send + paths::FileSystem,
@@ -42,13 +41,6 @@ impl St {
     //
     // NOTE: for each r in remove, we DO NOT bother removing r from s for any (_, s) in dependents.
     let updated = remove.into_iter().filter_map(|path| {
-      let path = match fs.canonicalize(path.as_path()) {
-        Ok(x) => x,
-        Err(e) => {
-          always!(false, "canonicalize error: {e}");
-          return None;
-        }
-      };
       let path_id = self.path_id(path);
       self.files.remove(&path_id);
       self.files_extra.remove(&path_id);
@@ -58,23 +50,17 @@ impl St {
 
     // get the file artifacts for each added file in parallel.
     let file_artifacts = add.into_par_iter().filter_map(|path| {
-      let contents = match fs.read_to_string(path.as_path()) {
+      let contents = match fs.read_to_string(path.as_abs_path().as_path()) {
         Ok(x) => x,
         Err(e) => {
           always!(false, "read to string error: {e}");
           return None;
         }
       };
-      let Some(parent) = path.parent() else {
-        always!(false, "no parent: {}", path.display());
+      let Some(parent) = path.as_abs_path().parent() else {
+        let path = path.as_abs_path().as_path().display();
+        always!(false, "no parent: {path}");
         return None;
-      };
-      let path = match fs.canonicalize(path.as_path()) {
-        Ok(x) => x,
-        Err(e) => {
-          always!(false, "canonicalize error: {e}");
-          return None;
-        }
       };
       let artifacts = IsolatedFileArtifacts::new(contents.as_str(), parent, &FsAdapter(fs));
       Some((path, artifacts))
@@ -89,14 +75,15 @@ impl St {
   pub fn update_one<F>(
     &mut self,
     fs: &F,
-    path: paths::CanonicalPathBuf,
+    path: paths::AbsPathBuf,
     contents: &str,
   ) -> PathMap<Vec<Diagnostic>>
   where
     F: paths::FileSystem,
   {
-    let Some(parent) = path.as_path().parent() else {
-      always!(false, "no parent: {}", path.as_path().display());
+    let Some(parent) = path.as_abs_path().parent() else {
+      let path = path.as_abs_path().as_path().display();
+      always!(false, "no parent: {path}");
       return PathMap::default();
     };
     let artifacts = IsolatedFileArtifacts::new(contents, parent, &FsAdapter(fs));
@@ -106,7 +93,7 @@ impl St {
   fn update(
     &mut self,
     mut updated: BTreeSet<paths::PathId>,
-    file_artifacts: Vec<(paths::CanonicalPathBuf, IsolatedFileArtifacts)>,
+    file_artifacts: Vec<(paths::AbsPathBuf, IsolatedFileArtifacts)>,
   ) -> PathMap<Vec<Diagnostic>> {
     // combine the file artifacts in sequence, and note which files were added.
     let added = file_artifacts.into_iter().map(|(path, mut art)| {
@@ -209,7 +196,7 @@ impl St {
   }
 
   /// Returns a path id for this path.
-  pub fn path_id(&mut self, path: paths::CanonicalPathBuf) -> PathId {
+  pub fn path_id(&mut self, path: paths::AbsPathBuf) -> PathId {
     self.artifacts.paths.get_id_owned(path)
   }
 
@@ -285,7 +272,11 @@ struct IsolatedFileArtifacts {
 
 impl IsolatedFileArtifacts {
   /// Returns artifacts for a file contained in the given directory.
-  fn new(contents: &str, current_dir: &Path, fs: &dyn jsonnet_desugar::FileSystem) -> Self {
+  fn new(
+    contents: &str,
+    current_dir: &paths::AbsPath,
+    fs: &dyn jsonnet_desugar::FileSystem,
+  ) -> Self {
     let lex = jsonnet_lex::get(contents);
     let parse = jsonnet_parse::get(&lex.tokens);
     let desugar = jsonnet_desugar::get(current_dir, &[], fs, parse.root.clone().expr());
@@ -315,7 +306,7 @@ impl<'a, F> jsonnet_desugar::FileSystem for FsAdapter<'a, F>
 where
   F: paths::FileSystem,
 {
-  fn canonicalize(&self, p: &Path) -> std::io::Result<paths::CanonicalPathBuf> {
-    self.0.canonicalize(p)
+  fn is_file(&self, p: &std::path::Path) -> bool {
+    paths::FileSystem::is_file(self.0, p)
   }
 }

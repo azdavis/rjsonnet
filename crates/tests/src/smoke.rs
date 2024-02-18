@@ -99,9 +99,9 @@ fn bool_op() {
 #[test]
 fn import() {
   manifest_many(&[
-    ("a.jsonnet", "1 + 2", "3"),
+    ("/a.jsonnet", "1 + 2", "3"),
     (
-      "b.jsonnet",
+      "/b.jsonnet",
       r"
 (import 'a.jsonnet') + 4
 ",

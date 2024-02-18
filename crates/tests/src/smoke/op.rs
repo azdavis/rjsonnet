@@ -4,7 +4,7 @@ use crate::check::manifest_many;
 fn add_str() {
   manifest_many(&[
     (
-      "a.jsonnet",
+      "/a.jsonnet",
       r"
 '123'
 ",
@@ -13,7 +13,7 @@ fn add_str() {
 "#,
     ),
     (
-      "b.jsonnet",
+      "/b.jsonnet",
       r"
 4
 ",
@@ -22,7 +22,7 @@ fn add_str() {
 ",
     ),
     (
-      "c.jsonnet",
+      "/c.jsonnet",
       r"
 (import 'a.jsonnet') + (import 'b.jsonnet')
 ",

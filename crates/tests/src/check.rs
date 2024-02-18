@@ -1,8 +1,9 @@
-use paths::FileSystem;
+// use paths::FileSystem;
+use paths::AbsPathBuf;
 use rustc_hash::FxHashMap;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
-const DEFAULT_FILE_NAME: &str = "f.jsonnet";
+const DEFAULT_FILE_NAME: &str = "/f.jsonnet";
 
 fn mk_st<'a, I>(iter: I) -> (paths::MemoryFileSystem, jsonnet_analyze::St)
 where
@@ -12,7 +13,8 @@ where
     iter.clone().map(|(path, contents)| (PathBuf::from(path), contents.to_owned())).collect();
   let fs = paths::MemoryFileSystem::new(map);
   let mut ret = jsonnet_analyze::St::default();
-  let add = iter.map(|(path, _)| PathBuf::from(path)).collect();
+  let add =
+    iter.map(|(path, _)| AbsPathBuf::try_new(PathBuf::from(path)).expect("not absolute")).collect();
   for (path, ds) in ret.update_many(&fs, Vec::new(), add) {
     if let Some(d) = ds.first() {
       let p = ret.paths().get_path(path);
@@ -31,9 +33,10 @@ fn get_json(st: &jsonnet_analyze::St, p: paths::PathId) -> &jsonnet_eval::Json {
 
 /// tests that for each triple of (filename, jsonnet, json), each jsonnet manifests to its json.
 pub(crate) fn manifest_many(input: &[(&str, &str, &str)]) {
-  let (fs, mut st) = mk_st(input.iter().map(|&(path, jsonnet, _)| (path, jsonnet)));
+  let (_, mut st) = mk_st(input.iter().map(|&(path, jsonnet, _)| (path, jsonnet)));
   for &(p, _, json) in input {
-    let p = fs.canonicalize(Path::new(p)).expect("canonicalize");
+    // let p = fs.canonicalize(Path::new(p)).expect("canonicalize");
+    let p = paths::AbsPathBuf::try_new(PathBuf::from(p)).expect("not absolute");
     let p = st.path_id(p);
     let got = get_json(&st, p);
     let want: serde_json::Value = serde_json::from_str(json).expect("test input json");
@@ -60,9 +63,9 @@ pub(crate) fn manifest_self(s: &str) {
 ///
 /// NOTE: `want` is NOT interpreted as JSON.
 pub(crate) fn manifest_str(jsonnet: &str, want: &str) {
-  let (fs, mut st) = mk_st(std::iter::once((DEFAULT_FILE_NAME, jsonnet)));
+  let (_, mut st) = mk_st(std::iter::once((DEFAULT_FILE_NAME, jsonnet)));
   let want = st.strings_mut().str(want.to_owned().into_boxed_str());
-  let p = fs.canonicalize(Path::new(DEFAULT_FILE_NAME)).expect("canonicalize");
+  let p = AbsPathBuf::try_new(PathBuf::from(DEFAULT_FILE_NAME)).expect("not absolute");
   let p = st.path_id(p);
   let got = get_json(&st, p);
   got.assert_is_str(st.strings(), &want);
@@ -70,8 +73,8 @@ pub(crate) fn manifest_str(jsonnet: &str, want: &str) {
 
 /// tests that `jsonnet` execution results in an error whose message is `want`.
 pub(crate) fn exec_err(jsonnet: &str, want: &str) {
-  let (fs, mut st) = mk_st(std::iter::once((DEFAULT_FILE_NAME, jsonnet)));
-  let p = fs.canonicalize(Path::new(DEFAULT_FILE_NAME)).expect("canonicalize");
+  let (_, mut st) = mk_st(std::iter::once((DEFAULT_FILE_NAME, jsonnet)));
+  let p = AbsPathBuf::try_new(PathBuf::from(DEFAULT_FILE_NAME)).expect("not absolute");
   let p = st.path_id(p);
   let err = st.get_json(p).expect_err("no error");
   let got = err.display(st.strings(), st.paths()).to_string();

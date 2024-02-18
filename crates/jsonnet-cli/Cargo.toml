@@ -16,4 +16,5 @@ doctest = false
 [dependencies]
 paths.workspace = true
 
+always.path = "../always"
 jsonnet-analyze.path = "../jsonnet-analyze"

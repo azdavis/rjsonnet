@@ -36,7 +36,7 @@ pub fn run<S: State>(st: &mut S) {
   let mut srv = server::Server::default();
 
   let root_url = init.root_uri.expect("no root url");
-  let root_path = convert::path_buf(&root_url).expect("root path");
+  let root_path = convert::abs_path_buf(&root_url).expect("root path");
   srv.file_watch = init
     .capabilities
     .workspace
@@ -60,11 +60,14 @@ pub fn run<S: State>(st: &mut S) {
   }
 
   let paths: Vec<_> = {
-    let wd = walkdir::WalkDir::new(root_path.as_path());
+    let wd = walkdir::WalkDir::new(root_path.as_abs_path().as_path());
     let iter = wd.into_iter().filter_map(|entry| {
       let entry = entry.ok()?;
       let ext = entry.path().extension()?.to_str()?;
-      st.is_ext(ext).then(|| entry.into_path())
+      if !st.is_ext(ext) {
+        return None;
+      }
+      paths::AbsPathBuf::try_new(entry.into_path())
     });
     iter.collect()
   };

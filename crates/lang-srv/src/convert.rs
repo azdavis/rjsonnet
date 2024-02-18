@@ -1,12 +1,15 @@
 use anyhow::{bail, Result};
 use lsp_types::Url;
 
-pub(crate) fn path_buf(url: &Url) -> Result<std::path::PathBuf> {
+pub(crate) fn abs_path_buf(url: &Url) -> Result<paths::AbsPathBuf> {
   if url.scheme() != "file" {
     bail!("not a file url: {url}")
   }
   match url.to_file_path() {
-    Ok(pb) => Ok(pb),
+    Ok(pb) => match paths::AbsPathBuf::try_new(pb) {
+      Some(x) => Ok(x),
+      None => bail!("non-absolute path from URL: {url}"),
+    },
     Err(()) => bail!("couldn't make a URL into a file path: {url}"),
   }
 }

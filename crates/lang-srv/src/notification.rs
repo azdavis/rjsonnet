@@ -1,6 +1,7 @@
 use crate::{convert, server::Server, state::State, util};
 use anyhow::{bail, Result};
-use std::{ops::ControlFlow, path::PathBuf};
+use paths::AbsPathBuf;
+use std::ops::ControlFlow;
 
 pub(crate) fn handle<S: State>(
   srv: &mut Server,
@@ -24,11 +25,11 @@ fn go<S: State>(
   mut notif: lsp_server::Notification,
 ) -> ControlFlowResult {
   notif = try_notif::<lsp_types::notification::DidChangeWatchedFiles, _>(notif, |params| {
-    let mut add = Vec::<PathBuf>::new();
-    let mut remove = Vec::<PathBuf>::new();
+    let mut add = Vec::<AbsPathBuf>::new();
+    let mut remove = Vec::<AbsPathBuf>::new();
     for change in params.changes {
-      let pb = srv.canonical_path(&change.uri)?;
-      let id = st.path_id(pb.clone());
+      let path = convert::abs_path_buf(&change.uri)?;
+      let id = st.path_id(path.clone());
       if srv.open_files.contains_key(&id) {
         // per docs for DidOpenTextDocument:
         //
@@ -38,7 +39,7 @@ fn go<S: State>(
       }
       // TODO cut down on converting back into path buf just to then pass to update_many which
       // re-converts back into path id?
-      let path = pb.into_path_buf();
+      // let path = path.into_path_buf();
       if change.typ == lsp_types::FileChangeType::CREATED
         || change.typ == lsp_types::FileChangeType::CHANGED
       {
@@ -52,7 +53,7 @@ fn go<S: State>(
     Ok(())
   })?;
   notif = try_notif::<lsp_types::notification::DidOpenTextDocument, _>(notif, |params| {
-    let path = srv.canonical_path(&params.text_document.uri)?;
+    let path = convert::abs_path_buf(&params.text_document.uri)?;
     let id = st.path_id(path.clone());
     let ds = st.update_one(&srv.fs, path, &params.text_document.text);
     Server::diagnose(conn, st.paths(), ds);
@@ -60,7 +61,7 @@ fn go<S: State>(
     Ok(())
   })?;
   notif = try_notif::<lsp_types::notification::DidCloseTextDocument, _>(notif, |params| {
-    let path = srv.canonical_path(&params.text_document.uri)?;
+    let path = convert::abs_path_buf(&params.text_document.uri)?;
     let id = st.path_id(path);
     srv.open_files.remove(&id);
     Ok(())
@@ -70,10 +71,10 @@ fn go<S: State>(
     Ok(())
   })?;
   notif = try_notif::<lsp_types::notification::DidChangeTextDocument, _>(notif, |params| {
-    let path = srv.canonical_path(&params.text_document.uri)?;
+    let path = convert::abs_path_buf(&params.text_document.uri)?;
     let id = st.path_id(path.clone());
     let Some(contents) = srv.open_files.get_mut(&id) else {
-      let path = path.as_path().display();
+      let path = path.as_abs_path().as_path().display();
       bail!("got DidChangeTextDocument for non-open file: {path}");
     };
     apply_changes(contents, params.content_changes);

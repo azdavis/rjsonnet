@@ -138,12 +138,13 @@ pub(crate) fn get_expr(st: &mut St, cx: Cx<'_>, expr: Option<ast::Expr>, in_obj:
       let import_str = expr.string()?;
       let import_str = escape::get(st, import_str);
       let import_path = std::path::Path::new(import_str.as_str());
-      let full_path = cx.dirs().find_map(|dir| {
-        let path = dir.join(import_path);
-        cx.fs.canonicalize(&path).ok()
+      let full_path = cx.dirs().find_map(|path| {
+        let mut path = path.to_owned();
+        path.push(import_path);
+        cx.fs.is_file(path.as_abs_path().as_path()).then_some(path)
       });
       match full_path {
-        Some(p) => ExprData::Import { kind, path: st.path_id(&p) },
+        Some(p) => ExprData::Import { kind, path: st.path_id(p.as_abs_path()) },
         None => {
           st.err(&expr, error::Kind::PathNotFound(import_str));
           return None;
