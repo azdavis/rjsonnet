@@ -4,6 +4,8 @@ use always::always;
 use paths::FileSystem;
 
 fn main() {
+  #[allow(clippy::disallowed_methods)]
+  let pwd = std::env::current_dir().expect("current dir");
   let mut st = jsonnet_analyze::St::default();
   let fs = paths::RealFileSystem::default();
   let mut num_errors = 0usize;
@@ -18,7 +20,9 @@ fn main() {
     };
     let ds_map = st.update_many(&fs, Vec::new(), vec![p]);
     for (path, ds) in ds_map {
-      let path = st.paths().get_path(path).as_path().display();
+      let path = st.paths().get_path(path).as_path();
+      let path = path.strip_prefix(pwd.as_path()).unwrap_or(path);
+      let path = path.display();
       for d in ds {
         num_errors += 1;
         eprintln!("{path}:{}: {}", d.range, d.message);
