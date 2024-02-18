@@ -28,6 +28,7 @@ fn main() {
   if num_errors == 0 {
     eprintln!("no errors!");
   } else {
-    eprintln!("{num_errors} errors");
+    let s = if num_errors == 1 { "" } else { "s" };
+    eprintln!("{num_errors} error{s}");
   }
 }
