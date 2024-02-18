@@ -16,7 +16,6 @@ fn main() {
         continue;
       }
     };
-    eprintln!("{}", p.as_path().display());
     let ds_map = st.update_many(&fs, Vec::new(), vec![p]);
     for (path, ds) in ds_map {
       let path = st.paths().get_path(path).as_path().display();
