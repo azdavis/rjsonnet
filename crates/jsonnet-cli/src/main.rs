@@ -5,6 +5,7 @@
 use always::always;
 use paths::FileSystem;
 use pico_args::Arguments;
+use std::process::ExitCode;
 
 fn run() -> usize {
   let logger_env = env_logger::Env::default().default_filter_or("info");
@@ -44,13 +45,14 @@ fn run() -> usize {
   ret
 }
 
-fn main() {
+fn main() -> ExitCode {
   let num_errors = run();
   if num_errors == 0 {
     eprintln!("no errors!");
+    ExitCode::SUCCESS
   } else {
     let s = if num_errors == 1 { "" } else { "s" };
     eprintln!("{num_errors} error{s}");
-    std::process::exit(1)
+    ExitCode::FAILURE
   }
 }
