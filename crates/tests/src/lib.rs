@@ -4,5 +4,6 @@
 #![allow(clippy::disallowed_methods)]
 
 mod check;
+mod misc;
 mod smoke;
 mod website;
