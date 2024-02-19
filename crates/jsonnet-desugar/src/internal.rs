@@ -288,169 +288,173 @@ fn get_assert(st: &mut St, cx: Cx<'_>, yes: Expr, assert: ast::Assert, in_obj: b
 
 fn get_object(st: &mut St, cx: Cx<'_>, inside: ast::Object, in_obj: bool) -> ExprData {
   match get_comp_specs(st, inside.comp_specs()) {
-    None => {
-      // first get the binds
-      let mut binds = Vec::<(Id, Expr)>::new();
-      for member in inside.members() {
-        let Some(member_kind) = member.member_kind() else { continue };
-        let ast::MemberKind::ObjectLocal(local) = member_kind else { continue };
+    None => get_object_literal(st, cx, inside, in_obj),
+    Some(_) => get_object_comp(st, cx, inside, in_obj),
+  }
+}
+
+fn get_object_literal(st: &mut St, cx: Cx<'_>, inside: ast::Object, in_obj: bool) -> ExprData {
+  // first get the binds
+  let mut binds = Vec::<(Id, Expr)>::new();
+  for member in inside.members() {
+    let Some(member_kind) = member.member_kind() else { continue };
+    let ast::MemberKind::ObjectLocal(local) = member_kind else { continue };
+    binds.extend(local.bind().and_then(|b| get_bind(st, cx, b, true)));
+  }
+  // this is the only time we actually use the `in_obj` flag
+  if !in_obj {
+    let ptr = ast::SyntaxNodePtr::new(inside.syntax());
+    let this = Some(st.expr(ptr, ExprData::Id(Id::self_)));
+    binds.push((Id::dollar, this));
+  }
+  // then get the asserts and fields
+  let mut asserts = Vec::<Expr>::new();
+  let mut fields = Vec::<(Expr, Visibility, Expr)>::new();
+  for member in inside.members() {
+    let Some(member_kind) = member.member_kind() else { continue };
+    match member_kind {
+      // already did locals
+      ast::MemberKind::ObjectLocal(_) => {}
+      ast::MemberKind::Assert(assert) => {
+        let ptr = ast::SyntaxNodePtr::new(assert.syntax());
+        let yes = Some(st.expr(ptr, ExprData::Prim(Prim::Null)));
+        let assert = get_assert(st, cx, yes, assert, true);
+        let mut assert = Some(st.expr(ptr, assert));
+        if !binds.is_empty() {
+          assert = Some(st.expr(ptr, ExprData::Local { binds: binds.clone(), body: assert }));
+        }
+        asserts.push(assert);
+      }
+      ast::MemberKind::Field(field) => {
+        let name = match field.field_name() {
+          None => continue,
+          Some(ast::FieldName::FieldNameId(name)) => match name.id() {
+            Some(id) => {
+              let expr = ExprData::Prim(Prim::String(st.str(id.text())));
+              let ptr = ast::SyntaxNodePtr::new(name.syntax());
+              Some(st.expr(ptr, expr))
+            }
+            None => continue,
+          },
+          Some(ast::FieldName::FieldNameString(name)) => match name.string() {
+            Some(string) => {
+              let string = escape::get(st, string);
+              let expr = ExprData::Prim(Prim::String(st.str(string.as_str())));
+              let ptr = ast::SyntaxNodePtr::new(name.syntax());
+              Some(st.expr(ptr, expr))
+            }
+            None => continue,
+          },
+          Some(ast::FieldName::FieldNameExpr(name)) => get_expr(st, cx, name.expr(), in_obj),
+        };
+        let vis = match field.visibility() {
+          Some(vis) => match vis.kind {
+            ast::VisibilityKind::Colon => Visibility::Default,
+            ast::VisibilityKind::ColonColon => Visibility::Hidden,
+            ast::VisibilityKind::ColonColonColon => Visibility::Visible,
+          },
+          None => Visibility::Default,
+        };
+        let mut body = match field.field_extra() {
+          None => get_expr(st, cx, field.expr(), true),
+          Some(ast::FieldExtra::FieldPlus(fp)) => {
+            // TODO the spec says do substitution with self and super and outerself and
+            // outersuper. maybe something with the same effect would be to have the env have
+            // another 'this' field for the 'outer this', and we could set that up correctly in
+            // the corresponding place in the spec where we set outerself and outersuper. then
+            // here we could replace the regular 'this' with that 'outer this'.
+            st.err(&fp, error::Kind::Todo("FieldPlus"));
+            None
+          }
+          Some(ast::FieldExtra::ParenParams(paren_params)) => {
+            let ptr = ast::SyntaxNodePtr::new(paren_params.syntax());
+            let expr = get_fn(st, cx, Some(paren_params), field.expr(), true);
+            Some(st.expr(ptr, expr))
+          }
+        };
+        if !binds.is_empty() {
+          let ptr = ast::SyntaxNodePtr::new(field.syntax());
+          body = Some(st.expr(ptr, ExprData::Local { binds: binds.clone(), body }));
+        }
+        fields.push((name, vis, body));
+      }
+    }
+  }
+  ExprData::Object { asserts, fields }
+}
+
+fn get_object_comp(st: &mut St, cx: Cx<'_>, inside: ast::Object, in_obj: bool) -> ExprData {
+  let mut binds = Vec::<(Id, Expr)>::new();
+  let mut lowered_field = None::<(ast::SyntaxNodePtr, Expr, Expr)>;
+  for member in inside.members() {
+    let Some(member_kind) = member.member_kind() else { continue };
+    match member_kind {
+      ast::MemberKind::ObjectLocal(local) => {
         binds.extend(local.bind().and_then(|b| get_bind(st, cx, b, true)));
       }
-      // this is the only time we actually use the `in_obj` flag
-      if !in_obj {
-        let ptr = ast::SyntaxNodePtr::new(inside.syntax());
-        let this = Some(st.expr(ptr, ExprData::Id(Id::self_)));
-        binds.push((Id::dollar, this));
+      ast::MemberKind::Assert(assert) => {
+        st.err(&assert, error::Kind::ObjectCompAssert);
       }
-      // then get the asserts and fields
-      let mut asserts = Vec::<Expr>::new();
-      let mut fields = Vec::<(Expr, Visibility, Expr)>::new();
-      for member in inside.members() {
-        let Some(member_kind) = member.member_kind() else { continue };
-        match member_kind {
-          // already did locals
-          ast::MemberKind::ObjectLocal(_) => {}
-          ast::MemberKind::Assert(assert) => {
-            let ptr = ast::SyntaxNodePtr::new(assert.syntax());
-            let yes = Some(st.expr(ptr, ExprData::Prim(Prim::Null)));
-            let assert = get_assert(st, cx, yes, assert, true);
-            let mut assert = Some(st.expr(ptr, assert));
-            if !binds.is_empty() {
-              assert = Some(st.expr(ptr, ExprData::Local { binds: binds.clone(), body: assert }));
-            }
-            asserts.push(assert);
-          }
-          ast::MemberKind::Field(field) => {
-            let name = match field.field_name() {
-              None => continue,
-              Some(ast::FieldName::FieldNameId(name)) => match name.id() {
-                Some(id) => {
-                  let expr = ExprData::Prim(Prim::String(st.str(id.text())));
-                  let ptr = ast::SyntaxNodePtr::new(name.syntax());
-                  Some(st.expr(ptr, expr))
-                }
-                None => continue,
-              },
-              Some(ast::FieldName::FieldNameString(name)) => match name.string() {
-                Some(string) => {
-                  let string = escape::get(st, string);
-                  let expr = ExprData::Prim(Prim::String(st.str(string.as_str())));
-                  let ptr = ast::SyntaxNodePtr::new(name.syntax());
-                  Some(st.expr(ptr, expr))
-                }
-                None => continue,
-              },
-              Some(ast::FieldName::FieldNameExpr(name)) => get_expr(st, cx, name.expr(), in_obj),
-            };
-            let vis = match field.visibility() {
-              Some(vis) => match vis.kind {
-                ast::VisibilityKind::Colon => Visibility::Default,
-                ast::VisibilityKind::ColonColon => Visibility::Hidden,
-                ast::VisibilityKind::ColonColonColon => Visibility::Visible,
-              },
-              None => Visibility::Default,
-            };
-            let mut body = match field.field_extra() {
-              None => get_expr(st, cx, field.expr(), true),
-              Some(ast::FieldExtra::FieldPlus(fp)) => {
-                // TODO the spec says do substitution with self and super and outerself and
-                // outersuper. maybe something with the same effect would be to have the env have
-                // another 'this' field for the 'outer this', and we could set that up correctly in
-                // the corresponding place in the spec where we set outerself and outersuper. then
-                // here we could replace the regular 'this' with that 'outer this'.
-                st.err(&fp, error::Kind::Todo("FieldPlus"));
-                None
-              }
-              Some(ast::FieldExtra::ParenParams(paren_params)) => {
-                let ptr = ast::SyntaxNodePtr::new(paren_params.syntax());
-                let expr = get_fn(st, cx, Some(paren_params), field.expr(), true);
-                Some(st.expr(ptr, expr))
-              }
-            };
-            if !binds.is_empty() {
-              let ptr = ast::SyntaxNodePtr::new(field.syntax());
-              body = Some(st.expr(ptr, ExprData::Local { binds: binds.clone(), body }));
-            }
-            fields.push((name, vis, body));
+      ast::MemberKind::Field(field) => {
+        let Some(name) = field.field_name() else {
+          continue;
+        };
+        let ast::FieldName::FieldNameExpr(name) = name else {
+          st.err(&name, error::Kind::ObjectCompLiteralFieldName);
+          continue;
+        };
+        if lowered_field.is_some() {
+          st.err(&field, error::Kind::ObjectCompNotOne);
+        }
+        if let Some(field_extra) = field.field_extra() {
+          st.err(&field_extra, error::Kind::ObjectCompFieldExtra);
+        }
+        if let Some(vis) = field.visibility() {
+          let is_colon = matches!(vis.kind, ast::VisibilityKind::Colon);
+          if !is_colon {
+            st.err_token(vis.token, error::Kind::ObjectCompVisibility);
           }
         }
+        let name = get_expr(st, cx, name.expr(), in_obj);
+        let body = get_expr(st, cx, field.expr(), in_obj);
+        let ptr = ast::SyntaxNodePtr::new(field.syntax());
+        lowered_field = Some((ptr, name, body));
       }
-      ExprData::Object { asserts, fields }
     }
-    Some((_, comp_specs)) => {
-      let mut binds = Vec::<(Id, Expr)>::new();
-      let mut lowered_field = None::<(ast::SyntaxNodePtr, Expr, Expr)>;
-      for member in inside.members() {
-        let Some(member_kind) = member.member_kind() else { continue };
-        match member_kind {
-          ast::MemberKind::ObjectLocal(local) => {
-            binds.extend(local.bind().and_then(|b| get_bind(st, cx, b, true)));
-          }
-          ast::MemberKind::Assert(assert) => {
-            st.err(&assert, error::Kind::ObjectCompAssert);
-          }
-          ast::MemberKind::Field(field) => {
-            let Some(name) = field.field_name() else {
-              continue;
-            };
-            let ast::FieldName::FieldNameExpr(name) = name else {
-              st.err(&name, error::Kind::ObjectCompLiteralFieldName);
-              continue;
-            };
-            if lowered_field.is_some() {
-              st.err(&field, error::Kind::ObjectCompNotOne);
-            }
-            if let Some(field_extra) = field.field_extra() {
-              st.err(&field_extra, error::Kind::ObjectCompFieldExtra);
-            }
-            if let Some(vis) = field.visibility() {
-              let is_colon = matches!(vis.kind, ast::VisibilityKind::Colon);
-              if !is_colon {
-                st.err_token(vis.token, error::Kind::ObjectCompVisibility);
-              }
-            }
-            let name = get_expr(st, cx, name.expr(), in_obj);
-            let body = get_expr(st, cx, field.expr(), in_obj);
-            let ptr = ast::SyntaxNodePtr::new(field.syntax());
-            lowered_field = Some((ptr, name, body));
-          }
-        }
-      }
-      let vars = comp_specs.filter_map(|comp_spec| match comp_spec {
-        ast::CompSpec::ForSpec(spec) => {
-          spec.id().map(|x| (ast::SyntaxNodePtr::new(spec.syntax()), st.id(x)))
-        }
-        ast::CompSpec::IfSpec(_) => None,
+  }
+  let vars = inside.comp_specs().filter_map(|comp_spec| match comp_spec {
+    ast::CompSpec::ForSpec(spec) => {
+      spec.id().map(|x| (ast::SyntaxNodePtr::new(spec.syntax()), st.id(x)))
+    }
+    ast::CompSpec::IfSpec(_) => None,
+  });
+  let vars: Vec<_> = vars.collect();
+  match lowered_field {
+    None => {
+      st.err(&inside, error::Kind::ObjectCompNotOne);
+      // this is a good "fake" return, since we knew this was going to be some kind of object,
+      // but now we can't figure out what fields it should have. so let's say it has no fields.
+      ExprData::Object { asserts: Vec::new(), fields: Vec::new() }
+    }
+    Some((ptr, name, body)) => {
+      let arr = st.fresh();
+      let on = Some(st.expr(ptr, ExprData::Id(arr)));
+      let name_binds = vars.iter().enumerate().map(|(idx, (ptr, id))| {
+        let idx = always::convert::usize_to_u32(idx);
+        let idx = f64::from(idx);
+        let idx = Number::always_from_f64(idx);
+        let idx = Some(st.expr(*ptr, ExprData::Prim(Prim::Number(idx))));
+        let subscript = Some(st.expr(*ptr, ExprData::Subscript { on, idx }));
+        (*id, subscript)
       });
+      let name_binds: Vec<_> = name_binds.collect();
+      let body_binds: Vec<_> = name_binds.iter().copied().chain(binds).collect();
+      let name = Some(st.expr(ptr, ExprData::Local { binds: name_binds, body: name }));
+      let body = Some(st.expr(ptr, ExprData::Local { binds: body_binds, body }));
+      let vars = vars.into_iter().map(|(ptr, x)| Some(st.expr(ptr, ExprData::Id(x))));
       let vars: Vec<_> = vars.collect();
-      match lowered_field {
-        None => {
-          st.err(&inside, error::Kind::ObjectCompNotOne);
-          // this is a good "fake" return, since we knew this was going to be some kind of object,
-          // but now we can't figure out what fields it should have. so let's say it has no fields.
-          ExprData::Object { asserts: Vec::new(), fields: Vec::new() }
-        }
-        Some((ptr, name, body)) => {
-          let arr = st.fresh();
-          let on = Some(st.expr(ptr, ExprData::Id(arr)));
-          let name_binds = vars.iter().enumerate().map(|(idx, (ptr, id))| {
-            let idx = always::convert::usize_to_u32(idx);
-            let idx = f64::from(idx);
-            let idx = Number::always_from_f64(idx);
-            let idx = Some(st.expr(*ptr, ExprData::Prim(Prim::Number(idx))));
-            let subscript = Some(st.expr(*ptr, ExprData::Subscript { on, idx }));
-            (*id, subscript)
-          });
-          let name_binds: Vec<_> = name_binds.collect();
-          let body_binds: Vec<_> = name_binds.iter().copied().chain(binds).collect();
-          let name = Some(st.expr(ptr, ExprData::Local { binds: name_binds, body: name }));
-          let body = Some(st.expr(ptr, ExprData::Local { binds: body_binds, body }));
-          let vars = vars.into_iter().map(|(ptr, x)| Some(st.expr(ptr, ExprData::Id(x))));
-          let vars: Vec<_> = vars.collect();
-          let vars_ary = Some(st.expr(ptr, ExprData::Array(vars)));
-          ExprData::ObjectComp { name, body, id: arr, ary: vars_ary }
-        }
-      }
+      let vars_ary = Some(st.expr(ptr, ExprData::Array(vars)));
+      ExprData::ObjectComp { name, body, id: arr, ary: vars_ary }
     }
   }
 }
