@@ -13,7 +13,7 @@ func(obj.field, 4)
 }
 
 #[test]
-#[should_panic = "not in scope: x"]
+#[should_panic = "not yet implemented: std.join"]
 fn for_comp_obj() {
   manifest(
     r#"

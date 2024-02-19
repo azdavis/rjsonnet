@@ -452,8 +452,10 @@ fn get_object_comp(st: &mut St, cx: Cx<'_>, inside: ast::Object, in_obj: bool) -
       let body = Some(st.expr(ptr, ExprData::Local { binds: body_binds, body }));
       let vars = vars.into_iter().map(|(ptr, x)| Some(st.expr(ptr, ExprData::Id(x))));
       let vars: Vec<_> = vars.collect();
-      let vars_ary = Some(st.expr(ptr, ExprData::Array(vars)));
-      ExprData::ObjectComp { name, body, id: arr, ary: vars_ary }
+      let vars = Some(st.expr(ptr, ExprData::Array(vars)));
+      let vars = get_array_comp(st, cx, inside.comp_specs(), vars, in_obj);
+      let vars = Some(st.expr(ptr, vars));
+      ExprData::ObjectComp { name, body, id: arr, ary: vars }
     }
   }
 }
