@@ -104,3 +104,11 @@ pub struct Desugar {
   /// Errors when desugaring.
   pub errors: Vec<Error>,
 }
+
+impl Desugar {
+  /// Displays the top-level expression.
+  #[must_use]
+  pub fn display_top(&self) -> impl std::fmt::Display + '_ {
+    jsonnet_expr::display_expr(self.top, &self.arenas.str, &self.arenas.expr, &self.ps)
+  }
+}

@@ -117,6 +117,111 @@ impl ExprData {
   }
 }
 
+/// Displays an expression, sort of. Mostly for debugging. (We already derive Debug.)
+///
+/// TODO handle precedence better, fix trailing commas
+#[must_use]
+pub fn display_expr<'a>(
+  e: Expr,
+  str_ar: &'a StrArena,
+  expr_ar: &'a ExprArena,
+  ps: &'a paths::Store,
+) -> impl fmt::Display + 'a {
+  DisplayExpr { e, str_ar, expr_ar, ps }
+}
+
+#[derive(Clone, Copy)]
+struct DisplayExpr<'a> {
+  e: Expr,
+  str_ar: &'a StrArena,
+  expr_ar: &'a ExprArena,
+  ps: &'a paths::Store,
+}
+
+impl<'a> DisplayExpr<'a> {
+  fn with(self, e: Expr) -> DisplayExpr<'a> {
+    DisplayExpr { e, ..self }
+  }
+}
+
+impl<'a> fmt::Display for DisplayExpr<'a> {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    let Some(e) = self.e else { return f.write_str("_") };
+    match &self.expr_ar[e] {
+      ExprData::Prim(prim) => prim.display(self.str_ar).fmt(f),
+      ExprData::Object { asserts, fields } => {
+        f.write_str("{ ")?;
+        for &a in asserts {
+          write!(f, "assert {}; ", self.with(a))?;
+        }
+        for &(key, vis, val) in fields {
+          write!(f, "{}{} {}, ", self.with(key), vis, self.with(val))?;
+        }
+        f.write_str("}")
+      }
+      ExprData::ObjectComp { name, body, id, ary } => {
+        write!(
+          f,
+          "{{ [{}]: {} for {} in {} }}",
+          self.with(*name),
+          self.with(*body),
+          id.display(self.str_ar),
+          self.with(*ary)
+        )
+      }
+      ExprData::Array(elems) => {
+        f.write_str("[")?;
+        for &elem in elems {
+          write!(f, "{}, ", self.with(elem))?;
+        }
+        f.write_str("]")
+      }
+      ExprData::Subscript { on, idx } => write!(f, "{}[{}]", self.with(*on), self.with(*idx)),
+      ExprData::Call { func, positional, named } => {
+        self.with(*func).fmt(f)?;
+        f.write_str("(")?;
+        for &arg in positional {
+          write!(f, "{}, ", self.with(arg))?;
+        }
+        for &(name, arg) in named {
+          write!(f, "{}={}, ", name.display(self.str_ar), self.with(arg))?;
+        }
+        f.write_str(")")
+      }
+      ExprData::Id(x) => x.display(self.str_ar).fmt(f),
+      ExprData::Local { binds, body } => {
+        f.write_str("local ")?;
+        for &(var, e) in binds {
+          write!(f, "{} = {}, ", var.display(self.str_ar), self.with(e))?;
+        }
+        write!(f, "; {}", self.with(*body))
+      }
+      ExprData::If { cond, yes, no } => {
+        write!(f, "if {} then {} else {}", self.with(*cond), self.with(*yes), self.with(*no))
+      }
+      ExprData::BinaryOp { lhs, op, rhs } => {
+        write!(f, "{} {} {}", self.with(*lhs), op, self.with(*rhs))
+      }
+      ExprData::UnaryOp { op, inner } => write!(f, "{}{}", op, self.with(*inner)),
+      ExprData::Function { params, body } => {
+        f.write_str("function(")?;
+        for &(name, default) in params {
+          name.display(self.str_ar).fmt(f)?;
+          if let Some(default) = default {
+            write!(f, " = {}", self.with(default))?;
+          }
+          f.write_str(", ")?;
+        }
+        self.with(*body).fmt(f)
+      }
+      ExprData::Error(e) => write!(f, "error {}", self.with(*e)),
+      ExprData::Import { kind, path } => {
+        write!(f, "{} {}", kind, self.ps.get_path(*path).as_path().display())
+      }
+    }
+  }
+}
+
 #[derive(Debug, Clone, Copy)]
 pub enum ImportKind {
   Code,
@@ -124,11 +229,33 @@ pub enum ImportKind {
   Binary,
 }
 
+impl fmt::Display for ImportKind {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    let s = match self {
+      ImportKind::Code => "import",
+      ImportKind::String => "importstr",
+      ImportKind::Binary => "importbin",
+    };
+    f.write_str(s)
+  }
+}
+
 #[derive(Debug, Clone, Copy)]
 pub enum Visibility {
   Default,
   Hidden,
   Visible,
+}
+
+impl fmt::Display for Visibility {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    let s = match self {
+      Visibility::Default => ":",
+      Visibility::Hidden => "::",
+      Visibility::Visible => ":::",
+    };
+    f.write_str(s)
+  }
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -148,12 +275,45 @@ pub enum BinaryOp {
   BitOr,
 }
 
+impl fmt::Display for BinaryOp {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    let s = match self {
+      BinaryOp::Mul => "*",
+      BinaryOp::Div => "/",
+      BinaryOp::Add => "+",
+      BinaryOp::Sub => "-",
+      BinaryOp::Shl => "<<",
+      BinaryOp::Shr => ">>",
+      BinaryOp::Lt => "<",
+      BinaryOp::LtEq => "<=",
+      BinaryOp::Gt => ">",
+      BinaryOp::GtEq => ">=",
+      BinaryOp::BitAnd => "&",
+      BinaryOp::BitXor => "^",
+      BinaryOp::BitOr => "|",
+    };
+    f.write_str(s)
+  }
+}
+
 #[derive(Debug, Clone, Copy)]
 pub enum UnaryOp {
   Neg,
   Pos,
   LogicalNot,
   BitNot,
+}
+
+impl fmt::Display for UnaryOp {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    let s = match self {
+      UnaryOp::Neg => "-",
+      UnaryOp::Pos => "+",
+      UnaryOp::LogicalNot => "!",
+      UnaryOp::BitNot => "~",
+    };
+    f.write_str(s)
+  }
 }
 
 /// A primitive value.
