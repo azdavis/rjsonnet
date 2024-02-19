@@ -1,6 +1,6 @@
 use crate::error::Result;
-use crate::val::jsonnet::{Env, Val};
-use crate::{exec, mk_todo, Cx};
+use crate::val::jsonnet::{Array, Env, Val};
+use crate::{error, exec, mk_todo, Cx};
 use jsonnet_expr::{std_fn, Expr, ExprMust, Id, Number, Prim, StdFn};
 use std::cmp::Ordering;
 
@@ -374,8 +374,56 @@ pub(crate) fn get(
       Err(mk_todo(expr, "std.slice"))
     }
     StdFn::join => {
-      let _ = std_fn::args::join(positional, named, expr)?;
-      Err(mk_todo(expr, "std.join"))
+      let arguments = std_fn::args::join(positional, named, expr)?;
+      let sep = exec::get(cx, env, arguments.sep)?;
+      let Val::Array(arr) = exec::get(cx, env, arguments.arr)? else {
+        return Err(error::Error::Exec {
+          expr: arguments.arr.unwrap_or(expr),
+          kind: error::Kind::IncompatibleTypes,
+        });
+      };
+      match sep {
+        Val::Prim(Prim::String(sep)) => {
+          let mut ret = String::new();
+          let sep = cx.str_ar.get(&sep);
+          let mut first = true;
+          for (env, elem) in arr.iter() {
+            if !first {
+              ret.push_str(sep);
+            };
+            first = false;
+            let Val::Prim(Prim::String(elem)) = exec::get(cx, env, elem)? else {
+              return Err(error::Error::Exec {
+                expr: elem.unwrap_or(expr),
+                kind: error::Kind::IncompatibleTypes,
+              });
+            };
+            ret.push_str(cx.str_ar.get(&elem));
+          }
+          Ok(Val::Prim(Prim::String(cx.str_ar.str_shared(ret.into_boxed_str()))))
+        }
+        Val::Array(sep) => {
+          let mut ret = Array::default();
+          let mut first = true;
+          for (env, elem) in arr.iter() {
+            if !first {
+              ret.append(&mut sep.clone());
+            };
+            first = false;
+            let Val::Array(mut elem) = exec::get(cx, env, elem)? else {
+              return Err(error::Error::Exec {
+                expr: elem.unwrap_or(expr),
+                kind: error::Kind::IncompatibleTypes,
+              });
+            };
+            ret.append(&mut elem);
+          }
+          Ok(Val::Array(ret))
+        }
+        Val::Prim(_) | Val::Object(_) | Val::Function(_) | Val::StdFn(_) => {
+          Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes })
+        }
+      }
     }
     StdFn::lines => {
       let _ = std_fn::args::lines(positional, named, expr)?;

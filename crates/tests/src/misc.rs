@@ -13,7 +13,7 @@ func(obj.field, 4)
 }
 
 #[test]
-#[should_panic = "not yet implemented: std.join"]
+#[should_panic = "not yet implemented: std.makeArray"]
 fn for_comp_obj() {
   manifest(
     r#"
