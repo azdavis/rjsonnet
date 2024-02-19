@@ -160,7 +160,14 @@ impl St {
     log::info!("update dependents");
     for (&dependent, dependencies) in &added_dependencies {
       for &dependency in dependencies {
-        self.dependents.entry(dependency).or_default().insert(dependent);
+        let not_same = always!(
+          dependency != dependent,
+          "file depends on itself: {}",
+          self.paths().get_path(dependency).as_path().display()
+        );
+        if not_same {
+          self.dependents.entry(dependency).or_default().insert(dependent);
+        }
       }
     }
 
