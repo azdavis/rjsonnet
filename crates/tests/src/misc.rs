@@ -11,3 +11,22 @@ func(obj.field, 4)
     "3",
   );
 }
+
+#[test]
+#[should_panic = "not in scope: x"]
+fn for_comp_obj() {
+  manifest(
+    r#"
+{
+  [x]: false
+  for x in ["a", "b"]
+}
+"#,
+    r#"
+{
+  "a": false,
+  "b": false
+}
+"#,
+  );
+}
