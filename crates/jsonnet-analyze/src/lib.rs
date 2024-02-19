@@ -98,9 +98,9 @@ impl St {
   {
     let mut added = BTreeSet::<PathId>::new();
 
-    // repeatedly add the new files and any relevant imports.
+    log::info!("repeatedly add the new files and any relevant imports");
     while !to_add.is_empty() {
-      // combine the file artifacts in sequence.
+      log::info!("combine the file artifacts in sequence");
       let did_add = to_add.into_iter().map(|(mut path_id, mut art)| {
         let subst = jsonnet_expr::Subst::get(&mut self.artifacts, art.combine);
 
@@ -119,9 +119,11 @@ impl St {
         path_id
       });
       let did_add: BTreeSet<_> = did_add.collect();
+      log::info!("did add {} files", did_add.len());
 
-      // the next set of things to add: imports from the added files that do not exist and were not
-      // themselves already added.
+      // the next set of things to add is imports from the added files that do not exist and were
+      // not themselves already added.
+      log::info!("construct the next set of things to add");
       let new_to_add = did_add.iter().flat_map(|path| self.files[path].imports());
       let new_to_add = new_to_add.filter_map(|(_, path)| {
         if added.contains(&path) || self.files.contains_key(&path) {
@@ -132,7 +134,7 @@ impl St {
       });
       let new_to_add: BTreeSet<_> = new_to_add.collect();
 
-      // get the file artifacts for each added file in parallel.
+      log::info!("get file artifacts for {} files in parallel", new_to_add.len());
       let iter = new_to_add.into_par_iter().filter_map(|path_id| {
         let path = self.paths().get_path(path_id);
         let art = get_isolated_fs(path, &self.root_dirs, fs)?;
@@ -143,6 +145,7 @@ impl St {
 
     // compute a mapping from path id p to non-empty set of path ids S, s.t. for all q in S, q was
     // just added, and p depends on q.
+    log::info!("compute dependency mapping");
     let added_dependencies = self.files.par_iter().filter_map(|(&path_id, file)| {
       let dependencies: BTreeSet<_> =
         file.imports().filter_map(|(_, path)| added.contains(&path).then_some(path)).collect();
@@ -154,7 +157,7 @@ impl St {
     });
     let added_dependencies: PathMap<_> = added_dependencies.collect();
 
-    // using that mapping, update the dependents.
+    log::info!("update dependents");
     for (&dependent, dependencies) in &added_dependencies {
       for &dependency in dependencies {
         self.dependents.entry(dependency).or_default().insert(dependent);
@@ -164,10 +167,11 @@ impl St {
     // added files were updated.
     updated.extend(added);
 
-    // repeatedly update files until they don't need updating anymore.
+    log::info!("repeatedly update files");
     let mut ret = PathMap::<Vec<Diagnostic>>::default();
     while !updated.is_empty() {
       let cx = self.cx();
+      log::info!("manifest in parallel");
       // manifest in parallel for all updated files. TODO this probably doesn't respect ordering
       // requirements among the updated. what if one updated file depends on another updated file?
       let updated_vals = updated.par_iter().flat_map(|&path| {
@@ -179,6 +183,8 @@ impl St {
         })
       });
       let updated_vals: PathMap<_> = updated_vals.collect();
+      log::info!("updated {} vals", updated_vals.len());
+
       let iter = updated.iter().map(|&path| {
         let art = &self.files_extra[&path];
         let ds: Vec<_> = std::iter::empty()
@@ -201,8 +207,13 @@ impl St {
           .collect();
         (path, ds)
       });
+      let old_len = ret.len();
       ret.extend(iter);
+      let new_len = ret.len();
+      log::info!("added {} diagnostics", new_len - old_len);
       updated.clear();
+
+      log::info!("getting further dependents");
       for (path_id, json) in updated_vals {
         // TODO could check if new json == old json and not add dependents if same
         self.json.insert(path_id, json);
@@ -210,6 +221,7 @@ impl St {
         let dependents = self.dependents.get(&path_id);
         updated.extend(dependents.into_iter().flatten());
       }
+      log::info!("found {} dependents", updated.len());
     }
     ret
   }

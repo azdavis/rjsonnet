@@ -7,6 +7,8 @@ use paths::FileSystem;
 use pico_args::Arguments;
 
 fn run() -> usize {
+  let logger_env = env_logger::Env::default().default_filter_or("info");
+  env_logger::try_init_from_env(logger_env).expect("init logger");
   let pwd = std::env::current_dir().expect("current dir");
   let mut args = Arguments::from_env();
   let name_only = args.contains("--name-only");

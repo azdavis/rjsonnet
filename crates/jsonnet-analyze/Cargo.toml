@@ -13,6 +13,7 @@ test = false
 doctest = false
 
 [dependencies]
+log.workspace = true
 paths.workspace = true
 rayon.workspace = true
 text-pos.workspace = true

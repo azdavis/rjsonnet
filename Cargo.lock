@@ -358,6 +358,7 @@ dependencies = [
  "jsonnet-parse",
  "jsonnet-statics",
  "jsonnet-syntax",
+ "log",
  "paths",
  "rayon",
  "text-pos",
@@ -368,6 +369,7 @@ name = "jsonnet-cli"
 version = "0.1.0"
 dependencies = [
  "always",
+ "env_logger",
  "jsonnet-analyze",
  "paths",
  "pico-args",
