@@ -37,8 +37,14 @@ pub(crate) fn get_expr(st: &mut St, cx: Cx<'_>, expr: Option<ast::Expr>, in_obj:
     ast::Expr::ExprId(expr) => ExprData::Id(st.id(expr.id()?)),
     ast::Expr::ExprParen(expr) => return get_expr(st, cx, expr.expr(), in_obj),
     ast::Expr::ExprObject(expr) => get_object(st, cx, expr.object()?, in_obj),
-    ast::Expr::ExprArray(expr) => match get_comp_specs(st, expr.comp_specs()) {
-      Some(_) => {
+    ast::Expr::ExprArray(expr) => {
+      if let Some(spec) = expr.comp_specs().next() {
+        match spec {
+          ast::CompSpec::ForSpec(_) => {}
+          ast::CompSpec::IfSpec(_) => {
+            st.err(&spec, error::Kind::FirstCompSpecNotFor);
+          }
+        }
         let mut expr_commas = expr.expr_commas();
         let Some(elem) = expr_commas.next().and_then(|x| x.expr()) else {
           st.err(&expr, error::Kind::ArrayCompNotOne);
@@ -49,11 +55,10 @@ pub(crate) fn get_expr(st: &mut St, cx: Cx<'_>, expr: Option<ast::Expr>, in_obj:
           st.err(&elem, error::Kind::ArrayCompNotOne);
         }
         get_array_comp(st, cx, expr.comp_specs(), elem, in_obj)
-      }
-      None => {
+      } else {
         ExprData::Array(expr.expr_commas().map(|x| get_expr(st, cx, x.expr(), in_obj)).collect())
       }
-    },
+    }
     ast::Expr::ExprFieldGet(expr) => {
       let on = get_expr(st, cx, expr.expr(), in_obj);
       let idx = ExprData::Prim(Prim::String(st.str(expr.id()?.text())));
@@ -262,19 +267,6 @@ fn get_fn(
   ExprData::Function { params, body }
 }
 
-fn get_comp_specs<I>(st: &mut St, mut iter: I) -> Option<(ast::ForSpec, I)>
-where
-  I: Iterator<Item = ast::CompSpec>,
-{
-  match iter.next()? {
-    ast::CompSpec::ForSpec(for_spec) => Some((for_spec, iter)),
-    ast::CompSpec::IfSpec(if_spec) => {
-      st.err(&if_spec, error::Kind::FirstCompSpecNotFor);
-      None
-    }
-  }
-}
-
 fn get_assert(st: &mut St, cx: Cx<'_>, yes: Expr, assert: ast::Assert, in_obj: bool) -> ExprData {
   let cond = get_expr(st, cx, assert.expr(), in_obj);
   let ptr = ast::SyntaxNodePtr::new(assert.syntax());
@@ -287,9 +279,16 @@ fn get_assert(st: &mut St, cx: Cx<'_>, yes: Expr, assert: ast::Assert, in_obj: b
 }
 
 fn get_object(st: &mut St, cx: Cx<'_>, inside: ast::Object, in_obj: bool) -> ExprData {
-  match get_comp_specs(st, inside.comp_specs()) {
-    None => get_object_literal(st, cx, inside, in_obj),
-    Some(_) => get_object_comp(st, cx, inside, in_obj),
+  if let Some(spec) = inside.comp_specs().next() {
+    match spec {
+      ast::CompSpec::ForSpec(_) => {}
+      ast::CompSpec::IfSpec(_) => {
+        st.err(&spec, error::Kind::FirstCompSpecNotFor);
+      }
+    }
+    get_object_comp(st, cx, inside, in_obj)
+  } else {
+    get_object_literal(st, cx, inside, in_obj)
   }
 }
 
