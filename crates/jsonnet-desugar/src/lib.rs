@@ -16,7 +16,7 @@ pub use st::{Desugar, Pointers};
 #[must_use]
 pub fn get(
   current_dir: &paths::CanonicalPath,
-  other_dirs: &[&paths::CanonicalPath],
+  other_dirs: &[paths::CanonicalPathBuf],
   fs: &dyn FileSystem,
   root: Option<jsonnet_syntax::ast::Expr>,
 ) -> Desugar {

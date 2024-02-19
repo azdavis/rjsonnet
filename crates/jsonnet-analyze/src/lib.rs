@@ -11,6 +11,7 @@ use std::collections::{BTreeMap, BTreeSet};
 /// The state of analysis.
 #[derive(Debug, Default)]
 pub struct St {
+  root_dirs: Vec<paths::CanonicalPathBuf>,
   artifacts: jsonnet_expr::Artifacts,
   files: PathMap<jsonnet_eval::JsonnetFile>,
   /// invariant: x in files iff x in files_extra.
@@ -26,6 +27,12 @@ pub struct St {
 }
 
 impl St {
+  /// Returns a new `St` with the given root dirs.
+  #[must_use]
+  pub fn new(root_dirs: Vec<paths::CanonicalPathBuf>) -> Self {
+    Self { root_dirs, ..Default::default() }
+  }
+
   /// Updates the state with added and removed Jsonnet paths.
   #[must_use]
   pub fn update_many<F>(
@@ -51,7 +58,7 @@ impl St {
     // get the initial file artifacts in parallel.
     let file_artifacts = add.into_par_iter().filter_map(|path| {
       let path = path.as_canonical_path();
-      let mut art = get_isolated_fs(path, fs)?;
+      let mut art = get_isolated_fs(path, &self.root_dirs, fs)?;
       let path = art.combine.paths.get_id(path);
       Some((path, art))
     });
@@ -71,7 +78,8 @@ impl St {
   where
     F: Sync + Send + paths::FileSystem,
   {
-    let Some(art) = get_isolated_str(path.as_canonical_path(), contents, fs) else {
+    let got = get_isolated_str(path.as_canonical_path(), contents, &self.root_dirs, fs);
+    let Some(art) = got else {
       return PathMap::default();
     };
     let path = self.path_id(path);
@@ -126,7 +134,7 @@ impl St {
       // get the file artifacts for each added file in parallel.
       let iter = new_to_add.into_par_iter().filter_map(|path_id| {
         let path = self.paths().get_path(path_id);
-        let art = get_isolated_fs(path, fs)?;
+        let art = get_isolated_fs(path, &self.root_dirs, fs)?;
         Some((path_id, art))
       });
       to_add = iter.collect();
@@ -294,11 +302,12 @@ impl IsolatedFileArtifacts {
   fn new(
     contents: &str,
     current_dir: &paths::CanonicalPath,
+    other_dirs: &[paths::CanonicalPathBuf],
     fs: &dyn jsonnet_desugar::FileSystem,
   ) -> Self {
     let lex = jsonnet_lex::get(contents);
     let parse = jsonnet_parse::get(&lex.tokens);
-    let desugar = jsonnet_desugar::get(current_dir, &[], fs, parse.root.clone().expr());
+    let desugar = jsonnet_desugar::get(current_dir, other_dirs, fs, parse.root.clone().expr());
     let statics_errors = jsonnet_statics::get(&desugar.arenas, desugar.top);
     Self {
       eval: jsonnet_eval::JsonnetFile { expr_ar: desugar.arenas.expr, top: desugar.top },
@@ -330,7 +339,11 @@ where
   }
 }
 
-fn get_isolated_fs<F>(path: &paths::CanonicalPath, fs: &F) -> Option<IsolatedFileArtifacts>
+fn get_isolated_fs<F>(
+  path: &paths::CanonicalPath,
+  root_dirs: &[paths::CanonicalPathBuf],
+  fs: &F,
+) -> Option<IsolatedFileArtifacts>
 where
   F: paths::FileSystem,
 {
@@ -341,12 +354,13 @@ where
       return None;
     }
   };
-  get_isolated_str(path, contents.as_str(), fs)
+  get_isolated_str(path, contents.as_str(), root_dirs, fs)
 }
 
 fn get_isolated_str<F>(
   path: &paths::CanonicalPath,
   contents: &str,
+  root_dirs: &[paths::CanonicalPathBuf],
   fs: &F,
 ) -> Option<IsolatedFileArtifacts>
 where
@@ -357,5 +371,5 @@ where
     always!(false, "no parent: {path}");
     return None;
   };
-  Some(IsolatedFileArtifacts::new(contents, parent, &FsAdapter(fs)))
+  Some(IsolatedFileArtifacts::new(contents, parent, root_dirs, &FsAdapter(fs)))
 }
