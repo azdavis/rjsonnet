@@ -14,15 +14,16 @@ pub struct St {
   root_dirs: Vec<paths::CanonicalPathBuf>,
   artifacts: jsonnet_expr::Artifacts,
   files: PathMap<jsonnet_eval::JsonnetFile>,
-  /// invariant: x in files iff x in files_extra.
+  /// invariant: `x` in `files` iff `x` in `files_extra`.
   files_extra: PathMap<FileArtifacts>,
-  /// invariant: if x in json, then x in files.
+  /// invariant: if `x` in `json`, then `x` in `files`.
   json: PathMap<jsonnet_eval::error::Result<jsonnet_eval::Json>>,
   /// invariants:
-  /// - if x in dependents, x in files.
-  /// - if a depends on b, a in dependents[b]. (note: NOT a bi-implication)
+  /// - if `x` in `dependents`, `x` in `files`.
+  /// - if `a` depends on `b`, `a` in `dependents[b]`. (note: NOT a bi-implication)
+  ///
   /// NON-invariants:
-  /// - for all (_, s) in dependents, for all x in s, x in files.
+  /// - for all `(_, s)` in `dependents`, for all `x` in `s`, `x` in `files`.
   dependents: BTreeMap<PathId, BTreeSet<PathId>>,
 }
 
