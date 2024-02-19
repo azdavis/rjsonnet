@@ -2,14 +2,18 @@
 
 use always::always;
 use paths::FileSystem;
+use pico_args::Arguments;
 
 fn run() -> usize {
   #[allow(clippy::disallowed_methods)]
   let pwd = std::env::current_dir().expect("current dir");
+  let mut args = Arguments::from_env();
+  let name_only = args.contains("--name-only");
+  let files = args.finish();
   let mut st = jsonnet_analyze::St::default();
   let fs = paths::RealFileSystem::default();
   let mut ret = 0usize;
-  for arg in std::env::args_os().skip(1) {
+  for arg in files {
     let p = std::path::PathBuf::from(arg);
     let p = match fs.canonical(p.as_path()) {
       Ok(x) => x,
@@ -24,8 +28,12 @@ fn run() -> usize {
       let path = path.strip_prefix(pwd.as_path()).unwrap_or(path);
       let path = path.display();
       ret += ds.len();
-      for d in ds {
-        eprintln!("{path}:{}: {}", d.range, d.message);
+      if name_only {
+        eprintln!("{path}");
+      } else {
+        for d in ds {
+          eprintln!("{path}:{}: {}", d.range, d.message);
+        }
       }
     }
   }

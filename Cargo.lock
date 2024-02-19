@@ -370,6 +370,7 @@ dependencies = [
  "always",
  "jsonnet-analyze",
  "paths",
+ "pico-args",
 ]
 
 [[package]]
