@@ -11,7 +11,8 @@ pub fn get(tokens: &[token::Token<'_, SK>]) -> Parse {
   let mut p = Parser::new(tokens);
   let en = p.enter();
   internal::expr_must(&mut p);
-  while p.peek().is_some() {
+  // could have this be a while loop, but then we'd just get a lot of errors
+  if p.peek().is_some() {
     p.error(ErrorKind::Trailing);
     p.bump();
   }
