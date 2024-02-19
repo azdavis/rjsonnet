@@ -1,17 +1,19 @@
 //! Analyze files from the CLI once, then exit.
 
+#![allow(clippy::disallowed_methods)]
+
 use always::always;
 use paths::FileSystem;
 use pico_args::Arguments;
 
 fn run() -> usize {
-  #[allow(clippy::disallowed_methods)]
   let pwd = std::env::current_dir().expect("current dir");
   let mut args = Arguments::from_env();
   let name_only = args.contains("--name-only");
   let files = args.finish();
-  let mut st = jsonnet_analyze::St::default();
   let fs = paths::RealFileSystem::default();
+  let canonical_pwd = fs.canonical(pwd.as_path()).expect("canonical");
+  let mut st = jsonnet_analyze::St::new(vec![canonical_pwd]);
   let mut ret = 0usize;
   for arg in files {
     let p = std::path::PathBuf::from(arg);
