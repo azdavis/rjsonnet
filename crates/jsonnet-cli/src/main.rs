@@ -23,8 +23,8 @@ fn run() -> usize {
       let path = st.paths().get_path(path).as_path();
       let path = path.strip_prefix(pwd.as_path()).unwrap_or(path);
       let path = path.display();
+      ret += ds.len();
       for d in ds {
-        ret += 1;
         eprintln!("{path}:{}: {}", d.range, d.message);
       }
     }
