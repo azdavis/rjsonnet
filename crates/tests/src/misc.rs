@@ -1,9 +1,7 @@
 use crate::check::manifest;
 
-// TODO fix
 #[test]
-#[should_panic = "expected `)`"]
-fn t1() {
+fn func_arg_id_not_named_arg() {
   manifest(
     r"
 local obj = { field: 3 };

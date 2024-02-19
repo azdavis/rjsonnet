@@ -241,16 +241,12 @@ fn object(p: &mut Parser<'_>) -> Exited {
 
 fn arg(p: &mut Parser<'_>) -> Option<Exited> {
   let outer = p.enter();
-  if p.at(SK::Id) {
+  if p.at(SK::Id) && p.at_n(1, SK::Eq) {
     let inner = p.enter();
     p.bump();
-    if p.at(SK::Eq) {
-      p.bump();
-      p.exit(inner, SK::IdEq);
-      expr_must(p);
-    } else {
-      p.exit(inner, SK::ExprId);
-    }
+    p.bump();
+    p.exit(inner, SK::IdEq);
+    expr_must(p);
   } else if expr(p).is_none() {
     p.abandon(outer);
     return None;
