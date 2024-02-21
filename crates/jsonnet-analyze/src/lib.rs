@@ -50,9 +50,21 @@ impl St {
     // NOTE: for each r in remove, we DO NOT bother removing r from s for any (_, s) in dependents.
     let updated = remove.into_iter().filter_map(|path| {
       let path_id = self.path_id(path);
-      self.files.remove(&path_id);
-      self.files_extra.remove(&path_id);
-      self.dependents.remove(&path_id)
+      let was_in_files = self.files.remove(&path_id).is_some();
+      let was_in_files_extra = self.files_extra.remove(&path_id).is_some();
+      always!(
+        was_in_files == was_in_files_extra,
+        "mismatched in-ness for files ({was_in_files}) and extra ({was_in_files_extra})"
+      );
+      let ret = self.dependents.remove(&path_id);
+      if ret.is_some() {
+        always!(
+          was_in_files,
+          "{} was in dependents, but not in files",
+          self.paths().get_path(path_id).as_path().display()
+        );
+      }
+      ret
     });
     let updated: BTreeSet<_> = updated.flatten().collect();
 
