@@ -113,6 +113,7 @@ impl St {
       log::info!("combine the file artifacts in sequence");
       let did_add = to_add.into_iter().map(|(mut path_id, mut art)| {
         let subst = jsonnet_expr::Subst::get(&mut self.artifacts, art.combine);
+        log::debug!("subst: {subst:?}");
 
         for (_, ed) in art.eval.expr_ar.iter_mut() {
           ed.apply(&subst);
