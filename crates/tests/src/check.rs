@@ -4,15 +4,16 @@ use std::path::{Path, PathBuf};
 
 const DEFAULT_FILE_NAME: &str = "/f.jsonnet";
 
-fn mk_st<'a, I>(iter: I) -> (paths::MemoryFileSystem, jsonnet_analyze::St)
+fn mk_st<'a, A, B>(files: A, add: B) -> (paths::MemoryFileSystem, jsonnet_analyze::St)
 where
-  I: Iterator<Item = (&'a str, &'a str)> + Clone,
+  A: Iterator<Item = (&'a str, &'a str)>,
+  B: Iterator<Item = &'a str>,
 {
-  let map: FxHashMap<_, _> =
-    iter.clone().map(|(path, contents)| (PathBuf::from(path), contents.to_owned())).collect();
-  let fs = paths::MemoryFileSystem::new(map);
+  let files: FxHashMap<_, _> =
+    files.map(|(path, contents)| (PathBuf::from(path), contents.to_owned())).collect();
+  let fs = paths::MemoryFileSystem::new(files);
+  let add: Vec<_> = add.map(|path| fs.canonical(Path::new(path)).expect("canonical")).collect();
   let mut ret = jsonnet_analyze::St::default();
-  let add = iter.map(|(path, _)| fs.canonical(Path::new(path)).expect("canonical")).collect();
   for (path, ds) in ret.update_many(&fs, Vec::new(), add) {
     if let Some(d) = ds.first() {
       let p = ret.paths().get_path(path);
@@ -29,9 +30,26 @@ fn get_json(st: &jsonnet_analyze::St, p: paths::PathId) -> &jsonnet_eval::Json {
   }
 }
 
-/// tests that for each triple of (filename, jsonnet, json), each jsonnet manifests to its json.
+/// tests that for each triple of (path, jsonnet, json), each jsonnet manifests to its json.
 pub(crate) fn manifest_many(input: &[(&str, &str, &str)]) {
-  let (fs, mut st) = mk_st(input.iter().map(|&(path, jsonnet, _)| (path, jsonnet)));
+  manifest_many_help(input, input.iter().map(|&(path, _, _)| path));
+}
+
+/// tests that for each triple of (path, jsonnet, json), each jsonnet manifests to its json, when
+/// adding the given paths.
+///
+/// this is similar to `manifest_many` but helps test the auto-discovery mechanism. this is where if
+/// you ask to add some files but those files import files that you didn't ask to add, the impl
+/// should discover and add them for you.
+pub(crate) fn manifest_many_add(input: &[(&str, &str, &str)], add: &[&str]) {
+  manifest_many_help(input, add.iter().copied());
+}
+
+fn manifest_many_help<'a, I>(input: &'a [(&'a str, &'a str, &'a str)], add: I)
+where
+  I: Iterator<Item = &'a str>,
+{
+  let (fs, mut st) = mk_st(input.iter().map(|&(path, jsonnet, _)| (path, jsonnet)), add);
   for &(p, _, json) in input {
     let p = fs.canonical(Path::new(p)).expect("canonical");
     let p = st.path_id(p);
@@ -60,7 +78,8 @@ pub(crate) fn manifest_self(s: &str) {
 ///
 /// NOTE: `want` is NOT interpreted as JSON.
 pub(crate) fn manifest_str(jsonnet: &str, want: &str) {
-  let (fs, mut st) = mk_st(std::iter::once((DEFAULT_FILE_NAME, jsonnet)));
+  let (fs, mut st) =
+    mk_st(std::iter::once((DEFAULT_FILE_NAME, jsonnet)), std::iter::once(DEFAULT_FILE_NAME));
   let want = st.strings_mut().str(want.to_owned().into_boxed_str());
   let p = fs.canonical(Path::new(DEFAULT_FILE_NAME)).expect("canonical");
   let p = st.path_id(p);
@@ -70,7 +89,8 @@ pub(crate) fn manifest_str(jsonnet: &str, want: &str) {
 
 /// tests that `jsonnet` execution results in an error whose message is `want`.
 pub(crate) fn exec_err(jsonnet: &str, want: &str) {
-  let (fs, mut st) = mk_st(std::iter::once((DEFAULT_FILE_NAME, jsonnet)));
+  let (fs, mut st) =
+    mk_st(std::iter::once((DEFAULT_FILE_NAME, jsonnet)), std::iter::once(DEFAULT_FILE_NAME));
   let p = fs.canonical(Path::new(DEFAULT_FILE_NAME)).expect("canonical");
   let p = st.path_id(p);
   let err = st.get_json(p).expect_err("no error");

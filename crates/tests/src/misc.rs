@@ -1,4 +1,4 @@
-use crate::check::manifest;
+use crate::check::{manifest, manifest_many_add};
 
 #[test]
 fn func_arg_id_not_named_arg() {
@@ -28,5 +28,19 @@ fn for_comp_obj() {
   "b": false
 }
 "#,
+  );
+}
+
+// TODO fix
+#[test]
+#[should_panic = "file depends on itself"]
+fn import_chain() {
+  manifest_many_add(
+    &[
+      ("a.jsonnet", "6 - 5 + 2", "3"),
+      ("b.jsonnet", "(import 'a.jsonnet') + 2", "5"),
+      ("c.jsonnet", "(import 'b.jsonnet') + 4", "9"),
+    ],
+    &["c.jsonnet"],
   );
 }
