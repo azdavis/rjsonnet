@@ -1,4 +1,4 @@
-use crate::check::{manifest, manifest_many_add};
+use crate::check::{manifest, manifest_many, manifest_many_add};
 
 #[test]
 fn func_arg_id_not_named_arg() {
@@ -41,4 +41,25 @@ fn import_chain() {
     ],
     &["c.jsonnet"],
   );
+}
+
+// TODO fix. yes that's right, this is supposed to be allowed.
+#[test]
+#[should_panic = "file depends on itself: a.jsonnet"]
+fn import_self() {
+  manifest_many(&[(
+    "a.jsonnet",
+    r#"
+{
+  foo: (import "a.jsonnet").bar + 1,
+  bar: 3,
+}
+"#,
+    r#"
+{
+  "foo": 4,
+  "bar": 3
+}
+"#,
+  )]);
 }
