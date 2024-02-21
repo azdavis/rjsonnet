@@ -31,9 +31,7 @@ fn for_comp_obj() {
   );
 }
 
-// TODO fix
 #[test]
-#[should_panic = "file depends on itself"]
 fn import_chain() {
   manifest_many_add(
     &[

@@ -80,6 +80,8 @@ impl St {
 
   /// Updates one file.
   #[must_use]
+  // TODO remove
+  #[allow(clippy::needless_pass_by_value)]
   pub fn update_one<F>(
     &mut self,
     fs: &F,
@@ -89,12 +91,20 @@ impl St {
   where
     F: Sync + Send + paths::FileSystem,
   {
-    let got = get_isolated_str(path.as_canonical_path(), contents, &self.root_dirs, fs);
-    let Some(art) = got else { return PathMap::default() };
-    let path = self.path_id(path);
-    self.update(fs, BTreeSet::new(), vec![(path, art)])
+    let path = path.as_canonical_path();
+    let got = get_isolated_str(path, contents, &self.root_dirs, fs);
+    let Some(mut art) = got else { return PathMap::default() };
+    // since we have &mut self, and no parallelism (as opposed to in update_many), we could get the
+    // path id from self. but instead, we intentionally get the path id from `art`, to uphold the
+    // contract of `update`.
+    let path_id = art.combine.paths.get_id(path);
+    self.update(fs, BTreeSet::new(), vec![(path_id, art)])
   }
 
+  /// invariant: for all `(p, a)` in `to_add`, `p` is the path id, of the path q, **from the path
+  /// store contained in a**, of that path q that yielded a. this path id may **or may not**
+  /// (usually not) be the path id from the store in self. (a will be combined with the path store
+  /// in self, and p will be updated appropriately.)
   fn update<F>(
     &mut self,
     fs: &F,
@@ -144,9 +154,11 @@ impl St {
       let new_to_add: BTreeSet<_> = new_to_add.collect();
 
       log::info!("get file artifacts for {} files in parallel", new_to_add.len());
-      let iter = new_to_add.into_par_iter().filter_map(|path_id| {
+      let iter = new_to_add.into_par_iter().filter_map(|mut path_id| {
         let path = self.paths().get_path(path_id);
-        let art = get_isolated_fs(path, &self.root_dirs, fs)?;
+        let mut art = get_isolated_fs(path, &self.root_dirs, fs)?;
+        // intentionally turn it into the one from `art`
+        path_id = art.combine.paths.get_id(path);
         Some((path_id, art))
       });
       to_add = iter.collect();
