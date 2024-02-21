@@ -230,6 +230,7 @@ fn main() {
         }
       }
 
+      #[doc = "A type that serves as a witness that a `Str` was not a `BuiltinStr`."]
       pub(crate) struct NotBuiltinStr(());
 
       impl NotBuiltinStr {
