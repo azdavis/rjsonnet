@@ -139,12 +139,12 @@ impl Object {
   /// TODO this should be a generator
   pub(crate) fn fields(&self) -> Vec<(Str, Visibility, Field)> {
     let mut ret = Vec::<(Str, Visibility, Field)>::new();
-    let mut seen = FxHashSet::<&Str>::default();
+    let mut seen = FxHashSet::<Str>::default();
     for this in self.ancestry().skip(self.is_super.into()) {
       match &this.kind {
         ObjectKind::Regular(this) => {
           for (name, &(vis, expr)) in &this.fields {
-            if !seen.insert(name) {
+            if !seen.insert(name.clone()) {
               continue;
             }
             ret.push((name.clone(), vis, Field::Expr(self.set_this(&this.env), expr)));
@@ -152,10 +152,10 @@ impl Object {
         }
         ObjectKind::Std => {
           for (name, field) in StdField::all() {
-            if !seen.insert(name) {
+            if !seen.insert(name.clone()) {
               continue;
             }
-            ret.push((name.clone(), Visibility::Hidden, Field::Std(field)));
+            ret.push((name, Visibility::Hidden, Field::Std(field)));
           }
         }
       }
@@ -213,9 +213,9 @@ pub(crate) enum StdField {
 }
 
 impl StdField {
-  fn all() -> impl Iterator<Item = (&'static Str, Self)> {
-    std::iter::once((&Str::thisFile, StdField::ThisFile))
-      .chain(StdFn::ALL.iter().map(|(a, b)| (a, StdField::Fn(*b))))
+  fn all() -> impl Iterator<Item = (Str, Self)> {
+    let it = StdFn::ALL.into_iter().map(|(a, b)| (a, StdField::Fn(b)));
+    std::iter::once((Str::thisFile, StdField::ThisFile)).chain(it)
   }
 }
 

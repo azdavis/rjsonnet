@@ -186,55 +186,57 @@ fn main() {
   drop(names);
   drop(contents);
 
-  let impl_str_idx_and_arena = {
-    let str_idx_constants = all().enumerate().map(|(idx, S { name, .. })| {
+  let builtin_str = {
+    let variants = all().map(|S { name, .. }| {
       let name = format_ident!("{name}");
-      let idx = u32::try_from(idx).expect("convert usize to u32");
-      quote! { const #name: Self = Self(#idx); }
+      quote! { #name, }
     });
-    let str_idx_debug_arms = all().enumerate().map(|(idx, S { content, .. })| {
-      let idx = u32::try_from(idx).expect("convert usize to u32");
-      quote! { #idx => d.field(&#content) }
-    });
-    let capacity = all().count();
-    let str_arena_inserts = all().map(|S { name, content }| {
+    let as_static_str_arms = all().map(|S { name, content }| {
       let name = format_ident!("{name}");
-      quote! { assert_eq!(StrIdx::#name, ret.mk_idx(bs(#content))); }
+      quote! { Self::#name => #content, }
+    });
+    let from_str_arms = all().map(|S { name, content }| {
+      let name = format_ident!("{name}");
+      quote! { #content => Self::#name, }
     });
 
     quote! {
-      // TODO use a Static variant of StrIdx/Str for compile time known strings? might also want to
-      // use phf for lookup
-      #[allow(non_upper_case_globals)]
-      impl StrIdx {
-        #(#str_idx_constants)*
+      #[allow(non_camel_case_types)]
+      #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+      pub(crate) enum BuiltinStr {
+        #(#variants)*
       }
 
-      impl fmt::Debug for StrIdx {
+      impl BuiltinStr {
         #[allow(clippy::too_many_lines)]
-        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-          let mut d = f.debug_tuple("StrIdx");
-          match self.to_u32() {
-            #(#str_idx_debug_arms,)*
-            n => d.field(&n),
-          };
-          d.finish()
+        pub(crate) const fn as_static_str(self) -> &'static str {
+          match self {
+            #(#as_static_str_arms)*
+          }
         }
       }
 
-      fn bs(s: &str) -> Box<str> {
-        s.to_owned().into_boxed_str()
+      // TODO: make this faster with phf?
+      impl std::str::FromStr for BuiltinStr {
+        type Err = NotBuiltinStr;
+
+        #[allow(clippy::too_many_lines)]
+        fn from_str(s: &str) -> Result<Self, Self::Err> {
+          let ret = match s {
+            #(#from_str_arms)*
+            _ => return Err(NotBuiltinStr(())),
+          };
+          Ok(ret)
+        }
       }
 
-      impl Default for StrArena {
-        #[allow(clippy::too_many_lines)]
-        fn default() -> Self {
-          let mut ret = Self {
-            idx_to_contents: Vec::with_capacity(#capacity),
-            contents_to_idx: FxHashMap::default(),
-          };
-          #(#str_arena_inserts)*
-          ret
+      pub(crate) struct NotBuiltinStr(());
+
+      impl NotBuiltinStr {
+        #[doc = "NOTE: only call this when we know the string just came from a string arena, "]
+        #[doc = "and is therefore known to be NOT a builtin"]
+        pub(crate) fn from_str_arena() -> Self {
+          Self(())
         }
       }
     }
@@ -251,7 +253,7 @@ fn main() {
         } else {
           quote! {}
         };
-        quote! { #vis const #name: Self = Self(StrIdx::#name); }
+        quote! { #vis const #name: Self = Self::builtin(BuiltinStr::#name); }
       });
 
     quote! {
@@ -265,7 +267,7 @@ fn main() {
   let impl_str = {
     let constants = strings().map(|S { name, .. }| {
       let name = format_ident!("{name}");
-      quote! { pub const #name: Self = Self(StrRepr::Idx(StrIdx::#name)); }
+      quote! { pub const #name: Self = Self::builtin(BuiltinStr::#name); }
     });
 
     quote! {
@@ -325,11 +327,9 @@ fn main() {
   let contents = quote! {
     pub const _GENERATED_BY: &str = #file;
 
-    use crate::{Id, Str, StrRepr, StrIdx, StrArena};
-    use rustc_hash::FxHashMap;
-    use std::fmt;
+    use crate::{Id, Str};
 
-    #impl_str_idx_and_arena
+    #builtin_str
 
     #impl_id
 

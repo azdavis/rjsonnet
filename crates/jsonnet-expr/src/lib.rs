@@ -12,6 +12,7 @@ pub use generated::{std_fn, StdFn};
 pub use la_arena::{Arena, ArenaMap, Idx};
 
 use always::always;
+use generated::{BuiltinStr, NotBuiltinStr};
 use rustc_hash::FxHashMap;
 use std::{collections::hash_map::Entry, fmt};
 
@@ -468,20 +469,53 @@ pub struct Str(StrRepr);
 impl Str {
   pub fn apply(&mut self, subst: &Subst) {
     match &mut self.0 {
-      StrRepr::Idx(idx) => *idx = subst.strings[idx],
+      StrRepr::Copy(repr) => repr.apply(subst),
       StrRepr::Alloc(_) => {}
     }
+  }
+
+  pub(crate) const fn builtin(bs: BuiltinStr) -> Self {
+    Self(StrRepr::Copy(CopyStrRepr::Builtin(bs)))
   }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 enum StrRepr {
-  Idx(StrIdx),
+  Copy(CopyStrRepr),
   Alloc(Box<str>),
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+enum CopyStrRepr {
+  Builtin(BuiltinStr),
+  Idx(StrIdx),
+}
+
+impl CopyStrRepr {
+  fn apply(&mut self, subst: &Subst) {
+    match self {
+      CopyStrRepr::Builtin(_) => {}
+      CopyStrRepr::Idx(idx) => *idx = subst.strings[&idx],
+    }
+  }
+}
+
+struct DisplayCopyStrRepr<'a> {
+  repr: CopyStrRepr,
+  ar: &'a StrArena,
+}
+
+impl fmt::Display for DisplayCopyStrRepr<'_> {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    match self.repr {
+      CopyStrRepr::Builtin(bs) => bs.as_static_str().fmt(f),
+      CopyStrRepr::Idx(idx) => self.ar.get_idx(idx).fmt(f),
+    }
+  }
+}
+
 /// An interned string, which is an index into a string arena.
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 struct StrIdx(u32);
 
 impl StrIdx {
@@ -491,10 +525,6 @@ impl StrIdx {
 
   fn to_usize(self) -> usize {
     always::convert::u32_to_usize(self.0)
-  }
-
-  fn to_u32(self) -> u32 {
-    self.0
   }
 }
 
@@ -509,14 +539,16 @@ impl fmt::Display for DisplayStrIdx<'_> {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct StrArena {
   idx_to_contents: Vec<Box<str>>,
   contents_to_idx: FxHashMap<Box<str>, StrIdx>,
 }
 
 impl StrArena {
-  fn mk_idx(&mut self, contents: Box<str>) -> StrIdx {
+  /// Should only call this when we know the contents are NOT one of the builtin strings. The
+  /// `NotBuiltinStr` argument serves as a witness to this fact.
+  fn dangerous_mk_idx(&mut self, contents: Box<str>, _: NotBuiltinStr) -> StrIdx {
     match self.contents_to_idx.entry(contents) {
       Entry::Occupied(entry) => *entry.get(),
       Entry::Vacant(entry) => {
@@ -528,23 +560,33 @@ impl StrArena {
     }
   }
 
+  fn mk_copy_repr(&mut self, contents: Box<str>) -> CopyStrRepr {
+    match contents.as_ref().parse::<BuiltinStr>() {
+      Ok(bs) => CopyStrRepr::Builtin(bs),
+      Err(nbs) => CopyStrRepr::Idx(self.dangerous_mk_idx(contents, nbs)),
+    }
+  }
+
   /// inserts the contents if it was not in the arena already
   pub fn str(&mut self, contents: Box<str>) -> Str {
-    Str(StrRepr::Idx(self.mk_idx(contents)))
+    Str(StrRepr::Copy(self.mk_copy_repr(contents)))
   }
 
   /// uses the contents if it was in the arena already, else does NOT insert
   #[must_use]
   pub fn str_shared(&self, contents: Box<str>) -> Str {
     // invariant: if there is a str idx for the contents, always return that instead of allocating
-    match self.contents_to_idx.get(contents.as_ref()) {
-      Some(idx) => Str(StrRepr::Idx(*idx)),
-      None => Str(StrRepr::Alloc(contents)),
+    match contents.as_ref().parse::<BuiltinStr>() {
+      Ok(bs) => Str(StrRepr::Copy(CopyStrRepr::Builtin(bs))),
+      Err(_) => match self.contents_to_idx.get(contents.as_ref()) {
+        Some(idx) => Str(StrRepr::Copy(CopyStrRepr::Idx(*idx))),
+        None => Str(StrRepr::Alloc(contents)),
+      },
     }
   }
 
   pub fn id(&mut self, contents: Box<str>) -> Id {
-    Id(self.mk_idx(contents))
+    Id(self.mk_copy_repr(contents))
   }
 
   fn get_idx(&self, idx: StrIdx) -> &str {
@@ -554,7 +596,10 @@ impl StrArena {
   #[must_use]
   pub fn get<'a>(&'a self, s: &'a Str) -> &'a str {
     match &s.0 {
-      StrRepr::Idx(idx) => self.get_idx(*idx),
+      StrRepr::Copy(repr) => match repr {
+        CopyStrRepr::Builtin(b) => b.as_static_str(),
+        CopyStrRepr::Idx(idx) => self.get_idx(*idx),
+      },
       StrRepr::Alloc(s) => s.as_ref(),
     }
   }
@@ -562,16 +607,20 @@ impl StrArena {
 
 /// An identifier.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct Id(StrIdx);
+pub struct Id(CopyStrRepr);
 
 impl Id {
   #[must_use]
   pub fn display(self, ar: &StrArena) -> impl fmt::Display + '_ {
-    DisplayStrIdx { idx: self.0, ar }
+    DisplayCopyStrRepr { repr: self.0, ar }
   }
 
   pub fn apply(&mut self, subst: &Subst) {
-    self.0 = subst.strings[&self.0];
+    self.0.apply(subst);
+  }
+
+  pub(crate) const fn builtin(bs: BuiltinStr) -> Self {
+    Self(CopyStrRepr::Builtin(bs))
   }
 }
 
@@ -594,7 +643,7 @@ impl Subst {
     let mut ret = Subst::default();
     for (idx, s) in other.strings.idx_to_contents.into_iter().enumerate() {
       let old = StrIdx::from_usize(idx);
-      let new = art.strings.mk_idx(s);
+      let new = art.strings.dangerous_mk_idx(s, NotBuiltinStr::from_str_arena());
       always!(ret.strings.insert(old, new).is_none());
     }
     art.paths.combine(other.paths, &mut |old, new| {
