@@ -57,13 +57,11 @@ impl St {
         "mismatched in-ness for files ({was_in_files}) and extra ({was_in_files_extra})"
       );
       let ret = self.dependents.remove(&path_id);
-      if ret.is_some() {
-        always!(
-          was_in_files,
-          "{} was in dependents, but not in files",
-          self.paths().get_path(path_id).as_path().display()
-        );
-      }
+      always!(
+        ret.is_none() || was_in_files,
+        "{} was in dependents, but not in files",
+        self.paths().get_path(path_id).as_path().display()
+      );
       ret
     });
     let updated: BTreeSet<_> = updated.flatten().collect();
