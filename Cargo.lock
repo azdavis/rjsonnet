@@ -829,6 +829,7 @@ dependencies = [
  "env_logger",
  "jsonnet-analyze",
  "jsonnet-eval",
+ "log",
  "paths",
  "rustc-hash",
  "serde_json",
