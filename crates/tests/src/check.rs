@@ -9,6 +9,7 @@ where
   A: Iterator<Item = (&'a str, &'a str)>,
   B: Iterator<Item = &'a str>,
 {
+  _ = env_logger::builder().is_test(true).try_init();
   let files: FxHashMap<_, _> =
     files.map(|(path, contents)| (PathBuf::from(path), contents.to_owned())).collect();
   let fs = paths::MemoryFileSystem::new(files);
