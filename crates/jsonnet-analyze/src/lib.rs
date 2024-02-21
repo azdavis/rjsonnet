@@ -90,9 +90,7 @@ impl St {
     F: Sync + Send + paths::FileSystem,
   {
     let got = get_isolated_str(path.as_canonical_path(), contents, &self.root_dirs, fs);
-    let Some(art) = got else {
-      return PathMap::default();
-    };
+    let Some(art) = got else { return PathMap::default() };
     let path = self.path_id(path);
     self.update(fs, BTreeSet::new(), vec![(path, art)])
   }
