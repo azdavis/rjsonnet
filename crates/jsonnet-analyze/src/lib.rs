@@ -145,7 +145,7 @@ impl St {
 
     // compute a mapping from path id p to non-empty set of path ids S, s.t. for all q in S, q was
     // just added, and p depends on q.
-    log::info!("compute dependency mapping");
+    log::info!("compute dependency mapping on {} files", self.files.len());
     let added_dependencies = self.files.par_iter().filter_map(|(&path, file)| {
       let dependencies: BTreeSet<_> = file
         .imports()
