@@ -80,18 +80,15 @@ impl St {
 
   /// Updates one file.
   #[must_use]
-  // TODO remove
-  #[allow(clippy::needless_pass_by_value)]
   pub fn update_one<F>(
     &mut self,
     fs: &F,
-    path: paths::CanonicalPathBuf,
+    path: &paths::CanonicalPath,
     contents: &str,
   ) -> PathMap<Vec<Diagnostic>>
   where
     F: Sync + Send + paths::FileSystem,
   {
-    let path = path.as_canonical_path();
     let got = get_isolated_str(path, contents, &self.root_dirs, fs);
     let Some(mut art) = got else { return PathMap::default() };
     // since we have &mut self, and no parallelism (as opposed to in update_many), we could get the

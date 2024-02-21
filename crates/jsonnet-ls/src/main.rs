@@ -43,7 +43,7 @@ impl lang_srv::State for State {
   where
     F: Sync + Send + paths::FileSystem,
   {
-    self.0.update_one(fs, path, contents)
+    self.0.update_one(fs, path.as_canonical_path(), contents)
   }
 
   /// - TODO take a text range thing
