@@ -193,19 +193,6 @@ impl St {
     let mut ret = PathMap::<Vec<Diagnostic>>::default();
     while !updated.is_empty() {
       let cx = self.cx();
-      log::info!("manifest in parallel");
-      // manifest in parallel for all updated files. TODO this probably doesn't respect ordering
-      // requirements among the updated. what if one updated file depends on another updated file?
-      let updated_vals = updated.par_iter().flat_map(|&path| {
-        // only exec if no errors in the file so far.
-        self.files_extra[&path].errors.is_empty().then(|| {
-          let val = jsonnet_eval::get_exec(cx, path);
-          let val = val.and_then(|val| jsonnet_eval::get_manifest(cx, val));
-          (path, val)
-        })
-      });
-      let updated_vals: PathMap<_> = updated_vals.collect();
-      log::info!("updated {} vals", updated_vals.len());
 
       let iter = updated.iter().map(|&path| {
         let art = &self.files_extra[&path];
@@ -233,16 +220,32 @@ impl St {
       ret.extend(iter);
       let new_len = ret.len();
       log::info!("added {} diagnostics", new_len - old_len);
-      updated.clear();
+
+      log::info!("manifest in parallel");
+      // manifest in parallel for all updated files. TODO this probably doesn't respect ordering
+      // requirements among the updated. what if one updated file depends on another updated file?
+      let iter = updated.par_iter().filter_map(|&path| {
+        // only exec if no errors in the file so far.
+        self.files_extra[&path].errors.is_empty().then(|| {
+          let val = jsonnet_eval::get_exec(cx, path);
+          let val = val.and_then(|val| jsonnet_eval::get_manifest(cx, val));
+          (path, val)
+        })
+      });
+      let mut updated_vals: PathMap<_> = iter.collect();
+      log::info!("updated {} vals", updated_vals.len());
 
       log::info!("getting further dependents");
-      for (path_id, json) in updated_vals {
-        // TODO could check if new json == old json and not add dependents if same
-        self.json.insert(path_id, json);
+      let iter = updated.into_iter().flat_map(|path_id| {
+        if let Some(json) = updated_vals.remove(&path_id) {
+          // TODO could check if new json == old json and not add dependents if same
+          self.json.insert(path_id, json);
+        }
         // TODO doesn't skip dependents that were already updated
         let dependents = self.dependents.get(&path_id);
-        updated.extend(dependents.into_iter().flatten());
-      }
+        dependents.into_iter().flatten().copied()
+      });
+      updated = iter.collect();
       log::info!("found {} dependents", updated.len());
     }
     ret
