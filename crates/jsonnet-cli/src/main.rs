@@ -11,6 +11,7 @@ use std::process::ExitCode;
 fn run() -> usize {
   let logger_env = env_logger::Env::default();
   env_logger::try_init_from_env(logger_env).expect("init logger");
+
   let pwd = std::env::current_dir().expect("current dir");
   let fs = paths::RealFileSystem::default();
   let canonical_pwd = fs.canonical(pwd.as_path()).expect("canonical");
@@ -28,6 +29,7 @@ fn run() -> usize {
 
   let mut ret = 0usize;
   let mut st = jsonnet_analyze::St::new(manifest, roots);
+
   for arg in files {
     let p = PathBuf::from(arg);
     let p = match fs.canonical(p.as_path()) {
@@ -37,12 +39,16 @@ fn run() -> usize {
         continue;
       }
     };
+
     let ds_map = st.update_many(&fs, Vec::new(), vec![p]);
+
     for (path, ds) in ds_map {
       let path = st.paths().get_path(path).as_path();
       let path = path.strip_prefix(pwd.as_path()).unwrap_or(path);
       let path = path.display();
+
       ret += ds.len();
+
       if name_only {
         eprintln!("{path}");
       } else {
@@ -52,6 +58,7 @@ fn run() -> usize {
       }
     }
   }
+
   ret
 }
 
