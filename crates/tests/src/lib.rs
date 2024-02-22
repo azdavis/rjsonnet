@@ -5,5 +5,6 @@
 
 mod check;
 mod misc;
+mod repo;
 mod smoke;
 mod website;

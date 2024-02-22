@@ -1,3 +1,5 @@
+//! Tests for the standard library.
+
 use crate::check::JsonnetInput;
 
 #[test]

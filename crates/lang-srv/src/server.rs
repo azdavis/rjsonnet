@@ -1,3 +1,8 @@
+//! The server, which contains language server specific state.
+//!
+//! Notably does not contain the analysis state because then the borrowing would get annoying. A
+//! mild limitation of Rust at time of writing.
+
 use crate::convert;
 use always::always;
 use anyhow::{bail, Result};

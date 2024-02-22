@@ -1,3 +1,7 @@
+//! A trait that describes what the "brain" of a language server must implement.
+//!
+//! This "brain" is not concerned with low-level LSP details like message formatting.
+
 use anyhow::Result;
 
 /// The state of a language server.

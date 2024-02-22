@@ -1,3 +1,7 @@
+//! Miscellaneous tests.
+//!
+//! If you're not sure where a test should go, put it here.
+
 use crate::check::{Input, JsonnetInput};
 
 #[test]

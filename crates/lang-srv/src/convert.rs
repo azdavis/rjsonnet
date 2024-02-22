@@ -1,3 +1,5 @@
+//! Conversions between common types.
+
 use anyhow::{bail, Result};
 use lsp_types::Url;
 

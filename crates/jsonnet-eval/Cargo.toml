@@ -13,8 +13,8 @@ test = false
 doctest = false
 
 [dependencies]
-rustc-hash.workspace = true
 paths.workspace = true
+rustc-hash.workspace = true
 serde_json.workspace = true
 
 always.path = "../always"

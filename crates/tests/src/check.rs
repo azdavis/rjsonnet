@@ -1,3 +1,5 @@
+//! Testing infra.
+
 use paths::FileSystem;
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::path::{Path, PathBuf};

@@ -1,3 +1,5 @@
+//! Tests for numbers, both integral and floating-point.
+
 use crate::check::JsonnetInput;
 
 #[test]

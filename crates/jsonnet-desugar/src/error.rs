@@ -1,3 +1,5 @@
+//! Errors.
+
 use std::fmt;
 
 /// An error when desugaring.

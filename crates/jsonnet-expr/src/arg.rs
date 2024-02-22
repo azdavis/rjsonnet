@@ -1,3 +1,5 @@
+//! Utilities for function arguments.
+
 use crate::{ExprMust, Id, StrArena};
 use std::fmt;
 

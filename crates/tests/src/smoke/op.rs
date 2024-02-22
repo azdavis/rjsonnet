@@ -1,3 +1,5 @@
+//! Tests for operators, like `+` and `!`.
+
 use crate::check::{Input, JsonnetInput};
 
 #[test]

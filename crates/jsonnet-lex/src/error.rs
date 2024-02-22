@@ -1,3 +1,5 @@
+//! Errors.
+
 use core::fmt;
 
 /// A lex error.

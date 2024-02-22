@@ -1,3 +1,5 @@
+//! Errors.
+
 use jsonnet_expr::{arg, Id, Str};
 use std::fmt::{self, Debug};
 

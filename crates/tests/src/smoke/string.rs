@@ -1,3 +1,5 @@
+//! Tests for strings, e.g. escape sequences like \n.
+
 use crate::check::JsonnetInput;
 
 #[test]

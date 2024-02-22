@@ -1,3 +1,5 @@
+//! Smoke tests, intended to be the smallest possible test for a given feature.
+
 mod array;
 mod comment;
 mod keyword_lit;

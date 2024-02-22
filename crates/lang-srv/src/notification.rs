@@ -1,3 +1,5 @@
+//! Handling notifications from the client, e.g. "these files changed".
+
 use crate::{convert, server::Server, state::State, util};
 use anyhow::{bail, Result};
 use std::ops::ControlFlow;

@@ -1,3 +1,5 @@
+//! Tests for arrays, aka lists, aka the stuff surrounded by `[]`.
+
 use crate::check::JsonnetInput;
 
 #[test]

@@ -50,10 +50,10 @@ fn run() -> usize {
       ret += ds.len();
 
       if name_only {
-        eprintln!("{path}");
+        println!("{path}");
       } else {
         for d in ds {
-          eprintln!("{path}:{}: {}", d.range, d.message);
+          println!("{path}:{}: {}", d.range, d.message);
         }
       }
     }
@@ -65,11 +65,11 @@ fn run() -> usize {
 fn main() -> ExitCode {
   let num_errors = run();
   if num_errors == 0 {
-    eprintln!("no errors!");
+    println!("no errors!");
     ExitCode::SUCCESS
   } else {
     let s = if num_errors == 1 { "" } else { "s" };
-    eprintln!("{num_errors} error{s}");
+    println!("{num_errors} error{s}");
     ExitCode::FAILURE
   }
 }

@@ -1,3 +1,5 @@
+//! Tests for comments in their various forms: `//`, `#`, and `/* */`.
+
 use crate::check::JsonnetInput;
 
 #[test]

@@ -1,6 +1,7 @@
+//! A thin wrapper around [`jsonnet_escape`].
+
 use crate::{error, st::St};
 use always::always;
-use jsonnet_escape::Output;
 use jsonnet_syntax::{ast, kind::SyntaxToken};
 
 struct EscapeOutput<'st> {
@@ -18,7 +19,7 @@ impl<'st> EscapeOutput<'st> {
   }
 }
 
-impl<'st> Output for EscapeOutput<'st> {
+impl<'st> jsonnet_escape::Output for EscapeOutput<'st> {
   fn err(&mut self, _: usize, e: jsonnet_escape::Error) {
     self.st.err_token(self.token.clone(), error::Kind::Escape(e));
   }

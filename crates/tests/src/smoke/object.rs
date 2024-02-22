@@ -1,3 +1,5 @@
+//! Tests for objects, i.e. the things surrounded by `{}`.
+
 use crate::check::JsonnetInput;
 
 #[test]

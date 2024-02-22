@@ -1,3 +1,5 @@
+//! The immutable context under which we desugar.
+
 use paths::{CanonicalPath, CanonicalPathBuf};
 
 #[derive(Clone, Copy)]

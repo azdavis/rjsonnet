@@ -10,6 +10,7 @@
     "azdavis",
     "bitand",
     "canonicalize",
+    "clippy",
     "codepoint",
     "consts",
     "conv",
@@ -23,6 +24,7 @@
     "Jsonml",
     "jsonnet",
     "libsonnet",
+    "losslessly",
     "lstrip",
     "maxsplits",
     "Mojito",
@@ -37,6 +39,7 @@
     "rposition",
     "rstrip",
     "rustc",
+    "rustfmt",
     "substr",
     "tailstrict",
     "templating",
@@ -47,5 +50,6 @@
     "walkdir",
     "xnor",
     "xtask"
-  ]
+  ],
+  "markdown.validate.enabled": true
 }

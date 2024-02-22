@@ -1,3 +1,5 @@
+//! The mutable state under which we desugar.
+
 use crate::error::{self, Error};
 use jsonnet_expr::Arenas;
 use jsonnet_syntax::{ast, kind::SyntaxToken};

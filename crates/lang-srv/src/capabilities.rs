@@ -1,3 +1,5 @@
+//! The capabilities of the server, which we advertise to the client.
+
 pub(crate) fn get() -> lsp_types::ServerCapabilities {
   lsp_types::ServerCapabilities {
     text_document_sync: Some(lsp_types::TextDocumentSyncCapability::Options(

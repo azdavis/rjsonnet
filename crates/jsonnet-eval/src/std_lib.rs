@@ -1,3 +1,5 @@
+//! The standard library for Jsonnet, implemented in Rust.
+
 use crate::error::Result;
 use crate::val::jsonnet::{Array, Env, Val};
 use crate::{error, exec, mk_todo, Cx};

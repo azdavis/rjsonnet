@@ -1,3 +1,5 @@
+//! Handling requests from the client, e.g. "compute the hover text for this area of the document".
+
 use crate::{server::Server, state::State, util};
 use always::always;
 use anyhow::{bail, Result};
