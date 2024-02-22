@@ -43,9 +43,7 @@ fn import_chain() {
   );
 }
 
-// TODO fix. yes that's right, this is supposed to be allowed.
 #[test]
-#[should_panic = "file depends on itself: a.jsonnet"]
 fn import_self() {
   manifest_many(&[(
     "a.jsonnet",
