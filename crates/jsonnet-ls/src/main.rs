@@ -4,11 +4,10 @@ use always::BUG_REPORT_MSG;
 use anyhow::{bail, Result};
 
 fn main() {
-  let mut st = State::default();
+  let mut st = State(jsonnet_analyze::St::new(false, Vec::new()));
   lang_srv::run(&mut st);
 }
 
-#[derive(Default)]
 struct State(jsonnet_analyze::St);
 
 impl lang_srv::State for State {

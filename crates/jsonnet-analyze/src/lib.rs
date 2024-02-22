@@ -11,6 +11,7 @@ use std::collections::{BTreeMap, BTreeSet};
 /// The state of analysis.
 #[derive(Debug, Default)]
 pub struct St {
+  manifest: Tool,
   root_dirs: Vec<paths::CanonicalPathBuf>,
   artifacts: jsonnet_expr::Artifacts,
   files: PathMap<jsonnet_eval::JsonnetFile>,
@@ -30,8 +31,8 @@ pub struct St {
 impl St {
   /// Returns a new `St` with the given root dirs.
   #[must_use]
-  pub fn new(root_dirs: Vec<paths::CanonicalPathBuf>) -> Self {
-    Self { root_dirs, ..Default::default() }
+  pub fn new(manifest: bool, root_dirs: Vec<paths::CanonicalPathBuf>) -> Self {
+    Self { manifest: Tool(manifest), root_dirs, ..Default::default() }
   }
 
   /// Updates the state with added and removed Jsonnet paths.
@@ -221,7 +222,7 @@ impl St {
       let new_len = ret.len();
       log::info!("added {} diagnostics", new_len - old_len);
 
-      let mut updated_vals: PathMap<_> = {
+      let mut updated_vals: PathMap<_> = if self.manifest.0 {
         log::info!("manifest in parallel");
         // manifest in parallel for all updated files. TODO this probably doesn't respect ordering
         // requirements among the updated. what if one updated file depends on another updated file?
@@ -234,6 +235,8 @@ impl St {
           })
         });
         iter.collect()
+      } else {
+        PathMap::default()
       };
       log::info!("updated {} vals", updated_vals.len());
 
@@ -412,4 +415,13 @@ where
     return None;
   };
   Some(IsolatedFileArtifacts::new(contents, parent, root_dirs, &FsAdapter(fs)))
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+struct Tool(bool);
+
+impl Default for Tool {
+  fn default() -> Self {
+    Self(true)
+  }
 }
