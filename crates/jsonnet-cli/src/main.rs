@@ -8,7 +8,7 @@ use pico_args::Arguments;
 use std::process::ExitCode;
 
 fn run() -> usize {
-  let logger_env = env_logger::Env::default().default_filter_or("info");
+  let logger_env = env_logger::Env::default();
   env_logger::try_init_from_env(logger_env).expect("init logger");
   let pwd = std::env::current_dir().expect("current dir");
   let mut args = Arguments::from_env();
