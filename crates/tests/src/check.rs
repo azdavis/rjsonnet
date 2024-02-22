@@ -4,37 +4,38 @@ use std::path::{Path, PathBuf};
 
 const DEFAULT_PATH: &str = "/f.jsonnet";
 
+#[must_use]
 #[derive(Default)]
-struct Input<'a> {
+pub(crate) struct Input<'a> {
   jsonnet: FxHashMap<&'a str, JsonnetInput<'a>>,
   raw: FxHashMap<&'a str, &'a str>,
-  add: FxHashSet<&'a str>,
+  to_add: FxHashSet<&'a str>,
 }
 
 impl<'a> Input<'a> {
-  fn with_jsonnet(mut self, path: &'a str, jsonnet: JsonnetInput<'a>) -> Self {
+  pub(crate) fn with_jsonnet(mut self, path: &'a str, jsonnet: JsonnetInput<'a>) -> Self {
     assert!(self.jsonnet.insert(path, jsonnet).is_none());
     self
   }
 
   // TODO use
   #[allow(dead_code)]
-  fn with_raw(mut self, path: &'a str, contents: &'a str) -> Self {
+  pub(crate) fn with_raw(mut self, path: &'a str, contents: &'a str) -> Self {
     assert!(self.raw.insert(path, contents).is_none());
     self
   }
 
-  fn add(mut self, path: &'a str) -> Self {
-    self.add.insert(path);
+  pub(crate) fn add(mut self, path: &'a str) -> Self {
+    assert!(self.to_add.insert(path));
     self
   }
 
-  fn add_all(mut self) -> Self {
-    self.add.extend(self.jsonnet.keys().chain(self.raw.keys()).copied());
+  pub(crate) fn add_all(mut self) -> Self {
+    self.to_add.extend(self.jsonnet.keys().chain(self.raw.keys()).copied());
     self
   }
 
-  fn check(self) {
+  pub(crate) fn check(self) {
     _ = env_logger::builder().is_test(true).filter_level(log::LevelFilter::Debug).try_init();
 
     let files = std::iter::empty()
@@ -43,12 +44,13 @@ impl<'a> Input<'a> {
       .map(|(path, text)| (PathBuf::from(path), text.to_owned()));
     let fs = paths::MemoryFileSystem::new(files.collect());
 
-    let add: Vec<_> =
-      self.add.iter().map(|&path| fs.canonical(Path::new(path)).expect("canonical")).collect();
+    assert!(!self.to_add.is_empty());
+    let to_add: Vec<_> =
+      self.to_add.iter().map(|&path| fs.canonical(Path::new(path)).expect("canonical")).collect();
 
     let mut st = jsonnet_analyze::St::default();
 
-    for (path, ds) in st.update_many(&fs, Vec::new(), add) {
+    for (path, ds) in st.update_many(&fs, Vec::new(), to_add) {
       if let Some(d) = ds.first() {
         let path = st.paths().get_path(path).as_path();
         panic!("{} at {}: diagnostic: {}", path.display(), d.range, d.message);
@@ -88,23 +90,32 @@ impl<'a> Input<'a> {
   }
 }
 
-struct JsonnetInput<'a> {
+#[must_use]
+pub(crate) struct JsonnetInput<'a> {
   text: &'a str,
   outcome: &'a str,
   kind: OutcomeKind,
 }
 
 impl<'a> JsonnetInput<'a> {
-  fn manifest(text: &'a str, json: &'a str) -> Self {
+  pub(crate) fn manifest(text: &'a str, json: &'a str) -> Self {
     Self { text, outcome: json, kind: OutcomeKind::Manifest }
   }
 
-  fn string(text: &'a str, string: &'a str) -> Self {
+  pub(crate) fn manifest_self(text: &'a str) -> Self {
+    Self { text, outcome: text, kind: OutcomeKind::Manifest }
+  }
+
+  pub(crate) fn string(text: &'a str, string: &'a str) -> Self {
     Self { text, outcome: string, kind: OutcomeKind::String }
   }
 
-  fn error(text: &'a str, message: &'a str) -> Self {
+  pub(crate) fn error(text: &'a str, message: &'a str) -> Self {
     Self { text, outcome: message, kind: OutcomeKind::Error }
+  }
+
+  pub(crate) fn check_one(self) {
+    Input::default().with_jsonnet(DEFAULT_PATH, self).add_all().check();
   }
 }
 
@@ -113,56 +124,4 @@ enum OutcomeKind {
   Manifest,
   String,
   Error,
-}
-
-/// tests that for each triple of (path, jsonnet, json), each jsonnet manifests to its json.
-pub(crate) fn manifest_many(files: &[(&str, &str, &str)]) {
-  let mut inp = Input::default();
-  for &(path, jsonnet, json) in files {
-    inp = inp.with_jsonnet(path, JsonnetInput::manifest(jsonnet, json));
-  }
-  inp.add_all().check();
-}
-
-/// tests that for each triple of (path, jsonnet, json), each jsonnet manifests to its json, when
-/// adding the given paths.
-///
-/// this is similar to `manifest_many` but helps test the auto-discovery mechanism. this is where if
-/// you ask to add some files but those files import files that you didn't ask to add, the impl
-/// should discover and add them for you.
-pub(crate) fn manifest_many_add(files: &[(&str, &str, &str)], add: &[&str]) {
-  let mut inp = Input::default();
-  for &(path, jsonnet, json) in files {
-    inp = inp.with_jsonnet(path, JsonnetInput::manifest(jsonnet, json));
-  }
-  for &path in add {
-    inp = inp.add(path);
-  }
-  inp.check();
-}
-
-fn one(jsonnet: JsonnetInput<'_>) {
-  Input::default().with_jsonnet(DEFAULT_PATH, jsonnet).add_all().check();
-}
-
-/// tests that `jsonnet` manifests to the `json`.
-pub(crate) fn manifest(jsonnet: &str, json: &str) {
-  one(JsonnetInput::manifest(jsonnet, json));
-}
-
-/// tests that `s`, when treated as either jsonnet or json, manifests to the same thing.
-pub(crate) fn manifest_self(s: &str) {
-  manifest(s, s);
-}
-
-/// tests that `jsonnet` manifests to the string `want`.
-///
-/// NOTE: `want` is NOT interpreted as JSON.
-pub(crate) fn manifest_str(jsonnet: &str, want: &str) {
-  one(JsonnetInput::string(jsonnet, want));
-}
-
-/// tests that `jsonnet` execution results in an error whose message is `want`.
-pub(crate) fn exec_err(jsonnet: &str, want: &str) {
-  one(JsonnetInput::error(jsonnet, want));
 }

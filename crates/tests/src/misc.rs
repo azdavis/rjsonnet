@@ -1,21 +1,22 @@
-use crate::check::{manifest, manifest_many, manifest_many_add};
+use crate::check::{Input, JsonnetInput};
 
 #[test]
 fn func_arg_id_not_named_arg() {
-  manifest(
+  JsonnetInput::manifest(
     r"
 local obj = { field: 3 };
 local func(x, y) = x;
 func(obj.field, 4)
 ",
     "3",
-  );
+  )
+  .check_one();
 }
 
 #[test]
 #[should_panic = "not yet implemented: std.makeArray"]
 fn for_comp_obj() {
-  manifest(
+  JsonnetInput::manifest(
     r#"
 {
   [x]: false
@@ -28,36 +29,40 @@ fn for_comp_obj() {
   "b": false
 }
 "#,
-  );
+  )
+  .check_one();
 }
 
 #[test]
 fn import_chain() {
-  manifest_many_add(
-    &[
-      ("a.jsonnet", "6 - 5 + 2", "3"),
-      ("b.jsonnet", "(import 'a.jsonnet') + 2", "5"),
-      ("c.jsonnet", "(import 'b.jsonnet') + 4", "9"),
-    ],
-    &["c.jsonnet"],
-  );
+  Input::default()
+    .with_jsonnet("a.jsonnet", JsonnetInput::manifest("6 - 5 + 2", "3"))
+    .with_jsonnet("b.jsonnet", JsonnetInput::manifest("(import 'a.jsonnet') + 2", "5"))
+    .with_jsonnet("c.jsonnet", JsonnetInput::manifest("(import 'b.jsonnet') + 4", "9"))
+    .add("c.jsonnet")
+    .check();
 }
 
 #[test]
 fn import_self() {
-  manifest_many(&[(
-    "a.jsonnet",
-    r#"
+  Input::default()
+    .with_jsonnet(
+      "a.jsonnet",
+      JsonnetInput::manifest(
+        r#"
 {
   foo: (import "a.jsonnet").bar + 1,
   bar: 3,
 }
 "#,
-    r#"
+        r#"
 {
   "foo": 4,
   "bar": 3
 }
 "#,
-  )]);
+      ),
+    )
+    .add_all()
+    .check();
 }

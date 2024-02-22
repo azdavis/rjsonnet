@@ -1,32 +1,35 @@
-use crate::check::manifest;
+use crate::check::JsonnetInput;
 
 #[test]
 fn slash_slash() {
-  manifest(
+  JsonnetInput::manifest(
     r"
 1 + // 2 +
 3
 ",
     "4.0",
-  );
+  )
+  .check_one();
 }
 
 #[test]
 fn hash() {
-  manifest(
+  JsonnetInput::manifest(
     r"
 1 # + 2
 ",
     "1.0",
-  );
+  )
+  .check_one();
 }
 
 #[test]
 fn slash_star() {
-  manifest(
+  JsonnetInput::manifest(
     r"
 2 /* * 2 */ + 3
 ",
     "5.0",
-  );
+  )
+  .check_one();
 }

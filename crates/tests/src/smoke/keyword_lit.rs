@@ -1,16 +1,16 @@
-use crate::check::manifest_self;
+use crate::check::JsonnetInput;
 
 #[test]
 fn bool_true() {
-  manifest_self("true");
+  JsonnetInput::manifest_self("true").check_one();
 }
 
 #[test]
 fn bool_false() {
-  manifest_self("false");
+  JsonnetInput::manifest_self("false").check_one();
 }
 
 #[test]
 fn null() {
-  manifest_self("null");
+  JsonnetInput::manifest_self("null").check_one();
 }

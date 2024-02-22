@@ -1,13 +1,13 @@
-use crate::check::{manifest, manifest_self};
+use crate::check::JsonnetInput;
 
 #[test]
 fn empty() {
-  manifest_self("{}");
+  JsonnetInput::manifest_self("{}").check_one();
 }
 
 #[test]
 fn non_empty() {
-  manifest(
+  JsonnetInput::manifest(
     r#"
 {
   num: 1,
@@ -24,12 +24,13 @@ fn non_empty() {
   "foo quz": null
 }
 "#,
-  );
+  )
+  .check_one();
 }
 
 #[test]
 fn self_() {
-  manifest(
+  JsonnetInput::manifest(
     r"
 {
   a: 3,
@@ -42,12 +43,13 @@ fn self_() {
   "b": 4
 }
 "#,
-  );
+  )
+  .check_one();
 }
 
 #[test]
 fn super_() {
-  manifest(
+  JsonnetInput::manifest(
     r"
 local base = {
   a: 3,
@@ -72,36 +74,39 @@ base + {
   "super_b": 6
 }
 "#,
-  );
+  )
+  .check_one();
 }
 
 #[test]
 fn explicit_plus() {
-  manifest(
+  JsonnetInput::manifest(
     r"
 { a: 1, b: 2 } + { a: 3, c: 4 }
 ",
     r#"
 { "a": 3, "b": 2, "c": 4 }
 "#,
-  );
+  )
+  .check_one();
 }
 
 #[test]
 fn implicit_plus() {
-  manifest(
+  JsonnetInput::manifest(
     r"
 { a: 1 } { b: 2 }
 ",
     r#"
 { "a": 1, "b": 2 }
 "#,
-  );
+  )
+  .check_one();
 }
 
 #[test]
 fn self_2() {
-  manifest(
+  JsonnetInput::manifest(
     r"
 local x = {
   a: 3,
@@ -121,12 +126,13 @@ local x = {
   }
 }
 "#,
-  );
+  )
+  .check_one();
 }
 
 #[test]
 fn self_3() {
-  manifest(
+  JsonnetInput::manifest(
     r"
 {
   a: 1,
@@ -149,5 +155,6 @@ fn self_3() {
   "outer_self_a": 1
 }
 "#,
-  );
+  )
+  .check_one();
 }

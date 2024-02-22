@@ -1,27 +1,29 @@
-use crate::check::{manifest, manifest_self};
+use crate::check::JsonnetInput;
 
 #[test]
 fn empty() {
-  manifest_self("[]");
+  JsonnetInput::manifest_self("[]").check_one();
 }
 
 #[test]
 fn non_empty() {
-  manifest_self(
+  JsonnetInput::manifest_self(
     r#"
 [1, true, "foo"]
 "#,
-  );
+  )
+  .check_one();
 }
 
 #[test]
 fn plus() {
-  manifest(
+  JsonnetInput::manifest(
     r"
 [1, 3] + [2, 4]
 ",
     r"
 [1, 3, 2, 4]
 ",
-  );
+  )
+  .check_one();
 }

@@ -1,83 +1,90 @@
-use crate::check::manifest_str;
+use crate::check::JsonnetInput;
 
 #[test]
 fn double() {
-  manifest_str(
+  JsonnetInput::string(
     r#"
 "hi"
 "#,
     "hi",
-  );
+  )
+  .check_one();
 }
 
 #[test]
 fn single() {
-  manifest_str("'hi'", "hi");
+  JsonnetInput::string("'hi'", "hi").check_one();
 }
 
 #[test]
 fn double_escape() {
-  manifest_str(
+  JsonnetInput::string(
     r#"
 "hi\nthere\"my'friend\'buddy"
 "#,
     "hi\nthere\"my'friend'buddy",
-  );
+  )
+  .check_one();
 }
 
 #[test]
 fn single_escape() {
-  manifest_str(
+  JsonnetInput::string(
     r#"
 'hi\nthere"my\'friend\"buddy'
 "#,
     "hi\nthere\"my'friend\"buddy",
-  );
+  )
+  .check_one();
 }
 
 #[test]
 fn double_verbatim() {
-  manifest_str(
+  JsonnetInput::string(
     r#"
 @"hi"
 "#,
     "hi",
-  );
+  )
+  .check_one();
 }
 
 #[test]
 fn single_verbatim() {
-  manifest_str(
+  JsonnetInput::string(
     r"
 @'hi'
 ", "hi",
-  );
+  )
+  .check_one();
 }
 
 #[test]
 fn double_verbatim_escape() {
-  manifest_str(
+  JsonnetInput::string(
     r#"
 @"hi "" '' \\ \n there"
 "#,
     r#"hi " '' \\ \n there"#,
-  );
+  )
+  .check_one();
 }
 
 #[test]
 #[should_panic = "unclosed string"]
 fn unclosed() {
-  manifest_str("'", "");
+  JsonnetInput::string("'", "").check_one();
 }
 
 #[test]
 fn text_block() {
-  manifest_str(
+  JsonnetInput::string(
     r"
 |||
   hi there
   buddy
 |||",
     "hi there\nbuddy\n",
-  );
+  )
+  .check_one();
 }

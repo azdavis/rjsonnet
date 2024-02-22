@@ -1,34 +1,29 @@
-use crate::check::manifest_many;
+use crate::check::{Input, JsonnetInput};
 
 #[test]
 fn add_str() {
-  manifest_many(&[
-    (
-      "/a.jsonnet",
-      r"
+  Input::default()
+    .with_jsonnet(
+      "a.jsonnet",
+      JsonnetInput::manifest(
+        r"
 '123'
 ",
-      r#"
+        r#"
 "123"
 "#,
-    ),
-    (
-      "/b.jsonnet",
-      r"
-4
-",
-      r"
-4
-",
-    ),
-    (
-      "/c.jsonnet",
-      r"
+      ),
+    )
+    .with_jsonnet("b.jsonnet", JsonnetInput::manifest("4", "4"))
+    .with_jsonnet(
+      "c.jsonnet",
+      JsonnetInput::string(
+        r"
 (import 'a.jsonnet') + (import 'b.jsonnet')
 ",
-      r#"
-"1234"
-"#,
-    ),
-  ]);
+        "1234",
+      ),
+    )
+    .add_all()
+    .check();
 }

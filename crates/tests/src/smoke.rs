@@ -7,105 +7,106 @@ mod op;
 mod std_lib;
 mod string;
 
-use crate::check::{exec_err, manifest, manifest_many};
+use crate::check::{Input, JsonnetInput};
 
 #[test]
 fn function() {
-  manifest(
+  JsonnetInput::manifest(
     r"
 local inc = function(x) x + 1;
 inc(3)
 ",
     "4",
-  );
+  )
+  .check_one();
 }
 
 #[test]
 fn undef_fn_arg() {
-  exec_err(
+  JsonnetInput::error(
     r"
 local f = function(b, x) if b then x else 1;
 f(false)
 ",
     "parameter `x` was not defined at the function call site",
-  );
+  )
+  .check_one();
 }
 
 #[test]
 #[should_panic = "expected expression"]
 fn parse_fail() {
-  manifest("if else", "0");
+  JsonnetInput::manifest("if else", "0").check_one();
 }
 
 #[test]
 fn if_else() {
-  manifest("if 1 < 2 then 3 else 4", "3.0");
+  JsonnetInput::manifest("if 1 < 2 then 3 else 4", "3.0").check_one();
 }
 
 #[test]
 fn if_without_else_yes() {
-  manifest("if 1 < 2 then 3", "3.0");
+  JsonnetInput::manifest("if 1 < 2 then 3", "3.0").check_one();
 }
 
 #[test]
 fn if_without_else_no() {
-  manifest("if 1 > 2 then 3", "null");
+  JsonnetInput::manifest("if 1 > 2 then 3", "null").check_one();
 }
 
 #[test]
 fn error() {
-  exec_err(
+  JsonnetInput::error(
     r#"
 error "oh no!"
 "#,
     "explicit `error`: oh no!",
-  );
+  )
+  .check_one();
 }
 
 #[test]
 fn assert() {
-  manifest(
+  JsonnetInput::manifest(
     r#"
 assert 2 + 2 < 5 : "math makes sense";
 0
 "#,
     "0.0",
-  );
+  )
+  .check_one();
 }
 
 #[test]
 fn local() {
-  manifest(
+  JsonnetInput::manifest(
     r"
 local x = 3;
 x + 1
 ",
     "4.0",
-  );
+  )
+  .check_one();
 }
 
 #[test]
 fn bool_op() {
-  manifest(
+  JsonnetInput::manifest(
     r"
 [false || true, true && false, !true]
 ",
     r"
 [true, false, false]
 ",
-  );
+  )
+  .check_one();
 }
 
 #[test]
 fn import() {
-  manifest_many(&[
-    ("/a.jsonnet", "1 + 2", "3"),
-    (
-      "/b.jsonnet",
-      r"
-(import 'a.jsonnet') + 4
-",
-      "7",
-    ),
-  ]);
+  Input::default()
+    .with_jsonnet("a.jsonnet", JsonnetInput::manifest("1 + 2", "3"))
+    .with_jsonnet("b.jsonnet", JsonnetInput::manifest("(import 'a.jsonnet') + 4", "7"))
+    .add_all()
+    .check();
 }

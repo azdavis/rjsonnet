@@ -1,10 +1,10 @@
 //! Examples from the [homepage](https://jsonnet.org/).
 
-use crate::check::manifest;
+use crate::check::JsonnetInput;
 
 #[test]
 fn t1() {
-  manifest(
+  JsonnetInput::manifest(
     r#"
 // Edit me!
 {
@@ -27,12 +27,13 @@ fn t1() {
   }
 }
 "#,
-  );
+  )
+  .check_one();
 }
 
 #[test]
 fn t2() {
-  manifest(
+  JsonnetInput::manifest(
     r"
 // A function that returns an object.
 local Person(name='Alice') = {
@@ -56,5 +57,6 @@ local Person(name='Alice') = {
   }
 }
 "#,
-  );
+  )
+  .check_one();
 }

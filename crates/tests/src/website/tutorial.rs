@@ -1,10 +1,10 @@
 //! Examples from the [tutorial](https://jsonnet.org/learning/tutorial.html).
 
-use crate::check::manifest;
+use crate::check::JsonnetInput;
 
 #[test]
 fn t1() {
-  manifest(
+  JsonnetInput::manifest(
     r#"
 /* A C-style comment. */
 # A Python-style comment.
@@ -91,12 +91,12 @@ fn t1() {
   }
 }
 "#,
-  );
+  ).check_one();
 }
 
 #[test]
 fn t2() {
-  manifest(
+  JsonnetInput::manifest(
     r"
 // A regular definition.
 local house_rum = 'Banks Rum';
@@ -180,12 +180,13 @@ local house_rum = 'Banks Rum';
   }
 }
 "#,
-  );
+  )
+  .check_one();
 }
 
 #[test]
 fn t3() {
-  manifest(
+  JsonnetInput::manifest(
     r#"
 {
   'Tom Collins': {
@@ -274,12 +275,13 @@ fn t3() {
   }
 }
 "#,
-  );
+  )
+  .check_one();
 }
 
 #[test]
 fn t4() {
-  manifest(
+  JsonnetInput::manifest(
     r#"
 {
   Martini: {
@@ -314,13 +316,14 @@ fn t4() {
   }
 }
 "#,
-  );
+  )
+  .check_one();
 }
 
 #[test]
 #[should_panic = "not yet implemented: object-object equality"]
 fn t5() {
-  manifest(
+  JsonnetInput::manifest(
     r"
 {
   concat_array: [1, 2, 3] + [4],
@@ -384,5 +387,6 @@ fn t5() {
   "str5": "ex1=1.67\nex2=3.00\n"
 }
 "#,
-  );
+  )
+  .check_one();
 }
