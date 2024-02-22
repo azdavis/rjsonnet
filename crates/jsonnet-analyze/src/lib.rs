@@ -6,7 +6,7 @@ use always::always;
 use diagnostic::Diagnostic;
 use paths::{PathId, PathMap};
 use rayon::iter::{IntoParallelIterator as _, IntoParallelRefIterator as _, ParallelIterator as _};
-use rustc_hash::FxHashMap;
+use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::BTreeSet;
 
 /// The state of analysis.
@@ -107,7 +107,7 @@ impl St {
   fn update<F>(
     &mut self,
     fs: &F,
-    mut updated: BTreeSet<paths::PathId>,
+    mut needs_update: BTreeSet<paths::PathId>,
     mut to_add: Vec<(paths::PathId, IsolatedFileArtifacts)>,
   ) -> PathMap<Vec<Diagnostic>>
   where
@@ -188,15 +188,18 @@ impl St {
       }
     }
 
-    // added files were updated.
-    updated.extend(added);
+    // added files need an update.
+    needs_update.extend(added);
+
+    let mut updated = FxHashSet::<PathId>::default();
 
     log::info!("repeatedly update files");
     let mut ret = PathMap::<Vec<Diagnostic>>::default();
-    while !updated.is_empty() {
+    while !needs_update.is_empty() {
       let cx = self.cx();
 
-      let iter = updated.iter().map(|&path| {
+      log::info!("getting diagnostics");
+      let iter = needs_update.iter().map(|&path| {
         let art = &self.files_extra[&path];
         let ds: Vec<_> = std::iter::empty()
           .chain(art.errors.lex.iter().map(|err| (err.range(), err.to_string())))
@@ -223,11 +226,11 @@ impl St {
       let new_len = ret.len();
       log::info!("added {} diagnostics", new_len - old_len);
 
-      let mut updated_vals: PathMap<_> = if self.manifest.0 {
+      let updated_vals: PathMap<_> = if self.manifest.0 {
         log::info!("manifest in parallel");
         // manifest in parallel for all updated files. TODO this probably doesn't respect ordering
         // requirements among the updated. what if one updated file depends on another updated file?
-        let iter = updated.par_iter().filter_map(|&path| {
+        let iter = needs_update.par_iter().filter_map(|&path| {
           // only exec if no errors in the file so far.
           self.files_extra[&path].errors.is_empty().then(|| {
             let val = jsonnet_eval::get_exec(cx, path);
@@ -240,19 +243,20 @@ impl St {
         PathMap::default()
       };
       log::info!("updated {} vals", updated_vals.len());
+      self.json.extend(updated_vals);
+      updated.extend(needs_update.iter().copied());
 
       log::info!("getting further dependents");
-      let iter = updated.into_iter().flat_map(|path_id| {
-        if let Some(json) = updated_vals.remove(&path_id) {
+      let iter = needs_update
+        .iter()
+        .flat_map(|&path_id| {
           // TODO could check if new json == old json and not add dependents if same
-          self.json.insert(path_id, json);
-        }
-        // TODO doesn't skip dependents that were already updated
-        let dependents = self.dependents.get(&path_id);
-        dependents.into_iter().flatten().copied()
-      });
-      updated = iter.collect();
-      log::info!("found {} dependents", updated.len());
+          let dependents = self.dependents.get(&path_id);
+          dependents.into_iter().flatten().copied()
+        })
+        .filter(|path_id| !updated.contains(path_id));
+      needs_update = iter.collect();
+      log::info!("found {} dependents", needs_update.len());
     }
     ret
   }
