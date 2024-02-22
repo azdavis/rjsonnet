@@ -5,22 +5,31 @@
 use always::always;
 use paths::FileSystem;
 use pico_args::Arguments;
+use std::path::PathBuf;
 use std::process::ExitCode;
 
 fn run() -> usize {
   let logger_env = env_logger::Env::default();
   env_logger::try_init_from_env(logger_env).expect("init logger");
   let pwd = std::env::current_dir().expect("current dir");
+  let fs = paths::RealFileSystem::default();
+  let canonical_pwd = fs.canonical(pwd.as_path()).expect("canonical");
+
   let mut args = Arguments::from_env();
   let name_only = args.contains("--name-only");
   let manifest = args.contains("--manifest");
+  let mut roots = vec![canonical_pwd];
+  while let Some(root) = args.opt_value_from_str::<_, String>("--root-dir").expect("parse arg") {
+    let root = PathBuf::from(root);
+    let root = fs.canonical(root.as_path()).expect("canonical");
+    roots.push(root);
+  }
   let files = args.finish();
-  let fs = paths::RealFileSystem::default();
-  let canonical_pwd = fs.canonical(pwd.as_path()).expect("canonical");
-  let mut st = jsonnet_analyze::St::new(manifest, vec![canonical_pwd]);
+
   let mut ret = 0usize;
+  let mut st = jsonnet_analyze::St::new(manifest, roots);
   for arg in files {
-    let p = std::path::PathBuf::from(arg);
+    let p = PathBuf::from(arg);
     let p = match fs.canonical(p.as_path()) {
       Ok(x) => x,
       Err(e) => {
