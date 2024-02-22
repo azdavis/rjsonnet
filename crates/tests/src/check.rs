@@ -31,21 +31,6 @@ fn get_json(st: &jsonnet_analyze::St, p: paths::PathId) -> &jsonnet_eval::Json {
   }
 }
 
-/// tests that for each triple of (path, jsonnet, json), each jsonnet manifests to its json.
-pub(crate) fn manifest_many(input: &[(&str, &str, &str)]) {
-  manifest_many_help(input, input.iter().map(|&(path, _, _)| path));
-}
-
-/// tests that for each triple of (path, jsonnet, json), each jsonnet manifests to its json, when
-/// adding the given paths.
-///
-/// this is similar to `manifest_many` but helps test the auto-discovery mechanism. this is where if
-/// you ask to add some files but those files import files that you didn't ask to add, the impl
-/// should discover and add them for you.
-pub(crate) fn manifest_many_add(input: &[(&str, &str, &str)], add: &[&str]) {
-  manifest_many_help(input, add.iter().copied());
-}
-
 fn manifest_many_help<'a, I>(input: &'a [(&'a str, &'a str, &'a str)], add: I)
 where
   I: Iterator<Item = &'a str>,
@@ -72,6 +57,21 @@ where
       panic!("want: {want}\ngot:  {got}");
     }
   }
+}
+
+/// tests that for each triple of (path, jsonnet, json), each jsonnet manifests to its json.
+pub(crate) fn manifest_many(input: &[(&str, &str, &str)]) {
+  manifest_many_help(input, input.iter().map(|&(path, _, _)| path));
+}
+
+/// tests that for each triple of (path, jsonnet, json), each jsonnet manifests to its json, when
+/// adding the given paths.
+///
+/// this is similar to `manifest_many` but helps test the auto-discovery mechanism. this is where if
+/// you ask to add some files but those files import files that you didn't ask to add, the impl
+/// should discover and add them for you.
+pub(crate) fn manifest_many_add(input: &[(&str, &str, &str)], add: &[&str]) {
+  manifest_many_help(input, add.iter().copied());
 }
 
 /// tests that `jsonnet` manifests to the `json`.
