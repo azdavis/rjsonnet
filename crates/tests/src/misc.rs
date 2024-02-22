@@ -66,3 +66,24 @@ fn import_self() {
     .add_all()
     .check();
 }
+
+// TODO fix
+#[test]
+#[should_panic = "diagnostic: trailing token"]
+fn import_str() {
+  Input::default()
+    .with_jsonnet(
+      "a.jsonnet",
+      JsonnetInput::manifest(
+        r#"
+importstr "hi.txt"
+"#,
+        r#"
+"hello there"
+"#,
+      ),
+    )
+    .with_raw("hi.txt", "hello there")
+    .add("a.jsonnet")
+    .check();
+}

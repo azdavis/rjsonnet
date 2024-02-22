@@ -18,8 +18,6 @@ impl<'a> Input<'a> {
     self
   }
 
-  // TODO use
-  #[allow(dead_code)]
   pub(crate) fn with_raw(mut self, path: &'a str, contents: &'a str) -> Self {
     assert!(self.raw.insert(path, contents).is_none());
     self
