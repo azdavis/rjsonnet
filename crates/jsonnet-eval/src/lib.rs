@@ -80,15 +80,12 @@ impl Json {
   ///
   /// If it wasn't.
   #[cfg(feature = "testing")]
-  pub fn assert_is_str(&self, ar: &jsonnet_expr::StrArena, want: &jsonnet_expr::Str) {
+  pub fn assert_is_str(&self, ar: &jsonnet_expr::StrArena, want: &str) {
     let val::json::Val::Prim(jsonnet_expr::Prim::String(got)) = &self.0 else {
       panic!("did not get a String")
     };
-    if want != got {
-      let want = ar.get(want);
-      let got = ar.get(got);
-      panic!("want: {want:?}\ngot:  {got:?}")
-    }
+    let got = ar.get(got);
+    assert_eq!(want, got);
   }
 }
 
