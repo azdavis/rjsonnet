@@ -221,18 +221,20 @@ impl St {
       let new_len = ret.len();
       log::info!("added {} diagnostics", new_len - old_len);
 
-      log::info!("manifest in parallel");
-      // manifest in parallel for all updated files. TODO this probably doesn't respect ordering
-      // requirements among the updated. what if one updated file depends on another updated file?
-      let iter = updated.par_iter().filter_map(|&path| {
-        // only exec if no errors in the file so far.
-        self.files_extra[&path].errors.is_empty().then(|| {
-          let val = jsonnet_eval::get_exec(cx, path);
-          let val = val.and_then(|val| jsonnet_eval::get_manifest(cx, val));
-          (path, val)
-        })
-      });
-      let mut updated_vals: PathMap<_> = iter.collect();
+      let mut updated_vals: PathMap<_> = {
+        log::info!("manifest in parallel");
+        // manifest in parallel for all updated files. TODO this probably doesn't respect ordering
+        // requirements among the updated. what if one updated file depends on another updated file?
+        let iter = updated.par_iter().filter_map(|&path| {
+          // only exec if no errors in the file so far.
+          self.files_extra[&path].errors.is_empty().then(|| {
+            let val = jsonnet_eval::get_exec(cx, path);
+            let val = val.and_then(|val| jsonnet_eval::get_manifest(cx, val));
+            (path, val)
+          })
+        });
+        iter.collect()
+      };
       log::info!("updated {} vals", updated_vals.len());
 
       log::info!("getting further dependents");
