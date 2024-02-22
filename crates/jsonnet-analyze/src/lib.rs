@@ -6,7 +6,8 @@ use always::always;
 use diagnostic::Diagnostic;
 use paths::{PathId, PathMap};
 use rayon::iter::{IntoParallelIterator as _, IntoParallelRefIterator as _, ParallelIterator as _};
-use std::collections::{BTreeMap, BTreeSet};
+use rustc_hash::FxHashMap;
+use std::collections::BTreeSet;
 
 /// The state of analysis.
 #[derive(Debug, Default)]
@@ -25,7 +26,7 @@ pub struct St {
   ///
   /// NON-invariants:
   /// - for all `(_, s)` in `dependents`, for all `x` in `s`, `x` in `files`.
-  dependents: BTreeMap<PathId, BTreeSet<PathId>>,
+  dependents: FxHashMap<PathId, BTreeSet<PathId>>,
 }
 
 impl St {

@@ -358,6 +358,7 @@ dependencies = [
  "log",
  "paths",
  "rayon",
+ "rustc-hash",
  "text-pos",
 ]
 

@@ -16,6 +16,7 @@ doctest = false
 log.workspace = true
 paths.workspace = true
 rayon.workspace = true
+rustc-hash.workspace = true
 text-pos.workspace = true
 
 always.path = "../always"
