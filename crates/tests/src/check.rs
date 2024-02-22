@@ -50,11 +50,20 @@ fn manifest_many_help<'a, I>(input: &'a [(&'a str, &'a str, &'a str)], add: I)
 where
   I: Iterator<Item = &'a str>,
 {
-  let (fs, mut st) = mk_st(input.iter().map(|&(path, jsonnet, _)| (path, jsonnet)), add);
-  for &(p, _, json) in input {
+  let files = input.iter().map(|&(path, jsonnet, _)| (path, jsonnet));
+  let to_check = input.iter().map(|&(path, _, json)| (path, json));
+  let (fs, mut st) = mk_st(files, add);
+  check_manifest(&fs, &mut st, to_check);
+}
+
+fn check_manifest<'a, I>(fs: &paths::MemoryFileSystem, st: &mut jsonnet_analyze::St, xs: I)
+where
+  I: Iterator<Item = (&'a str, &'a str)>,
+{
+  for (p, json) in xs {
     let p = fs.canonical(Path::new(p)).expect("canonical");
     let p = st.path_id(p);
-    let got = get_json(&st, p);
+    let got = get_json(st, p);
     let want: serde_json::Value = serde_json::from_str(json).expect("test input json");
     let want = jsonnet_eval::Json::from_serde(st.strings(), want);
     if want != *got {
