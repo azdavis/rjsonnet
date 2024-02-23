@@ -117,7 +117,6 @@ impl St {
 
     log::info!("repeatedly add the new files and any relevant imports");
     while !to_add.is_empty() {
-      log::info!("combine the file artifacts in sequence");
       let did_add = to_add.into_iter().map(|(mut path_id, mut art)| {
         let subst = jsonnet_expr::Subst::get(&mut self.artifacts, art.combine);
         log::debug!("subst: {subst:?}");
@@ -141,7 +140,6 @@ impl St {
 
       // the next set of things to add is imports from the added files that do not exist and were
       // not themselves already added.
-      log::info!("construct the next set of things to add");
       let new_to_add = did_add.iter().flat_map(|path| self.files[path].imports());
       let new_to_add = new_to_add.filter_map(|(_, path)| {
         if added.contains(&path) || self.files.contains_key(&path) {
@@ -179,7 +177,7 @@ impl St {
     });
     let added_dependencies: PathMap<_> = added_dependencies.collect();
 
-    log::info!("update dependents");
+    log::info!("update {} dependents", added_dependencies.len());
     for (&dependent, dependencies) in &added_dependencies {
       for &dependency in dependencies {
         if dependency != dependent {
@@ -198,7 +196,7 @@ impl St {
     while !needs_update.is_empty() {
       let cx = self.cx();
 
-      log::info!("getting diagnostics");
+      log::info!("getting diagnostics for {} files", needs_update.len());
       let iter = needs_update.iter().map(|&path| {
         let art = &self.files_extra[&path];
         let ds: Vec<_> = std::iter::empty()
@@ -227,7 +225,6 @@ impl St {
       log::info!("added {} diagnostics", new_len - old_len);
 
       let updated_vals: PathMap<_> = if self.manifest.0 {
-        log::info!("manifest in parallel");
         // manifest in parallel for all updated files. TODO this probably doesn't respect ordering
         // requirements among the updated. what if one updated file depends on another updated file?
         let iter = needs_update.par_iter().filter_map(|&path| {
@@ -246,7 +243,6 @@ impl St {
       self.json.extend(updated_vals);
       updated.extend(needs_update.iter().copied());
 
-      log::info!("getting further dependents");
       let iter = needs_update
         .iter()
         .flat_map(|&path_id| {
