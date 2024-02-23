@@ -7,7 +7,6 @@ use diagnostic::Diagnostic;
 use paths::{PathId, PathMap};
 use rayon::iter::{IntoParallelIterator as _, IntoParallelRefIterator as _, ParallelIterator as _};
 use rustc_hash::{FxHashMap, FxHashSet};
-use std::collections::BTreeSet;
 
 /// The state of analysis.
 #[derive(Debug, Default)]
@@ -26,7 +25,7 @@ pub struct St {
   ///
   /// NON-invariants:
   /// - for all `(_, s)` in `dependents`, for all `x` in `s`, `x` in `files`.
-  dependents: FxHashMap<PathId, BTreeSet<PathId>>,
+  dependents: FxHashMap<PathId, FxHashSet<PathId>>,
 }
 
 impl St {
@@ -66,7 +65,7 @@ impl St {
       );
       ret
     });
-    let updated: BTreeSet<_> = updated.flatten().collect();
+    let updated: FxHashSet<_> = updated.flatten().collect();
 
     // get the initial file artifacts in parallel.
     let file_artifacts = add.into_par_iter().filter_map(|path| {
@@ -97,7 +96,7 @@ impl St {
     // path id from self. but instead, we intentionally get the path id from `art`, to uphold the
     // contract of `update`.
     let path_id = art.combine.paths.get_id(path);
-    self.update(fs, BTreeSet::new(), vec![(path_id, art)])
+    self.update(fs, FxHashSet::default(), vec![(path_id, art)])
   }
 
   /// invariant: for all `(p, a)` in `to_add`, `p` is the path id, of the path q, **from the path
@@ -107,13 +106,13 @@ impl St {
   fn update<F>(
     &mut self,
     fs: &F,
-    mut needs_update: BTreeSet<paths::PathId>,
+    mut needs_update: FxHashSet<paths::PathId>,
     mut to_add: Vec<(paths::PathId, IsolatedFileArtifacts)>,
   ) -> PathMap<Vec<Diagnostic>>
   where
     F: Sync + Send + paths::FileSystem,
   {
-    let mut added = BTreeSet::<PathId>::new();
+    let mut added = FxHashSet::<PathId>::default();
 
     log::info!("repeatedly add the new files and any relevant imports");
     while !to_add.is_empty() {
@@ -135,7 +134,7 @@ impl St {
 
         path_id
       });
-      let did_add: BTreeSet<_> = did_add.collect();
+      let did_add: FxHashSet<_> = did_add.collect();
       log::info!("did add {} files", did_add.len());
 
       // the next set of things to add is imports from the added files that do not exist and were
@@ -148,7 +147,7 @@ impl St {
           Some(path)
         }
       });
-      let new_to_add: BTreeSet<_> = new_to_add.collect();
+      let new_to_add: FxHashSet<_> = new_to_add.collect();
 
       log::info!("get file artifacts for {} files in parallel", new_to_add.len());
       let iter = new_to_add.into_par_iter().filter_map(|mut path_id| {
@@ -165,7 +164,7 @@ impl St {
     // just added, and p depends on q.
     log::info!("compute dependency mapping on {} files", self.files.len());
     let added_dependencies = self.files.par_iter().filter_map(|(&path, file)| {
-      let dependencies: BTreeSet<_> = file
+      let dependencies: FxHashSet<_> = file
         .imports()
         .filter_map(|(_, import_path)| added.contains(&import_path).then_some(import_path))
         .collect();
