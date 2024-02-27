@@ -194,7 +194,7 @@ impl St {
                 }
                 Err(e) => {
                   let Some(fe) = self.files_extra.get_mut(&importer) else {
-                    let path = path.as_path().display();
+                    let path = self.artifacts.paths.get_path(importer).as_path().display();
                     always!(false, "no files extra when in files: {path}");
                     continue;
                   };
@@ -210,7 +210,7 @@ impl St {
                 }
                 Err(e) => {
                   let Some(fe) = self.files_extra.get_mut(&importer) else {
-                    let path = path.as_path().display();
+                    let path = self.artifacts.paths.get_path(importer).as_path().display();
                     always!(false, "no files extra when in files: {path}");
                     continue;
                   };
