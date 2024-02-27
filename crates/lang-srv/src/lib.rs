@@ -34,6 +34,7 @@ pub fn run<S: State>(st: &mut S) {
   let server_capabilities = serde_json::to_value(capabilities::get()).expect("get capabilities");
   let init = conn.initialize(server_capabilities).expect("init conn");
   let init: lsp_types::InitializeParams = serde_json::from_value(init).expect("get init");
+  st.init(init.initialization_options);
   let mut srv = server::Server::default();
 
   let root_url = init.root_uri.expect("no root url");

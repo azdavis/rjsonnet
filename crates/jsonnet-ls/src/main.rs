@@ -20,6 +20,8 @@ impl lang_srv::State for State {
     matches!(s, "jsonnet" | "libsonnet" | "TEMPLATE")
   }
 
+  fn init(&mut self, _val: Option<serde_json::Value>) {}
+
   fn update_many<F>(
     &mut self,
     fs: &F,

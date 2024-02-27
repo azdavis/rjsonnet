@@ -16,6 +16,7 @@ doctest = false
 [dependencies]
 log.workspace = true
 paths.workspace = true
+serde_json.workspace = true
 
 always.path = "../always"
 diagnostic.path = "../diagnostic"

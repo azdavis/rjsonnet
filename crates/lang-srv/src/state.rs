@@ -13,6 +13,9 @@ pub trait State {
   /// Whether this file extension should be considered.
   fn is_ext(&self, s: &str) -> bool;
 
+  /// Initialize the server.
+  fn init(&mut self, val: Option<serde_json::Value>);
+
   /// Update many files at once.
   #[must_use]
   fn update_many<F>(

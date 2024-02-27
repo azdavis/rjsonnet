@@ -435,6 +435,7 @@ dependencies = [
  "lang-srv",
  "log",
  "paths",
+ "serde_json",
 ]
 
 [[package]]
