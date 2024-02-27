@@ -65,6 +65,7 @@ impl St {
   where
     F: paths::FileSystem,
   {
+    log::info!("make new St with {init:?}");
     let mut root_dirs = Vec::<paths::CanonicalPathBuf>::with_capacity(init.root_dirs.len());
     for dir in init.root_dirs {
       match fs.canonical(dir.as_path()) {
