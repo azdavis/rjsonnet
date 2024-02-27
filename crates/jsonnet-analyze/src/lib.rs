@@ -8,6 +8,8 @@ use paths::{PathId, PathMap};
 use rayon::iter::{IntoParallelIterator as _, IntoParallelRefIterator as _, ParallelIterator as _};
 use rustc_hash::{FxHashMap, FxHashSet};
 
+const MAX_DIAGNOSTICS_PER_FILE: usize = 15;
+
 /// A trait for a file systems.
 pub trait FileSystem: paths::FileSystem {
   /// Read the contents of a file as bytes.
@@ -258,6 +260,7 @@ impl St {
             };
             Some(Diagnostic { range, message })
           })
+          .take(MAX_DIAGNOSTICS_PER_FILE)
           .collect();
         (path, ds)
       });
