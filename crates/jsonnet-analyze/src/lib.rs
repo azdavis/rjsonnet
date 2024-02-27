@@ -348,6 +348,8 @@ impl St {
       needs_update = iter.collect();
       log::info!("found {} dependents", needs_update.len());
     }
+
+    log::info!("finish update for {} files", ret.len());
     ret
   }
 
