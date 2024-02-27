@@ -53,7 +53,7 @@ fn run() -> usize {
         println!("{path}");
       } else {
         for d in ds {
-          println!("{path}:{}: {}", d.range, d.message);
+          println!("{path}:{}: {}", d.range.start, d.message);
         }
       }
     }
