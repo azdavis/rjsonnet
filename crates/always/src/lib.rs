@@ -11,7 +11,7 @@ pub mod convert;
 #[doc(hidden)]
 pub use log::error as __log_error;
 
-/// The url to report issues at.
+/// The message to ask a user to file a bug report.
 pub const BUG_REPORT_MSG: &str =
   "please file a bug report: https://github.com/azdavis/rjsonnet/issues";
 
