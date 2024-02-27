@@ -13,7 +13,16 @@ impl lang_srv::State for State {
   where
     F: paths::FileSystem,
   {
-    let init = jsonnet_analyze::Init::default();
+    let mut init = jsonnet_analyze::Init::default();
+    if let Some(Value::Object(obj)) = val {
+      init.manifest = obj.get("manifest").and_then(Value::as_bool).unwrap_or_default();
+      if let Some(root_dirs) = obj.get("root_dirs").and_then(Value::as_array) {
+        init.root_dirs = root_dirs
+          .iter()
+          .filter_map(|x| Some(std::path::PathBuf::from(x.as_str()?.to_owned())))
+          .collect();
+      }
+    }
     Self(jsonnet_analyze::St::new(fs, init))
   }
 

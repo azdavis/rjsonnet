@@ -26,6 +26,10 @@ export async function activate(cx: vscode.ExtensionContext) {
   };
   const clientOpts: LanguageClientOptions = {
     documentSelector: [{ scheme: "file", language: "jsonnet" }],
+    initializationOptions: {
+      manifest: config.get("server.manifest.enable"),
+      root_dirs: config.get("server.importDirs.extra"),
+    },
   };
   client = new LanguageClient("jsonnet", serverOpts, clientOpts);
   await client.start();

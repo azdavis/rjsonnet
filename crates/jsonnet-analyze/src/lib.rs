@@ -14,9 +14,9 @@ const MAX_DIAGNOSTICS_PER_FILE: usize = 5;
 /// Options for initialization.
 #[derive(Debug, Default)]
 pub struct Init {
-  /// Whether to manifest to JSON.
+  /// Manifest into JSON.
   pub manifest: bool,
-  /// Extra root dirs for imports.
+  /// Extra directories in which to search for import paths.
   pub root_dirs: Vec<std::path::PathBuf>,
 }
 
