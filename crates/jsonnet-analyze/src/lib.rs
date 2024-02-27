@@ -147,7 +147,7 @@ impl St {
 
     log::info!("repeatedly add the new files and any relevant imports");
     while !to_add.is_empty() {
-      let did_add = to_add.into_iter().map(|(mut path_id, mut art)| {
+      let did_add = to_add.drain(..).map(|(mut path_id, mut art)| {
         let subst = jsonnet_expr::Subst::get(&mut self.artifacts, art.combine);
         log::debug!("subst: {subst:?}");
 
