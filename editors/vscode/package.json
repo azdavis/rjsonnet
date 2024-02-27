@@ -50,6 +50,11 @@
           "type": "boolean",
           "default": true,
           "markdownDescription": "Enable the language server."
+        },
+        "jsonnet.server.path": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Path to the `jsonnet-ls` executable.\n\nWhen set to the empty string `\"\"` (the default), use the path to the one that's pre-built and bundled with the extension."
         }
       }
     },
