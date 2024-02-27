@@ -11,6 +11,15 @@ use std::{io, path::Path};
 
 const MAX_DIAGNOSTICS_PER_FILE: usize = 5;
 
+/// Options for initialization.
+#[derive(Debug, Default)]
+pub struct Init {
+  /// Whether to manifest to JSON.
+  pub manifest: bool,
+  /// Extra root dirs for imports.
+  pub root_dirs: Vec<std::path::PathBuf>,
+}
+
 /// A trait for a file systems.
 pub trait FileSystem: paths::FileSystem {
   /// Read the contents of a file as bytes.
@@ -22,9 +31,9 @@ pub trait FileSystem: paths::FileSystem {
 }
 
 /// The state of analysis.
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct St {
-  manifest: Tool,
+  manifest: bool,
   root_dirs: Vec<paths::CanonicalPathBuf>,
   artifacts: jsonnet_expr::Artifacts,
   /// these are the non-jsonnet imported files via `importstr`
@@ -50,10 +59,33 @@ pub struct St {
 }
 
 impl St {
-  /// Returns a new `St` with the given root dirs.
+  /// Returns a new `St` with the given init options.
   #[must_use]
-  pub fn new(manifest: bool, root_dirs: Vec<paths::CanonicalPathBuf>) -> Self {
-    Self { manifest: Tool(manifest), root_dirs, ..Default::default() }
+  pub fn new<F>(fs: &F, init: Init) -> Self
+  where
+    F: paths::FileSystem,
+  {
+    let mut root_dirs = Vec::<paths::CanonicalPathBuf>::with_capacity(init.root_dirs.len());
+    for dir in init.root_dirs {
+      match fs.canonical(dir.as_path()) {
+        Ok(can) => root_dirs.push(can),
+        Err(e) => {
+          let dir = dir.display();
+          always!(false, "{dir}: i/o error: {e}");
+        }
+      }
+    }
+    Self {
+      manifest: init.manifest,
+      root_dirs,
+      artifacts: jsonnet_expr::Artifacts::default(),
+      importstr: paths::PathMap::default(),
+      importbin: paths::PathMap::default(),
+      files: paths::PathMap::default(),
+      files_extra: paths::PathMap::default(),
+      json: paths::PathMap::default(),
+      dependents: paths::PathMap::default(),
+    }
   }
 
   /// Updates the state with added and removed Jsonnet paths.
@@ -318,7 +350,7 @@ impl St {
       let new_len: usize = ret.par_iter().map(|(_, xs)| xs.len()).sum();
       log::info!("added {} diagnostics", new_len - old_len);
 
-      let updated_vals: PathMap<_> = if self.manifest.0 {
+      let updated_vals: PathMap<_> = if self.manifest {
         // manifest in parallel for all updated files. TODO this probably doesn't respect ordering
         // requirements among the updated. what if one updated file depends on another updated file?
         let iter = needs_update.par_iter().filter_map(|&path| {
@@ -508,13 +540,4 @@ where
     return Err(io::Error::other("path has no parent"));
   };
   Ok(IsolatedFileArtifacts::new(contents, parent, root_dirs, &FsAdapter(fs)))
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-struct Tool(bool);
-
-impl Default for Tool {
-  fn default() -> Self {
-    Self(true)
-  }
 }

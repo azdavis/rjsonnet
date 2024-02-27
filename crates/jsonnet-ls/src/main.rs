@@ -1,26 +1,29 @@
 //! A language server for Jsonnet.
 
-use always::BUG_REPORT_MSG;
+use serde_json::Value;
 
 fn main() {
-  let mut st = State(jsonnet_analyze::St::new(false, Vec::new()));
-  lang_srv::run(&mut st);
+  lang_srv::run::<State>();
 }
 
 struct State(jsonnet_analyze::St);
 
 impl lang_srv::State for State {
-  fn crash_msg(&self) -> String {
-    BUG_REPORT_MSG.to_owned()
+  fn new<F>(fs: &F, val: Option<Value>) -> Self
+  where
+    F: paths::FileSystem,
+  {
+    let init = jsonnet_analyze::Init::default();
+    Self(jsonnet_analyze::St::new(fs, init))
   }
+
+  const BUG_REPORT_MSG: &'static str = always::BUG_REPORT_MSG;
 
   const GLOB: &'static str = "**/*.{jsonnet,libsonnet,TEMPLATE}";
 
   fn is_ext(&self, s: &str) -> bool {
     matches!(s, "jsonnet" | "libsonnet" | "TEMPLATE")
   }
-
-  fn init(&mut self, _val: Option<serde_json::Value>) {}
 
   fn update_many<F>(
     &mut self,

@@ -48,7 +48,8 @@ impl<'a> Input<'a> {
     let to_add: Vec<_> =
       self.to_add.iter().map(|&path| fs.canonical(Path::new(path)).expect("canonical")).collect();
 
-    let mut st = jsonnet_analyze::St::default();
+    let init = jsonnet_analyze::Init { manifest: true, root_dirs: Vec::new() };
+    let mut st = jsonnet_analyze::St::new(&fs, init);
 
     for (path, ds) in st.update_many(&fs, Vec::new(), to_add) {
       if let Some(d) = ds.first() {

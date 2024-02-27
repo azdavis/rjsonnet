@@ -19,9 +19,11 @@ pub use state::State;
 /// If things failed that it wouldn't make sense to try to recover from, like starting up the LSP or
 /// joining I/O threads.
 #[allow(clippy::disallowed_methods)]
-pub fn run<S: State>(st: &mut S) {
+pub fn run<S: State>() {
+  let mut srv = server::Server::default();
+
   better_panic::Settings::new()
-    .message(st.crash_msg())
+    .message(S::BUG_REPORT_MSG)
     .verbosity(better_panic::Verbosity::Medium)
     .install();
 
@@ -34,8 +36,7 @@ pub fn run<S: State>(st: &mut S) {
   let server_capabilities = serde_json::to_value(capabilities::get()).expect("get capabilities");
   let init = conn.initialize(server_capabilities).expect("init conn");
   let init: lsp_types::InitializeParams = serde_json::from_value(init).expect("get init");
-  st.init(init.initialization_options);
-  let mut srv = server::Server::default();
+  let mut st = S::new(&srv.fs, init.initialization_options);
 
   let root_url = init.root_uri.expect("no root url");
   let root_path = convert::path_buf(&root_url).expect("root path");
@@ -83,14 +84,14 @@ pub fn run<S: State>(st: &mut S) {
         if conn.handle_shutdown(&req).expect("handle shutdown") {
           return;
         }
-        match request::handle(&mut srv, st, req).and_then(|r| srv.respond(&conn, r)) {
+        match request::handle(&mut srv, &mut st, req).and_then(|r| srv.respond(&conn, r)) {
           Ok(()) => {}
           Err(e) => log::error!("error: {e}"),
         }
       }
       lsp_server::Message::Response(res) => response::handle(res),
       lsp_server::Message::Notification(notif) => {
-        match notification::handle(&mut srv, st, &conn, notif) {
+        match notification::handle(&mut srv, &mut st, &conn, notif) {
           Ok(()) => {}
           Err(e) => log::error!("error: {e}"),
         }

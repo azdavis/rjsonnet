@@ -14,21 +14,19 @@ fn run() -> usize {
 
   let pwd = std::env::current_dir().expect("current dir");
   let fs = paths::RealFileSystem::default();
-  let canonical_pwd = fs.canonical(pwd.as_path()).expect("canonical");
 
   let mut args = Arguments::from_env();
   let name_only = args.contains("--name-only");
   let manifest = args.contains("--manifest");
-  let mut roots = vec![canonical_pwd];
+  let mut root_dirs = vec![pwd.clone()];
   while let Some(root) = args.opt_value_from_str::<_, String>("--root-dir").expect("parse arg") {
-    let root = PathBuf::from(root);
-    let root = fs.canonical(root.as_path()).expect("canonical");
-    roots.push(root);
+    root_dirs.push(PathBuf::from(root));
   }
   let files = args.finish();
 
   let mut ret = 0usize;
-  let mut st = jsonnet_analyze::St::new(manifest, roots);
+  let init = jsonnet_analyze::Init { manifest, root_dirs };
+  let mut st = jsonnet_analyze::St::new(&fs, init);
 
   for arg in files {
     let p = PathBuf::from(arg);

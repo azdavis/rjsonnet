@@ -4,17 +4,19 @@
 
 /// The state of a language server.
 pub trait State {
-  /// What to say when the server crashed.
-  fn crash_msg(&self) -> String;
+  /// Make a new state with init options.
+  fn new<F>(fs: &F, val: Option<serde_json::Value>) -> Self
+  where
+    F: paths::FileSystem;
+
+  /// What to say to ask for a bug report.
+  const BUG_REPORT_MSG: &'static str;
 
   /// A glob for all files that should be considered.
   const GLOB: &'static str;
 
   /// Whether this file extension should be considered.
   fn is_ext(&self, s: &str) -> bool;
-
-  /// Initialize the server.
-  fn init(&mut self, val: Option<serde_json::Value>);
 
   /// Update many files at once.
   #[must_use]
