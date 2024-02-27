@@ -171,38 +171,40 @@ impl St {
       // the next set of things to add is imports from the added files that do not exist and were
       // not themselves already added.
       let mut new_to_add = FxHashSet::<PathId>::default();
-      for (kind, path_id) in did_add.iter().flat_map(|path_id| self.files[path_id].imports()) {
-        if added.contains(&path_id) || self.files.contains_key(&path_id) {
-          continue;
-        }
-        // TODO this could be in parallel for string and binary with a bit more work
-        match kind {
-          jsonnet_expr::ImportKind::Code => {
-            new_to_add.insert(path_id);
+      for &importer in &did_add {
+        for (kind, imported) in self.files[&importer].imports() {
+          if added.contains(&imported) || self.files.contains_key(&imported) {
+            continue;
           }
-          jsonnet_expr::ImportKind::String => {
-            let path = self.paths().get_path(path_id);
-            let contents = match fs.read_to_string(path.as_path()) {
-              Ok(x) => x,
-              Err(e) => {
-                let path = path.as_path().display();
-                always!(false, "read {path} to string error: {e}");
-                continue;
-              }
-            };
-            self.importstr.insert(path_id, contents);
-          }
-          jsonnet_expr::ImportKind::Binary => {
-            let path = self.paths().get_path(path_id);
-            let contents = match fs.read_to_bytes(path.as_path()) {
-              Ok(x) => x,
-              Err(e) => {
-                let path = path.as_path().display();
-                always!(false, "read {path} to bytes error: {e}");
-                continue;
-              }
-            };
-            self.importbin.insert(path_id, contents);
+          // TODO this could be in parallel for string and binary with a bit more work
+          match kind {
+            jsonnet_expr::ImportKind::Code => {
+              new_to_add.insert(imported);
+            }
+            jsonnet_expr::ImportKind::String => {
+              let path = self.paths().get_path(imported);
+              let contents = match fs.read_to_string(path.as_path()) {
+                Ok(x) => x,
+                Err(e) => {
+                  let path = path.as_path().display();
+                  always!(false, "read {path} to string error: {e}");
+                  continue;
+                }
+              };
+              self.importstr.insert(imported, contents);
+            }
+            jsonnet_expr::ImportKind::Binary => {
+              let path = self.paths().get_path(imported);
+              let contents = match fs.read_to_bytes(path.as_path()) {
+                Ok(x) => x,
+                Err(e) => {
+                  let path = path.as_path().display();
+                  always!(false, "read {path} to bytes error: {e}");
+                  continue;
+                }
+              };
+              self.importbin.insert(imported, contents);
+            }
           }
         }
       }
