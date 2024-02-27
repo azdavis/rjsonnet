@@ -7,6 +7,7 @@ use diagnostic::Diagnostic;
 use paths::{PathId, PathMap};
 use rayon::iter::{IntoParallelIterator as _, IntoParallelRefIterator as _, ParallelIterator as _};
 use rustc_hash::{FxHashMap, FxHashSet};
+use std::{io, path::Path};
 
 const MAX_DIAGNOSTICS_PER_FILE: usize = 15;
 
@@ -17,7 +18,7 @@ pub trait FileSystem: paths::FileSystem {
   /// # Errors
   ///
   /// If the filesystem failed us.
-  fn read_to_bytes(&self, path: &std::path::Path) -> std::io::Result<Vec<u8>>;
+  fn read_to_bytes(&self, path: &Path) -> io::Result<Vec<u8>>;
 }
 
 /// The state of analysis.
@@ -89,7 +90,13 @@ impl St {
     log::info!("get {} initial file artifacts in parallel", add.len());
     let file_artifacts = add.into_par_iter().filter_map(|path| {
       let path = path.as_canonical_path();
-      let mut art = get_isolated_fs(path, &self.root_dirs, fs)?;
+      let mut art = match get_isolated_fs(path, &self.root_dirs, fs) {
+        Ok(x) => x,
+        Err(e) => {
+          always!(false, "{}: i/o error: {}", path.as_path().display(), e);
+          return None;
+        }
+      };
       let path = art.combine.paths.get_id(path);
       Some((path, art))
     });
@@ -109,8 +116,13 @@ impl St {
   where
     F: Sync + Send + paths::FileSystem,
   {
-    let got = get_isolated_str(path, contents, &self.root_dirs, fs);
-    let Some(mut art) = got else { return PathMap::default() };
+    let mut art = match get_isolated_str(path, contents, &self.root_dirs, fs) {
+      Ok(x) => x,
+      Err(e) => {
+        always!(false, "{}: i/o error: {}", path.as_path().display(), e);
+        return PathMap::default();
+      }
+    };
     // since we have &mut self, and no parallelism (as opposed to in update_many), we could get the
     // path id from self. but instead, we intentionally get the path id from `art`, to uphold the
     // contract of `update`.
@@ -198,7 +210,13 @@ impl St {
       log::info!("get file artifacts for {} files in parallel", new_to_add.len());
       let iter = new_to_add.into_par_iter().filter_map(|mut path_id| {
         let path = self.paths().get_path(path_id);
-        let mut art = get_isolated_fs(path, &self.root_dirs, fs)?;
+        let mut art = match get_isolated_fs(path, &self.root_dirs, fs) {
+          Ok(x) => x,
+          Err(e) => {
+            always!(false, "{}: i/o error: {}", path.as_path().display(), e);
+            return None;
+          }
+        };
         // intentionally turn it into the one from `art`
         path_id = art.combine.paths.get_id(path);
         Some((path_id, art))
@@ -426,7 +444,7 @@ impl<'a, F> jsonnet_desugar::FileSystem for FsAdapter<'a, F>
 where
   F: paths::FileSystem,
 {
-  fn canonical(&self, p: &std::path::Path) -> std::io::Result<paths::CanonicalPathBuf> {
+  fn canonical(&self, p: &Path) -> io::Result<paths::CanonicalPathBuf> {
     paths::FileSystem::canonical(self.0, p)
   }
 }
@@ -435,18 +453,11 @@ fn get_isolated_fs<F>(
   path: &paths::CanonicalPath,
   root_dirs: &[paths::CanonicalPathBuf],
   fs: &F,
-) -> Option<IsolatedFileArtifacts>
+) -> io::Result<IsolatedFileArtifacts>
 where
   F: paths::FileSystem,
 {
-  let contents = match fs.read_to_string(path.as_path()) {
-    Ok(x) => x,
-    Err(e) => {
-      let path = path.as_path().display();
-      always!(false, "read {path} to string error: {e}");
-      return None;
-    }
-  };
+  let contents = fs.read_to_string(path.as_path())?;
   get_isolated_str(path, contents.as_str(), root_dirs, fs)
 }
 
@@ -455,16 +466,14 @@ fn get_isolated_str<F>(
   contents: &str,
   root_dirs: &[paths::CanonicalPathBuf],
   fs: &F,
-) -> Option<IsolatedFileArtifacts>
+) -> io::Result<IsolatedFileArtifacts>
 where
   F: paths::FileSystem,
 {
   let Some(parent) = path.parent() else {
-    let path = path.as_path().display();
-    always!(false, "no parent: {path}");
-    return None;
+    return Err(io::Error::other("path has no parent"));
   };
-  Some(IsolatedFileArtifacts::new(contents, parent, root_dirs, &FsAdapter(fs)))
+  Ok(IsolatedFileArtifacts::new(contents, parent, root_dirs, &FsAdapter(fs)))
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
