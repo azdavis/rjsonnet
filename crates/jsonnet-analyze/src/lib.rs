@@ -66,8 +66,7 @@ impl St {
   where
     F: Sync + Send + paths::FileSystem,
   {
-    // first remove files, and start keeping track of what remaining files were updated.
-    //
+    log::info!("remove {} files", remove.len());
     // NOTE: for each r in remove, we DO NOT bother removing r from s for any (_, s) in dependents.
     let updated = remove.into_iter().filter_map(|path| {
       let path_id = self.path_id(path);
@@ -87,7 +86,7 @@ impl St {
     });
     let updated: FxHashSet<_> = updated.flatten().collect();
 
-    // get the initial file artifacts in parallel.
+    log::info!("get {} initial file artifacts in parallel", add.len());
     let file_artifacts = add.into_par_iter().filter_map(|path| {
       let path = path.as_canonical_path();
       let mut art = get_isolated_fs(path, &self.root_dirs, fs)?;
@@ -174,7 +173,8 @@ impl St {
             let contents = match fs.read_to_string(path.as_path()) {
               Ok(x) => x,
               Err(e) => {
-                always!(false, "read to string error: {e}");
+                let path = path.as_path().display();
+                always!(false, "read {path} to string error: {e}");
                 continue;
               }
             };
@@ -185,7 +185,8 @@ impl St {
             let contents = match fs.read_to_bytes(path.as_path()) {
               Ok(x) => x,
               Err(e) => {
-                always!(false, "read to string error: {e}");
+                let path = path.as_path().display();
+                always!(false, "read {path} to bytes error: {e}");
                 continue;
               }
             };
@@ -441,7 +442,8 @@ where
   let contents = match fs.read_to_string(path.as_path()) {
     Ok(x) => x,
     Err(e) => {
-      always!(false, "read to string error: {e}");
+      let path = path.as_path().display();
+      always!(false, "read {path} to string error: {e}");
       return None;
     }
   };
