@@ -6,7 +6,7 @@ use always::always;
 use diagnostic::Diagnostic;
 use paths::{PathId, PathMap};
 use rayon::iter::{IntoParallelIterator as _, IntoParallelRefIterator as _, ParallelIterator as _};
-use rustc_hash::{FxHashMap, FxHashSet};
+use rustc_hash::FxHashSet;
 use std::{io, path::Path};
 
 const MAX_DIAGNOSTICS_PER_FILE: usize = 5;
@@ -46,7 +46,7 @@ pub struct St {
   ///
   /// NON-invariants:
   /// - for all `(_, s)` in `dependents`, for all `x` in `s`, `x` in `files`.
-  dependents: FxHashMap<PathId, FxHashSet<PathId>>,
+  dependents: PathMap<FxHashSet<PathId>>,
 }
 
 impl St {
