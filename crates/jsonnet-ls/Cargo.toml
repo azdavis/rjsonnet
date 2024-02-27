@@ -14,7 +14,7 @@ test = false
 doctest = false
 
 [dependencies]
-anyhow.workspace = true
+log.workspace = true
 paths.workspace = true
 
 always.path = "../always"

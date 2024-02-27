@@ -27,15 +27,14 @@ fn go<S: State>(
 ) -> ControlFlowResult<lsp_server::Response> {
   req = try_req::<lsp_types::request::HoverRequest, _, _>(req, |id, params| {
     let path = srv.canonical_path_buf(&params.text_document_position_params.text_document.uri)?;
-    let json = st.hover(path)?;
-    let result = lsp_types::Hover {
+    let result = st.hover(path).map(|json| lsp_types::Hover {
       contents: lsp_types::HoverContents::Markup(lsp_types::MarkupContent {
         kind: lsp_types::MarkupKind::Markdown,
         value: format!("```json\n{json}\n```"),
       }),
       range: None,
-    };
-    Ok(mk_res::<lsp_types::request::HoverRequest>(id, Some(result)))
+    });
+    Ok(mk_res::<lsp_types::request::HoverRequest>(id, result))
   })?;
   ControlFlow::Continue(req)
 }

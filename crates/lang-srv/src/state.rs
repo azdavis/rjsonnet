@@ -2,8 +2,6 @@
 //!
 //! This "brain" is not concerned with low-level LSP details like message formatting.
 
-use anyhow::Result;
-
 /// The state of a language server.
 pub trait State {
   /// What to say when the server crashed.
@@ -42,7 +40,7 @@ pub trait State {
   /// # Errors
   ///
   /// If we couldn't show more info about the hovered file.
-  fn hover(&mut self, path: paths::CanonicalPathBuf) -> Result<String>;
+  fn hover(&mut self, path: paths::CanonicalPathBuf) -> Option<String>;
 
   /// Returns the paths store for this.
   fn paths(&self) -> &paths::Store;

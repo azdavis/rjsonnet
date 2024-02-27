@@ -1,7 +1,6 @@
 //! A language server for Jsonnet.
 
 use always::BUG_REPORT_MSG;
-use anyhow::{bail, Result};
 
 fn main() {
   let mut st = State(jsonnet_analyze::St::new(false, Vec::new()));
@@ -45,18 +44,17 @@ impl lang_srv::State for State {
     self.0.update_one(fs, path.as_canonical_path(), contents)
   }
 
-  /// - TODO take a text range thing
-  /// - TODO have this return an option instead? logs are chatty with 'could not show json' when
-  ///   there is even just a simple syntax error
-  fn hover(&mut self, path: paths::CanonicalPathBuf) -> Result<String> {
+  /// TODO take a text range thing
+  fn hover(&mut self, path: paths::CanonicalPathBuf) -> Option<String> {
     let path_id = self.0.path_id(path);
     let json = match self.0.get_json(path_id) {
       Ok(x) => x,
       Err(e) => {
-        bail!("couldn't get json: {}", e.display(self.0.strings(), self.paths()))
+        log::error!("couldn't get json: {}", e.display(self.0.strings(), self.paths()));
+        return None;
       }
     };
-    Ok(json.display(self.0.strings()).to_string())
+    Some(json.display(self.0.strings()).to_string())
   }
 
   fn paths(&self) -> &paths::Store {

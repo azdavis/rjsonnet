@@ -430,10 +430,10 @@ name = "jsonnet-ls"
 version = "0.1.0"
 dependencies = [
  "always",
- "anyhow",
  "diagnostic",
  "jsonnet-analyze",
  "lang-srv",
+ "log",
  "paths",
 ]
 
