@@ -35,11 +35,18 @@ pub struct JsonnetFile {
   pub top: jsonnet_expr::Expr,
 }
 
+#[derive(Debug, Clone, Copy)]
+pub struct Import {
+  pub expr: jsonnet_expr::ExprMust,
+  pub kind: jsonnet_expr::ImportKind,
+  pub path: paths::PathId,
+}
+
 impl JsonnetFile {
-  pub fn imports(&self) -> impl Iterator<Item = (jsonnet_expr::ImportKind, paths::PathId)> + '_ {
-    self.expr_ar.iter().filter_map(|(_, ed)| {
+  pub fn imports(&self) -> impl Iterator<Item = Import> + '_ {
+    self.expr_ar.iter().filter_map(|(expr, ed)| {
       if let jsonnet_expr::ExprData::Import { kind, path } = *ed {
-        Some((kind, path))
+        Some(Import { expr, kind, path })
       } else {
         None
       }

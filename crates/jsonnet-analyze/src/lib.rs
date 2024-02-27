@@ -81,7 +81,7 @@ impl St {
       always!(
         ret.is_none() || was_in_files,
         "{} was in dependents, but not in files",
-        self.paths().get_path(path_id).as_path().display()
+        self.artifacts.paths.get_path(path_id).as_path().display()
       );
       ret
     });
@@ -171,39 +171,47 @@ impl St {
       // the next set of things to add is imports from the added files that do not exist and were
       // not themselves already added.
       let mut new_to_add = FxHashSet::<PathId>::default();
+      // TODO this could be in parallel for string and binary with a bit more work
       for &importer in &did_add {
-        for (kind, imported) in self.files[&importer].imports() {
-          if added.contains(&imported) || self.files.contains_key(&imported) {
+        for import in self.files[&importer].imports() {
+          if added.contains(&import.path) || self.files.contains_key(&import.path) {
             continue;
           }
-          // TODO this could be in parallel for string and binary with a bit more work
-          match kind {
+          match import.kind {
             jsonnet_expr::ImportKind::Code => {
-              new_to_add.insert(imported);
+              new_to_add.insert(import.path);
             }
             jsonnet_expr::ImportKind::String => {
-              let path = self.paths().get_path(imported);
-              let contents = match fs.read_to_string(path.as_path()) {
-                Ok(x) => x,
-                Err(e) => {
-                  let path = path.as_path().display();
-                  always!(false, "read {path} to string error: {e}");
-                  continue;
+              let path = self.artifacts.paths.get_path(import.path);
+              match fs.read_to_string(path.as_path()) {
+                Ok(contents) => {
+                  self.importstr.insert(import.path, contents);
                 }
-              };
-              self.importstr.insert(imported, contents);
+                Err(e) => {
+                  let Some(fe) = self.files_extra.get_mut(&importer) else {
+                    let path = path.as_path().display();
+                    always!(false, "no files extra when in files: {path}");
+                    continue;
+                  };
+                  fe.errors.imports.push((import.expr, e));
+                }
+              }
             }
             jsonnet_expr::ImportKind::Binary => {
-              let path = self.paths().get_path(imported);
-              let contents = match fs.read_to_bytes(path.as_path()) {
-                Ok(x) => x,
-                Err(e) => {
-                  let path = path.as_path().display();
-                  always!(false, "read {path} to bytes error: {e}");
-                  continue;
+              let path = self.artifacts.paths.get_path(import.path);
+              match fs.read_to_string(path.as_path()) {
+                Ok(contents) => {
+                  self.importstr.insert(import.path, contents);
                 }
-              };
-              self.importbin.insert(imported, contents);
+                Err(e) => {
+                  let Some(fe) = self.files_extra.get_mut(&importer) else {
+                    let path = path.as_path().display();
+                    always!(false, "no files extra when in files: {path}");
+                    continue;
+                  };
+                  fe.errors.imports.push((import.expr, e));
+                }
+              }
             }
           }
         }
@@ -211,7 +219,7 @@ impl St {
 
       log::info!("get file artifacts for {} files in parallel", new_to_add.len());
       let iter = new_to_add.into_par_iter().filter_map(|mut path_id| {
-        let path = self.paths().get_path(path_id);
+        let path = self.artifacts.paths.get_path(path_id);
         let mut art = match get_isolated_fs(path, &self.root_dirs, fs) {
           Ok(x) => x,
           Err(e) => {
@@ -232,7 +240,7 @@ impl St {
     let added_dependencies = self.files.par_iter().filter_map(|(&path, file)| {
       let dependencies: FxHashSet<_> = file
         .imports()
-        .filter_map(|(_, import_path)| added.contains(&import_path).then_some(import_path))
+        .filter_map(|import| added.contains(&import.path).then_some(import.path))
         .collect();
       if dependencies.is_empty() {
         None
@@ -272,6 +280,10 @@ impl St {
             let expr = err.expr();
             let ptr = art.pointers.get_ptr(expr);
             let err = err.display(&self.artifacts.strings);
+            (ptr.text_range(), err.to_string())
+          }))
+          .chain(art.errors.imports.iter().map(|(expr, err)| {
+            let ptr = art.pointers.get_ptr(*expr);
             (ptr.text_range(), err.to_string())
           }))
           .filter_map(|(range, message)| {
@@ -390,6 +402,7 @@ struct FileErrors {
   parse: Vec<jsonnet_parse::Error>,
   desugar: Vec<jsonnet_desugar::Error>,
   statics: Vec<jsonnet_statics::error::Error>,
+  imports: Vec<(jsonnet_expr::ExprMust, io::Error)>,
 }
 
 impl FileErrors {
@@ -433,6 +446,7 @@ impl IsolatedFileArtifacts {
           parse: parse.errors,
           desugar: desugar.errors,
           statics: statics_errors,
+          imports: Vec::new(),
         },
       },
     }
