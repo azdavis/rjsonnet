@@ -297,9 +297,9 @@ impl St {
           .collect();
         (path, ds)
       });
-      let old_len = ret.len();
+      let old_len: usize = ret.par_iter().map(|(_, xs)| xs.len()).sum();
       ret.extend(iter);
-      let new_len = ret.len();
+      let new_len: usize = ret.par_iter().map(|(_, xs)| xs.len()).sum();
       log::info!("added {} diagnostics", new_len - old_len);
 
       let updated_vals: PathMap<_> = if self.manifest.0 {
