@@ -9,7 +9,7 @@ use rayon::iter::{IntoParallelIterator as _, IntoParallelRefIterator as _, Paral
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::{io, path::Path};
 
-const MAX_DIAGNOSTICS_PER_FILE: usize = 15;
+const MAX_DIAGNOSTICS_PER_FILE: usize = 5;
 
 /// A trait for a file systems.
 pub trait FileSystem: paths::FileSystem {
