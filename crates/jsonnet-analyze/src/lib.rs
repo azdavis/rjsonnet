@@ -170,8 +170,13 @@ impl St {
 
       // the next set of things to add is imports from the added files that do not exist and were
       // not themselves already added.
-      let mut new_to_add = FxHashSet::<PathId>::default();
-      // TODO this could be in parallel for string and binary with a bit more work
+      //
+      // `new_to_add` is the jsonnet importer paths and their imports. the string and binary paths
+      // are handled separately.
+      //
+      // we actually do the importing and processing of the jsonnet paths in parallel. TODO this
+      // could be in parallel for string and binary with a bit more work.
+      let mut new_to_add = Vec::<(PathId, jsonnet_eval::Import)>::default();
       for &importer in &did_add {
         for import in self.files[&importer].imports() {
           if added.contains(&import.path) || self.files.contains_key(&import.path) {
@@ -179,7 +184,7 @@ impl St {
           }
           match import.kind {
             jsonnet_expr::ImportKind::Code => {
-              new_to_add.insert(import.path);
+              new_to_add.push((importer, import));
             }
             jsonnet_expr::ImportKind::String => {
               let path = self.artifacts.paths.get_path(import.path);
@@ -218,20 +223,31 @@ impl St {
       }
 
       log::info!("get file artifacts for {} files in parallel", new_to_add.len());
-      let iter = new_to_add.into_par_iter().filter_map(|mut path_id| {
-        let path = self.artifacts.paths.get_path(path_id);
-        let mut art = match get_isolated_fs(path, &self.root_dirs, fs) {
-          Ok(x) => x,
-          Err(e) => {
-            always!(false, "{}: i/o error: {}", path.as_path().display(), e);
-            return None;
+      let iter = new_to_add.into_par_iter().map(|(importer, import)| {
+        let imported_path = self.artifacts.paths.get_path(import.path);
+        match get_isolated_fs(imported_path, &self.root_dirs, fs) {
+          Ok(mut art) => {
+            // intentionally turn it into the one from `art`
+            let art_import_path = art.combine.paths.get_id(imported_path);
+            Ok((art_import_path, art))
           }
-        };
-        // intentionally turn it into the one from `art`
-        path_id = art.combine.paths.get_id(path);
-        Some((path_id, art))
+          Err(e) => Err((importer, import.expr, e)),
+        }
       });
-      to_add = iter.collect();
+      let file_artifacts: Vec<_> = iter.collect();
+      for result in file_artifacts {
+        match result {
+          Ok((path_id, art)) => to_add.push((path_id, art)),
+          Err((importer, expr, e)) => {
+            let Some(fe) = self.files_extra.get_mut(&importer) else {
+              let path = self.artifacts.paths.get_path(importer).as_path().display();
+              always!(false, "no files extra when in files: {path}");
+              continue;
+            };
+            fe.errors.imports.push((expr, e));
+          }
+        }
+      }
     }
 
     // compute a mapping from path id p to non-empty set of path ids S, s.t. for all q in S, q was
