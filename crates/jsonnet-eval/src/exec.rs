@@ -291,10 +291,16 @@ pub(crate) fn get(cx: Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
     ExprData::Import { kind, path } => match kind {
       jsonnet_expr::ImportKind::Code => match cx.jsonnet_files.get(path) {
         Some(file) => get(cx, &Env::new(*path), file.top),
-        None => Err(mk_todo(expr, "no import")),
+        None => Err(mk_todo(expr, "no code import")),
       },
-      jsonnet_expr::ImportKind::String => Err(mk_todo(expr, "ImportKind::String")),
-      jsonnet_expr::ImportKind::Binary => Err(mk_todo(expr, "ImportKind::Binary")),
+      jsonnet_expr::ImportKind::String => match cx.importstr.get(path) {
+        Some(s) => Ok(Val::Prim(Prim::String(cx.str_ar.str_shared(s.clone().into_boxed_str())))),
+        None => Err(mk_todo(expr, "no string import")),
+      },
+      jsonnet_expr::ImportKind::Binary => match cx.importbin.get(path) {
+        Some(_) => Err(mk_todo(expr, "yes binary import")),
+        None => Err(mk_todo(expr, "no binary import")),
+      },
     },
   }
 }

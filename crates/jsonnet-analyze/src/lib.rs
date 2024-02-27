@@ -8,19 +8,37 @@ use paths::{PathId, PathMap};
 use rayon::iter::{IntoParallelIterator as _, IntoParallelRefIterator as _, ParallelIterator as _};
 use rustc_hash::{FxHashMap, FxHashSet};
 
+/// A trait for a file systems.
+pub trait FileSystem: paths::FileSystem {
+  /// Read the contents of a file as bytes.
+  ///
+  /// # Errors
+  ///
+  /// If the filesystem failed us.
+  fn read_to_bytes(&self, path: &std::path::Path) -> std::io::Result<Vec<u8>>;
+}
+
 /// The state of analysis.
 #[derive(Debug, Default)]
 pub struct St {
   manifest: Tool,
   root_dirs: Vec<paths::CanonicalPathBuf>,
   artifacts: jsonnet_expr::Artifacts,
+  /// these are the non-jsonnet imported files via `importstr`
+  importstr: PathMap<String>,
+  /// these are the non-jsonnet imported files via `importbin`
+  importbin: PathMap<Vec<u8>>,
+  /// note: a file may be in files and importstr if it is imported twice in both ways (rare)
   files: PathMap<jsonnet_eval::JsonnetFile>,
   /// invariant: `x` in `files` iff `x` in `files_extra`.
   files_extra: PathMap<FileArtifacts>,
   /// invariant: if `x` in `json`, then `x` in `files`.
   json: PathMap<jsonnet_eval::error::Result<jsonnet_eval::Json>>,
   /// invariants:
-  /// - if `x` in `dependents`, `x` in `files`.
+  /// - if `x` in `dependents`, at least one of the following is true:
+  ///   - `x` in `files`
+  ///   - `x` in `importstr`
+  ///   - `x` in `importbin`
   /// - if `a` depends on `b`, `a` in `dependents[b]`. (note: NOT a bi-implication)
   ///
   /// NON-invariants:
@@ -139,15 +157,40 @@ impl St {
 
       // the next set of things to add is imports from the added files that do not exist and were
       // not themselves already added.
-      let new_to_add = did_add.iter().flat_map(|path| self.files[path].imports());
-      let new_to_add = new_to_add.filter_map(|(_, path)| {
-        if added.contains(&path) || self.files.contains_key(&path) {
-          None
-        } else {
-          Some(path)
+      let mut new_to_add = FxHashSet::<PathId>::default();
+      for (kind, path_id) in did_add.iter().flat_map(|path_id| self.files[path_id].imports()) {
+        if added.contains(&path_id) || self.files.contains_key(&path_id) {
+          continue;
         }
-      });
-      let new_to_add: FxHashSet<_> = new_to_add.collect();
+        // TODO this could be in parallel for string and binary with a bit more work
+        match kind {
+          jsonnet_expr::ImportKind::Code => {
+            new_to_add.insert(path_id);
+          }
+          jsonnet_expr::ImportKind::String => {
+            let path = self.paths().get_path(path_id);
+            let contents = match fs.read_to_string(path.as_path()) {
+              Ok(x) => x,
+              Err(e) => {
+                always!(false, "read to string error: {e}");
+                continue;
+              }
+            };
+            self.importstr.insert(path_id, contents);
+          }
+          jsonnet_expr::ImportKind::Binary => {
+            let path = self.paths().get_path(path_id);
+            let contents = match fs.read_to_bytes(path.as_path()) {
+              Ok(x) => x,
+              Err(e) => {
+                always!(false, "read to string error: {e}");
+                continue;
+              }
+            };
+            self.importbin.insert(path_id, contents);
+          }
+        }
+      }
 
       log::info!("get file artifacts for {} files in parallel", new_to_add.len());
       let iter = new_to_add.into_par_iter().filter_map(|mut path_id| {
@@ -260,6 +303,8 @@ impl St {
   fn cx(&self) -> jsonnet_eval::Cx<'_> {
     jsonnet_eval::Cx {
       jsonnet_files: &self.files,
+      importstr: &self.importstr,
+      importbin: &self.importbin,
       paths: &self.artifacts.paths,
       str_ar: &self.artifacts.strings,
     }

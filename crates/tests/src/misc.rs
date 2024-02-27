@@ -71,9 +71,7 @@ fn import_self() {
     .check();
 }
 
-// TODO fix
 #[test]
-#[should_panic = "diagnostic: trailing token"]
 fn import_str() {
   Input::default()
     .with_jsonnet(

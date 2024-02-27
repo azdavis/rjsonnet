@@ -24,6 +24,8 @@ mod val;
 pub struct Cx<'a> {
   pub paths: &'a paths::Store,
   pub jsonnet_files: &'a paths::PathMap<JsonnetFile>,
+  pub importstr: &'a paths::PathMap<String>,
+  pub importbin: &'a paths::PathMap<Vec<u8>>,
   pub str_ar: &'a jsonnet_expr::StrArena,
 }
 
