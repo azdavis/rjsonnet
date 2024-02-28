@@ -354,6 +354,7 @@ dependencies = [
  "rayon",
  "rustc-hash",
  "text-pos",
+ "text-size",
 ]
 
 [[package]]
@@ -455,6 +456,7 @@ name = "jsonnet-statics"
 version = "0.1.0"
 dependencies = [
  "jsonnet-expr",
+ "paths",
  "rustc-hash",
 ]
 

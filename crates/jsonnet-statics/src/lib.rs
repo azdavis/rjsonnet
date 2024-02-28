@@ -16,6 +16,8 @@ pub enum Def {
   Local(jsonnet_expr::ExprMust, usize),
   /// A `function`.
   Function(jsonnet_expr::ExprMust, usize),
+  /// An `import` (Jsonnet code only).
+  Import(paths::PathId),
 }
 
 /// The state when checking statics.
@@ -74,7 +76,7 @@ pub fn get(st: &mut St, ars: &Arenas, expr: Expr) {
 fn check(st: &mut St, cx: &Cx, ars: &Arenas, expr: Expr) {
   let Some(expr) = expr else { return };
   match &ars.expr[expr] {
-    ExprData::Prim(_) | ExprData::Import { .. } => {}
+    ExprData::Prim(_) => {}
     ExprData::Object { asserts, fields } => {
       let cx_big = {
         let mut cx = cx.clone();
@@ -175,5 +177,9 @@ fn check(st: &mut St, cx: &Cx, ars: &Arenas, expr: Expr) {
     ExprData::UnaryOp { inner, .. } | ExprData::Error(inner) => {
       check(st, cx, ars, *inner);
     }
+    ExprData::Import { kind, path } => match kind {
+      jsonnet_expr::ImportKind::Code => st.note_usage(expr, Def::Import(*path)),
+      jsonnet_expr::ImportKind::String | jsonnet_expr::ImportKind::Binary => {}
+    },
   }
 }

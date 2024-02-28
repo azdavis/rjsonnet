@@ -52,7 +52,7 @@ pub trait State {
     &mut self,
     path: paths::CanonicalPathBuf,
     pos: text_pos::PositionUtf16,
-  ) -> Option<text_pos::RangeUtf16>;
+  ) -> Option<(paths::PathId, text_pos::RangeUtf16)>;
 
   /// Returns the paths store for this.
   fn paths(&self) -> &paths::Store;

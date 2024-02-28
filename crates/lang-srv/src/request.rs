@@ -40,11 +40,12 @@ fn go<S: State>(
     let td_params = params.text_document_position_params;
     let path = srv.canonical_path_buf(&td_params.text_document.uri)?;
     let pos = convert::text_pos_position(td_params.position);
-    let result = st.get_def(path, pos).map(|range| {
-      lsp_types::GotoDefinitionResponse::Scalar(lsp_types::Location {
-        uri: td_params.text_document.uri,
+    let result = st.get_def(path, pos).and_then(|(path_id, range)| {
+      let uri = convert::url(st.paths().get_path(path_id))?;
+      Some(lsp_types::GotoDefinitionResponse::Scalar(lsp_types::Location {
+        uri,
         range: convert::lsp_range(range),
-      })
+      }))
     });
     Ok(mk_res::<lsp_types::request::GotoDefinition>(id, result))
   })?;

@@ -18,6 +18,7 @@ paths.workspace = true
 rayon.workspace = true
 rustc-hash.workspace = true
 text-pos.workspace = true
+text-size.workspace = true
 
 always.path = "../always"
 diagnostic.path = "../diagnostic"

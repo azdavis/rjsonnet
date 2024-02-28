@@ -75,7 +75,7 @@ impl lang_srv::State for State {
     &mut self,
     path: paths::CanonicalPathBuf,
     pos: text_pos::PositionUtf16,
-  ) -> Option<text_pos::RangeUtf16> {
+  ) -> Option<(paths::PathId, text_pos::RangeUtf16)> {
     let path_id = self.0.path_id(path);
     self.0.get_def(path_id, pos)
   }

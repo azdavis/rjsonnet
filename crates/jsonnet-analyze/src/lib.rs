@@ -440,9 +440,9 @@ impl St {
   #[must_use]
   pub fn get_def(
     &self,
-    path_id: PathId,
+    mut path_id: PathId,
     pos: text_pos::PositionUtf16,
-  ) -> Option<text_pos::RangeUtf16> {
+  ) -> Option<(paths::PathId, text_pos::RangeUtf16)> {
     let file = self.files_extra.get(&path_id)?;
     let ts = file.pos_db.text_size_utf16(pos)?;
     let root = file.syntax.clone().into_ast()?;
@@ -496,8 +496,13 @@ impl St {
             Some(node.text_range())
           })?
       }
+      jsonnet_statics::Def::Import(imported) => {
+        path_id = imported;
+        text_size::TextRange::default()
+      }
     };
-    file.pos_db.range_utf16(tr)
+    let range = file.pos_db.range_utf16(tr)?;
+    Some((path_id, range))
   }
 }
 
