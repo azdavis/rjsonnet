@@ -3,58 +3,65 @@
 pub mod error;
 
 use jsonnet_expr::{Arenas, Expr, ExprData, ExprMust, Id, Prim, Str};
-use rustc_hash::FxHashSet;
+use rustc_hash::{FxHashMap, FxHashSet};
+
+/// A definition site for an identifier.
+#[derive(Debug, Clone, Copy)]
+pub enum Def {
+  /// Things like std, self, and super.
+  Builtin,
+  /// An object comprehension, which are handled somewhat specially.
+  ObjectComp(jsonnet_expr::ExprMust),
+  /// A `local`.
+  Local(jsonnet_expr::ExprMust, usize),
+  /// A `function`.
+  Function(jsonnet_expr::ExprMust, usize),
+}
 
 /// The state when checking statics.
 #[derive(Debug, Default)]
-struct St {
-  errors: Vec<error::Error>,
+pub struct St {
+  /// The errors.
+  pub errors: Vec<error::Error>,
+  /// Any definition sites we could figure out.
+  pub defs: FxHashMap<jsonnet_expr::ExprMust, Def>,
 }
 
 impl St {
   fn err(&mut self, expr: ExprMust, kind: error::Kind) {
     self.errors.push(error::Error { expr, kind });
   }
-
-  /// Returns all the errors accumulated in the state.
-  #[must_use]
-  fn finish(self) -> Vec<error::Error> {
-    self.errors
-  }
 }
 
 /// The context. Stores the identifiers currently in scope.
 #[derive(Debug, Clone)]
 struct Cx {
-  store: FxHashSet<Id>,
+  store: FxHashMap<Id, Def>,
 }
 
 impl Default for Cx {
   fn default() -> Self {
-    let mut ret = Self { store: FxHashSet::default() };
-    ret.insert(Id::std);
-    ret.insert(Id::std_unutterable);
+    let mut ret = Self { store: FxHashMap::default() };
+    ret.define(Id::std, Def::Builtin);
+    ret.define(Id::std_unutterable, Def::Builtin);
     ret
   }
 }
 
 impl Cx {
-  fn insert(&mut self, id: Id) {
-    self.store.insert(id);
+  fn define(&mut self, id: Id, def: Def) {
+    self.store.insert(id, def);
   }
 
-  fn contains(&self, id: Id) -> bool {
-    self.store.contains(&id)
+  fn get(&self, id: Id) -> Option<Def> {
+    self.store.get(&id).copied()
   }
 }
 
 /// Performs the checks.
-#[must_use]
-pub fn get(ars: &Arenas, expr: Expr) -> Vec<error::Error> {
-  let mut st = St::default();
+pub fn get(st: &mut St, ars: &Arenas, expr: Expr) {
   let cx = Cx::default();
-  check(&mut st, &cx, ars, expr);
-  st.finish()
+  check(st, &cx, ars, expr);
 }
 
 #[allow(clippy::too_many_lines)]
@@ -65,8 +72,8 @@ fn check(st: &mut St, cx: &Cx, ars: &Arenas, expr: Expr) {
     ExprData::Object { asserts, fields } => {
       let cx_big = {
         let mut cx = cx.clone();
-        cx.insert(Id::self_);
-        cx.insert(Id::super_);
+        cx.define(Id::self_, Def::Builtin);
+        cx.define(Id::super_, Def::Builtin);
         cx
       };
       let mut field_names = FxHashSet::<&Str>::default();
@@ -87,10 +94,10 @@ fn check(st: &mut St, cx: &Cx, ars: &Arenas, expr: Expr) {
     ExprData::ObjectComp { name, body, id, ary } => {
       check(st, cx, ars, *ary);
       let mut cx = cx.clone();
-      cx.insert(*id);
+      cx.define(*id, Def::ObjectComp(expr));
       check(st, &cx, ars, *name);
-      cx.insert(Id::self_);
-      cx.insert(Id::super_);
+      cx.define(Id::self_, Def::Builtin);
+      cx.define(Id::super_, Def::Builtin);
       check(st, &cx, ars, *body);
     }
     ExprData::Array(exprs) => {
@@ -117,16 +124,19 @@ fn check(st: &mut St, cx: &Cx, ars: &Arenas, expr: Expr) {
         }
       }
     }
-    ExprData::Id(id) => {
-      if !cx.contains(*id) {
-        st.err(expr, error::Kind::NotInScope(*id));
+    ExprData::Id(id) => match cx.get(*id) {
+      Some(def) => {
+        // NOTE: we CANNOT assert insert returns none here, because we reuse expr indices sometimes
+        // when desugaring.
+        st.defs.insert(expr, def);
       }
-    }
+      None => st.err(expr, error::Kind::NotInScope(*id)),
+    },
     ExprData::Local { binds, body } => {
       let mut cx = cx.clone();
       let mut bound_names = FxHashSet::<Id>::default();
-      for &(id, rhs) in binds {
-        cx.insert(id);
+      for (idx, &(id, rhs)) in binds.iter().enumerate() {
+        cx.define(id, Def::Local(expr, idx));
         if !bound_names.insert(id) {
           st.err(rhs.unwrap_or(expr), error::Kind::DuplicateBinding(id));
         }
@@ -139,8 +149,8 @@ fn check(st: &mut St, cx: &Cx, ars: &Arenas, expr: Expr) {
     ExprData::Function { params, body } => {
       let mut cx = cx.clone();
       let mut bound_names = FxHashSet::<Id>::default();
-      for &(id, rhs) in params {
-        cx.insert(id);
+      for (idx, &(id, rhs)) in params.iter().enumerate() {
+        cx.define(id, Def::Function(expr, idx));
         if !bound_names.insert(id) {
           st.err(rhs.flatten().unwrap_or(expr), error::Kind::DuplicateBinding(id));
         }

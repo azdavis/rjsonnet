@@ -38,7 +38,7 @@ pub(crate) fn diagnostic(d: diagnostic::Diagnostic) -> lsp_types::Diagnostic {
   }
 }
 
-fn lsp_range(r: text_pos::RangeUtf16) -> lsp_types::Range {
+pub(crate) fn lsp_range(r: text_pos::RangeUtf16) -> lsp_types::Range {
   lsp_types::Range { start: lsp_position(r.start), end: lsp_position(r.end) }
 }
 
@@ -50,6 +50,6 @@ pub(crate) fn text_pos_range(r: lsp_types::Range) -> text_pos::RangeUtf16 {
   text_pos::RangeUtf16 { start: text_pos_position(r.start), end: text_pos_position(r.end) }
 }
 
-fn text_pos_position(p: lsp_types::Position) -> text_pos::PositionUtf16 {
+pub(crate) fn text_pos_position(p: lsp_types::Position) -> text_pos::PositionUtf16 {
   text_pos::PositionUtf16 { line: p.line, col: p.character }
 }

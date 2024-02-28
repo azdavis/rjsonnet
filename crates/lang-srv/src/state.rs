@@ -47,6 +47,13 @@ pub trait State {
   /// If we couldn't show more info about the hovered file.
   fn hover(&mut self, path: paths::CanonicalPathBuf) -> Option<String>;
 
+  /// Get the definition site of a part of a file.
+  fn get_def(
+    &mut self,
+    path: paths::CanonicalPathBuf,
+    pos: text_pos::PositionUtf16,
+  ) -> Option<text_pos::RangeUtf16>;
+
   /// Returns the paths store for this.
   fn paths(&self) -> &paths::Store;
 

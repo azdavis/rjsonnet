@@ -1,6 +1,6 @@
 //! Handling requests from the client, e.g. "compute the hover text for this area of the document".
 
-use crate::{server::Server, state::State, util};
+use crate::{convert, server::Server, state::State, util};
 use always::always;
 use anyhow::{bail, Result};
 use std::ops::ControlFlow;
@@ -35,6 +35,18 @@ fn go<S: State>(
       range: None,
     });
     Ok(mk_res::<lsp_types::request::HoverRequest>(id, result))
+  })?;
+  req = try_req::<lsp_types::request::GotoDefinition, _, _>(req, |id, params| {
+    let td_params = params.text_document_position_params;
+    let path = srv.canonical_path_buf(&td_params.text_document.uri)?;
+    let pos = convert::text_pos_position(td_params.position);
+    let result = st.get_def(path, pos).map(|range| {
+      lsp_types::GotoDefinitionResponse::Scalar(lsp_types::Location {
+        uri: td_params.text_document.uri,
+        range: convert::lsp_range(range),
+      })
+    });
+    Ok(mk_res::<lsp_types::request::GotoDefinition>(id, result))
   })?;
   ControlFlow::Continue(req)
 }

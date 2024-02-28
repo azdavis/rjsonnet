@@ -71,6 +71,15 @@ impl lang_srv::State for State {
     Some(json.display(self.0.strings()).to_string())
   }
 
+  fn get_def(
+    &mut self,
+    path: paths::CanonicalPathBuf,
+    pos: text_pos::PositionUtf16,
+  ) -> Option<text_pos::RangeUtf16> {
+    let path_id = self.0.path_id(path);
+    self.0.get_def(path_id, pos)
+  }
+
   fn paths(&self) -> &paths::Store {
     self.0.paths()
   }

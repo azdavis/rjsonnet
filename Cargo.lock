@@ -436,6 +436,7 @@ dependencies = [
  "log",
  "paths",
  "serde_json",
+ "text-pos",
 ]
 
 [[package]]

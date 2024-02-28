@@ -4,9 +4,10 @@
 
 use always::always;
 use diagnostic::Diagnostic;
+use jsonnet_syntax::ast::AstNode as _;
 use paths::{PathId, PathMap};
 use rayon::iter::{IntoParallelIterator as _, IntoParallelRefIterator as _, ParallelIterator as _};
-use rustc_hash::FxHashSet;
+use rustc_hash::{FxHashMap, FxHashSet};
 use std::{io, path::Path};
 
 const MAX_DIAGNOSTICS_PER_FILE: usize = 5;
@@ -433,6 +434,51 @@ impl St {
       None => Err(jsonnet_eval::error::Error::NoPath(path_id)),
     }
   }
+
+  /// Returns the def site for the indicated area, if there is one.
+  #[must_use]
+  pub fn get_def(
+    &self,
+    path_id: PathId,
+    pos: text_pos::PositionUtf16,
+  ) -> Option<text_pos::RangeUtf16> {
+    let file = self.files_extra.get(&path_id)?;
+    let ts = file.pos_db.text_size_utf16(pos)?;
+    let root = file.syntax.clone().expr()?;
+    let tok = jsonnet_syntax::node_token(root.syntax(), ts)?;
+    let node = tok.parent()?;
+    let ptr = jsonnet_syntax::ast::SyntaxNodePtr::new(&node);
+    let expr = file.pointers.get_idx(ptr)?;
+    let def = file.defs.get(&expr)?;
+    let tr = match *def {
+      jsonnet_statics::Def::Builtin => return None,
+      jsonnet_statics::Def::ObjectComp(expr) => {
+        let obj = file.pointers.get_ptr(expr);
+        let obj = obj.cast::<jsonnet_syntax::ast::Object>()?;
+        let obj = obj.try_to_node(root.syntax())?;
+        let comp_spec = obj.comp_specs().next()?;
+        match comp_spec {
+          jsonnet_syntax::ast::CompSpec::ForSpec(for_spec) => for_spec.id()?.text_range(),
+          jsonnet_syntax::ast::CompSpec::IfSpec(_) => return None,
+        }
+      }
+      jsonnet_statics::Def::Local(expr, idx) => {
+        let local = file.pointers.get_ptr(expr);
+        // NOTE because of desugaring, not all expr locals are actually from ast locals
+        let local = local.cast::<jsonnet_syntax::ast::ExprLocal>()?;
+        let local = local.try_to_node(root.syntax())?;
+        local.binds().nth(idx)?.id()?.text_range()
+      }
+      jsonnet_statics::Def::Function(expr, idx) => {
+        let func = file.pointers.get_ptr(expr);
+        // NOTE because of desugaring, possibly not all expr fns are actually from ast fns
+        let func = func.cast::<jsonnet_syntax::ast::ExprFunction>()?;
+        let func = func.try_to_node(root.syntax())?;
+        func.paren_params()?.params().nth(idx)?.id()?.text_range()
+      }
+    };
+    file.pos_db.range_utf16(tr)
+  }
 }
 
 /// Artifacts from a file whose shared artifacts have been combined into the global ones.
@@ -442,6 +488,7 @@ struct FileArtifacts {
   pos_db: text_pos::PositionDb,
   syntax: jsonnet_syntax::Root,
   pointers: jsonnet_desugar::Pointers,
+  defs: FxHashMap<jsonnet_expr::ExprMust, jsonnet_statics::Def>,
   errors: FileErrors,
 }
 
@@ -484,7 +531,8 @@ impl IsolatedFileArtifacts {
     let lex = jsonnet_lex::get(contents);
     let parse = jsonnet_parse::get(&lex.tokens);
     let desugar = jsonnet_desugar::get(current_dir, other_dirs, fs, parse.root.clone().expr());
-    let statics_errors = jsonnet_statics::get(&desugar.arenas, desugar.top);
+    let mut st = jsonnet_statics::St::default();
+    jsonnet_statics::get(&mut st, &desugar.arenas, desugar.top);
     Self {
       eval: jsonnet_eval::JsonnetFile { expr_ar: desugar.arenas.expr, top: desugar.top },
       combine: jsonnet_expr::Artifacts { paths: desugar.ps, strings: desugar.arenas.str },
@@ -492,11 +540,12 @@ impl IsolatedFileArtifacts {
         pos_db: text_pos::PositionDb::new(contents),
         syntax: parse.root,
         pointers: desugar.pointers,
+        defs: st.defs,
         errors: FileErrors {
           lex: lex.errors,
           parse: parse.errors,
           desugar: desugar.errors,
-          statics: statics_errors,
+          statics: st.errors,
           imports: Vec::new(),
         },
       },
