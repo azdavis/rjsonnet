@@ -15,12 +15,16 @@ pub(crate) fn get_expr(defs: &DefMap, exprs: &ExprArena, expr: Expr) -> ConstEva
     return get_def(defs, exprs, def);
   }
   match &exprs[expr_must] {
-    // Id: will have been covered by the above if we knew anything else about it
-    // Prim, Object, Array, Function: literals
-    // Error: does not evaluate
-    // ObjectComp, Call, If, BinaryOp, UnaryOp: no attempt made to analyze further
-    // Import: TODO
+    ExprData::Subscript { on, idx } => {
+      get_subscript(defs, exprs, *on, *idx).unwrap_or(ConstEval::Expr(expr))
+    }
+    ExprData::Local { body, .. } => get_expr(defs, exprs, *body),
+    // Id, Import: would have been covered by defs.get above if we knew anything about them
+    // Prim, Object, Array, Function: literals are values, they do not evaluate further
+    // Error: errors do not evaluate to values
+    // ObjectComp, Call, If, BinaryOp, UnaryOp: too tricky, no attempt made to analyze further
     ExprData::Id(_)
+    | ExprData::Import { .. }
     | ExprData::Prim(_)
     | ExprData::Object { .. }
     | ExprData::Array(_)
@@ -30,26 +34,21 @@ pub(crate) fn get_expr(defs: &DefMap, exprs: &ExprArena, expr: Expr) -> ConstEva
     | ExprData::Call { .. }
     | ExprData::If { .. }
     | ExprData::BinaryOp { .. }
-    | ExprData::UnaryOp { .. }
-    | ExprData::Import { .. } => ConstEval::Expr(expr),
-    ExprData::Subscript { on, idx } => {
-      get_subscript(defs, exprs, *on, *idx).unwrap_or(ConstEval::Expr(expr))
-    }
-    ExprData::Local { body, .. } => get_expr(defs, exprs, *body),
+    | ExprData::UnaryOp { .. } => ConstEval::Expr(expr),
   }
 }
 
 fn get_def(defs: &DefMap, exprs: &ExprArena, def: Def) -> ConstEval {
   match def {
+    Def::LocalBind(expr, idx) => {
+      get_local(defs, exprs, Some(expr), idx).unwrap_or(ConstEval::Def(def))
+    }
     // Builtin: opaque
-    // ObjectCompId: no attempt made to analyze further
-    // FunctionParam: params can be arbitrary
+    // ObjectCompId: too tricky, no attempt made to analyze further
+    // FunctionParam: params can be arbitrary, impossible to analyze further
     // Import: TODO
     Def::Builtin | Def::ObjectCompId(_) | Def::FunctionParam(_, _) | Def::Import(_) => {
       ConstEval::Def(def)
-    }
-    Def::LocalBind(expr, idx) => {
-      get_local(defs, exprs, Some(expr), idx).unwrap_or(ConstEval::Def(def))
     }
   }
 }
