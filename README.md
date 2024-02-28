@@ -24,9 +24,19 @@ There is also a CLI that can translate Jsonnet files into JSON.
 
 ### First time repo setup
 
-1. Get [Rust][rustup].
+1. Get [Rust][rustup] and Cargo (the package manager, included by default).
 1. Clone or download the repo.
-1. Enter the repo and run `cargo xtask ci`.
+1. Enter the repo.
+
+Now you can run things like:
+
+```
+$ cargo build
+$ cargo test
+$ cargo clippy
+$ cargo fmt
+$ cargo xtask ci
+```
 
 ### Try the CLI only
 
