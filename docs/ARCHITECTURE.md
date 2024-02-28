@@ -26,7 +26,7 @@ For expressions, not so. This means syntactically identical expressions at diffe
 
 These are the separate stages of analysis.
 
-Each stage produces an output that is as "correct" as we could manage **and** errors, instead of either an error-less output or errors. This lets us continue to analyze malformed inputs as best we can in further stages.
+Each stage produces an output that is as "correct" as we could manage **as well as** errors, instead of **either** an error-less output **or** errors. This lets us continue to analyze malformed inputs as best we can in further stages.
 
 ### `crates/jsonnet-lex`
 
@@ -85,11 +85,13 @@ Like `assert!()` except it only panics in debug mode. Evaluates to the asserted 
 This is handy if you don't want to hard fail in production:
 
 ```rs
-if always!(...) {
+if always!(internal_invariant_satisfied()) {
     // normal, good
 } else {
     // oops, something that should "never happen" happened.
-    // in this branch we can do something like return a fake value
+    // the internal invariant was NOT satisfied.
+    // in this branch we can do something like return a fake value,
+    // or `continue` in a loop, or return `None`, etc.
 }
 ```
 
