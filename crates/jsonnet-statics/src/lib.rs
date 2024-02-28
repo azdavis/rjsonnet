@@ -31,6 +31,12 @@ impl St {
   fn err(&mut self, expr: ExprMust, kind: error::Kind) {
     self.errors.push(error::Error { expr, kind });
   }
+
+  fn note_usage(&mut self, expr: ExprMust, def: Def) {
+    // NOTE: we CANNOT assert insert returns none here, because we reuse expr indices sometimes
+    // when desugaring.
+    self.defs.insert(expr, def);
+  }
 }
 
 /// The context. Stores the identifiers currently in scope.
@@ -125,11 +131,7 @@ fn check(st: &mut St, cx: &Cx, ars: &Arenas, expr: Expr) {
       }
     }
     ExprData::Id(id) => match cx.get(*id) {
-      Some(def) => {
-        // NOTE: we CANNOT assert insert returns none here, because we reuse expr indices sometimes
-        // when desugaring.
-        st.defs.insert(expr, def);
-      }
+      Some(def) => st.note_usage(expr, def),
       None => st.err(expr, error::Kind::NotInScope(*id)),
     },
     ExprData::Local { binds, body } => {
