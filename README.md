@@ -12,6 +12,12 @@ There is also a CLI that can translate Jsonnet files into JSON.
 
 This project is pre-MVP. Most IDE features are not implemented. Some **language** features haven't even been implemented. There are a lot of TODOs and probably a good amount of latent bugs.
 
+## Features
+
+- Inline diagnostics
+- Go-to-definition
+- Hover for info
+
 ## Try it
 
 ### First time repo setup
