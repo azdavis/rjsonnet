@@ -150,6 +150,7 @@ impl St {
   where
     F: Sync + Send + paths::FileSystem,
   {
+    log::info!("update one file: {}", path.as_path().display());
     let mut art = match get_isolated_str(path, contents, &self.root_dirs, fs) {
       Ok(x) => x,
       Err(e) => {
