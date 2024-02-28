@@ -50,14 +50,14 @@ to turn `FOO.jsonnet` into JSON and report any errors.
 
 ### Try the language server
 
-- Get [VS Code][vscode].
-- Get [Node][node].
-- Open the repo in VS Code.
-- Click "Run and Debug" (by default, the triangular play button with bug on the left).
-- Click the triangular play button by "extension" (you may need to select it from the drop-down). Another VS Code will pop up, with the extension enabled.
-- Open that VS Code on a folder with Jsonnet files.
-- Ensure other Jsonnet-related extensions like [Jsonnet LSP][other-ext] are disabled.
-- Try out the IDE features like inline diagnostics and go-to-def.
+1. Get [VS Code][vscode].
+1. Get [Node][node].
+1. Open the repo in VS Code.
+1. Click "Run and Debug" (by default, the triangular play button with bug on the left).
+1. Click the triangular play button by "extension" (you may need to select it from the drop-down). Another VS Code will pop up, with the extension enabled.
+1. Open that VS Code on a folder with Jsonnet files.
+1. Ensure other Jsonnet-related extensions like [Jsonnet LSP][other-ext] are disabled.
+1. Try out the IDE features like inline diagnostics and go-to-def.
 
 ## Credits
 
