@@ -1,5 +1,6 @@
 //! Conversions between common types.
 
+use always::always;
 use anyhow::{bail, Result};
 use lsp_types::Url;
 
@@ -10,6 +11,18 @@ pub(crate) fn path_buf(url: &Url) -> Result<std::path::PathBuf> {
   match url.to_file_path() {
     Ok(x) => Ok(x),
     Err(()) => bail!("couldn't make a URL into a file path: {url}"),
+  }
+}
+
+#[allow(clippy::single_match_else, clippy::manual_let_else)]
+pub(crate) fn url(path: &paths::CanonicalPath) -> Option<Url> {
+  // we want a compile error if the Err type stops being ().
+  match Url::from_file_path(path.as_path()) {
+    Ok(x) => Some(x),
+    Err(()) => {
+      always!(false, "canonical path to url error");
+      None
+    }
   }
 }
 
