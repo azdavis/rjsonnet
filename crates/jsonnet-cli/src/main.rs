@@ -38,7 +38,15 @@ fn run() -> usize {
       }
     };
 
-    let ds_map = st.update_many(&fs, Vec::new(), vec![p]);
+    let ds_map = st.update_many(&fs, Vec::new(), vec![p.clone()]);
+
+    if manifest {
+      let path_id = st.path_id(p);
+      if let Ok(json) = st.get_json(path_id) {
+        let json = json.display(st.strings());
+        println!("{json}");
+      }
+    }
 
     for (path, ds) in ds_map {
       let path = st.paths().get_path(path).as_path();
