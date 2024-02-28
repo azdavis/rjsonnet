@@ -10,7 +10,7 @@ This project is pre-MVP. Most IDE features are not implemented. Some **language*
 
 The primary intended way to use this is via the [language server][lsp] and its official VS Code extension.
 
-However, you can also use the language server with any supported editor, you'll just have to write your own glue code between this server and your editor.
+However, you can also use the language server with any supported editor. You'll just have to write your own glue code between this server and your editor.
 
 There is also a CLI that can translate Jsonnet files into JSON.
 
