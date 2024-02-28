@@ -2,7 +2,7 @@
 
 An implementation of [Jsonnet][] in [Rust][], which aims to conform to the [spec][], and is built with the IDE use-case in mind.
 
-The primary intended way to use this is via the [language server][lsp] and its official VS Code extension
+The primary intended way to use this is via the [language server][lsp] and its official VS Code extension.
 
 However, you can also use the language server with any supported editor, you'll just have to write your own glue code between this server and your editor.
 
