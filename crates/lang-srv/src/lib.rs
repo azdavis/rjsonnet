@@ -67,7 +67,7 @@ pub fn run<S: State>() {
     let iter = wd.into_iter().filter_map(|entry| {
       let entry = entry.ok()?;
       let ext = entry.path().extension()?.to_str()?;
-      if !st.is_ext(ext) {
+      if !st.is_ext(ext) || !srv.fs.is_file(entry.path()) {
         return None;
       }
       srv.fs.canonical(entry.path()).ok()
