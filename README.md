@@ -45,6 +45,10 @@ to turn `FOO.jsonnet` into JSON and report any errors.
 
 I took a lot of inspiration from the existing [Jsonnet LSP][other-ext] extension, but I wanted to try doing it myself, in Rust, from scratch, specifically for IDEs. I had already done so with Standard ML in [Millet][millet].
 
+## License
+
+Like Rust itself and many other projects in the Rust community, this project is licensed under either the MIT license or the Apache license v2.0, at your option.
+
 [Jsonnet]: https://jsonnet.org
 [lsp]: https://microsoft.github.io/language-server-protocol
 [node]: https://nodejs.org/en
