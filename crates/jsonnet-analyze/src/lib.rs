@@ -453,7 +453,7 @@ impl St {
     let def = file.defs.get(&expr)?;
     let tr = match *def {
       jsonnet_statics::Def::Builtin => return None,
-      jsonnet_statics::Def::ObjectComp(expr) => {
+      jsonnet_statics::Def::ObjectCompId(expr) => {
         let obj = file.pointers.get_ptr(expr);
         let obj = obj.cast::<jsonnet_syntax::ast::Object>()?;
         let obj = obj.try_to_node(root.syntax())?;
@@ -463,7 +463,7 @@ impl St {
           jsonnet_syntax::ast::CompSpec::IfSpec(_) => return None,
         }
       }
-      jsonnet_statics::Def::Local(expr, idx) => {
+      jsonnet_statics::Def::LocalBind(expr, idx) => {
         let local = file.pointers.get_ptr(expr);
         // NOTE because of desugaring, not all expr locals are actually from ast locals. we try to
         // get the exact location first and then fall back.
@@ -480,7 +480,7 @@ impl St {
             Some(node.text_range())
           })?
       }
-      jsonnet_statics::Def::Function(expr, idx) => {
+      jsonnet_statics::Def::FunctionParam(expr, idx) => {
         let func = file.pointers.get_ptr(expr);
         // NOTE because of desugaring, possibly not all expr fns are actually from ast fns
         func

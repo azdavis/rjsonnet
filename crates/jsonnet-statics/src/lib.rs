@@ -11,11 +11,11 @@ pub enum Def {
   /// Things like std, self, and super.
   Builtin,
   /// An object comprehension, which are handled somewhat specially.
-  ObjectComp(jsonnet_expr::ExprMust),
-  /// A `local`.
-  Local(jsonnet_expr::ExprMust, usize),
-  /// A `function`.
-  Function(jsonnet_expr::ExprMust, usize),
+  ObjectCompId(jsonnet_expr::ExprMust),
+  /// A `local` bind.
+  LocalBind(jsonnet_expr::ExprMust, usize),
+  /// A `function` parameter.
+  FunctionParam(jsonnet_expr::ExprMust, usize),
   /// An `import` (Jsonnet code only).
   Import(paths::PathId),
 }
@@ -102,7 +102,7 @@ fn check(st: &mut St, cx: &Cx, ars: &Arenas, expr: Expr) {
     ExprData::ObjectComp { name, body, id, ary } => {
       check(st, cx, ars, *ary);
       let mut cx = cx.clone();
-      cx.define(*id, Def::ObjectComp(expr));
+      cx.define(*id, Def::ObjectCompId(expr));
       check(st, &cx, ars, *name);
       cx.define(Id::self_, Def::Builtin);
       cx.define(Id::super_, Def::Builtin);
@@ -140,7 +140,7 @@ fn check(st: &mut St, cx: &Cx, ars: &Arenas, expr: Expr) {
       let mut cx = cx.clone();
       let mut bound_names = FxHashSet::<Id>::default();
       for (idx, &(id, rhs)) in binds.iter().enumerate() {
-        cx.define(id, Def::Local(expr, idx));
+        cx.define(id, Def::LocalBind(expr, idx));
         if !bound_names.insert(id) {
           st.err(rhs.unwrap_or(expr), error::Kind::DuplicateBinding(id));
         }
@@ -154,7 +154,7 @@ fn check(st: &mut St, cx: &Cx, ars: &Arenas, expr: Expr) {
       let mut cx = cx.clone();
       let mut bound_names = FxHashSet::<Id>::default();
       for (idx, &(id, rhs)) in params.iter().enumerate() {
-        cx.define(id, Def::Function(expr, idx));
+        cx.define(id, Def::FunctionParam(expr, idx));
         if !bound_names.insert(id) {
           st.err(rhs.flatten().unwrap_or(expr), error::Kind::DuplicateBinding(id));
         }
