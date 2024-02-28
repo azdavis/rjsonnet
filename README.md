@@ -2,11 +2,15 @@
 
 An implementation of [Jsonnet][] in [Rust][], which aims to conform to the [spec][], and is built with the IDE use-case in mind.
 
-The primary intended way to use this is via the [language server][lsp], but there is also a CLI that can translate Jsonnet files into JSON.
+The primary intended way to use this is via the [language server][lsp] and its official VS Code extension
+
+However, you can also use the language server with any supported editor, you'll just have to write your own glue code between this server and your editor.
+
+There is also a CLI that can translate Jsonnet files into JSON.
 
 ## Warning
 
-This project is pre-MVP. Most IDE features are not implemented. Some **language** features haven't even been implemented.
+This project is pre-MVP. Most IDE features are not implemented. Some **language** features haven't even been implemented. There are a lot of TODOs and probably a good amount of latent bugs.
 
 ## Try it
 
@@ -18,11 +22,13 @@ This project is pre-MVP. Most IDE features are not implemented. Some **language*
 
 ### Try the CLI only
 
+Run:
+
 ```
 $ cargo run --bin jsonnet-cli -- --manifest FOO.jsonnet
 ```
 
-to turn FOO.jsonnet into JSON and report any errors.
+to turn `FOO.jsonnet` into JSON and report any errors.
 
 ### Try the language server
 
