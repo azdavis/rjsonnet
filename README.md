@@ -4,6 +4,10 @@ An implementation of [Jsonnet][] in [Rust][], which aims to conform to the [spec
 
 The primary intended way to use this is via the [language server][lsp], but there is also a CLI that can translate Jsonnet files into JSON.
 
+## Warning
+
+This project is pre-MVP. Most IDE features are not implemented. Some **language** features haven't even been implemented.
+
 ## Try it
 
 ### First time repo setup
