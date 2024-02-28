@@ -28,7 +28,6 @@ to turn FOO.jsonnet into JSON and report any errors.
 
 - Get [VS Code][vscode].
 - Get [Node][node].
-- Run `cargo xtask dist --release`.
 - Open the repo in VS Code.
 - Click "Run and Debug" (by default, the triangular play button with bug on the left).
 - Click the triangular play button by "extension" (you may need to select it from the drop-down). Another VS Code will pop up, with the extension enabled.

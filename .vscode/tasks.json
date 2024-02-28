@@ -7,7 +7,7 @@
       "type": "shell",
       "command": "cargo xtask dist --release",
       "presentation": {
-        "reveal": "silent"
+        "reveal": "always"
       }
     }
   ]
