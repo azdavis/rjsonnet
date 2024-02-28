@@ -7,7 +7,7 @@ use diagnostic::Diagnostic;
 use jsonnet_syntax::ast::AstNode as _;
 use paths::{PathId, PathMap};
 use rayon::iter::{IntoParallelIterator as _, IntoParallelRefIterator as _, ParallelIterator as _};
-use rustc_hash::{FxHashMap, FxHashSet};
+use rustc_hash::FxHashSet;
 use std::{io, path::Path};
 
 const MAX_DIAGNOSTICS_PER_FILE: usize = 5;
@@ -513,7 +513,7 @@ struct FileArtifacts {
   pos_db: text_pos::PositionDb,
   syntax: jsonnet_syntax::Root,
   pointers: jsonnet_desugar::Pointers,
-  defs: FxHashMap<jsonnet_expr::ExprMust, jsonnet_statics::Def>,
+  defs: jsonnet_statics::DefMap,
   errors: FileErrors,
 }
 

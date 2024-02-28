@@ -20,13 +20,16 @@ pub enum Def {
   Import(paths::PathId),
 }
 
+/// A map from expressions to defs.
+pub type DefMap = FxHashMap<jsonnet_expr::ExprMust, Def>;
+
 /// The state when checking statics.
 #[derive(Debug, Default)]
 pub struct St {
   /// The errors.
   pub errors: Vec<error::Error>,
   /// Any definition sites we could figure out.
-  pub defs: FxHashMap<jsonnet_expr::ExprMust, Def>,
+  pub defs: DefMap,
 }
 
 impl St {
