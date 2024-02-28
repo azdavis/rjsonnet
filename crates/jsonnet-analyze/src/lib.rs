@@ -444,7 +444,7 @@ impl St {
   ) -> Option<text_pos::RangeUtf16> {
     let file = self.files_extra.get(&path_id)?;
     let ts = file.pos_db.text_size_utf16(pos)?;
-    let root = file.syntax.clone().expr()?;
+    let root = file.syntax.clone().into_ast()?;
     let tok = jsonnet_syntax::node_token(root.syntax(), ts)?;
     let node = tok.parent()?;
     let ptr = jsonnet_syntax::ast::SyntaxNodePtr::new(&node);
@@ -464,17 +464,36 @@ impl St {
       }
       jsonnet_statics::Def::Local(expr, idx) => {
         let local = file.pointers.get_ptr(expr);
-        // NOTE because of desugaring, not all expr locals are actually from ast locals
-        let local = local.cast::<jsonnet_syntax::ast::ExprLocal>()?;
-        let local = local.try_to_node(root.syntax())?;
-        local.binds().nth(idx)?.id()?.text_range()
+        // NOTE because of desugaring, not all expr locals are actually from ast locals. we try to
+        // get the exact location first and then fall back.
+        local
+          .cast::<jsonnet_syntax::ast::ExprLocal>()
+          .and_then(|local| {
+            let local = local.try_to_node(root.syntax())?;
+            Some(local.binds().nth(idx)?.id()?.text_range())
+          })
+          .or_else(|| {
+            log::warn!("local fallback: {local:?}");
+            let node = local.try_to_node(root.syntax())?;
+            log::warn!("node: {node:?}");
+            Some(node.text_range())
+          })?
       }
       jsonnet_statics::Def::Function(expr, idx) => {
         let func = file.pointers.get_ptr(expr);
         // NOTE because of desugaring, possibly not all expr fns are actually from ast fns
-        let func = func.cast::<jsonnet_syntax::ast::ExprFunction>()?;
-        let func = func.try_to_node(root.syntax())?;
-        func.paren_params()?.params().nth(idx)?.id()?.text_range()
+        func
+          .cast::<jsonnet_syntax::ast::ExprFunction>()
+          .and_then(|func| {
+            let func = func.try_to_node(root.syntax())?;
+            Some(func.paren_params()?.params().nth(idx)?.id()?.text_range())
+          })
+          .or_else(|| {
+            log::warn!("func fallback: {func:?}");
+            let node = func.try_to_node(root.syntax())?;
+            log::warn!("node: {node:?}");
+            Some(node.text_range())
+          })?
       }
     };
     file.pos_db.range_utf16(tr)
@@ -530,7 +549,8 @@ impl IsolatedFileArtifacts {
   ) -> Self {
     let lex = jsonnet_lex::get(contents);
     let parse = jsonnet_parse::get(&lex.tokens);
-    let desugar = jsonnet_desugar::get(current_dir, other_dirs, fs, parse.root.clone().expr());
+    let root = parse.root.clone().into_ast().and_then(|x| x.expr());
+    let desugar = jsonnet_desugar::get(current_dir, other_dirs, fs, root);
     let mut st = jsonnet_statics::St::default();
     jsonnet_statics::get(&mut st, &desugar.arenas, desugar.top);
     Self {
