@@ -1,5 +1,7 @@
 //! Testing infra.
 
+mod expect;
+
 use paths::FileSystem;
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::path::{Path, PathBuf};
@@ -58,9 +60,37 @@ impl<'a> Input<'a> {
       }
     }
 
+    let expects = self.jsonnet.iter().map(|(&path, jsonnet)| {
+      let path = fs.canonical(Path::new(path)).expect("canonical");
+      let path = st.path_id(path);
+      let ex_file = expect::File::new(jsonnet.text);
+      (path, ex_file)
+    });
+    let expects: paths::PathMap<_> = expects.collect();
+
     for (&path, jsonnet) in &self.jsonnet {
       let path = fs.canonical(Path::new(path)).expect("canonical");
       let path = st.path_id(path);
+
+      let ex_file = &expects[&path];
+      for (region, ex) in ex_file.iter() {
+        match ex.kind {
+          expect::Kind::Def => {}
+          expect::Kind::Use => {
+            let pos = text_pos::PositionUtf16 { line: region.line, col: region.col_start };
+            let (def_path, range) = st.get_def(path, pos).expect("no def");
+            assert_eq!(range.start.line, range.end.line);
+            let region = expect::Region {
+              line: range.start.line,
+              col_start: range.start.col,
+              col_end: range.end.col,
+            };
+            let def_ex = expects[&def_path].get(region).expect("nothing at def site");
+            assert!(matches!(def_ex.kind, expect::Kind::Def));
+            assert_eq!(def_ex.msg, ex.msg);
+          }
+        }
+      }
 
       match (jsonnet.kind, st.get_json(path)) {
         (OutcomeKind::Manifest, Ok(got)) => {

@@ -831,6 +831,7 @@ dependencies = [
  "paths",
  "rustc-hash",
  "serde_json",
+ "text-pos",
 ]
 
 [[package]]

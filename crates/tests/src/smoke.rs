@@ -2,6 +2,7 @@
 
 mod array;
 mod comment;
+mod def;
 mod keyword_lit;
 mod number;
 mod object;
