@@ -24,7 +24,7 @@ There is also a CLI that can translate Jsonnet files into JSON.
 
 ### First time repo setup
 
-1. Get [Rust][rustup] and Cargo (the package manager, included by default).
+1. Get [Rust][rustup].
 1. Clone or download the repo.
 1. Enter the repo.
 
