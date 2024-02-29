@@ -1,24 +1,48 @@
 //! Try to "evaluate" without actually evaluating, using statically-known information.
 
-use jsonnet_expr::{Expr, ExprArena, ExprData, Prim};
-use jsonnet_statics::{Def, DefMap};
+use crate::St;
+use jsonnet_expr::{Expr, ExprData, ExprMust, Prim};
+use jsonnet_statics::Def;
+use paths::PathId;
 
 #[derive(Debug)]
-pub(crate) enum ConstEval {
-  Expr(Expr),
-  Def(Def),
+pub(crate) struct ExprWithPath {
+  pub(crate) path_id: PathId,
+  pub(crate) expr: ExprMust,
 }
 
-pub(crate) fn get_expr(defs: &DefMap, exprs: &ExprArena, expr: Expr) -> ConstEval {
-  let Some(expr_must) = expr else { return ConstEval::Expr(None) };
-  if let Some(&def) = defs.get(&expr_must) {
-    return get_def(defs, exprs, def);
+impl ExprWithPath {
+  fn expr_data<'s>(&self, st: &'s St) -> &'s ExprData {
+    &st.files[&self.path_id].expr_ar[self.expr]
   }
-  match &exprs[expr_must] {
+}
+
+#[derive(Debug)]
+pub(crate) struct ConstEval {
+  pub(crate) ewp: ExprWithPath,
+  pub(crate) kind: Kind,
+}
+
+#[derive(Debug)]
+pub(crate) enum Kind {
+  Expr,
+  ObjectCompId,
+  LocalBind(usize),
+  FunctionParam(usize),
+}
+
+pub(crate) fn get(st: &St, path_id: PathId, expr: Expr) -> Option<ConstEval> {
+  let ewp = ExprWithPath { path_id, expr: expr? };
+  if let Some(&def) = st.files_extra[&path_id].defs.get(&ewp.expr) {
+    return from_def(st, path_id, def);
+  }
+  let ret = ConstEval { ewp, kind: Kind::Expr };
+  match ret.ewp.expr_data(st) {
     ExprData::Subscript { on, idx } => {
-      get_subscript(defs, exprs, *on, *idx).unwrap_or(ConstEval::Expr(expr))
+      let subscript = from_subscript(st, path_id, *on, *idx);
+      Some(subscript.unwrap_or(ret))
     }
-    ExprData::Local { body, .. } => get_expr(defs, exprs, *body),
+    ExprData::Local { body, .. } => get(st, path_id, *body),
     // Id, Import: would have been covered by defs.get above if we knew anything about them
     // Prim, Object, Array, Function: literals are values, they do not evaluate further
     // Error: errors do not evaluate to values
@@ -34,42 +58,55 @@ pub(crate) fn get_expr(defs: &DefMap, exprs: &ExprArena, expr: Expr) -> ConstEva
     | ExprData::Call { .. }
     | ExprData::If { .. }
     | ExprData::BinaryOp { .. }
-    | ExprData::UnaryOp { .. } => ConstEval::Expr(expr),
+    | ExprData::UnaryOp { .. } => Some(ret),
   }
 }
 
-fn get_def(defs: &DefMap, exprs: &ExprArena, def: Def) -> ConstEval {
+fn from_def(st: &St, path_id: PathId, def: Def) -> Option<ConstEval> {
   match def {
     Def::LocalBind(expr, idx) => {
-      get_local(defs, exprs, Some(expr), idx).unwrap_or(ConstEval::Def(def))
+      let ewp = ExprWithPath { path_id, expr };
+      let local = from_local(st, path_id, Some(expr), idx);
+      Some(local.unwrap_or(ConstEval { ewp, kind: Kind::LocalBind(idx) }))
     }
-    // Builtin: opaque
-    // ObjectCompId: too tricky, no attempt made to analyze further
-    // FunctionParam: params can be arbitrary, impossible to analyze further
-    // Import: TODO
-    Def::Builtin | Def::ObjectCompId(_) | Def::FunctionParam(_, _) | Def::Import(_) => {
-      ConstEval::Def(def)
+    Def::Builtin => None,
+    Def::ObjectCompId(expr) => {
+      let ewp = ExprWithPath { path_id, expr };
+      Some(ConstEval { ewp, kind: Kind::ObjectCompId })
     }
+    Def::FunctionParam(expr, idx) => {
+      let ewp = ExprWithPath { path_id, expr };
+      Some(ConstEval { ewp, kind: Kind::FunctionParam(idx) })
+    }
+    Def::Import(path_id) => get(st, path_id, st.files[&path_id].top),
   }
 }
 
-fn get_local(defs: &DefMap, exprs: &ExprArena, expr: Expr, idx: usize) -> Option<ConstEval> {
-  let expr = expr?;
-  let ExprData::Local { binds, .. } = &exprs[expr] else { return None };
+fn from_local(st: &St, path_id: PathId, expr: Expr, idx: usize) -> Option<ConstEval> {
+  let ewp = ExprWithPath { path_id, expr: expr? };
+  let ExprData::Local { binds, .. } = ewp.expr_data(st) else { return None };
   let &(_, expr) = binds.get(idx)?;
-  Some(get_expr(defs, exprs, expr))
+  get(st, path_id, expr)
 }
 
-fn get_subscript(defs: &DefMap, exprs: &ExprArena, on: Expr, idx: Expr) -> Option<ConstEval> {
-  let ConstEval::Expr(Some(on)) = get_expr(defs, exprs, on) else { return None };
-  let ConstEval::Expr(Some(idx)) = get_expr(defs, exprs, idx) else { return None };
-  let ExprData::Object { fields, .. } = &exprs[on] else { return None };
-  let ExprData::Prim(Prim::String(idx)) = &exprs[idx] else { return None };
+fn from_subscript(st: &St, path_id: PathId, on: Expr, idx: Expr) -> Option<ConstEval> {
+  let on = get(st, path_id, on)?;
+  let idx = get(st, path_id, idx)?;
+  if !matches!(on.kind, Kind::Expr) || !matches!(idx.kind, Kind::Expr) {
+    return None;
+  }
+  let ExprData::Object { fields, .. } = on.ewp.expr_data(st) else { return None };
+  let ExprData::Prim(Prim::String(idx)) = idx.ewp.expr_data(st) else { return None };
   for &(key, _, val) in fields {
-    let ConstEval::Expr(Some(key)) = get_expr(defs, exprs, key) else { continue };
-    let ExprData::Prim(Prim::String(key)) = &exprs[key] else { continue };
+    let key = get(st, on.ewp.path_id, key)?;
+    if !matches!(key.kind, Kind::Expr) {
+      continue;
+    }
+    let ExprData::Prim(Prim::String(key)) = key.ewp.expr_data(st) else {
+      continue;
+    };
     if key == idx {
-      return Some(get_expr(defs, exprs, val));
+      return get(st, on.ewp.path_id, val);
     }
   }
   None

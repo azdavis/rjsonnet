@@ -442,75 +442,69 @@ impl St {
   #[must_use]
   pub fn get_def(
     &self,
-    mut path_id: PathId,
+    path_id: PathId,
     pos: text_pos::PositionUtf16,
   ) -> Option<(paths::PathId, text_pos::RangeUtf16)> {
-    let file = self.files.get(&path_id)?;
-    let file_extra = self.files_extra.get(&path_id)?;
-    let ts = file_extra.pos_db.text_size_utf16(pos)?;
+    let ce = {
+      let file_extra = self.files_extra.get(&path_id)?;
+      let ts = file_extra.pos_db.text_size_utf16(pos)?;
+      let root = file_extra.syntax.clone().into_ast()?;
+      let tok = jsonnet_syntax::node_token(root.syntax(), ts)?;
+      let node = tok.parent()?;
+      let ptr = jsonnet_syntax::ast::SyntaxNodePtr::new(&node);
+      let expr = file_extra.pointers.get_idx(ptr);
+      const_eval::get(self, path_id, expr)?
+    };
+    let file_extra = self.files_extra.get(&ce.ewp.path_id)?;
     let root = file_extra.syntax.clone().into_ast()?;
-    let tok = jsonnet_syntax::node_token(root.syntax(), ts)?;
-    let node = tok.parent()?;
-    let ptr = jsonnet_syntax::ast::SyntaxNodePtr::new(&node);
-    let expr = file_extra.pointers.get_idx(ptr);
-    let tr = match const_eval::get_expr(&file_extra.defs, &file.expr_ar, expr) {
-      const_eval::ConstEval::Expr(expr) => {
-        let expr = file_extra.pointers.get_ptr(expr?);
-        expr.text_range()
+    let tr = match ce.kind {
+      const_eval::Kind::Expr => file_extra.pointers.get_ptr(ce.ewp.expr).text_range(),
+      const_eval::Kind::ObjectCompId => {
+        let obj = file_extra.pointers.get_ptr(ce.ewp.expr);
+        let obj = obj.cast::<jsonnet_syntax::ast::Object>()?;
+        let obj = obj.try_to_node(root.syntax())?;
+        let comp_spec = obj.comp_specs().next()?;
+        match comp_spec {
+          jsonnet_syntax::ast::CompSpec::ForSpec(for_spec) => for_spec.id()?.text_range(),
+          jsonnet_syntax::ast::CompSpec::IfSpec(_) => return None,
+        }
       }
-      const_eval::ConstEval::Def(def) => match def {
-        jsonnet_statics::Def::Builtin => return None,
-        jsonnet_statics::Def::ObjectCompId(expr) => {
-          let obj = file_extra.pointers.get_ptr(expr);
-          let obj = obj.cast::<jsonnet_syntax::ast::Object>()?;
-          let obj = obj.try_to_node(root.syntax())?;
-          let comp_spec = obj.comp_specs().next()?;
-          match comp_spec {
-            jsonnet_syntax::ast::CompSpec::ForSpec(for_spec) => for_spec.id()?.text_range(),
-            jsonnet_syntax::ast::CompSpec::IfSpec(_) => return None,
-          }
-        }
-        jsonnet_statics::Def::LocalBind(expr, idx) => {
-          let local = file_extra.pointers.get_ptr(expr);
-          // NOTE because of desugaring, not all expr locals are actually from ast locals. we try to
-          // get the exact location first and then fall back.
-          local
-            .cast::<jsonnet_syntax::ast::ExprLocal>()
-            .and_then(|local| {
-              let local = local.try_to_node(root.syntax())?;
-              Some(local.binds().nth(idx)?.id()?.text_range())
-            })
-            .or_else(|| {
-              log::warn!("local fallback: {local:?}");
-              let node = local.try_to_node(root.syntax())?;
-              log::warn!("node: {node:?}");
-              Some(node.text_range())
-            })?
-        }
-        jsonnet_statics::Def::FunctionParam(expr, idx) => {
-          let func = file_extra.pointers.get_ptr(expr);
-          // NOTE because of desugaring, possibly not all expr fns are actually from ast fns
-          func
-            .cast::<jsonnet_syntax::ast::ExprFunction>()
-            .and_then(|func| {
-              let func = func.try_to_node(root.syntax())?;
-              Some(func.paren_params()?.params().nth(idx)?.id()?.text_range())
-            })
-            .or_else(|| {
-              log::warn!("func fallback: {func:?}");
-              let node = func.try_to_node(root.syntax())?;
-              log::warn!("node: {node:?}");
-              Some(node.text_range())
-            })?
-        }
-        jsonnet_statics::Def::Import(imported) => {
-          path_id = imported;
-          text_size::TextRange::default()
-        }
-      },
+      const_eval::Kind::LocalBind(idx) => {
+        let local = file_extra.pointers.get_ptr(ce.ewp.expr);
+        // NOTE because of desugaring, not all expr locals are actually from ast locals. we try to
+        // get the exact location first and then fall back.
+        local
+          .cast::<jsonnet_syntax::ast::ExprLocal>()
+          .and_then(|local| {
+            let local = local.try_to_node(root.syntax())?;
+            Some(local.binds().nth(idx)?.id()?.text_range())
+          })
+          .or_else(|| {
+            log::warn!("local fallback: {local:?}");
+            let node = local.try_to_node(root.syntax())?;
+            log::warn!("node: {node:?}");
+            Some(node.text_range())
+          })?
+      }
+      const_eval::Kind::FunctionParam(idx) => {
+        let func = file_extra.pointers.get_ptr(ce.ewp.expr);
+        // NOTE because of desugaring, possibly not all expr fns are actually from ast fns
+        func
+          .cast::<jsonnet_syntax::ast::ExprFunction>()
+          .and_then(|func| {
+            let func = func.try_to_node(root.syntax())?;
+            Some(func.paren_params()?.params().nth(idx)?.id()?.text_range())
+          })
+          .or_else(|| {
+            log::warn!("func fallback: {func:?}");
+            let node = func.try_to_node(root.syntax())?;
+            log::warn!("node: {node:?}");
+            Some(node.text_range())
+          })?
+      }
     };
     let range = file_extra.pos_db.range_utf16(tr)?;
-    Some((path_id, range))
+    Some((ce.ewp.path_id, range))
   }
 }
 
