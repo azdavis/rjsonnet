@@ -46,7 +46,7 @@ impl<'a> Input<'a> {
       .map(|(path, text)| (PathBuf::from(path), text.to_owned()));
     let fs = paths::MemoryFileSystem::new(files.collect());
 
-    assert!(!self.to_add.is_empty());
+    assert!(!self.to_add.is_empty(), "must call .add() or .add_all() on the Input");
     let to_add: Vec<_> =
       self.to_add.iter().map(|&path| fs.canonical(Path::new(path)).expect("canonical")).collect();
 
