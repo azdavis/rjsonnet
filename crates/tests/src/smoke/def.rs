@@ -57,6 +57,33 @@ a.bar
 }
 
 #[test]
+fn import_minimal() {
+  Input::default()
+    .with_jsonnet(
+      "a.jsonnet",
+      JsonnetInput::manifest(
+        r"
+  3
+##^ def: file_a
+",
+        "3",
+      ),
+    )
+    .with_jsonnet(
+      "b.jsonnet",
+      JsonnetInput::manifest(
+        r"
+import 'a.jsonnet'
+## ^ use: file_a
+",
+        "3",
+      ),
+    )
+    .add("b.jsonnet")
+    .check();
+}
+
+#[test]
 fn import() {
   Input::default()
     .with_jsonnet(
@@ -114,5 +141,98 @@ a.num - 3
       ),
     )
     .add("b.jsonnet")
+    .check();
+}
+
+#[test]
+fn small_chain_1() {
+  Input::default()
+    .with_jsonnet(
+      "a.jsonnet",
+      JsonnetInput::manifest(
+        r#"
+  "hi"
+"#,
+        r#"
+"hi"
+"#,
+      ),
+    )
+    .with_jsonnet(
+      "b.jsonnet",
+      JsonnetInput::manifest(
+        r#"
+local two = import 'a.jsonnet';
+  two + "!"
+##^^^^^^^^^ def: the_file
+"#,
+        r#"
+"hi!"
+"#,
+      ),
+    )
+    .with_jsonnet(
+      "d.jsonnet",
+      JsonnetInput::manifest(
+        r#"
+local three = import 'b.jsonnet';
+  [three]
+## ^ use: the_file
+"#,
+        r#"
+[
+  "hi!"
+]
+"#,
+      ),
+    )
+    .add_all()
+    .check();
+}
+
+#[test]
+fn small_chain_2() {
+  Input::default()
+    .with_jsonnet(
+      "a.jsonnet",
+      JsonnetInput::manifest(
+        r#"
+  "hi"
+##^^^^ def: the_file
+// TODO fix this def. it should be on the second file instead
+"#,
+        r#"
+"hi"
+"#,
+      ),
+    )
+    .with_jsonnet(
+      "c.jsonnet",
+      JsonnetInput::manifest(
+        r#"
+local two = import 'a.jsonnet';
+  two + "!"
+"#,
+        r#"
+"hi!"
+"#,
+      ),
+    )
+    .with_jsonnet(
+      "d.jsonnet",
+      JsonnetInput::manifest(
+        r#"
+local three = import 'c.jsonnet';
+  [three]
+## ^ use: the_file
+"#,
+        r#"
+[
+  "hi!"
+]
+"#,
+      ),
+    )
+    .add_all()
     .check();
 }
