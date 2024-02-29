@@ -1,6 +1,6 @@
 //! Tests for go-to-definition.
 
-use crate::check::JsonnetInput;
+use crate::check::{Input, JsonnetInput};
 
 #[test]
 fn simple() {
@@ -54,4 +54,65 @@ a.bar
     "2",
   )
   .check_one();
+}
+
+#[test]
+fn import() {
+  Input::default()
+    .with_jsonnet(
+      "a.jsonnet",
+      JsonnetInput::manifest(
+        r"
+  1 + 2
+##^^^^^ def: file_a
+",
+        "3",
+      ),
+    )
+    .with_jsonnet(
+      "b.jsonnet",
+      JsonnetInput::manifest(
+        r"
+(import 'a.jsonnet') + 4
+## ^ use: file_a
+",
+        "7",
+      ),
+    )
+    .add("b.jsonnet")
+    .check();
+}
+
+#[test]
+fn import_local() {
+  Input::default()
+    .with_jsonnet(
+      "a.jsonnet",
+      JsonnetInput::manifest(
+        r"
+{
+  num: 1 + 4,
+##     ^^^^^ def: a_num
+}
+",
+        r#"
+{
+  "num": 5
+}
+"#,
+      ),
+    )
+    .with_jsonnet(
+      "b.jsonnet",
+      JsonnetInput::manifest(
+        r"
+local a = import 'a.jsonnet';
+a.num - 3
+## ^ use: a_num
+",
+        "2",
+      ),
+    )
+    .add("b.jsonnet")
+    .check();
 }
