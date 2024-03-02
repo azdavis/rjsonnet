@@ -2,7 +2,7 @@
 
 pub mod error;
 
-use jsonnet_expr::{Arenas, Expr, ExprData, ExprMust, Id, Prim, Str};
+use jsonnet_expr::{Arenas, Expr, ExprData, ExprMust, Id, Prim, Str, Subst};
 use rustc_hash::{FxHashMap, FxHashSet};
 
 /// A definition site for an identifier.
@@ -18,6 +18,16 @@ pub enum Def {
   FunctionParam(jsonnet_expr::ExprMust, usize),
   /// An `import` (Jsonnet code only).
   Import(paths::PathId),
+}
+
+impl Def {
+  /// Apply a subst.
+  pub fn apply(&mut self, subst: &Subst) {
+    match self {
+      Def::Builtin | Def::ObjectCompId(_) | Def::LocalBind(_, _) | Def::FunctionParam(_, _) => {}
+      Def::Import(path_id) => *path_id = subst.get_path_id(*path_id),
+    }
+  }
 }
 
 /// A map from expressions to defs.

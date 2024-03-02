@@ -194,6 +194,9 @@ impl St {
         for err in &mut art.extra.errors.statics {
           err.apply(&subst);
         }
+        for def in art.extra.defs.values_mut() {
+          def.apply(&subst);
+        }
         path_id = subst.get_path_id(path_id);
 
         self.files.insert(path_id, art.eval);

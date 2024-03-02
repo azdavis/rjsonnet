@@ -198,8 +198,6 @@ fn small_chain_2() {
       JsonnetInput::manifest(
         r#"
   "hi"
-##^^^^ def: the_file
-// TODO fix this def. it should be on the second file instead
 "#,
         r#"
 "hi"
@@ -212,6 +210,7 @@ fn small_chain_2() {
         r#"
 local two = import 'a.jsonnet';
   two + "!"
+##^^^^^^^^^ def: the_file
 "#,
         r#"
 "hi!"
