@@ -12,8 +12,6 @@ use rayon::iter::{IntoParallelIterator as _, IntoParallelRefIterator as _, Paral
 use rustc_hash::FxHashSet;
 use std::{fmt, io, path::Path};
 
-const MAX_DIAGNOSTICS_PER_FILE: usize = 5;
-
 /// Options for initialization.
 #[derive(Debug, Default)]
 pub struct Init {
@@ -23,6 +21,8 @@ pub struct Init {
   pub root_dirs: Vec<std::path::PathBuf>,
   /// How to show diagnostics.
   pub show_diagnostics: ShowDiagnostics,
+  /// Maximum number of diagnostics per file we may show.
+  pub max_diagnostics_per_file: DefaultUsize<5>,
 }
 
 /// How to show diagnostics.
@@ -61,6 +61,31 @@ impl fmt::Display for ShowDiagnosticsFromStrError {
   }
 }
 
+/// Same as a `usize` but carries the default value in a const generic.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[repr(transparent)]
+pub struct DefaultUsize<const DEFAULT: usize>(pub usize);
+
+impl<const DEFAULT: usize> Default for DefaultUsize<DEFAULT> {
+  fn default() -> Self {
+    Self(DEFAULT)
+  }
+}
+
+impl<const DEFAULT: usize> From<usize> for DefaultUsize<DEFAULT> {
+  fn from(value: usize) -> Self {
+    Self(value)
+  }
+}
+
+impl<const DEFAULT: usize> std::str::FromStr for DefaultUsize<DEFAULT> {
+  type Err = <usize as std::str::FromStr>::Err;
+
+  fn from_str(s: &str) -> Result<Self, Self::Err> {
+    s.parse::<usize>().map(Self)
+  }
+}
+
 /// A trait for a file systems.
 pub trait FileSystem: paths::FileSystem {
   /// Read the contents of a file as bytes.
@@ -79,6 +104,7 @@ pub struct St {
   // TODO fix
   #[allow(dead_code)]
   show_diagnostics: ShowDiagnostics,
+  max_diagnostics_per_file: usize,
   artifacts: jsonnet_expr::Artifacts,
   /// these are the non-jsonnet imported files via `importstr`
   importstr: PathMap<String>,
@@ -124,6 +150,7 @@ impl St {
       manifest: init.manifest,
       root_dirs,
       show_diagnostics: init.show_diagnostics,
+      max_diagnostics_per_file: init.max_diagnostics_per_file.0,
       artifacts: jsonnet_expr::Artifacts::default(),
       importstr: paths::PathMap::default(),
       importbin: paths::PathMap::default(),
@@ -391,7 +418,7 @@ impl St {
             };
             Some(Diagnostic { range, message })
           })
-          .take(MAX_DIAGNOSTICS_PER_FILE)
+          .take(self.max_diagnostics_per_file)
           .collect();
         (path, ds)
       });

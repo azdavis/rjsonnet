@@ -22,6 +22,10 @@ fn run() -> usize {
     .opt_value_from_str::<_, jsonnet_analyze::ShowDiagnostics>("--show-diagnostics")
     .expect("show diagnostics")
     .unwrap_or_default();
+  let max_diagnostics_per_file = args
+    .opt_value_from_str::<_, jsonnet_analyze::DefaultUsize<5>>("--max-diagnostics-per-file")
+    .expect("diagnostics per file")
+    .unwrap_or_default();
   let mut root_dirs = vec![pwd.clone()];
   while let Some(root) = args.opt_value_from_str::<_, String>("--root-dir").expect("parse arg") {
     root_dirs.push(PathBuf::from(root));
@@ -29,7 +33,8 @@ fn run() -> usize {
   let files = args.finish();
 
   let mut ret = 0usize;
-  let init = jsonnet_analyze::Init { manifest, root_dirs, show_diagnostics };
+  let init =
+    jsonnet_analyze::Init { manifest, root_dirs, show_diagnostics, max_diagnostics_per_file };
   let mut st = jsonnet_analyze::St::new(&fs, init);
 
   for arg in files {

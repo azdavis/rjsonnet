@@ -80,6 +80,11 @@
             "Show no diagnostics."
           ],
           "markdownDescription": "How to show diagnostics."
+        },
+        "jsonnet.server.diagnostics.maxPerFile": {
+          "type": "number",
+          "default": 5,
+          "markdownDescription": "Max number of diagnostics to show per file."
         }
       }
     },

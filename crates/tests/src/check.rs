@@ -52,8 +52,8 @@ impl<'a> Input<'a> {
 
     let init = jsonnet_analyze::Init {
       manifest: true,
-      root_dirs: Vec::new(),
       show_diagnostics: jsonnet_analyze::ShowDiagnostics::All,
+      ..Default::default()
     };
     let mut st = jsonnet_analyze::St::new(&fs, init);
 
