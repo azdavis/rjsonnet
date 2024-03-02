@@ -16,12 +16,15 @@ impl lang_srv::State for State {
     let mut init = jsonnet_analyze::Init::default();
     if let Some(Value::Object(obj)) = val {
       init.manifest = obj.get("manifest").and_then(Value::as_bool).unwrap_or_default();
-      if let Some(root_dirs) = obj.get("root_dirs").and_then(Value::as_array) {
-        init.root_dirs = root_dirs
-          .iter()
-          .filter_map(|x| Some(std::path::PathBuf::from(x.as_str()?.to_owned())))
-          .collect();
-      }
+      init.root_dirs = obj
+        .get("root_dirs")
+        .and_then(|x| {
+          x.as_array()?
+            .iter()
+            .map(|x| x.as_str().map(|x| std::path::PathBuf::from(x.to_owned())))
+            .collect::<Option<Vec<_>>>()
+        })
+        .unwrap_or_default();
     }
     Self(jsonnet_analyze::St::new(fs, init))
   }
