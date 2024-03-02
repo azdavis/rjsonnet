@@ -101,8 +101,6 @@ pub trait FileSystem: paths::FileSystem {
 pub struct St {
   manifest: bool,
   root_dirs: Vec<paths::CanonicalPathBuf>,
-  // TODO fix
-  #[allow(dead_code)]
   show_diagnostics: ShowDiagnostics,
   max_diagnostics_per_file: usize,
   artifacts: jsonnet_expr::Artifacts,
@@ -588,7 +586,6 @@ impl St {
 
 /// Artifacts from a file whose shared artifacts have been combined into the global ones.
 #[derive(Debug)]
-#[allow(dead_code)]
 struct FileArtifacts {
   pos_db: text_pos::PositionDb,
   syntax: jsonnet_syntax::Root,
@@ -599,7 +596,6 @@ struct FileArtifacts {
 
 /// Errors from a file analyzed in isolation.
 #[derive(Debug)]
-#[allow(dead_code)]
 struct FileErrors {
   lex: Vec<jsonnet_lex::Error>,
   parse: Vec<jsonnet_parse::Error>,
