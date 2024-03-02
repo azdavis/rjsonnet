@@ -1,16 +1,16 @@
 //! Handling notifications from the client, e.g. "these files changed".
 
-use crate::{convert, server::Server, state::State, util};
+use crate::server::{self, Server};
+use crate::{convert, state::State, util};
 use anyhow::{bail, Result};
 use std::ops::ControlFlow;
 
 pub(crate) fn handle<S: State>(
-  srv: &mut Server,
-  st: &mut S,
+  srv: &mut Server<S>,
   conn: &lsp_server::Connection,
   notif: lsp_server::Notification,
 ) -> Result<()> {
-  match go(srv, st, conn, notif) {
+  match go(srv, conn, notif) {
     ControlFlow::Continue(x) => bail!("unhandled notification: {x:?}"),
     ControlFlow::Break(Ok(())) => Ok(()),
     ControlFlow::Break(Err(e)) => bail!("couldn't handle notification: {e:?}"),
@@ -20,8 +20,7 @@ pub(crate) fn handle<S: State>(
 type ControlFlowResult = ControlFlow<Result<()>, lsp_server::Notification>;
 
 fn go<S: State>(
-  srv: &mut Server,
-  st: &mut S,
+  srv: &mut Server<S>,
   conn: &lsp_server::Connection,
   mut notif: lsp_server::Notification,
 ) -> ControlFlowResult {
@@ -30,7 +29,7 @@ fn go<S: State>(
     let mut remove = Vec::<paths::CanonicalPathBuf>::new();
     for change in params.changes {
       let path = srv.canonical_path_buf(&change.uri)?;
-      let id = st.path_id(path.clone());
+      let id = srv.st.path_id(path.clone());
       if srv.open_files.contains_key(&id) {
         // per docs for DidOpenTextDocument:
         //
@@ -49,21 +48,21 @@ fn go<S: State>(
         remove.push(path);
       }
     }
-    let ds = st.update_many(&srv.fs, remove, add);
-    Server::diagnose(conn, st.paths(), ds);
+    let ds = srv.st.update_many(&srv.fs, remove, add);
+    server::diagnose(conn, srv.st.paths(), ds);
     Ok(())
   })?;
   notif = try_notif::<lsp_types::notification::DidOpenTextDocument, _>(notif, |params| {
     let path = srv.canonical_path_buf(&params.text_document.uri)?;
-    let id = st.path_id(path.clone());
-    let ds = st.update_one(&srv.fs, path, &params.text_document.text);
-    Server::diagnose(conn, st.paths(), ds);
+    let id = srv.st.path_id(path.clone());
+    let ds = srv.st.update_one(&srv.fs, path, &params.text_document.text);
+    server::diagnose(conn, srv.st.paths(), ds);
     srv.open_files.insert(id, params.text_document.text);
     Ok(())
   })?;
   notif = try_notif::<lsp_types::notification::DidCloseTextDocument, _>(notif, |params| {
     let path = srv.canonical_path_buf(&params.text_document.uri)?;
-    let id = st.path_id(path);
+    let id = srv.st.path_id(path);
     srv.open_files.remove(&id);
     Ok(())
   })?;
@@ -73,14 +72,14 @@ fn go<S: State>(
   })?;
   notif = try_notif::<lsp_types::notification::DidChangeTextDocument, _>(notif, |params| {
     let path = srv.canonical_path_buf(&params.text_document.uri)?;
-    let id = st.path_id(path.clone());
+    let id = srv.st.path_id(path.clone());
     let Some(contents) = srv.open_files.get_mut(&id) else {
       let path = path.as_path().display();
       bail!("got DidChangeTextDocument for non-open file: {path}");
     };
     apply_changes(contents, params.content_changes);
-    let ds = st.update_one(&srv.fs, path, contents);
-    Server::diagnose(conn, st.paths(), ds);
+    let ds = srv.st.update_one(&srv.fs, path, contents);
+    server::diagnose(conn, srv.st.paths(), ds);
     Ok(())
   })?;
   ControlFlow::Continue(notif)

@@ -20,8 +20,6 @@ pub use state::State;
 /// joining I/O threads.
 #[allow(clippy::disallowed_methods)]
 pub fn run<S: State>() {
-  let mut srv = server::Server::default();
-
   better_panic::Settings::new()
     .message(S::BUG_REPORT_MSG)
     .verbosity(better_panic::Verbosity::Medium)
@@ -36,7 +34,9 @@ pub fn run<S: State>() {
   let server_capabilities = serde_json::to_value(capabilities::get()).expect("get capabilities");
   let init = conn.initialize(server_capabilities).expect("init conn");
   let init: lsp_types::InitializeParams = serde_json::from_value(init).expect("get init");
-  let mut st = S::new(&srv.fs, init.initialization_options);
+  let fs = paths::RealFileSystem::default();
+  let st = S::new(&fs, init.initialization_options);
+  let mut srv = server::Server::new(fs, st);
 
   let root_url = init.root_uri.expect("no root url");
   let root_path = convert::path_buf(&root_url).expect("root path");
@@ -67,15 +67,15 @@ pub fn run<S: State>() {
     let iter = wd.into_iter().filter_map(|entry| {
       let entry = entry.ok()?;
       let ext = entry.path().extension()?.to_str()?;
-      if !st.is_ext(ext) || !srv.fs.is_file(entry.path()) {
+      if !srv.st.is_ext(ext) || !srv.fs.is_file(entry.path()) {
         return None;
       }
       srv.fs.canonical(entry.path()).ok()
     });
     iter.collect()
   };
-  let ds = st.update_many(&srv.fs, Vec::new(), paths);
-  server::Server::diagnose(&conn, st.paths(), ds);
+  let ds = srv.st.update_many(&srv.fs, Vec::new(), paths);
+  server::diagnose(&conn, srv.st.paths(), ds);
 
   for msg in &conn.receiver {
     log::debug!("recv {msg:?}");
@@ -84,14 +84,14 @@ pub fn run<S: State>() {
         if conn.handle_shutdown(&req).expect("handle shutdown") {
           return;
         }
-        match request::handle(&mut srv, &mut st, req).and_then(|r| srv.respond(&conn, r)) {
+        match request::handle(&mut srv, req).and_then(|r| srv.respond(&conn, r)) {
           Ok(()) => {}
           Err(e) => log::error!("error: {e}"),
         }
       }
       lsp_server::Message::Response(res) => response::handle(res),
       lsp_server::Message::Notification(notif) => {
-        match notification::handle(&mut srv, &mut st, &conn, notif) {
+        match notification::handle(&mut srv, &conn, notif) {
           Ok(()) => {}
           Err(e) => log::error!("error: {e}"),
         }

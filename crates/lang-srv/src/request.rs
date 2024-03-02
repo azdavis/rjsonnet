@@ -6,12 +6,11 @@ use anyhow::{bail, Result};
 use std::ops::ControlFlow;
 
 pub(crate) fn handle<S: State>(
-  srv: &mut Server,
-  st: &mut S,
+  srv: &mut Server<S>,
   req: lsp_server::Request,
 ) -> Result<lsp_server::Response> {
   srv.queue.incoming.register(req.id.clone(), ());
-  match go(srv, st, req) {
+  match go(srv, req) {
     ControlFlow::Continue(x) => bail!("unhandled request: {x:?}"),
     ControlFlow::Break(Ok(response)) => Ok(response),
     ControlFlow::Break(Err(e)) => bail!("couldn't handle request: {e:?}"),
@@ -21,13 +20,12 @@ pub(crate) fn handle<S: State>(
 type ControlFlowResult<T, C = lsp_server::Request> = ControlFlow<Result<T>, C>;
 
 fn go<S: State>(
-  srv: &mut Server,
-  st: &mut S,
+  srv: &mut Server<S>,
   mut req: lsp_server::Request,
 ) -> ControlFlowResult<lsp_server::Response> {
   req = try_req::<lsp_types::request::HoverRequest, _, _>(req, |id, params| {
     let path = srv.canonical_path_buf(&params.text_document_position_params.text_document.uri)?;
-    let result = st.hover(path).map(|json| lsp_types::Hover {
+    let result = srv.st.hover(path).map(|json| lsp_types::Hover {
       contents: lsp_types::HoverContents::Markup(lsp_types::MarkupContent {
         kind: lsp_types::MarkupKind::Markdown,
         value: format!("```json\n{json}\n```"),
@@ -40,8 +38,8 @@ fn go<S: State>(
     let td_params = params.text_document_position_params;
     let path = srv.canonical_path_buf(&td_params.text_document.uri)?;
     let pos = convert::text_pos_position(td_params.position);
-    let result = st.get_def(path, pos).and_then(|(path_id, range)| {
-      let uri = convert::url(st.paths().get_path(path_id))?;
+    let result = srv.st.get_def(path, pos).and_then(|(path_id, range)| {
+      let uri = convert::url(srv.st.paths().get_path(path_id))?;
       Some(lsp_types::GotoDefinitionResponse::Scalar(lsp_types::Location {
         uri,
         range: convert::lsp_range(range),
