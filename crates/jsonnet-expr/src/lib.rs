@@ -217,7 +217,8 @@ impl<'a> fmt::Display for DisplayExpr<'a> {
       }
       ExprData::Error(e) => write!(f, "error {}", self.with(*e)),
       ExprData::Import { kind, path } => {
-        write!(f, "{} {}", kind, self.ps.get_path(*path).as_path().display())
+        // TODO handle escapes
+        write!(f, "{} \"{}\"", kind, self.ps.get_path(*path).as_path().display())
       }
     }
   }
