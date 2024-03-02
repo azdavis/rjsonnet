@@ -206,8 +206,9 @@ impl St {
       Some((path, art))
     });
     let file_artifacts: Vec<_> = file_artifacts.collect();
-
-    self.update(fs, updated, file_artifacts)
+    // NOTE depends on the fact that all the added files in `update_all` are NOT open
+    let want_diagnostics = matches!(self.show_diagnostics, ShowDiagnostics::All);
+    self.update(fs, updated, file_artifacts, want_diagnostics)
   }
 
   /// Updates one file.
@@ -233,7 +234,10 @@ impl St {
     // path id from self. but instead, we intentionally get the path id from `art`, to uphold the
     // contract of `update`.
     let path_id = art.combine.paths.get_id(path);
-    self.update(fs, FxHashSet::default(), vec![(path_id, art)])
+    // NOTE depends on the fact that `update_one` is called iff the file is open
+    let want_diagnostics =
+      matches!(self.show_diagnostics, ShowDiagnostics::All | ShowDiagnostics::Open);
+    self.update(fs, FxHashSet::default(), vec![(path_id, art)], want_diagnostics)
   }
 
   /// invariant: for all `(p, a)` in `to_add`, `p` is the path id, of the path q, **from the path
@@ -245,6 +249,7 @@ impl St {
     fs: &F,
     mut needs_update: FxHashSet<paths::PathId>,
     mut to_add: Vec<(paths::PathId, IsolatedFileArtifacts)>,
+    want_diagnostics: bool,
   ) -> PathMap<Vec<Diagnostic>>
   where
     F: Sync + Send + paths::FileSystem,
@@ -392,42 +397,43 @@ impl St {
     log::info!("repeatedly update files");
     let mut ret = PathMap::<Vec<Diagnostic>>::default();
     while !needs_update.is_empty() {
-      let cx = self.cx();
-
-      log::info!("getting diagnostics for {} files", needs_update.len());
-      let iter = needs_update.iter().map(|&path| {
-        let art = &self.files_extra[&path];
-        let ds: Vec<_> = std::iter::empty()
-          .chain(art.errors.lex.iter().map(|err| (err.range(), err.to_string())))
-          .chain(art.errors.parse.iter().map(|err| (err.range(), err.to_string())))
-          .chain(art.errors.desugar.iter().map(|err| (err.range(), err.to_string())))
-          .chain(art.errors.statics.iter().map(|err| {
-            let expr = err.expr();
-            let ptr = art.pointers.get_ptr(expr);
-            let err = err.display(&self.artifacts.strings);
-            (ptr.text_range(), err.to_string())
-          }))
-          .chain(art.errors.imports.iter().map(|(expr, err)| {
-            let ptr = art.pointers.get_ptr(*expr);
-            (ptr.text_range(), err.to_string())
-          }))
-          .filter_map(|(range, message)| {
-            let Some(range) = art.pos_db.range_utf16(range) else {
-              always!(false, "bad range: {range:?}");
-              return None;
-            };
-            Some(Diagnostic { range, message })
-          })
-          .take(self.max_diagnostics_per_file)
-          .collect();
-        (path, ds)
-      });
-      let old_len: usize = ret.par_iter().map(|(_, xs)| xs.len()).sum();
-      ret.extend(iter);
-      let new_len: usize = ret.par_iter().map(|(_, xs)| xs.len()).sum();
-      log::info!("added {} diagnostics", new_len - old_len);
+      if want_diagnostics {
+        log::info!("getting diagnostics for {} files", needs_update.len());
+        let iter = needs_update.iter().map(|&path| {
+          let art = &self.files_extra[&path];
+          let ds: Vec<_> = std::iter::empty()
+            .chain(art.errors.lex.iter().map(|err| (err.range(), err.to_string())))
+            .chain(art.errors.parse.iter().map(|err| (err.range(), err.to_string())))
+            .chain(art.errors.desugar.iter().map(|err| (err.range(), err.to_string())))
+            .chain(art.errors.statics.iter().map(|err| {
+              let expr = err.expr();
+              let ptr = art.pointers.get_ptr(expr);
+              let err = err.display(&self.artifacts.strings);
+              (ptr.text_range(), err.to_string())
+            }))
+            .chain(art.errors.imports.iter().map(|(expr, err)| {
+              let ptr = art.pointers.get_ptr(*expr);
+              (ptr.text_range(), err.to_string())
+            }))
+            .filter_map(|(range, message)| {
+              let Some(range) = art.pos_db.range_utf16(range) else {
+                always!(false, "bad range: {range:?}");
+                return None;
+              };
+              Some(Diagnostic { range, message })
+            })
+            .take(self.max_diagnostics_per_file)
+            .collect();
+          (path, ds)
+        });
+        let old_len: usize = ret.par_iter().map(|(_, xs)| xs.len()).sum();
+        ret.extend(iter);
+        let new_len: usize = ret.par_iter().map(|(_, xs)| xs.len()).sum();
+        log::info!("added {} diagnostics", new_len - old_len);
+      }
 
       let updated_vals: PathMap<_> = if self.manifest {
+        let cx = self.cx();
         // manifest in parallel for all updated files. TODO this probably doesn't respect ordering
         // requirements among the updated. what if one updated file depends on another updated file?
         let iter = needs_update.par_iter().filter_map(|&path| {
