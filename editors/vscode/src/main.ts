@@ -29,6 +29,7 @@ export async function activate(cx: vscode.ExtensionContext) {
     initializationOptions: {
       manifest: config.get("server.manifest.enable"),
       root_dirs: config.get("server.importDirs.extra"),
+      show_diagnostics: config.get("server.diagnostics.show"),
     },
   };
   client = new LanguageClient("jsonnet", serverOpts, clientOpts);

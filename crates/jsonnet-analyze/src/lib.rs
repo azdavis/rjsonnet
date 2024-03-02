@@ -10,7 +10,7 @@ use jsonnet_syntax::ast::AstNode as _;
 use paths::{PathId, PathMap};
 use rayon::iter::{IntoParallelIterator as _, IntoParallelRefIterator as _, ParallelIterator as _};
 use rustc_hash::FxHashSet;
-use std::{io, path::Path};
+use std::{fmt, io, path::Path};
 
 const MAX_DIAGNOSTICS_PER_FILE: usize = 5;
 
@@ -21,6 +21,44 @@ pub struct Init {
   pub manifest: bool,
   /// Extra directories in which to search for import paths.
   pub root_dirs: Vec<std::path::PathBuf>,
+  /// How to show diagnostics.
+  pub show_diagnostics: ShowDiagnostics,
+}
+
+/// How to show diagnostics.
+#[derive(Debug, Default)]
+pub enum ShowDiagnostics {
+  /// On all files in the project.
+  All,
+  /// Only on open files.
+  #[default]
+  Open,
+  /// On no files.
+  None,
+}
+
+impl std::str::FromStr for ShowDiagnostics {
+  type Err = ShowDiagnosticsFromStrError;
+
+  fn from_str(s: &str) -> Result<Self, Self::Err> {
+    let ret = match s {
+      "all" => Self::All,
+      "open" => Self::Open,
+      "none" => Self::None,
+      _ => return Err(ShowDiagnosticsFromStrError(())),
+    };
+    Ok(ret)
+  }
+}
+
+/// An error used in `impl FromStr for ShowDiagnostics`.
+#[derive(Debug)]
+pub struct ShowDiagnosticsFromStrError(());
+
+impl fmt::Display for ShowDiagnosticsFromStrError {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    f.write_str("invalid value for show diagnostics: must be one of 'all', 'open', or 'none'")
+  }
 }
 
 /// A trait for a file systems.
@@ -38,6 +76,9 @@ pub trait FileSystem: paths::FileSystem {
 pub struct St {
   manifest: bool,
   root_dirs: Vec<paths::CanonicalPathBuf>,
+  // TODO fix
+  #[allow(dead_code)]
+  show_diagnostics: ShowDiagnostics,
   artifacts: jsonnet_expr::Artifacts,
   /// these are the non-jsonnet imported files via `importstr`
   importstr: PathMap<String>,
@@ -82,6 +123,7 @@ impl St {
     Self {
       manifest: init.manifest,
       root_dirs,
+      show_diagnostics: init.show_diagnostics,
       artifacts: jsonnet_expr::Artifacts::default(),
       importstr: paths::PathMap::default(),
       importbin: paths::PathMap::default(),

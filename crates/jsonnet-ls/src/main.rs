@@ -25,6 +25,10 @@ impl lang_srv::State for State {
             .collect::<Option<Vec<_>>>()
         })
         .unwrap_or_default();
+      init.show_diagnostics = obj
+        .get("show_diagnostics")
+        .and_then(|x| x.as_str()?.parse::<jsonnet_analyze::ShowDiagnostics>().ok())
+        .unwrap_or_default();
     }
     Self(jsonnet_analyze::St::new(fs, init))
   }

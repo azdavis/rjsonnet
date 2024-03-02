@@ -65,6 +65,21 @@
           "type": "array",
           "default": [],
           "markdownDescription": "Extra directories in which to search for import paths."
+        },
+        "jsonnet.server.diagnostics.show": {
+          "type": "string",
+          "default": "open",
+          "enum": [
+            "all",
+            "open",
+            "none"
+          ],
+          "markdownEnumDescriptions": [
+            "Show all diagnostics.",
+            "Show diagnostics only on open files.",
+            "Show no diagnostics."
+          ],
+          "markdownDescription": "How to show diagnostics."
         }
       }
     },
