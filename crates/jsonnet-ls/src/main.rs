@@ -14,14 +14,18 @@ impl lang_srv::State for State {
     F: paths::FileSystem,
   {
     let mut init = jsonnet_analyze::Init::default();
+    let pwd = fs.current_dir();
+    // TODO report errors
     if let Some(Value::Object(obj)) = val {
       init.manifest = obj.get("manifest").and_then(Value::as_bool).unwrap_or_default();
       init.root_dirs = obj
         .get("root_dirs")
         .and_then(|x| {
-          x.as_array()?
+          let ary = x.as_array()?;
+          let pwd = pwd.ok()?;
+          ary
             .iter()
-            .map(|x| x.as_str().map(|x| std::path::PathBuf::from(x.to_owned())))
+            .map(|x| x.as_str().map(|x| pwd.as_clean_path().join(x)))
             .collect::<Option<Vec<_>>>()
         })
         .unwrap_or_default();
@@ -30,7 +34,7 @@ impl lang_srv::State for State {
         .and_then(|x| x.as_str()?.parse::<jsonnet_analyze::ShowDiagnostics>().ok())
         .unwrap_or_default();
     }
-    Self(jsonnet_analyze::St::new(fs, init))
+    Self(jsonnet_analyze::St::new(init))
   }
 
   const BUG_REPORT_MSG: &'static str = always::BUG_REPORT_MSG;
@@ -44,8 +48,8 @@ impl lang_srv::State for State {
   fn update_many<F>(
     &mut self,
     fs: &F,
-    remove: Vec<paths::CanonicalPathBuf>,
-    add: Vec<paths::CanonicalPathBuf>,
+    remove: Vec<paths::CleanPathBuf>,
+    add: Vec<paths::CleanPathBuf>,
   ) -> paths::PathMap<Vec<diagnostic::Diagnostic>>
   where
     F: Sync + Send + paths::FileSystem,
@@ -56,17 +60,17 @@ impl lang_srv::State for State {
   fn update_one<F>(
     &mut self,
     fs: &F,
-    path: paths::CanonicalPathBuf,
+    path: paths::CleanPathBuf,
     contents: &str,
   ) -> paths::PathMap<Vec<diagnostic::Diagnostic>>
   where
     F: Sync + Send + paths::FileSystem,
   {
-    self.0.update_one(fs, path.as_canonical_path(), contents)
+    self.0.update_one(fs, path.as_clean_path(), contents)
   }
 
   /// TODO take a text range thing
-  fn hover(&mut self, path: paths::CanonicalPathBuf) -> Option<String> {
+  fn hover(&mut self, path: paths::CleanPathBuf) -> Option<String> {
     let path_id = self.0.path_id(path);
     let json = match self.0.get_json(path_id) {
       Ok(x) => x,
@@ -80,7 +84,7 @@ impl lang_srv::State for State {
 
   fn get_def(
     &mut self,
-    path: paths::CanonicalPathBuf,
+    path: paths::CleanPathBuf,
     pos: text_pos::PositionUtf16,
   ) -> Option<(paths::PathId, text_pos::RangeUtf16)> {
     let path_id = self.0.path_id(path);
@@ -91,7 +95,7 @@ impl lang_srv::State for State {
     self.0.paths()
   }
 
-  fn path_id(&mut self, path: paths::CanonicalPathBuf) -> paths::PathId {
+  fn path_id(&mut self, path: paths::CleanPathBuf) -> paths::PathId {
     self.0.path_id(path)
   }
 }

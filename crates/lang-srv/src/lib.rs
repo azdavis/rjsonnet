@@ -70,7 +70,7 @@ pub fn run<S: State>() {
       if !srv.st.is_ext(ext) || !srv.fs.is_file(entry.path()) {
         return None;
       }
-      srv.fs.canonical(entry.path()).ok()
+      paths::CleanPathBuf::new(entry.path())
     });
     iter.collect()
   };

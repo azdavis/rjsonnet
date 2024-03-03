@@ -14,8 +14,16 @@ pub(crate) fn path_buf(url: &Url) -> Result<std::path::PathBuf> {
   }
 }
 
+pub(crate) fn clean_path_buf(url: &Url) -> Result<paths::CleanPathBuf> {
+  let pb = path_buf(url)?;
+  match paths::CleanPathBuf::new(pb.as_path()) {
+    Some(x) => Ok(x),
+    None => bail!("not absolute: {}", pb.display()),
+  }
+}
+
 #[allow(clippy::single_match_else, clippy::manual_let_else)]
-pub(crate) fn url(path: &paths::CanonicalPath) -> Option<Url> {
+pub(crate) fn url(path: &paths::CleanPath) -> Option<Url> {
   // we want a compile error if the Err type stops being ().
   match Url::from_file_path(path.as_path()) {
     Ok(x) => Some(x),

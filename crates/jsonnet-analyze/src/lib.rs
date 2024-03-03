@@ -18,7 +18,7 @@ pub struct Init {
   /// Manifest into JSON.
   pub manifest: bool,
   /// Extra directories in which to search for import paths.
-  pub root_dirs: Vec<std::path::PathBuf>,
+  pub root_dirs: Vec<paths::CleanPathBuf>,
   /// How to show diagnostics.
   pub show_diagnostics: ShowDiagnostics,
   /// Maximum number of diagnostics per file we may show.
@@ -100,7 +100,7 @@ pub trait FileSystem: paths::FileSystem {
 #[derive(Debug)]
 pub struct St {
   manifest: bool,
-  root_dirs: Vec<paths::CanonicalPathBuf>,
+  root_dirs: Vec<paths::CleanPathBuf>,
   show_diagnostics: ShowDiagnostics,
   max_diagnostics_per_file: usize,
   artifacts: jsonnet_expr::Artifacts,
@@ -129,24 +129,11 @@ pub struct St {
 impl St {
   /// Returns a new `St` with the given init options.
   #[must_use]
-  pub fn new<F>(fs: &F, init: Init) -> Self
-  where
-    F: paths::FileSystem,
-  {
+  pub fn new(init: Init) -> Self {
     log::info!("make new St with {init:?}");
-    let mut root_dirs = Vec::<paths::CanonicalPathBuf>::with_capacity(init.root_dirs.len());
-    for dir in init.root_dirs {
-      match fs.canonical(dir.as_path()) {
-        Ok(can) => root_dirs.push(can),
-        Err(e) => {
-          let dir = dir.display();
-          always!(false, "{dir}: i/o error: {e}");
-        }
-      }
-    }
     Self {
       manifest: init.manifest,
-      root_dirs,
+      root_dirs: init.root_dirs,
       show_diagnostics: init.show_diagnostics,
       max_diagnostics_per_file: init.max_diagnostics_per_file.0,
       artifacts: jsonnet_expr::Artifacts::default(),
@@ -164,8 +151,8 @@ impl St {
   pub fn update_many<F>(
     &mut self,
     fs: &F,
-    remove: Vec<paths::CanonicalPathBuf>,
-    add: Vec<paths::CanonicalPathBuf>,
+    remove: Vec<paths::CleanPathBuf>,
+    add: Vec<paths::CleanPathBuf>,
   ) -> PathMap<Vec<Diagnostic>>
   where
     F: Sync + Send + paths::FileSystem,
@@ -192,7 +179,7 @@ impl St {
 
     log::info!("get {} initial file artifacts in parallel", add.len());
     let file_artifacts = add.into_par_iter().filter_map(|path| {
-      let path = path.as_canonical_path();
+      let path = path.as_clean_path();
       let mut art = match get_isolated_fs(path, &self.root_dirs, fs) {
         Ok(x) => x,
         Err(e) => {
@@ -214,7 +201,7 @@ impl St {
   pub fn update_one<F>(
     &mut self,
     fs: &F,
-    path: &paths::CanonicalPath,
+    path: &paths::CleanPath,
     contents: &str,
   ) -> PathMap<Vec<Diagnostic>>
   where
@@ -478,7 +465,7 @@ impl St {
   }
 
   /// Returns a path id for this path.
-  pub fn path_id(&mut self, path: paths::CanonicalPathBuf) -> PathId {
+  pub fn path_id(&mut self, path: paths::CleanPathBuf) -> PathId {
     self.artifacts.paths.get_id_owned(path)
   }
 
@@ -625,8 +612,8 @@ impl IsolatedFileArtifacts {
   /// Returns artifacts for a file contained in the given directory.
   fn new(
     contents: &str,
-    current_dir: &paths::CanonicalPath,
-    other_dirs: &[paths::CanonicalPathBuf],
+    current_dir: &paths::CleanPath,
+    other_dirs: &[paths::CleanPathBuf],
     fs: &dyn jsonnet_desugar::FileSystem,
   ) -> Self {
     let lex = jsonnet_lex::get(contents);
@@ -662,14 +649,14 @@ impl<'a, F> jsonnet_desugar::FileSystem for FsAdapter<'a, F>
 where
   F: paths::FileSystem,
 {
-  fn canonical(&self, p: &Path) -> io::Result<paths::CanonicalPathBuf> {
-    paths::FileSystem::canonical(self.0, p)
+  fn is_file(&self, p: &Path) -> bool {
+    paths::FileSystem::is_file(self.0, p)
   }
 }
 
 fn get_isolated_fs<F>(
-  path: &paths::CanonicalPath,
-  root_dirs: &[paths::CanonicalPathBuf],
+  path: &paths::CleanPath,
+  root_dirs: &[paths::CleanPathBuf],
   fs: &F,
 ) -> io::Result<IsolatedFileArtifacts>
 where
@@ -680,9 +667,9 @@ where
 }
 
 fn get_isolated_str<F>(
-  path: &paths::CanonicalPath,
+  path: &paths::CleanPath,
   contents: &str,
-  root_dirs: &[paths::CanonicalPathBuf],
+  root_dirs: &[paths::CleanPathBuf],
   fs: &F,
 ) -> io::Result<IsolatedFileArtifacts>
 where

@@ -1,25 +1,22 @@
 //! The immutable context under which we desugar.
 
-use paths::{CanonicalPath, CanonicalPathBuf};
+use paths::{CleanPath, CleanPathBuf};
 
 #[derive(Clone, Copy)]
 pub(crate) struct Cx<'a> {
-  pub(crate) current_dir: &'a CanonicalPath,
-  pub(crate) other_dirs: &'a [CanonicalPathBuf],
+  pub(crate) current_dir: &'a CleanPath,
+  pub(crate) other_dirs: &'a [CleanPathBuf],
   pub(crate) fs: &'a dyn FileSystem,
 }
 
 impl<'a> Cx<'a> {
-  pub(crate) fn dirs(&self) -> impl Iterator<Item = &'a CanonicalPath> {
-    std::iter::once(self.current_dir)
-      .chain(self.other_dirs.iter().map(CanonicalPathBuf::as_canonical_path))
+  pub(crate) fn dirs(&self) -> impl Iterator<Item = &'a CleanPath> {
+    std::iter::once(self.current_dir).chain(self.other_dirs.iter().map(CleanPathBuf::as_clean_path))
   }
 }
 
 /// The filesystem operations we need.
 pub trait FileSystem {
-  /// Makes a path canonical.
-  /// # Errors
-  /// If the filesystem failed.
-  fn canonical(&self, p: &std::path::Path) -> std::io::Result<paths::CanonicalPathBuf>;
+  /// Returns whether a path is a file that exists and which we can access.
+  fn is_file(&self, p: &std::path::Path) -> bool;
 }

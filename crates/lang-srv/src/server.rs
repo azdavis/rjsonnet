@@ -3,7 +3,6 @@
 use crate::convert;
 use always::always;
 use anyhow::{bail, Result};
-use paths::FileSystem as _;
 
 #[derive(Debug, Default)]
 pub(crate) struct Server<S> {
@@ -23,10 +22,6 @@ impl<S> Server<S> {
       file_watch: false,
       open_files: paths::PathMap::default(),
     }
-  }
-  pub(crate) fn canonical_path_buf(&self, url: &lsp_types::Url) -> Result<paths::CanonicalPathBuf> {
-    let path = convert::path_buf(url)?;
-    Ok(self.fs.canonical(path.as_path())?)
   }
 
   #[allow(dead_code)]

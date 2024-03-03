@@ -2,18 +2,15 @@
 
 #![allow(clippy::disallowed_methods)]
 
-use always::always;
-use paths::FileSystem;
 use pico_args::Arguments;
-use std::path::PathBuf;
 use std::process::ExitCode;
 
 fn run() -> usize {
   let logger_env = env_logger::Env::default();
   env_logger::try_init_from_env(logger_env).expect("init logger");
 
-  let pwd = std::env::current_dir().expect("current dir");
-  let fs = paths::RealFileSystem::default();
+  let pwd = std::env::current_dir().expect("get current dir");
+  let clean_pwd = paths::CleanPathBuf::new(&pwd).expect("current dir not absolute");
 
   let mut args = Arguments::from_env();
   let name_only = args.contains("--name-only");
@@ -26,26 +23,20 @@ fn run() -> usize {
     .opt_value_from_str::<_, jsonnet_analyze::DefaultUsize<5>>("--max-diagnostics-per-file")
     .expect("diagnostics per file")
     .unwrap_or_default();
-  let mut root_dirs = vec![pwd.clone()];
+  let mut root_dirs = vec![clean_pwd.clone()];
   while let Some(root) = args.opt_value_from_str::<_, String>("--root-dir").expect("parse arg") {
-    root_dirs.push(PathBuf::from(root));
+    root_dirs.push(clean_pwd.as_clean_path().join(root.as_str()));
   }
   let files = args.finish();
 
   let mut ret = 0usize;
   let init =
     jsonnet_analyze::Init { manifest, root_dirs, show_diagnostics, max_diagnostics_per_file };
-  let mut st = jsonnet_analyze::St::new(&fs, init);
+  let mut st = jsonnet_analyze::St::new(init);
+  let fs = paths::RealFileSystem::default();
 
   for arg in files {
-    let p = PathBuf::from(arg);
-    let p = match fs.canonical(p.as_path()) {
-      Ok(x) => x,
-      Err(e) => {
-        always!(false, "couldn't make canonical: {e}");
-        continue;
-      }
-    };
+    let p = clean_pwd.as_clean_path().join(arg.as_os_str());
 
     let ds_map = st.update_many(&fs, Vec::new(), vec![p.clone()]);
 

@@ -18,5 +18,4 @@ env_logger.workspace = true
 paths.workspace = true
 pico-args.workspace = true
 
-always.path = "../always"
 jsonnet-analyze.path = "../jsonnet-analyze"

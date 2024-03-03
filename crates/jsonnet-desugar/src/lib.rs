@@ -15,8 +15,8 @@ pub use st::{Desugar, Pointers};
 /// Transforms CST into desugared core.
 #[must_use]
 pub fn get(
-  current_dir: &paths::CanonicalPath,
-  other_dirs: &[paths::CanonicalPathBuf],
+  current_dir: &paths::CleanPath,
+  other_dirs: &[paths::CleanPathBuf],
   fs: &dyn FileSystem,
   root: Option<jsonnet_syntax::ast::Expr>,
 ) -> Desugar {

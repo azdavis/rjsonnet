@@ -2,9 +2,7 @@
 
 mod expect;
 
-use paths::FileSystem;
 use rustc_hash::{FxHashMap, FxHashSet};
-use std::path::{Path, PathBuf};
 
 const DEFAULT_PATH: &str = "/f.jsonnet";
 
@@ -40,22 +38,22 @@ impl<'a> Input<'a> {
   pub(crate) fn check(self) {
     _ = env_logger::builder().is_test(true).filter_level(log::LevelFilter::Debug).try_init();
 
+    let pwd = paths::MemoryFileSystem::root();
     let files = std::iter::empty()
       .chain(self.jsonnet.iter().map(|(&path, jsonnet)| (path, jsonnet.text)))
       .chain(self.raw.iter().map(|(&path, &text)| (path, text)))
-      .map(|(path, text)| (PathBuf::from(path), text.to_owned()));
+      .map(|(path, text)| (pwd.as_clean_path().join(path), text.to_owned()));
     let fs = paths::MemoryFileSystem::new(files.collect());
 
     assert!(!self.to_add.is_empty(), "must call .add() or .add_all() on the Input");
-    let to_add: Vec<_> =
-      self.to_add.iter().map(|&path| fs.canonical(Path::new(path)).expect("canonical")).collect();
+    let to_add: Vec<_> = self.to_add.iter().map(|&path| pwd.as_clean_path().join(path)).collect();
 
     let init = jsonnet_analyze::Init {
       manifest: true,
       show_diagnostics: jsonnet_analyze::ShowDiagnostics::All,
       ..Default::default()
     };
-    let mut st = jsonnet_analyze::St::new(&fs, init);
+    let mut st = jsonnet_analyze::St::new(init);
 
     for (path, ds) in st.update_many(&fs, Vec::new(), to_add) {
       if let Some(d) = ds.first() {
@@ -65,7 +63,7 @@ impl<'a> Input<'a> {
     }
 
     let expects = self.jsonnet.iter().map(|(&path, jsonnet)| {
-      let path = fs.canonical(Path::new(path)).expect("canonical");
+      let path = pwd.as_clean_path().join(path);
       let path = st.path_id(path);
       let ex_file = expect::File::new(jsonnet.text);
       (path, ex_file)
@@ -73,7 +71,7 @@ impl<'a> Input<'a> {
     let expects: paths::PathMap<_> = expects.collect();
 
     for (&path, jsonnet) in &self.jsonnet {
-      let path = fs.canonical(Path::new(path)).expect("canonical");
+      let path = pwd.as_clean_path().join(path);
       let path = st.path_id(path);
 
       let ex_file = &expects[&path];
