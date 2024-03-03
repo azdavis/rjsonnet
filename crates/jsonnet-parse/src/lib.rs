@@ -76,6 +76,7 @@ enum Expected {
   Kind(SK),
   Visibility,
   String,
+  Bind,
 }
 
 impl fmt::Display for Expected {
@@ -85,6 +86,7 @@ impl fmt::Display for Expected {
       Expected::Kind(k) => k.fmt(f),
       Expected::Visibility => f.write_str("field visibility modifier"),
       Expected::String => f.write_str("string"),
+      Expected::Bind => f.write_str("binding"),
     }
   }
 }

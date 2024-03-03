@@ -100,7 +100,7 @@ fn expr_prec(p: &mut Parser<'_>, min_prec: Prec) -> Option<Exited> {
     // spec), so we may simply recur with `expr_must` which will handle the precedence.
     SK::LocalKw => {
       p.bump();
-      bind(p);
+      while bind_comma(p).is_some() {}
       p.eat(SK::Semicolon);
       expr_must(p);
       SK::ExprLocal
@@ -329,7 +329,9 @@ fn member_kind(p: &mut Parser<'_>) -> Option<Exited> {
   let kind = match cur.kind {
     SK::LocalKw => {
       p.bump();
-      bind(p);
+      if bind(p).is_none() {
+        p.error(ErrorKind::Expected(Expected::Bind));
+      }
       SK::ObjectLocal
     }
     SK::AssertKw => assert_(p),
@@ -397,16 +399,26 @@ fn field_name(p: &mut Parser<'_>) -> Option<Exited> {
   Some(p.exit(en, kind))
 }
 
-fn bind(p: &mut Parser<'_>) -> Exited {
+#[must_use]
+fn bind(p: &mut Parser<'_>) -> Option<Exited> {
+  if !p.at(SK::Id) {
+    return None;
+  }
   let en = p.enter();
-  p.eat(SK::Id);
+  p.bump();
   _ = paren_params(p);
   p.eat(SK::Eq);
   expr_must(p);
+  Some(p.exit(en, SK::Bind))
+}
+
+fn bind_comma(p: &mut Parser<'_>) -> Option<Exited> {
+  let ex = bind(p)?;
+  let en = p.precede(ex);
   if p.at(SK::Comma) {
     p.bump();
   }
-  p.exit(en, SK::Bind)
+  Some(p.exit(en, SK::BindComma))
 }
 
 #[must_use]

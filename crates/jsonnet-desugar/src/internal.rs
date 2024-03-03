@@ -95,7 +95,8 @@ pub(crate) fn get_expr(st: &mut St, cx: Cx<'_>, expr: Option<ast::Expr>, in_obj:
       ExprData::Call { func, positional, named }
     }
     ast::Expr::ExprLocal(expr) => {
-      let binds: Vec<_> = expr.binds().filter_map(|bind| get_bind(st, cx, bind, in_obj)).collect();
+      let binds: Vec<_> =
+        expr.bind_commas().filter_map(|bind| get_bind(st, cx, bind.bind()?, in_obj)).collect();
       let body = get_expr(st, cx, expr.expr(), in_obj);
       ExprData::Local { binds, body }
     }

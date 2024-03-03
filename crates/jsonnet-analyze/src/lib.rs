@@ -540,7 +540,7 @@ impl St {
           .cast::<jsonnet_syntax::ast::ExprLocal>()
           .and_then(|local| {
             let local = local.try_to_node(root.syntax())?;
-            Some(local.binds().nth(idx)?.id()?.text_range())
+            Some(local.bind_commas().nth(idx)?.bind()?.id()?.text_range())
           })
           .or_else(|| {
             log::warn!("local fallback: {local:?}");

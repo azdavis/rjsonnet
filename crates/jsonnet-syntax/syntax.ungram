@@ -47,7 +47,7 @@ ExprArray = '[' ExprComma* CompSpec* ']'
 ExprFieldGet = Expr '.' 'Id'
 ExprSubscript = on:Expr '[' idx_a:Expr? colon_a:':'? idx_b:Expr? colon_b:':'? idx_c:Expr? ']'
 ExprCall = Expr '(' Arg* ')'
-ExprLocal = 'local' Bind* ';' Expr
+ExprLocal = 'local' BindComma* ';' Expr
 ExprIf = 'if' cond:Expr 'then' yes:Expr ElseExpr?
 ExprBinaryOp = lhs:Expr BinaryOp rhs:Expr
 ExprUnaryOp = UnaryOp Expr
@@ -89,7 +89,8 @@ FieldNameExpr = '[' Expr ']'
 
 Assert = 'assert' Expr ColonExpr?
 
-Bind = 'Id' ParenParams? '=' Expr ','?
+Bind = 'Id' ParenParams? '=' Expr
+BindComma = Bind ','?
 
 Arg = IdEq? Expr ','?
 

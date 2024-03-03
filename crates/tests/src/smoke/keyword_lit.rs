@@ -18,7 +18,7 @@ fn null() {
 }
 
 #[test]
-#[should_panic = "expected an identifier"]
+#[should_panic = "expected `;`"]
 fn redefine() {
   JsonnetInput::manifest(
     r"
