@@ -31,6 +31,7 @@ export async function activate(cx: vscode.ExtensionContext) {
       root_dirs: config.get("server.importDirs.extra"),
       show_diagnostics: config.get("server.diagnostics.show"),
       max_diagnostics_per_file: config.get("server.diagnostics.maxPerFile"),
+      logger_filter: config.get("unstable.server.logFilter"),
     },
   };
   client = new LanguageClient("jsonnet", serverOpts, clientOpts);

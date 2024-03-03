@@ -25,10 +25,6 @@ pub fn run<S: State>() {
     .verbosity(better_panic::Verbosity::Medium)
     .install();
 
-  let logger_env = env_logger::Env::default().default_filter_or("info");
-  env_logger::try_init_from_env(logger_env).expect("init logger");
-
-  log::info!("start up lsp server");
   let (conn, io_threads) = lsp_server::Connection::stdio();
 
   let server_capabilities = serde_json::to_value(capabilities::get()).expect("get capabilities");

@@ -425,6 +425,7 @@ version = "0.1.0"
 dependencies = [
  "always",
  "diagnostic",
+ "env_logger",
  "jsonnet-analyze",
  "lang-srv",
  "log",
@@ -478,7 +479,6 @@ dependencies = [
  "anyhow",
  "better-panic",
  "diagnostic",
- "env_logger",
  "log",
  "lsp-server",
  "lsp-types",

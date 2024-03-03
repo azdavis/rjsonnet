@@ -1,5 +1,6 @@
 //! A language server for Jsonnet.
 
+use always::always;
 use serde_json::Value;
 
 fn main() {
@@ -15,8 +16,15 @@ impl lang_srv::State for State {
   {
     let mut init = jsonnet_analyze::Init::default();
     let pwd = fs.current_dir();
+    let mut logger_env = env_logger::Env::default();
     // TODO report errors
     if let Some(Value::Object(obj)) = val {
+      if let Some(filter) = obj.get("logger_filter").and_then(Value::as_str) {
+        if !filter.is_empty() {
+          logger_env = logger_env.default_filter_or(filter.to_owned());
+        }
+      }
+
       init.manifest = obj.get("manifest").and_then(Value::as_bool).unwrap_or_default();
       init.root_dirs = obj
         .get("root_dirs")
@@ -34,6 +42,11 @@ impl lang_srv::State for State {
         .and_then(|x| x.as_str()?.parse::<jsonnet_analyze::ShowDiagnostics>().ok())
         .unwrap_or_default();
     }
+
+    if let Err(e) = env_logger::try_init_from_env(logger_env) {
+      always!(false, "couldn't init logger: {e}");
+    }
+
     Self(jsonnet_analyze::St::new(init))
   }
 

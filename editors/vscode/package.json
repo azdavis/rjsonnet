@@ -85,6 +85,11 @@
           "type": "number",
           "default": 5,
           "markdownDescription": "Max number of diagnostics to show per file."
+        },
+        "jsonnet.unstable.server.logFilter": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "**Note:** This is intended for debugging the language server itself. It is not intended for normal use. It may change without notice.\n\nThe log filter. Set to e.g. 'info' or 'debug' for more info printed to the output console."
         }
       }
     },
