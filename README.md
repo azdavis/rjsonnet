@@ -23,9 +23,22 @@ https://github.com/azdavis/rjsonnet/assets/6496454/0a2f4059-74c0-4f4e-99e2-5dd7b
 
 ## Ways to use
 
+### VS Code
+
 The primary intended way to use this is via the [language server][lsp] and its official VS Code extension.
 
-However, you can also use the language server with any supported editor. You'll just have to write your own glue code between this server and your editor.
+You can install the VS Code extension from:
+
+- [VS Code Marketplace][vs-code-marketplace]
+- [Open VSX][open-vsx]
+
+### Language server
+
+You can also use the language server with any editor that supports language servers. (Many modern editors do).
+
+You'll just have to write your own glue code between this server and your editor.
+
+### CLI
 
 There is also a CLI that can translate Jsonnet files into JSON.
 
@@ -86,3 +99,5 @@ Like Rust itself and many other projects in the Rust community, this project is 
 [spec]: https://jsonnet.org/ref/spec.html
 [vscode]: https://code.visualstudio.com
 [millet]: https://github.com/azdavis/millet
+[vs-code-marketplace]: https://marketplace.visualstudio.com/items?itemName=azdavis.rjsonnet
+[open-vsx]: https://open-vsx.org/extension/azdavis/rjsonnet
