@@ -51,7 +51,7 @@ pub(crate) fn diagnostic(d: diagnostic::Diagnostic) -> lsp_types::Diagnostic {
     severity: Some(lsp_types::DiagnosticSeverity::ERROR),
     code: None,
     code_description: None,
-    source: None,
+    source: Some("rjsonnet".to_owned()),
     message: d.message,
     related_information: None,
     tags: None,
