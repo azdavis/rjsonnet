@@ -110,8 +110,8 @@ pub struct St {
   importbin: PathMap<Vec<u8>>,
   /// note: a file may be in files and importstr if it is imported twice in both ways (rare)
   files: PathMap<jsonnet_eval::JsonnetFile>,
-  /// invariant: `x` in `files` iff `x` in `files_extra`.
-  files_extra: PathMap<FileArtifacts>,
+  /// invariant: `x` in `files` iff `x` in `file_artifacts`.
+  file_artifacts: PathMap<FileArtifacts>,
   /// invariant: if `x` in `json`, then `x` in `files`.
   json: PathMap<jsonnet_eval::error::Result<jsonnet_eval::Json>>,
   /// invariants:
@@ -140,7 +140,7 @@ impl St {
       importstr: paths::PathMap::default(),
       importbin: paths::PathMap::default(),
       files: paths::PathMap::default(),
-      files_extra: paths::PathMap::default(),
+      file_artifacts: paths::PathMap::default(),
       json: paths::PathMap::default(),
       dependents: paths::PathMap::default(),
     }
@@ -162,10 +162,10 @@ impl St {
     let updated = remove.into_iter().filter_map(|path| {
       let path_id = self.path_id(path);
       let was_in_files = self.files.remove(&path_id).is_some();
-      let was_in_files_extra = self.files_extra.remove(&path_id).is_some();
+      let was_in_files_artifacts = self.file_artifacts.remove(&path_id).is_some();
       always!(
-        was_in_files == was_in_files_extra,
-        "mismatched in-ness for files ({was_in_files}) and extra ({was_in_files_extra})"
+        was_in_files == was_in_files_artifacts,
+        "mismatched in-ness for files ({was_in_files}) and artifacts ({was_in_files_artifacts})"
       );
       let ret = self.dependents.remove(&path_id);
       always!(
@@ -175,7 +175,9 @@ impl St {
       );
       ret
     });
-    let updated: FxHashSet<_> = updated.flatten().collect();
+    // when we remove files, we must reset their diagnostics to nothing.
+    let updated: paths::PathMap<_> =
+      updated.flatten().map(|x| (x, FileErrors::default())).collect();
 
     log::info!("get {} initial file artifacts in parallel", add.len());
     let file_artifacts = add.into_par_iter().filter_map(|path| {
@@ -222,7 +224,7 @@ impl St {
     // NOTE depends on the fact that `update_one` is called iff the file is open
     let want_diagnostics =
       matches!(self.show_diagnostics, ShowDiagnostics::All | ShowDiagnostics::Open);
-    self.update(fs, FxHashSet::default(), vec![(path_id, art)], want_diagnostics)
+    self.update(fs, paths::PathMap::default(), vec![(path_id, art)], want_diagnostics)
   }
 
   /// invariant: for all `(p, a)` in `to_add`, `p` is the path id, of the path q, **from the path
@@ -232,15 +234,14 @@ impl St {
   fn update<F>(
     &mut self,
     fs: &F,
-    mut needs_update: FxHashSet<paths::PathId>,
+    mut needs_update: paths::PathMap<FileErrors>,
     mut to_add: Vec<(paths::PathId, IsolatedFileArtifacts)>,
     want_diagnostics: bool,
   ) -> PathMap<Vec<Diagnostic>>
   where
     F: Sync + Send + paths::FileSystem,
   {
-    let mut added = FxHashSet::<PathId>::default();
-
+    let mut added = paths::PathMap::<FileErrors>::default();
     log::info!("repeatedly add the new files and any relevant imports");
     while !to_add.is_empty() {
       let did_add = to_add.drain(..).map(|(mut path_id, mut art)| {
@@ -250,17 +251,17 @@ impl St {
         for (_, ed) in art.eval.expr_ar.iter_mut() {
           ed.apply(&subst);
         }
-        for err in &mut art.extra.errors.statics {
+        for err in &mut art.errors.statics {
           err.apply(&subst);
         }
-        for def in art.extra.defs.values_mut() {
+        for def in art.artifacts.defs.values_mut() {
           def.apply(&subst);
         }
         path_id = subst.get_path_id(path_id);
 
         self.files.insert(path_id, art.eval);
-        self.files_extra.insert(path_id, art.extra);
-        added.insert(path_id);
+        self.file_artifacts.insert(path_id, art.artifacts);
+        added.insert(path_id, art.errors);
 
         path_id
       });
@@ -278,13 +279,11 @@ impl St {
       let mut new_to_add = Vec::<(PathId, jsonnet_eval::Import)>::default();
       for &importer in &did_add {
         for import in self.files[&importer].imports() {
-          if added.contains(&import.path) || self.files.contains_key(&import.path) {
+          if added.contains_key(&import.path) || self.files.contains_key(&import.path) {
             continue;
           }
           match import.kind {
-            jsonnet_expr::ImportKind::Code => {
-              new_to_add.push((importer, import));
-            }
+            jsonnet_expr::ImportKind::Code => new_to_add.push((importer, import)),
             jsonnet_expr::ImportKind::String => {
               let path = self.artifacts.paths.get_path(import.path);
               match fs.read_to_string(path.as_path()) {
@@ -292,12 +291,12 @@ impl St {
                   self.importstr.insert(import.path, contents);
                 }
                 Err(e) => {
-                  let Some(fe) = self.files_extra.get_mut(&importer) else {
+                  let Some(errors) = added.get_mut(&importer) else {
                     let path = self.artifacts.paths.get_path(importer).as_path().display();
-                    always!(false, "no files extra when in files: {path}");
+                    always!(false, "couldn't get errors: {path}");
                     continue;
                   };
-                  fe.errors.imports.push((import.expr, e));
+                  errors.imports.push((import.expr, e));
                 }
               }
             }
@@ -308,12 +307,12 @@ impl St {
                   self.importstr.insert(import.path, contents);
                 }
                 Err(e) => {
-                  let Some(fe) = self.files_extra.get_mut(&importer) else {
+                  let Some(errors) = added.get_mut(&importer) else {
                     let path = self.artifacts.paths.get_path(importer).as_path().display();
-                    always!(false, "no files extra when in files: {path}");
+                    always!(false, "couldn't get errors: {path}");
                     continue;
                   };
-                  fe.errors.imports.push((import.expr, e));
+                  errors.imports.push((import.expr, e));
                 }
               }
             }
@@ -338,12 +337,12 @@ impl St {
         match result {
           Ok((path_id, art)) => to_add.push((path_id, art)),
           Err((importer, expr, e)) => {
-            let Some(fe) = self.files_extra.get_mut(&importer) else {
+            let Some(errors) = added.get_mut(&importer) else {
               let path = self.artifacts.paths.get_path(importer).as_path().display();
-              always!(false, "no files extra when in files: {path}");
+              always!(false, "couldn't get errors: {path}");
               continue;
             };
-            fe.errors.imports.push((expr, e));
+            errors.imports.push((expr, e));
           }
         }
       }
@@ -355,7 +354,7 @@ impl St {
     let added_dependencies = self.files.par_iter().filter_map(|(&path, file)| {
       let dependencies: FxHashSet<_> = file
         .imports()
-        .filter_map(|import| added.contains(&import.path).then_some(import.path))
+        .filter_map(|import| added.contains_key(&import.path).then_some(import.path))
         .collect();
       if dependencies.is_empty() {
         None
@@ -384,19 +383,19 @@ impl St {
     while !needs_update.is_empty() {
       if want_diagnostics {
         log::info!("getting diagnostics for {} files", needs_update.len());
-        let iter = needs_update.iter().map(|&path| {
-          let art = &self.files_extra[&path];
+        let iter = needs_update.iter().map(|(&path, errors)| {
+          let art = &self.file_artifacts[&path];
           let ds: Vec<_> = std::iter::empty()
-            .chain(art.errors.lex.iter().map(|err| (err.range(), err.to_string())))
-            .chain(art.errors.parse.iter().map(|err| (err.range(), err.to_string())))
-            .chain(art.errors.desugar.iter().map(|err| (err.range(), err.to_string())))
-            .chain(art.errors.statics.iter().map(|err| {
+            .chain(errors.lex.iter().map(|err| (err.range(), err.to_string())))
+            .chain(errors.parse.iter().map(|err| (err.range(), err.to_string())))
+            .chain(errors.desugar.iter().map(|err| (err.range(), err.to_string())))
+            .chain(errors.statics.iter().map(|err| {
               let expr = err.expr();
               let ptr = art.pointers.get_ptr(expr);
               let err = err.display(&self.artifacts.strings);
               (ptr.text_range(), err.to_string())
             }))
-            .chain(art.errors.imports.iter().map(|(expr, err)| {
+            .chain(errors.imports.iter().map(|(expr, err)| {
               let ptr = art.pointers.get_ptr(*expr);
               (ptr.text_range(), err.to_string())
             }))
@@ -421,9 +420,9 @@ impl St {
         let cx = self.cx();
         // manifest in parallel for all updated files. TODO this probably doesn't respect ordering
         // requirements among the updated. what if one updated file depends on another updated file?
-        let iter = needs_update.par_iter().filter_map(|&path| {
+        let iter = needs_update.par_iter().filter_map(|(&path, errors)| {
           // only exec if no errors in the file so far.
-          self.files_extra[&path].errors.is_empty().then(|| {
+          errors.is_empty().then(|| {
             let val = jsonnet_eval::get_exec(cx, path);
             let val = val.and_then(|val| jsonnet_eval::get_manifest(cx, val));
             (path, val)
@@ -435,16 +434,25 @@ impl St {
       };
       log::info!("updated {} vals", updated_vals.len());
       self.json.extend(updated_vals);
-      updated.extend(needs_update.iter().copied());
+      updated.extend(needs_update.keys().copied());
 
       let iter = needs_update
-        .iter()
+        .keys()
         .flat_map(|&path_id| {
           // TODO could check if new json == old json and not add dependents if same
           let dependents = self.dependents.get(&path_id);
           dependents.into_iter().flatten().copied()
         })
-        .filter(|path_id| !updated.contains(path_id));
+        .filter(|path_id| !updated.contains(path_id))
+        .map(|x| (x, FileErrors::default()));
+
+      // TODO: when we do FileErrors::default above, that is probably not correct. we should
+      // probably instead compute the file errors for the new set of need-update files.
+      //
+      // in fact, we should probably compute some or all of the other isolated file artifacts, like
+      // the eval result for that file. since that could change if the imported files for that file
+      // changed. and we know that the imported files did change, because the new round of
+      // needs_update is computed as the (transitive) dependents of all the changed (updated) files.
       needs_update = iter.collect();
       log::info!("found {} dependents", needs_update.len());
     }
@@ -509,21 +517,21 @@ impl St {
     pos: text_pos::PositionUtf16,
   ) -> Option<(paths::PathId, text_pos::RangeUtf16)> {
     let ce = {
-      let file_extra = self.files_extra.get(&path_id)?;
-      let ts = file_extra.pos_db.text_size_utf16(pos)?;
-      let root = file_extra.syntax.clone().into_ast()?;
+      let art = self.file_artifacts.get(&path_id)?;
+      let ts = art.pos_db.text_size_utf16(pos)?;
+      let root = art.syntax.clone().into_ast()?;
       let tok = jsonnet_syntax::node_token(root.syntax(), ts)?;
       let node = tok.parent()?;
       let ptr = jsonnet_syntax::ast::SyntaxNodePtr::new(&node);
-      let expr = file_extra.pointers.get_idx(ptr);
+      let expr = art.pointers.get_idx(ptr);
       const_eval::get(self, path_id, expr)?
     };
-    let file_extra = self.files_extra.get(&ce.ewp.path_id)?;
-    let root = file_extra.syntax.clone().into_ast()?;
+    let art = self.file_artifacts.get(&ce.ewp.path_id)?;
+    let root = art.syntax.clone().into_ast()?;
     let tr = match ce.kind {
-      const_eval::Kind::Expr => file_extra.pointers.get_ptr(ce.ewp.expr).text_range(),
+      const_eval::Kind::Expr => art.pointers.get_ptr(ce.ewp.expr).text_range(),
       const_eval::Kind::ObjectCompId => {
-        let obj = file_extra.pointers.get_ptr(ce.ewp.expr);
+        let obj = art.pointers.get_ptr(ce.ewp.expr);
         let obj = obj.cast::<jsonnet_syntax::ast::Object>()?;
         let obj = obj.try_to_node(root.syntax())?;
         let comp_spec = obj.comp_specs().next()?;
@@ -533,7 +541,7 @@ impl St {
         }
       }
       const_eval::Kind::LocalBind(idx) => {
-        let local = file_extra.pointers.get_ptr(ce.ewp.expr);
+        let local = art.pointers.get_ptr(ce.ewp.expr);
         // NOTE because of desugaring, not all expr locals are actually from ast locals. we try to
         // get the exact location first and then fall back.
         local
@@ -550,7 +558,7 @@ impl St {
           })?
       }
       const_eval::Kind::FunctionParam(idx) => {
-        let func = file_extra.pointers.get_ptr(ce.ewp.expr);
+        let func = art.pointers.get_ptr(ce.ewp.expr);
         // NOTE because of desugaring, possibly not all expr fns are actually from ast fns
         func
           .cast::<jsonnet_syntax::ast::ExprFunction>()
@@ -566,7 +574,7 @@ impl St {
           })?
       }
     };
-    let range = file_extra.pos_db.range_utf16(tr)?;
+    let range = art.pos_db.range_utf16(tr)?;
     Some((ce.ewp.path_id, range))
   }
 }
@@ -578,11 +586,10 @@ struct FileArtifacts {
   syntax: jsonnet_syntax::Root,
   pointers: jsonnet_desugar::Pointers,
   defs: jsonnet_statics::DefMap,
-  errors: FileErrors,
 }
 
 /// Errors from a file analyzed in isolation.
-#[derive(Debug)]
+#[derive(Debug, Default)]
 struct FileErrors {
   lex: Vec<jsonnet_lex::Error>,
   parse: Vec<jsonnet_parse::Error>,
@@ -605,7 +612,8 @@ impl FileErrors {
 struct IsolatedFileArtifacts {
   eval: jsonnet_eval::JsonnetFile,
   combine: jsonnet_expr::Artifacts,
-  extra: FileArtifacts,
+  artifacts: FileArtifacts,
+  errors: FileErrors,
 }
 
 impl IsolatedFileArtifacts {
@@ -625,18 +633,18 @@ impl IsolatedFileArtifacts {
     Self {
       eval: jsonnet_eval::JsonnetFile { expr_ar: desugar.arenas.expr, top: desugar.top },
       combine: jsonnet_expr::Artifacts { paths: desugar.ps, strings: desugar.arenas.str },
-      extra: FileArtifacts {
+      artifacts: FileArtifacts {
         pos_db: text_pos::PositionDb::new(contents),
         syntax: parse.root,
         pointers: desugar.pointers,
         defs: st.defs,
-        errors: FileErrors {
-          lex: lex.errors,
-          parse: parse.errors,
-          desugar: desugar.errors,
-          statics: st.errors,
-          imports: Vec::new(),
-        },
+      },
+      errors: FileErrors {
+        lex: lex.errors,
+        parse: parse.errors,
+        desugar: desugar.errors,
+        statics: st.errors,
+        imports: Vec::new(),
       },
     }
   }

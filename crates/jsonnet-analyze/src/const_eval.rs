@@ -33,7 +33,7 @@ pub(crate) enum Kind {
 
 pub(crate) fn get(st: &St, path_id: PathId, expr: Expr) -> Option<ConstEval> {
   let ewp = ExprWithPath { path_id, expr: expr? };
-  if let Some(&def) = st.files_extra[&path_id].defs.get(&ewp.expr) {
+  if let Some(&def) = st.file_artifacts[&path_id].defs.get(&ewp.expr) {
     return from_def(st, path_id, def);
   }
   let ret = ConstEval { ewp, kind: Kind::Expr };
