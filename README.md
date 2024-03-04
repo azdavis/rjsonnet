@@ -6,6 +6,11 @@ An implementation of [Jsonnet][] in [Rust][], which aims to conform to the [spec
 
 This project is pre-MVP. Most IDE features are not implemented. Some **language** features haven't even been implemented. There are a lot of TODOs and probably a good amount of latent bugs.
 
+For more mature alternatives, consider:
+
+- [Jsonnet LSP][carl] by Carl Verge
+- [Jsonnet Language Server][grafana] by Grafana
+
 ## Ways to use
 
 The primary intended way to use this is via the [language server][lsp] and its official VS Code extension.
@@ -56,12 +61,12 @@ to turn `FOO.jsonnet` into JSON and report any errors.
 1. Click "Run and Debug" (by default, the triangular play button with bug on the left).
 1. Click the triangular play button by "extension" (you may need to select it from the drop-down). Another VS Code will pop up, with the extension enabled.
 1. Open that VS Code on a folder with Jsonnet files.
-1. Ensure other Jsonnet-related extensions like [Jsonnet LSP][other-ext] are disabled.
+1. Ensure other Jsonnet-related extensions like [Jsonnet LSP][carl] are disabled.
 1. Try out the IDE features like inline diagnostics and go-to-def.
 
 ## Credits
 
-I took a lot of inspiration from the existing [Jsonnet LSP][other-ext] extension, but I wanted to try doing it myself, in Rust, from scratch, specifically for IDEs. I had already done so with Standard ML in [Millet][millet].
+I took a lot of inspiration from the existing [Jsonnet LSP][carl] extension, but I wanted to try doing it myself, in Rust, from scratch, specifically for IDEs. I had already done so with Standard ML in [Millet][millet].
 
 ## License
 
@@ -70,7 +75,8 @@ Like Rust itself and many other projects in the Rust community, this project is 
 [Jsonnet]: https://jsonnet.org
 [lsp]: https://microsoft.github.io/language-server-protocol
 [node]: https://nodejs.org/en
-[other-ext]: https://marketplace.visualstudio.com/items?itemName=cverge.jsonnet-lsp
+[carl]: https://marketplace.visualstudio.com/items?itemName=cverge.jsonnet-lsp
+[grafana]: https://marketplace.visualstudio.com/items?itemName=Grafana.vscode-jsonnet
 [Rust]: https://www.rust-lang.org
 [rustup]: https://rustup.rs
 [spec]: https://jsonnet.org/ref/spec.html
