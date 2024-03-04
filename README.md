@@ -11,6 +11,16 @@ For more mature alternatives, consider:
 - [Jsonnet LSP][carl] by Carl Verge
 - [Jsonnet Language Server][grafana] by Grafana
 
+## Features
+
+- Inline diagnostics
+- Go-to-definition
+- Hover for info
+
+## Demo
+
+https://github.com/azdavis/rjsonnet/assets/6496454/0a2f4059-74c0-4f4e-99e2-5dd7be8c81fe
+
 ## Ways to use
 
 The primary intended way to use this is via the [language server][lsp] and its official VS Code extension.
@@ -18,12 +28,6 @@ The primary intended way to use this is via the [language server][lsp] and its o
 However, you can also use the language server with any supported editor. You'll just have to write your own glue code between this server and your editor.
 
 There is also a CLI that can translate Jsonnet files into JSON.
-
-## Features
-
-- Inline diagnostics
-- Go-to-definition
-- Hover for info
 
 ## Try it
 
