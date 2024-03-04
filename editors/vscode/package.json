@@ -1,9 +1,9 @@
 {
   "private": true,
-  "name": "jsonnet",
-  "displayName": "Jsonnet",
+  "name": "rjsonnet",
+  "displayName": "rjsonnet",
   "version": "0.1.0",
-  "description": "Jsonnet support",
+  "description": "Jsonnet support in Rust",
   "publisher": "azdavis",
   "author": "Ariel Davis <ariel.z.davis@icloud.com>",
   "repository": {
@@ -15,7 +15,7 @@
     "Programming Languages"
   ],
   "keywords": [
-    "Jsonnet",
+    "jsonnet",
     "language server"
   ],
   "main": "out/main.js",
