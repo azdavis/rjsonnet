@@ -47,7 +47,7 @@ $ cargo fmt
 $ cargo xtask ci
 ```
 
-### Try the CLI only
+### Try the CLI
 
 Run:
 
