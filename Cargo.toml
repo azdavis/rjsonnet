@@ -44,5 +44,6 @@ write-rs-tokens.git = "https://github.com/azdavis/language-util.git"
 missing_debug_implementations = "deny"
 missing_docs = "deny"
 rust_2018_idioms = "deny"
+unsafe_code = "deny"
 [workspace.lints.clippy]
 pedantic = "deny"

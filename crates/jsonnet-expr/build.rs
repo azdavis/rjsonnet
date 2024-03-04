@@ -427,6 +427,7 @@ fn mk_get_params(params: &[&str]) -> proc_macro2::TokenStream {
           }
         }
         #(#require_vars_set)*
+        #[allow(unsafe_code)]
         Ok(Self { #(#unwraps_unchecked)* })
       }
     }
