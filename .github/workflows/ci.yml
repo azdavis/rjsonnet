@@ -96,6 +96,9 @@ jobs:
   release:
     needs: dist
     runs-on: ubuntu-latest
+    # need this to allow creating a release
+    permissions:
+      contents: write
     steps:
       - name: Check out repo
         uses: actions/checkout@v4
