@@ -42,9 +42,16 @@ fn run() -> usize {
 
     if manifest {
       let path_id = st.path_id(p);
-      if let Ok(json) = st.get_json(path_id) {
-        let json = json.display(st.strings());
-        println!("{json}");
+      match st.get_json(path_id) {
+        Ok(json) => {
+          let json = json.display(st.strings());
+          println!("{json}");
+        }
+        Err(e) => {
+          let e = e.display(st.strings(), st.paths());
+          println!("error: {e}");
+          ret += 1;
+        }
       }
     }
 
