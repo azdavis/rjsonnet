@@ -2,9 +2,10 @@
 
 #![allow(clippy::disallowed_methods)]
 
+use flate2::{write::GzEncoder, Compression};
 use pico_args::Arguments;
 use std::path::{Path, PathBuf};
-use std::{env, fs, process::Command};
+use std::{env, fs, io, process::Command};
 
 #[derive(Debug, Clone, Copy)]
 enum Cmd {
@@ -30,12 +31,15 @@ impl Cmd {
       Cmd::Dist => CmdSpec {
         name: "dist",
         desc: "make artifacts for distribution",
-        options: &[("--release", "build for release")],
+        options: &[
+          ("--release", "build for release"),
+          ("--target <TARGET>", "a specific target to build for"),
+        ],
       },
       Cmd::Release => CmdSpec {
         name: "release",
         desc: "make a new release",
-        options: &[("--tag <t>", "the new tag to create")],
+        options: &[("--tag <TAG>", "the new tag to create")],
       },
     }
   }
@@ -91,9 +95,11 @@ fn run_ci() {
 #[derive(Debug)]
 struct DistArgs {
   release: bool,
+  target: Option<String>,
 }
 
 const LANG_SRV_NAME: &str = "jsonnet-ls";
+const CLI_NAME: &str = "jsonnet-cli";
 
 fn cmd_exe(fst: &str) -> Command {
   if cfg!(windows) {
@@ -110,16 +116,42 @@ fn exe(s: &str) -> String {
   format!("{s}{suffix}")
 }
 
+fn gzip(src: &Path, dst: &Path) {
+  let dst_file = fs::File::create(dst).expect("create gzip dist");
+  let mut encoder = GzEncoder::new(dst_file, Compression::best());
+  let src_file = fs::File::open(src).expect("open file");
+  let mut input = io::BufReader::new(src_file);
+  io::copy(&mut input, &mut encoder).expect("copy gzip");
+  encoder.finish().expect("finish gzip");
+}
+
 fn dist(args: &DistArgs) {
   let mut c = Command::new("cargo");
   c.args(["build", "--locked", "--bin", LANG_SRV_NAME]);
   if args.release {
     c.arg("--release");
   }
+  if let Some(target) = &args.target {
+    c.args(["--bin", CLI_NAME, "--target", target.as_str()]);
+  }
   run(&mut c);
   let kind = if args.release { "release" } else { "debug" };
-  let mut src: PathBuf = ["target", kind].into_iter().collect();
-  let mut dst: PathBuf = ["editors", "vscode", "out"].into_iter().collect();
+  let mut src: PathBuf =
+    std::iter::once("target").chain(args.target.as_deref()).chain(std::iter::once(kind)).collect();
+  let mut dst: PathBuf;
+  if let Some(target) = &args.target {
+    dst = PathBuf::from("binary");
+    fs::create_dir_all(&dst).expect("create dirs");
+    for name in [LANG_SRV_NAME, CLI_NAME] {
+      let gz = format!("{name}-{target}.gz");
+      src.push(exe(name).as_str());
+      dst.push(gz.as_str());
+      gzip(&src, &dst);
+      assert!(src.pop());
+      assert!(dst.pop());
+    }
+  }
+  dst = ["editors", "vscode", "out"].into_iter().collect();
   // ignore errors if it exists already. if we have permission errors we're about to report them
   // with the create_dir_all anyway
   _ = fs::remove_dir_all(&dst);
@@ -227,7 +259,10 @@ fn main() {
       run_ci();
     }
     Cmd::Dist => {
-      let dist_args = DistArgs { release: args.contains("--release") };
+      let dist_args = DistArgs {
+        release: args.contains("--release"),
+        target: args.opt_value_from_str("--target").expect("no parse"),
+      };
       finish_args(args);
       dist(&dist_args);
     }

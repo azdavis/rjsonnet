@@ -13,4 +13,5 @@ test = false
 workspace = true
 
 [dependencies]
+flate2.workspace = true
 pico-args.workspace = true

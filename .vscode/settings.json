@@ -19,6 +19,7 @@
     "desugared",
     "dtolnay",
     "elems",
+    "flate",
     "foldl",
     "foldr",
     "hexdigit",
