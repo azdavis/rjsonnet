@@ -151,6 +151,7 @@ Configuration for GitHub, like:
 
 - PR templates
 - Issue templates
+- How to run CI
 
 ### `.gitignore`
 
