@@ -11,6 +11,7 @@ enum Cmd {
   Help,
   Ci,
   Dist,
+  Release,
 }
 
 struct CmdSpec {
@@ -20,7 +21,7 @@ struct CmdSpec {
 }
 
 impl Cmd {
-  const VALUES: [Cmd; 3] = [Cmd::Help, Cmd::Ci, Cmd::Dist];
+  const VALUES: [Cmd; 4] = [Cmd::Help, Cmd::Ci, Cmd::Dist, Cmd::Release];
 
   fn spec(self) -> CmdSpec {
     match self {
@@ -30,6 +31,11 @@ impl Cmd {
         name: "dist",
         desc: "make artifacts for distribution",
         options: &[("--release", "build for release")],
+      },
+      Cmd::Release => CmdSpec {
+        name: "release",
+        desc: "make a new release",
+        options: &[("--tag <t>", "the new tag to create")],
       },
     }
   }
@@ -131,6 +137,76 @@ fn dist(args: &DistArgs) {
   run(cmd_exe("npm").args(["run", format!("build-{kind}").as_str()]));
 }
 
+fn modify_each_line<P, F>(path: P, mut f: F)
+where
+  P: AsRef<Path>,
+  F: FnMut(&mut String, usize, &str),
+{
+  let contents = fs::read_to_string(path.as_ref()).expect("read file");
+  let mut out = String::with_capacity(contents.len());
+  for (idx, line) in contents.lines().enumerate() {
+    f(&mut out, idx, line);
+    out.push('\n');
+  }
+  fs::write(path.as_ref(), out).expect("write file");
+}
+
+fn release(tag_arg: &str) {
+  let version = tag_arg.strip_prefix('v').expect("tag must start with v");
+  let version_parts: Vec<_> = version.split('.').collect();
+  let num_parts = version_parts.len();
+  assert_eq!(num_parts, 3, "version must have 3 dot-separated parts");
+  for part in version_parts {
+    part.parse::<u16>().expect("parse as u16");
+  }
+  let package_json_ish = ["editors/vscode/package.json", "editors/vscode/package-lock.json"];
+  for path in &package_json_ish {
+    modify_each_line(path, |out, idx, line| {
+      if idx >= 15 {
+        out.push_str(line);
+      } else {
+        match line.split_once(": ") {
+          None => out.push_str(line),
+          Some((key, _)) => {
+            if key.trim() == "\"version\"" {
+              out.push_str(key);
+              out.push_str(": \"");
+              out.push_str(version);
+              out.push_str("\",");
+            } else {
+              out.push_str(line);
+            }
+          }
+        }
+      }
+    });
+  }
+  let cargo_toml = "Cargo.toml";
+  modify_each_line(cargo_toml, |out, _, line| {
+    match line.strip_prefix("version = \"").and_then(|x| x.strip_suffix('"')) {
+      None => out.push_str(line),
+      Some(_) => {
+        out.push_str("version = ");
+        out.push('"');
+        out.push_str(version);
+        out.push('"');
+      }
+    }
+  });
+  // to update Cargo.lock
+  run(Command::new("cargo").arg("build"));
+  run(Command::new("git").arg("add").args([
+    "Cargo.lock",
+    "Cargo.toml",
+    "docs/CHANGELOG.md",
+    "editors/vscode/package-lock.json",
+    "editors/vscode/package.json",
+  ]));
+  let msg = format!("Release {tag_arg}");
+  run(Command::new("git").args(["commit", "-m", msg.as_str(), "--no-verify"]));
+  run(Command::new("git").arg("tag").arg(tag_arg));
+}
+
 fn main() {
   let mut args = Arguments::from_env();
   if args.contains(["-h", "--help"]) {
@@ -154,6 +230,12 @@ fn main() {
       let dist_args = DistArgs { release: args.contains("--release") };
       finish_args(args);
       dist(&dist_args);
+    }
+    Cmd::Release => {
+      let tag_arg: String = args.opt_value_from_str("--tag").expect("no parse").expect("no --tag");
+      finish_args(args);
+      release(tag_arg.as_str());
+      run_ci();
     }
   }
 }
