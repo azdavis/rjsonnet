@@ -235,7 +235,7 @@ impl St {
     &mut self,
     fs: &F,
     mut needs_update: paths::PathMap<FileErrors>,
-    mut to_add: Vec<(paths::PathId, IsolatedFileArtifacts)>,
+    mut to_add: Vec<(paths::PathId, IsolatedFile)>,
     want_diagnostics: bool,
   ) -> PathMap<Vec<Diagnostic>>
   where
@@ -610,14 +610,14 @@ impl FileErrors {
 
 /// Artifacts from a file analyzed in isolation.
 #[derive(Debug)]
-struct IsolatedFileArtifacts {
+struct IsolatedFile {
   eval: jsonnet_eval::JsonnetFile,
   combine: jsonnet_expr::Artifacts,
   artifacts: FileArtifacts,
   errors: FileErrors,
 }
 
-impl IsolatedFileArtifacts {
+impl IsolatedFile {
   /// Returns artifacts for a file contained in the given directory.
   fn new(
     contents: &str,
@@ -667,7 +667,7 @@ fn get_isolated_fs<F>(
   path: &paths::CleanPath,
   root_dirs: &[paths::CleanPathBuf],
   fs: &F,
-) -> io::Result<IsolatedFileArtifacts>
+) -> io::Result<IsolatedFile>
 where
   F: paths::FileSystem,
 {
@@ -680,12 +680,12 @@ fn get_isolated_str<F>(
   contents: &str,
   root_dirs: &[paths::CleanPathBuf],
   fs: &F,
-) -> io::Result<IsolatedFileArtifacts>
+) -> io::Result<IsolatedFile>
 where
   F: paths::FileSystem,
 {
   let Some(parent) = path.parent() else {
     return Err(io::Error::other("path has no parent"));
   };
-  Ok(IsolatedFileArtifacts::new(contents, parent, root_dirs, &FsAdapter(fs)))
+  Ok(IsolatedFile::new(contents, parent, root_dirs, &FsAdapter(fs)))
 }
