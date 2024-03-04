@@ -3,6 +3,7 @@
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::hash_map::Entry;
 use std::collections::BTreeSet;
+use std::fmt::{self, Write as _};
 use std::{env, fs, path::Path, process::Command};
 
 fn eq_sets<T>(lhs: &BTreeSet<T>, rhs: &BTreeSet<T>, only_lhs: &str, only_rhs: &str)
@@ -93,6 +94,34 @@ fn no_debugging() {
 }
 
 #[test]
+fn changelog() {
+  if std::env::var_os("CI").is_some_and(|x| x == "1") {
+    return;
+  }
+  let tag_out = output(root_cmd("git").arg("tag"));
+  let in_git: BTreeSet<_> = tag_out.lines().filter(|x| x.starts_with('v')).collect();
+  let in_doc: BTreeSet<_> = include_str!("../../../docs/CHANGELOG.md")
+    .lines()
+    .filter_map(|line| {
+      let title = line.strip_prefix("## ")?;
+      // allow a title of 'main' for unreleased changes.
+      (title != "main").then_some(title)
+    })
+    .collect();
+  eq_sets(&in_git, &in_doc, "tags that have no changelog entry", "changelog entries without a tag");
+}
+
+type Metadata = serde_json::Map<String, serde_json::Value>;
+static METADATA: std::sync::OnceLock<Metadata> = std::sync::OnceLock::new();
+fn metadata_init() -> Metadata {
+  let out = output(root_cmd("cargo").args(["metadata", "--format-version", "1"]));
+  serde_json::from_str(&out).unwrap()
+}
+fn metadata() -> &'static Metadata {
+  METADATA.get_or_init(metadata_init)
+}
+
+#[test]
 fn licenses() {
   let allowed = [
     "(MIT OR Apache-2.0) AND Unicode-DFS-2016",
@@ -110,9 +139,7 @@ fn licenses() {
     "Zlib OR Apache-2.0 OR MIT",
   ];
   let mut allowed: FxHashMap<_, _> = allowed.iter().map(|&x| (x, false)).collect();
-  let out = output(root_cmd("cargo").args(["metadata", "--format-version", "1"]));
-  let metadata: serde_json::Map<String, serde_json::Value> = serde_json::from_str(&out).unwrap();
-  let packages = metadata.get("packages").unwrap().as_array().unwrap();
+  let packages = metadata().get("packages").unwrap().as_array().unwrap();
   let mut new_licenses = FxHashMap::<&str, FxHashSet<&str>>::default();
   for package in packages {
     let package = package.as_object().unwrap();
@@ -136,6 +163,155 @@ fn licenses() {
   empty_set(&allowed_unused, "allowed but unused license");
 }
 
+#[derive(Debug)]
+struct EnumVariant<'a> {
+  name: &'a str,
+  desc: &'a str,
+}
+
+impl fmt::Display for EnumVariant<'_> {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    write!(f, "`{:?}`: {}", self.name, self.desc)
+  }
+}
+
+#[derive(Debug)]
+enum TypeAndDefault<'a> {
+  String(&'a str, Vec<EnumVariant<'a>>),
+  Bool(bool),
+  Number(u64),
+  Array(&'a [serde_json::Value]),
+}
+
+impl fmt::Display for TypeAndDefault<'_> {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    match self {
+      TypeAndDefault::String(s, vs) => {
+        writeln!(f, "- Type: `string`")?;
+        writeln!(f, "- Default: `{s:?}`")?;
+        if !vs.is_empty() {
+          writeln!(f, "- Valid values:")?;
+          for v in vs {
+            writeln!(f, "  - {v}")?;
+          }
+        }
+        Ok(())
+      }
+      TypeAndDefault::Bool(b) => {
+        writeln!(f, "- Type: `boolean`")?;
+        writeln!(f, "- Default: `{b:?}`")?;
+        Ok(())
+      }
+      TypeAndDefault::Number(n) => {
+        writeln!(f, "- Type: `number`")?;
+        writeln!(f, "- Default: `{n:?}`")?;
+        Ok(())
+      }
+      TypeAndDefault::Array(ar) => {
+        writeln!(f, "- Type: `array`")?;
+        writeln!(f, "- Default: `{ar:?}`")?;
+        Ok(())
+      }
+    }
+  }
+}
+
+#[derive(Debug)]
+struct ConfigProperty<'a> {
+  name: &'a str,
+  desc: &'a str,
+  type_and_default: TypeAndDefault<'a>,
+}
+
+impl fmt::Display for ConfigProperty<'_> {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    writeln!(f, "#### `{}`", self.name)?;
+    writeln!(f)?;
+    self.type_and_default.fmt(f)?;
+    writeln!(f)?;
+    writeln!(f, "{}", self.desc)?;
+    Ok(())
+  }
+}
+
+const PACKAGE_JSON: &str = include_str!("../../../editors/vscode/package.json");
+const PACKAGE_LOCK_JSON: &str = include_str!("../../../editors/vscode/package-lock.json");
+const MANUAL: &str = include_str!("../../../docs/manual.md");
+const COMMENT_CLOSE: &str = " -->";
+
+fn is_section_comment(s: &str, comment_open: &str, section: &str) -> bool {
+  s.trim()
+    .strip_prefix(comment_open)
+    .and_then(|s| s.strip_suffix(COMMENT_CLOSE))
+    .map_or(false, |s| s == section)
+}
+
+fn get_manual_section(section: &str) -> impl Iterator<Item = &'static str> + '_ {
+  let mut iter = MANUAL.lines();
+  iter.find(|s| is_section_comment(s, "<!-- @begin ", section));
+  iter.take_while(|s| !is_section_comment(s, "<!-- @end ", section))
+}
+
+#[test]
+fn vs_code_config() {
+  let package_json: serde_json::Value = serde_json::from_str(PACKAGE_JSON).unwrap();
+  let properties = package_json
+    .as_object()
+    .unwrap()
+    .get("contributes")
+    .unwrap()
+    .as_object()
+    .unwrap()
+    .get("configuration")
+    .unwrap()
+    .as_object()
+    .unwrap()
+    .get("properties")
+    .unwrap()
+    .as_object()
+    .unwrap();
+  let mut want_doc = String::new();
+  for (name, val) in properties {
+    let val = val.as_object().unwrap();
+    let typ = val.get("type").unwrap().as_str().unwrap();
+    let default_ = val.get("default").unwrap();
+    let desc = val.get("markdownDescription").unwrap().as_str().unwrap();
+    let enums = val.get("enum").and_then(serde_json::Value::as_array);
+    let enum_descs = val.get("markdownEnumDescriptions").and_then(serde_json::Value::as_array);
+    assert_eq!(enums.map(Vec::len), enum_descs.map(Vec::len));
+    let enum_variants: Vec<_> = enums
+      .into_iter()
+      .flatten()
+      .zip(enum_descs.into_iter().flatten())
+      .map(|(name, desc)| EnumVariant {
+        name: name.as_str().unwrap(),
+        desc: desc.as_str().unwrap(),
+      })
+      .collect();
+    let type_and_default = match typ {
+      "string" => TypeAndDefault::String(default_.as_str().unwrap(), enum_variants),
+      "boolean" => {
+        assert!(enum_variants.is_empty());
+        TypeAndDefault::Bool(default_.as_bool().unwrap())
+      }
+      "number" => {
+        assert!(enum_variants.is_empty());
+        TypeAndDefault::Number(default_.as_number().unwrap().as_u64().unwrap())
+      }
+      "array" => {
+        assert!(enum_variants.is_empty());
+        TypeAndDefault::Array(default_.as_array().unwrap())
+      }
+      _ => panic!("unknown type: {typ}"),
+    };
+    let config_property = ConfigProperty { name, desc, type_and_default };
+    writeln!(want_doc, "{config_property}").unwrap();
+  }
+  let got_doc_lines: Vec<_> = get_manual_section("vscode-config").collect();
+  let got_doc = got_doc_lines.join("\n");
+  pretty_assertions::assert_str_eq!(got_doc.trim(), want_doc.trim(),);
+}
+
 #[test]
 fn rs_file_comments() {
   let out = output(root_cmd("git").args(["ls-files", "**/*.rs"]));
@@ -148,6 +324,50 @@ fn rs_file_comments() {
     })
     .collect();
   empty_set(&no_doc, "rust files without doc comment at top");
+}
+
+#[test]
+fn version() {
+  let package_json: serde_json::Value = serde_json::from_str(PACKAGE_JSON).unwrap();
+  let package_lock_json: serde_json::Value = serde_json::from_str(PACKAGE_LOCK_JSON).unwrap();
+  let package_lock_json = package_lock_json.as_object().unwrap();
+  let cargo_toml = include_str!("../../../Cargo.toml");
+  let pkg_json_ver = package_json.as_object().unwrap().get("version").unwrap().as_str().unwrap();
+  let pkg_lk_json_ver = package_lock_json.get("version").unwrap().as_str().unwrap();
+  let pkg_lk_json_self_ver = package_lock_json
+    .get("packages")
+    .unwrap()
+    .as_object()
+    .unwrap()
+    .get("")
+    .unwrap()
+    .as_object()
+    .unwrap()
+    .get("version")
+    .unwrap()
+    .as_str()
+    .unwrap();
+  let cargo_toml_ver = cargo_toml
+    .lines()
+    .find_map(|line| line.strip_prefix("version = \"")?.strip_suffix('"'))
+    .unwrap();
+
+  assert_eq!(pkg_json_ver, pkg_lk_json_ver);
+  assert_eq!(pkg_json_ver, pkg_lk_json_self_ver);
+  assert_eq!(pkg_json_ver, cargo_toml_ver);
+
+  for member in metadata().get("workspace_members").unwrap().as_array().unwrap() {
+    let member = member.as_str().unwrap();
+    let mut iter = member.split_ascii_whitespace();
+    // package name
+    iter.next();
+    let member_version = iter.next().unwrap();
+    assert_eq!(pkg_json_ver, member_version);
+  }
+
+  if let Some(github_ref_v) = option_env!("GITHUB_REF_NAME").and_then(|r| r.strip_prefix('v')) {
+    assert_eq!(pkg_json_ver, github_ref_v);
+  }
 }
 
 #[test]
