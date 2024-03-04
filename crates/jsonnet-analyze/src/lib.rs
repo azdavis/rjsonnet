@@ -604,6 +604,7 @@ impl FileErrors {
       && self.parse.is_empty()
       && self.desugar.is_empty()
       && self.statics.is_empty()
+      && self.imports.is_empty()
   }
 }
 
