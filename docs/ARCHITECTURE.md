@@ -121,7 +121,7 @@ The VS Code client extension, in [TypeScript][ts].
 
 ### `xtask`
 
-A [task runner][xtask] written in Rust.
+A [task runner][xtask] for the repo.
 
 Allows you to invoke `cargo xtask <task>` to run the `<task>`.
 

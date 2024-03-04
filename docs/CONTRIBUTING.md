@@ -17,5 +17,5 @@ Note that this project has a [Code of Conduct][coc]. We expect all members of th
 
 [coc]: /docs/CODE_OF_CONDUCT.md
 [discuss]: https://github.com/azdavis/rjsonnet/discussions
-[issue]: https://github.com/azdavis/millet/issues/new/choose
+[issue]: https://github.com/azdavis/rjsonnet/issues/new/choose
 [no]: https://opensource.guide/best-practices/#learning-to-say-no

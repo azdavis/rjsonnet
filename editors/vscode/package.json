@@ -4,11 +4,11 @@
   "name": "rjsonnet",
   "displayName": "rjsonnet",
   "version": "0.1.0",
-  "description": "Jsonnet support in Rust",
+  "description": "Jsonnet support implemented in Rust",
   "publisher": "azdavis",
   "author": "Ariel Davis <ariel.z.davis@icloud.com>",
   "repository": {
-    "url": "https://github.com/azdavis/rrjsonnet.git",
+    "url": "https://github.com/azdavis/rjsonnet.git",
     "type": "git"
   },
   "license": "MIT OR Apache-2.0",
