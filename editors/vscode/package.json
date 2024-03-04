@@ -8,7 +8,7 @@
   "publisher": "azdavis",
   "author": "Ariel Davis <ariel.z.davis@icloud.com>",
   "repository": {
-    "url": "https://github.com/azdavis/rjsonnet.git",
+    "url": "https://github.com/azdavis/rrjsonnet.git",
     "type": "git"
   },
   "license": "MIT OR Apache-2.0",
@@ -47,27 +47,27 @@
       "type": "object",
       "title": "Jsonnet",
       "properties": {
-        "jsonnet.server.enable": {
+        "rjsonnet.server.enable": {
           "type": "boolean",
           "default": true,
           "markdownDescription": "Enable the language server."
         },
-        "jsonnet.server.path": {
+        "rjsonnet.server.path": {
           "type": "string",
           "default": "",
           "markdownDescription": "Path to the `jsonnet-ls` executable.\n\nWhen set to the empty string `\"\"` (the default), use the path to the one that's pre-built and bundled with the extension."
         },
-        "jsonnet.server.manifest.enable": {
+        "rjsonnet.server.manifest.enable": {
           "type": "boolean",
           "default": false,
           "markdownDescription": "Manifest into JSON."
         },
-        "jsonnet.server.importDirs.extra": {
+        "rjsonnet.server.importDirs.extra": {
           "type": "array",
           "default": [],
           "markdownDescription": "Extra directories in which to search for import paths."
         },
-        "jsonnet.server.diagnostics.show": {
+        "rjsonnet.server.diagnostics.show": {
           "type": "string",
           "default": "open",
           "enum": [
@@ -82,12 +82,12 @@
           ],
           "markdownDescription": "How to show diagnostics."
         },
-        "jsonnet.server.diagnostics.maxPerFile": {
+        "rjsonnet.server.diagnostics.maxPerFile": {
           "type": "number",
           "default": 5,
           "markdownDescription": "Max number of diagnostics to show per file."
         },
-        "jsonnet.unstable.server.logFilter": {
+        "rjsonnet.unstable.server.logFilter": {
           "type": "string",
           "default": "",
           "markdownDescription": "**Note:** This is intended for debugging the language server itself. It is not intended for normal use. It may change without notice.\n\nThe log filter. Set to e.g. 'info' or 'debug' for more info printed to the output console."

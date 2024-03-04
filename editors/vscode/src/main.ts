@@ -12,7 +12,7 @@ export async function activate(cx: vscode.ExtensionContext) {
   if (client !== null) {
     return;
   }
-  const config = vscode.workspace.getConfiguration("jsonnet");
+  const config = vscode.workspace.getConfiguration("rjsonnet");
   if (!config.get("server.enable")) {
     return;
   }
