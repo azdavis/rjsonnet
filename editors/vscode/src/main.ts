@@ -34,7 +34,7 @@ export async function activate(cx: vscode.ExtensionContext) {
       logger_filter: config.get("unstable.server.logFilter"),
     },
   };
-  client = new LanguageClient("jsonnet", serverOpts, clientOpts);
+  client = new LanguageClient("rjsonnet", serverOpts, clientOpts);
   await client.start();
 }
 
