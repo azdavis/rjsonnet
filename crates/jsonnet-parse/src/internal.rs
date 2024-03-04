@@ -1,10 +1,8 @@
 //! The internal impl.
-//!
-//! TODO forbid no comma between members, expr commas, params, etc. maybe do it in lowering?
 
 use crate::{ErrorKind, Expected, Parser};
 use always::always;
-use event_parse::Exited;
+use event_parse::{Entered, Exited};
 use jsonnet_syntax::kind::SyntaxKind as SK;
 
 /// errors but does not advance iff no expr
@@ -80,7 +78,7 @@ fn expr_prec(p: &mut Parser<'_>, min_prec: Prec) -> Option<Exited> {
     }
     SK::LSquare => {
       p.bump();
-      while expr_comma(p).is_some() {}
+      comma_sep(p, expr_comma, |x| matches!(x, SK::ForKw | SK::RSquare), SK::ExprComma);
       while comp_spec(p).is_some() {}
       p.eat(SK::RSquare);
       SK::ExprArray
@@ -100,7 +98,7 @@ fn expr_prec(p: &mut Parser<'_>, min_prec: Prec) -> Option<Exited> {
     // spec), so we may simply recur with `expr_must` which will handle the precedence.
     SK::LocalKw => {
       p.bump();
-      while bind_comma(p).is_some() {}
+      comma_sep(p, bind_comma, |x| x == SK::Semicolon, SK::BindComma);
       p.eat(SK::Semicolon);
       expr_must(p);
       SK::ExprLocal
@@ -164,7 +162,7 @@ fn expr_prec(p: &mut Parser<'_>, min_prec: Prec) -> Option<Exited> {
       SK::LRound => {
         let en = p.precede(ex);
         p.bump();
-        while arg(p).is_some() {}
+        comma_sep(p, arg, |x| x == SK::RRound, SK::Arg);
         p.eat(SK::RRound);
         p.exit(en, SK::ExprCall)
       }
@@ -233,13 +231,13 @@ fn object(p: &mut Parser<'_>) -> Exited {
   always!(p.at(SK::LCurly));
   let en = p.enter();
   p.bump();
-  while member(p).is_some() {}
+  comma_sep(p, member, |x| matches!(x, SK::ForKw | SK::RCurly), SK::Member);
   while comp_spec(p).is_some() {}
   p.eat(SK::RCurly);
   p.exit(en, SK::Object)
 }
 
-fn arg(p: &mut Parser<'_>) -> Option<Exited> {
+fn arg(p: &mut Parser<'_>) -> Option<Entered> {
   let outer = p.enter();
   if p.at(SK::Id) && p.at_n(1, SK::Eq) {
     let inner = p.enter();
@@ -251,10 +249,7 @@ fn arg(p: &mut Parser<'_>) -> Option<Exited> {
     p.abandon(outer);
     return None;
   }
-  if p.at(SK::Comma) {
-    p.bump();
-  }
-  Some(p.exit(outer, SK::Arg))
+  Some(outer)
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
@@ -313,13 +308,9 @@ fn comp_spec(p: &mut Parser<'_>) -> Option<Exited> {
 }
 
 #[must_use]
-fn member(p: &mut Parser<'_>) -> Option<Exited> {
+fn member(p: &mut Parser<'_>) -> Option<Entered> {
   let ex = member_kind(p)?;
-  let en = p.precede(ex);
-  if p.at(SK::Comma) {
-    p.bump();
-  }
-  Some(p.exit(en, SK::Member))
+  Some(p.precede(ex))
 }
 
 #[must_use]
@@ -412,13 +403,9 @@ fn bind(p: &mut Parser<'_>) -> Option<Exited> {
   Some(p.exit(en, SK::Bind))
 }
 
-fn bind_comma(p: &mut Parser<'_>) -> Option<Exited> {
+fn bind_comma(p: &mut Parser<'_>) -> Option<Entered> {
   let ex = bind(p)?;
-  let en = p.precede(ex);
-  if p.at(SK::Comma) {
-    p.bump();
-  }
-  Some(p.exit(en, SK::BindComma))
+  Some(p.precede(ex))
 }
 
 #[must_use]
@@ -428,23 +415,20 @@ fn paren_params(p: &mut Parser<'_>) -> Option<Exited> {
   }
   let en = p.enter();
   p.bump();
-  while param(p).is_some() {}
+  comma_sep(p, param, |x| x == SK::RRound, SK::Param);
   p.eat(SK::RRound);
   Some(p.exit(en, SK::ParenParams))
 }
 
 #[must_use]
-fn param(p: &mut Parser<'_>) -> Option<Exited> {
+fn param(p: &mut Parser<'_>) -> Option<Entered> {
   if !p.at(SK::Id) {
     return None;
   }
   let en = p.enter();
   p.bump();
   _ = eq_expr(p);
-  if p.at(SK::Comma) {
-    p.bump();
-  }
-  Some(p.exit(en, SK::Param))
+  Some(en)
 }
 
 #[must_use]
@@ -474,11 +458,35 @@ fn assert_(p: &mut Parser<'_>) -> SK {
 }
 
 #[must_use]
-fn expr_comma(p: &mut Parser<'_>) -> Option<Exited> {
+fn expr_comma(p: &mut Parser<'_>) -> Option<Entered> {
   let ex = expr(p)?;
-  let en = p.precede(ex);
-  if p.at(SK::Comma) {
-    p.bump();
+  Some(p.precede(ex))
+}
+
+/// `inner` must consume tokens iff it returns `Some`. returns whether `inner` consumed anything.
+fn comma_sep<F, G>(p: &mut Parser<'_>, inner: F, is_end: G, wrap: SK) -> bool
+where
+  F: Fn(&mut Parser<'_>) -> Option<Entered>,
+  G: Fn(SK) -> bool,
+{
+  let mut seen_any = false;
+  let mut need_comma = false;
+  while p.peek().is_some_and(|x| !is_end(x.kind)) {
+    if need_comma {
+      p.error(ErrorKind::Expected(Expected::Kind(SK::Comma)));
+    }
+    need_comma = true;
+    let Some(en) = inner(p) else { break };
+    seen_any = true;
+    if p.at(SK::Comma) {
+      p.bump();
+      need_comma = false;
+    }
+    while p.at(SK::Comma) {
+      p.error(ErrorKind::ExtraComma);
+      p.bump();
+    }
+    p.exit(en, wrap);
   }
-  Some(p.exit(en, SK::ExprComma))
+  seen_any
 }

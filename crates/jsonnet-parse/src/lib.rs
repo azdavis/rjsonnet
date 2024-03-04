@@ -54,6 +54,7 @@ impl fmt::Display for Error {
     match &self.0.kind {
       ErrorKind::Trailing => f.write_str("trailing token"),
       ErrorKind::Expected(e) => write!(f, "expected {e}"),
+      ErrorKind::ExtraComma => f.write_str("extra `,`"),
     }
   }
 }
@@ -62,6 +63,7 @@ impl fmt::Display for Error {
 enum ErrorKind {
   Trailing,
   Expected(Expected),
+  ExtraComma,
 }
 
 impl event_parse::Expected<SK> for ErrorKind {
