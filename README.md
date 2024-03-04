@@ -8,8 +8,13 @@ This project is pre-MVP. Most IDE features are not implemented. Some **language*
 
 For more mature alternatives, consider:
 
-- [Jsonnet LSP][carl] by Carl Verge
-- [Jsonnet Language Server][grafana] by Grafana
+- [Jsonnet LSP][carl], by Carl Verge
+- [Jsonnet Language Server][grafana], by Grafana
+
+## Install
+
+- [VS Code Marketplace][vs-code-marketplace]
+- [Open VSX][open-vsx]
 
 ## Features
 
@@ -27,14 +32,9 @@ https://github.com/azdavis/rjsonnet/assets/6496454/0a2f4059-74c0-4f4e-99e2-5dd7b
 
 The primary intended way to use this is via the [language server][lsp] and its official VS Code extension.
 
-You can install the VS Code extension from:
-
-- [VS Code Marketplace][vs-code-marketplace]
-- [Open VSX][open-vsx]
-
 ### Language server
 
-You can also use the language server with any editor that supports language servers. (Many modern editors do).
+You can also use the language server with any editor that supports language servers.
 
 You'll just have to write your own glue code between this server and your editor.
 
@@ -60,23 +60,23 @@ $ cargo fmt
 $ cargo xtask ci
 ```
 
-### Try the CLI
+### CLI
 
 Run:
 
 ```
-$ cargo run --bin jsonnet-cli -- --manifest FOO.jsonnet
+$ cargo run --bin jsonnet-cli -- --manifest foo.jsonnet
 ```
 
-to turn `FOO.jsonnet` into JSON and report any errors.
+to turn `foo.jsonnet` into JSON and report any errors.
 
-### Try the language server
+### Language server + VS Code extension
 
 1. Get [VS Code][vscode].
 1. Get [Node][node].
 1. Open the repo in VS Code.
 1. Click "Run and Debug" (by default, the triangular play button with bug on the left).
-1. In the "Run and Debug sidebar that appears, click the triangular play button by "extension" (you may need to select it from the drop-down). Another VS Code will pop up, with the extension enabled.
+1. In the "Run and Debug" sidebar that appears, click the triangular play button by "extension" (you may need to select it from the drop-down). Another VS Code will pop up, with the extension enabled.
 1. Open that VS Code on a folder with Jsonnet files.
 1. Ensure other Jsonnet-related extensions like [Jsonnet LSP][carl] are disabled.
 1. Try out the IDE features like inline diagnostics and go-to-def.
