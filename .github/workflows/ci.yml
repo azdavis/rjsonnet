@@ -1,0 +1,128 @@
+# https://news.ycombinator.com/item?id=32970198
+name: ci
+on:
+  pull_request: null
+  push:
+    branches: [main]
+    tags: [v*]
+env:
+  CARGO_INCREMENTAL: 0
+  CI: 1
+  RUST_BACKTRACE: short
+  RUSTFLAGS: "-D warnings"
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v3
+      - name: Set up rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - name: Cache rust
+        uses: Swatinem/rust-cache@v2
+      - name: Run CI
+        run: cargo xtask ci
+        env:
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+  dist:
+    needs: test
+    if: success() && github.repository == 'azdavis/rjsonnet' && startsWith(github.ref, 'refs/tags/v')
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            rust: x86_64-unknown-linux-gnu
+            vscode: linux-x64
+          - os: ubuntu-latest
+            rust: aarch64-unknown-linux-gnu
+            vscode: linux-arm64
+          - os: macos-latest
+            rust: x86_64-apple-darwin
+            vscode: darwin-x64
+          - os: macos-latest
+            rust: aarch64-apple-darwin
+            vscode: darwin-arm64
+          - os: windows-latest
+            rust: x86_64-pc-windows-msvc
+            vscode: win32-x64
+          - os: windows-latest
+            rust: aarch64-pc-windows-msvc
+            vscode: win32-arm64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Fix git line endings
+        if: matrix.os == 'windows-latest'
+        run: |
+          git config --global core.autocrlf false
+          git config --global core.eol lf
+      - name: Install platform linker
+        if: matrix.rust == 'aarch64-unknown-linux-gnu'
+        run: |
+          sudo apt-get update
+          sudo apt-get install gcc-aarch64-linux-gnu
+      - name: Check out repo
+        uses: actions/checkout@v3
+      - name: Set up rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          target: ${{ matrix.rust }}
+      - name: Cache rust
+        uses: Swatinem/rust-cache@v2
+      - name: Set up node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
+      - name: Make dist
+        run: cargo xtask dist --release --target ${{ matrix.rust }}
+      - name: Make VSIX directory
+        run: mkdir -p editors/vscode/vsix
+      - name: Package VSIX
+        run: npx --no-install vsce package --target ${{ matrix.vscode }} -o vsix/jsonnet-${{ matrix.vscode }}.vsix
+        working-directory: editors/vscode
+      - name: Upload binary artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: binary
+          path: |
+            binary/jsonnet-ls-${{ matrix.rust }}.gz
+            binary/jsonnet-cli-${{ matrix.rust }}.gz
+      - name: Upload VSIX artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: vsix
+          path: editors/vscode/vsix/jsonnet-${{ matrix.vscode }}.vsix
+  release:
+    needs: dist
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v3
+      - name: Set up node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
+      - name: Install node dependencies
+        run: npm ci
+        working-directory: editors/vscode
+      - name: Download binary artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: binary
+          path: binary
+      - name: Download VSIX artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: vsix
+          path: editors/vscode/vsix
+      - name: Make GitHub release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: binary/*
+      - name: Publish to VS Code Marketplace
+        run: npx --no-install vsce publish --pat ${{ secrets.AZURE_MARKETPLACE_TOKEN }} --packagePath vsix/*
+        working-directory: editors/vscode
+      - name: Publish to Open VSX
+        run: npx --no-install ovsx publish --pat ${{ secrets.OPEN_VSX_TOKEN }} --packagePath vsix/*
+        working-directory: editors/vscode
