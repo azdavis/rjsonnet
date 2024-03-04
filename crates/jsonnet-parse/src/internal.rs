@@ -214,6 +214,7 @@ fn expr_prec(p: &mut Parser<'_>, min_prec: Prec) -> Option<Exited> {
   Some(ex)
 }
 
+#[must_use]
 fn string(p: &mut Parser<'_>) -> bool {
   p.peek().is_some_and(|tok| {
     matches!(
@@ -237,6 +238,7 @@ fn object(p: &mut Parser<'_>) -> Exited {
   p.exit(en, SK::Object)
 }
 
+#[must_use]
 fn arg(p: &mut Parser<'_>) -> Option<Entered> {
   let outer = p.enter();
   if p.at(SK::Id) && p.at_n(1, SK::Eq) {
@@ -268,6 +270,7 @@ enum Prec {
   Unary,
 }
 
+#[must_use]
 fn bin_op_prec(op: SK) -> Option<Prec> {
   let ret = match op {
     SK::Star | SK::Slash | SK::Percent => Prec::Mul,
@@ -403,6 +406,7 @@ fn bind(p: &mut Parser<'_>) -> Option<Exited> {
   Some(p.exit(en, SK::Bind))
 }
 
+#[must_use]
 fn bind_comma(p: &mut Parser<'_>) -> Option<Entered> {
   let ex = bind(p)?;
   Some(p.precede(ex))
