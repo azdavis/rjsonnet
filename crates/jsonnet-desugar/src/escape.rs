@@ -1,27 +1,24 @@
 //! A thin wrapper around [`jsonnet_escape`].
 
-use crate::{error, st::St};
 use always::always;
 use jsonnet_syntax::{ast, kind::SyntaxToken};
 
-struct EscapeOutput<'st> {
+struct EscapeOutput {
   bytes: Vec<u8>,
-  token: jsonnet_syntax::kind::SyntaxToken,
-  st: &'st mut St,
 }
 
-impl<'st> EscapeOutput<'st> {
-  fn new(token: jsonnet_syntax::kind::SyntaxToken, st: &'st mut St) -> EscapeOutput<'st> {
+impl EscapeOutput {
+  fn new(token: &jsonnet_syntax::kind::SyntaxToken) -> EscapeOutput {
     // usually has at least 2 delimiter bytes (1 at start, 1 at end), but may not if the token was
     // malformed (lex/parse error)
     let cap = token.text().len().saturating_sub(2);
-    EscapeOutput { bytes: Vec::with_capacity(cap), token, st }
+    EscapeOutput { bytes: Vec::with_capacity(cap) }
   }
 }
 
-impl<'st> jsonnet_escape::Output for EscapeOutput<'st> {
-  fn err(&mut self, _: usize, e: jsonnet_escape::Error) {
-    self.st.err_token(self.token.clone(), error::Kind::Escape(e));
+impl jsonnet_escape::Output for EscapeOutput {
+  fn err(&mut self, _: usize, _: jsonnet_escape::Error) {
+    // should have already been emitted as an error when lexing
   }
 
   fn byte(&mut self, b: u8) {
@@ -29,15 +26,15 @@ impl<'st> jsonnet_escape::Output for EscapeOutput<'st> {
   }
 }
 
-pub(crate) fn get(st: &mut St, string: ast::String) -> String {
+pub(crate) fn get(string: ast::String) -> String {
   match string.kind {
-    ast::StringKind::DoubleQuotedString => slash(st, string.token, b'"'),
-    ast::StringKind::SingleQuotedString => slash(st, string.token, b'\''),
-    ast::StringKind::DoubleQuotedVerbatimString => verbatim(st, string.token, b'"'),
-    ast::StringKind::SingleQuotedVerbatimString => verbatim(st, string.token, b'\''),
+    ast::StringKind::DoubleQuotedString => slash(string.token, b'"'),
+    ast::StringKind::SingleQuotedString => slash(string.token, b'\''),
+    ast::StringKind::DoubleQuotedVerbatimString => verbatim(string.token, b'"'),
+    ast::StringKind::SingleQuotedVerbatimString => verbatim(string.token, b'\''),
     ast::StringKind::TextBlock => {
       let mut sp_st = str_process::St::new(string.token.text());
-      let mut out = EscapeOutput::new(string.token.clone(), st);
+      let mut out = EscapeOutput::new(&string.token);
       always!(sp_st.eat_prefix(b"|||"));
       jsonnet_escape::text_block(&mut sp_st, &mut out);
       match String::from_utf8(out.bytes) {
@@ -51,9 +48,9 @@ pub(crate) fn get(st: &mut St, string: ast::String) -> String {
   }
 }
 
-fn slash(st: &mut St, token: SyntaxToken, delim: u8) -> String {
+fn slash(token: SyntaxToken, delim: u8) -> String {
   let mut sp_st = str_process::St::new(token.text());
-  let mut out = EscapeOutput::new(token.clone(), st);
+  let mut out = EscapeOutput::new(&token);
   if sp_st.cur().is_some_and(|x| x == delim) {
     sp_st.bump();
   } else {
@@ -71,9 +68,9 @@ fn slash(st: &mut St, token: SyntaxToken, delim: u8) -> String {
   }
 }
 
-fn verbatim(st: &mut St, token: SyntaxToken, delim: u8) -> String {
+fn verbatim(token: SyntaxToken, delim: u8) -> String {
   let mut sp_st = str_process::St::new(token.text());
-  let mut out = EscapeOutput::new(token.clone(), st);
+  let mut out = EscapeOutput::new(&token);
   if sp_st.cur().is_some_and(|x| x == b'@') {
     sp_st.bump();
   } else {
