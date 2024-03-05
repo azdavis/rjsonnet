@@ -381,6 +381,26 @@ impl St {
     log::info!("repeatedly update files");
     let mut ret = PathMap::<Vec<Diagnostic>>::default();
     while !needs_update.is_empty() {
+      let updated_vals: PathMap<_> = if self.manifest {
+        let cx = self.cx();
+        // manifest in parallel for all updated files. TODO this probably doesn't respect ordering
+        // requirements among the updated. what if one updated file depends on another updated file?
+        let iter = needs_update.par_iter().filter_map(|(&path, errors)| {
+          // only exec if no errors in the file so far.
+          errors.is_empty().then(|| {
+            let val = jsonnet_eval::get_exec(cx, path);
+            let val = val.and_then(|val| jsonnet_eval::get_manifest(cx, val));
+            (path, val)
+          })
+        });
+        iter.collect()
+      } else {
+        PathMap::default()
+      };
+      log::info!("updated {} vals", updated_vals.len());
+      self.json.extend(updated_vals);
+      updated.extend(needs_update.keys().copied());
+
       if want_diagnostics {
         log::info!("getting diagnostics for {} files", needs_update.len());
         let iter = needs_update.iter().map(|(&path, errors)| {
@@ -415,26 +435,6 @@ impl St {
         let new_len: usize = ret.par_iter().map(|(_, xs)| xs.len()).sum();
         log::info!("added {} diagnostics", new_len - old_len);
       }
-
-      let updated_vals: PathMap<_> = if self.manifest {
-        let cx = self.cx();
-        // manifest in parallel for all updated files. TODO this probably doesn't respect ordering
-        // requirements among the updated. what if one updated file depends on another updated file?
-        let iter = needs_update.par_iter().filter_map(|(&path, errors)| {
-          // only exec if no errors in the file so far.
-          errors.is_empty().then(|| {
-            let val = jsonnet_eval::get_exec(cx, path);
-            let val = val.and_then(|val| jsonnet_eval::get_manifest(cx, val));
-            (path, val)
-          })
-        });
-        iter.collect()
-      } else {
-        PathMap::default()
-      };
-      log::info!("updated {} vals", updated_vals.len());
-      self.json.extend(updated_vals);
-      updated.extend(needs_update.keys().copied());
 
       let iter = needs_update
         .keys()
