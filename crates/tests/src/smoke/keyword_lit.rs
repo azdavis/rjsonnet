@@ -26,7 +26,7 @@ local true = 1;
 ##    ^^^^ diagnostic: expected `;`
 2
 ",
-    "no such path: /f.jsonnet",
+    "no such path: f.jsonnet",
   )
   .check_one();
 }

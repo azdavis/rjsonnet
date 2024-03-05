@@ -19,8 +19,9 @@ impl Error {
     &'a self,
     ar: &'a jsonnet_expr::StrArena,
     paths: &'a paths::Store,
+    relative_to: Option<&'a paths::CleanPath>,
   ) -> impl fmt::Display + 'a {
-    DisplayError { error: self, ar, paths }
+    DisplayError { error: self, ar, paths, relative_to }
   }
 }
 
@@ -62,6 +63,17 @@ struct DisplayError<'a> {
   error: &'a Error,
   ar: &'a jsonnet_expr::StrArena,
   paths: &'a paths::Store,
+  relative_to: Option<&'a paths::CleanPath>,
+}
+
+impl<'a> DisplayError<'a> {
+  fn display_path(&self, path_id: paths::PathId) -> impl fmt::Display + 'a {
+    let mut p = self.paths.get_path(path_id).as_path();
+    if let Some(r) = self.relative_to {
+      p = p.strip_prefix(r.as_path()).unwrap_or(p);
+    }
+    p.display()
+  }
 }
 
 impl fmt::Display for DisplayError<'_> {
@@ -81,10 +93,10 @@ impl fmt::Display for DisplayError<'_> {
         Kind::User(s) => write!(f, "explicit `error`: {}", self.ar.get(s)),
         Kind::NotInScope(id) => write!(f, "not in scope: {}", id.display(self.ar)),
         Kind::Cycle(cycle) => {
-          let first_and_last = self.paths.get_path(cycle.first_and_last).as_path().display();
+          let first_and_last = self.display_path(cycle.first_and_last);
           write!(f, "import cycle: {first_and_last} -> ")?;
           for &path in &cycle.intervening {
-            let path = self.paths.get_path(path).as_path().display();
+            let path = self.display_path(path);
             write!(f, "{path} -> ")?;
           }
           write!(f, "{first_and_last}")
@@ -92,7 +104,8 @@ impl fmt::Display for DisplayError<'_> {
       },
       Error::ManifestFn => f.write_str("cannot manifest function"),
       Error::NoPath(p) => {
-        write!(f, "no such path: {}", self.paths.get_path(*p).as_path().display())
+        let p = self.display_path(*p);
+        write!(f, "no such path: {p}")
       }
       Error::NoExpr => write!(f, "no expr"),
     }

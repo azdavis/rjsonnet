@@ -15,6 +15,8 @@ use std::{fmt, io, path::Path};
 /// Options for initialization.
 #[derive(Debug, Default)]
 pub struct Init {
+  /// Path to which other paths may be displayed relative.
+  pub relative_to: Option<paths::CleanPathBuf>,
   /// Manifest into JSON.
   pub manifest: bool,
   /// Extra directories in which to search for import paths.
@@ -99,6 +101,7 @@ pub trait FileSystem: paths::FileSystem {
 /// The state of analysis.
 #[derive(Debug)]
 pub struct St {
+  relative_to: Option<paths::CleanPathBuf>,
   manifest: bool,
   root_dirs: Vec<paths::CleanPathBuf>,
   show_diagnostics: ShowDiagnostics,
@@ -132,6 +135,7 @@ impl St {
   pub fn new(init: Init) -> Self {
     log::info!("make new St with {init:?}");
     Self {
+      relative_to: init.relative_to,
       manifest: init.manifest,
       root_dirs: init.root_dirs,
       show_diagnostics: init.show_diagnostics,
@@ -171,7 +175,7 @@ impl St {
       always!(
         ret.is_none() || was_in_files,
         "{} was in dependents, but not in files",
-        self.artifacts.paths.get_path(path_id).as_path().display()
+        self.display_path_id(path_id),
       );
       ret
     });
@@ -185,7 +189,7 @@ impl St {
       let mut art = match get_isolated_fs(path, &self.root_dirs, fs) {
         Ok(x) => x,
         Err(e) => {
-          always!(false, "{}: i/o error: {}", path.as_path().display(), e);
+          always!(false, "{}: i/o error: {}", self.strip(path.as_path()).display(), e);
           return None;
         }
       };
@@ -209,11 +213,11 @@ impl St {
   where
     F: Sync + Send + paths::FileSystem,
   {
-    log::info!("update one file: {}", path.as_path().display());
+    log::info!("update one file: {}", self.strip(path.as_path()).display());
     let mut art = match get_isolated_str(path, contents, &self.root_dirs, fs) {
       Ok(x) => x,
       Err(e) => {
-        always!(false, "{}: i/o error: {}", path.as_path().display(), e);
+        always!(false, "{}: i/o error: {}", self.strip(path.as_path()).display(), e);
         return PathMap::default();
       }
     };
@@ -292,7 +296,7 @@ impl St {
                 }
                 Err(e) => {
                   let Some(errors) = added.get_mut(&importer) else {
-                    let path = self.artifacts.paths.get_path(importer).as_path().display();
+                    let path = self.display_path_id(importer);
                     always!(false, "couldn't get errors: {path}");
                     continue;
                   };
@@ -308,7 +312,7 @@ impl St {
                 }
                 Err(e) => {
                   let Some(errors) = added.get_mut(&importer) else {
-                    let path = self.artifacts.paths.get_path(importer).as_path().display();
+                    let path = self.display_path_id(importer);
                     always!(false, "couldn't get errors: {path}");
                     continue;
                   };
@@ -338,7 +342,7 @@ impl St {
           Ok((path_id, art)) => to_add.push((path_id, art)),
           Err((importer, expr, e)) => {
             let Some(errors) = added.get_mut(&importer) else {
-              let path = self.artifacts.paths.get_path(importer).as_path().display();
+              let path = self.display_path_id(importer);
               always!(false, "couldn't get errors: {path}");
               continue;
             };
@@ -420,7 +424,10 @@ impl St {
               (ptr.text_range(), err.to_string())
             }))
             .chain(self.json.get(&path).and_then(|res| res.as_ref().err()).and_then(|err| {
-              let message = err.display(&self.artifacts.strings, &self.artifacts.paths).to_string();
+              let relative_to = self.relative_to.as_ref().map(paths::CleanPathBuf::as_clean_path);
+              let message = err
+                .display(&self.artifacts.strings, &self.artifacts.paths, relative_to)
+                .to_string();
               let range = match err {
                 jsonnet_eval::error::Error::Exec { expr, .. } => {
                   let ptr = art.pointers.get_ptr(*expr);
@@ -593,6 +600,17 @@ impl St {
     };
     let range = art.pos_db.range_utf16(tr)?;
     Some((ce.ewp.path_id, range))
+  }
+
+  fn strip<'a>(&self, p: &'a Path) -> &'a Path {
+    match &self.relative_to {
+      None => p,
+      Some(r) => p.strip_prefix(r.as_path()).unwrap_or(p),
+    }
+  }
+
+  fn display_path_id(&self, path_id: PathId) -> impl std::fmt::Display + '_ {
+    self.strip(self.artifacts.paths.get_path(path_id).as_path()).display()
   }
 }
 

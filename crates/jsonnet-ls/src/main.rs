@@ -17,7 +17,12 @@ impl lang_srv::State for State {
     let mut init = jsonnet_analyze::Init::default();
     let pwd = fs.current_dir();
     let mut logger_env = env_logger::Env::default();
-    // TODO report errors
+    // TODO is it correct to use pwd here or should we be using the root dir from the language
+    // server init object (which is NOT the `val` init object passed to us here)?
+    if let Ok(pwd) = &pwd {
+      init.relative_to = Some(pwd.to_owned());
+    }
+    // TODO report errors from bad init object
     if let Some(Value::Object(obj)) = val {
       if let Some(filter) = obj.get("logger_filter").and_then(Value::as_str) {
         if !filter.is_empty() {
@@ -88,7 +93,8 @@ impl lang_srv::State for State {
     let json = match self.0.get_json(path_id) {
       Ok(x) => x,
       Err(e) => {
-        log::error!("couldn't get json: {}", e.display(self.0.strings(), self.paths()));
+        // NOTE we don't have the relative_to here
+        log::error!("couldn't get json: {}", e.display(self.0.strings(), self.paths(), None));
         return None;
       }
     };

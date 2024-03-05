@@ -127,8 +127,9 @@ pub fn display_expr<'a>(
   str_ar: &'a StrArena,
   expr_ar: &'a ExprArena,
   ps: &'a paths::Store,
+  relative_to: Option<&'a paths::CleanPath>,
 ) -> impl fmt::Display + 'a {
-  DisplayExpr { e, str_ar, expr_ar, ps }
+  DisplayExpr { e, str_ar, expr_ar, ps, relative_to }
 }
 
 #[derive(Clone, Copy)]
@@ -137,6 +138,7 @@ struct DisplayExpr<'a> {
   str_ar: &'a StrArena,
   expr_ar: &'a ExprArena,
   ps: &'a paths::Store,
+  relative_to: Option<&'a paths::CleanPath>,
 }
 
 impl<'a> DisplayExpr<'a> {
@@ -218,7 +220,12 @@ impl<'a> fmt::Display for DisplayExpr<'a> {
       ExprData::Error(e) => write!(f, "error {}", self.with(*e)),
       ExprData::Import { kind, path } => {
         // TODO handle escapes
-        write!(f, "{} \"{}\"", kind, self.ps.get_path(*path).as_path().display())
+        let mut p = self.ps.get_path(*path).as_path();
+        if let Some(r) = self.relative_to {
+          p = p.strip_prefix(r.as_path()).unwrap_or(p);
+        }
+        let p = p.display();
+        write!(f, "{kind} \"{p}\"")
       }
     }
   }

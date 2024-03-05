@@ -30,8 +30,13 @@ fn run() -> usize {
   let files = args.finish();
 
   let mut ret = 0usize;
-  let init =
-    jsonnet_analyze::Init { manifest, root_dirs, show_diagnostics, max_diagnostics_per_file };
+  let init = jsonnet_analyze::Init {
+    relative_to: Some(clean_pwd.clone()),
+    manifest,
+    root_dirs,
+    show_diagnostics,
+    max_diagnostics_per_file,
+  };
   let mut st = jsonnet_analyze::St::new(init);
   let fs = paths::RealFileSystem::default();
 
@@ -48,7 +53,7 @@ fn run() -> usize {
           println!("{json}");
         }
         Err(e) => {
-          let e = e.display(st.strings(), st.paths());
+          let e = e.display(st.strings(), st.paths(), Some(clean_pwd.as_clean_path()));
           println!("error: {e}");
           ret += 1;
         }

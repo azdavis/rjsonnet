@@ -110,7 +110,10 @@ pub struct Desugar {
 impl Desugar {
   /// Displays the top-level expression.
   #[must_use]
-  pub fn display_top(&self) -> impl std::fmt::Display + '_ {
-    jsonnet_expr::display_expr(self.top, &self.arenas.str, &self.arenas.expr, &self.ps)
+  pub fn display_top<'a>(
+    &'a self,
+    relative_to: Option<&'a paths::CleanPath>,
+  ) -> impl std::fmt::Display + 'a {
+    jsonnet_expr::display_expr(self.top, &self.arenas.str, &self.arenas.expr, &self.ps, relative_to)
   }
 }

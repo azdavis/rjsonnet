@@ -44,7 +44,7 @@ fn parse_fail() {
 if else 4
 ## ^^^^ diagnostic: expected expression
 ",
-    "no such path: /f.jsonnet",
+    "no such path: f.jsonnet",
   )
   .check_one();
 }

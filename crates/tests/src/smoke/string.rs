@@ -78,7 +78,7 @@ fn unclosed() {
     r"
 ## V diagnostic: unclosed string
   '",
-    "no such path: /f.jsonnet",
+    "no such path: f.jsonnet",
   )
   .check_one();
 }

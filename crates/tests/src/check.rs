@@ -24,6 +24,7 @@ impl<'a> MultiInput<'a> {
     let mut fs = paths::MemoryFileSystem::default();
     let pwd = fs.current_dir().expect("no current dir for in-mem fs");
     let init = jsonnet_analyze::Init {
+      relative_to: Some(pwd.clone()),
       manifest: true,
       show_diagnostics: jsonnet_analyze::ShowDiagnostics::All,
       ..Default::default()
@@ -158,13 +159,13 @@ impl<'a> Input<'a> {
         (OutcomeKind::String, Ok(got)) => got.assert_is_str(st.strings(), jsonnet.outcome),
 
         (OutcomeKind::Error, Err(err)) => {
-          let got = err.display(st.strings(), st.paths()).to_string();
+          let got = err.display(st.strings(), st.paths(), Some(pwd)).to_string();
           assert_eq!(jsonnet.outcome, got.as_str(), "{path_str}: mismatched errors");
         }
 
         (OutcomeKind::Error, Ok(got)) => panic!("{path_str}: no error, got json: {got:?}"),
         (OutcomeKind::Manifest | OutcomeKind::String, Err(err)) => {
-          let got = err.display(st.strings(), st.paths()).to_string();
+          let got = err.display(st.strings(), st.paths(), Some(pwd)).to_string();
           panic!("{path_str}: error: {got:?}");
         }
       }

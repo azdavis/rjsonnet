@@ -118,7 +118,7 @@ fn self_cycle() {
   import 'a.jsonnet'
 ##^^^^^^^^^^^^^^^^^^ diagnostic: <eval>
 ",
-        "import cycle: /a.jsonnet -> /a.jsonnet",
+        "import cycle: a.jsonnet -> a.jsonnet",
       ),
     )
     .add_all()
@@ -135,7 +135,7 @@ fn bigger_cycle() {
   import 'b.jsonnet'
 ##^^^^^^^^^^^^^^^^^^ diagnostic: <eval>
 ",
-        "import cycle: /b.jsonnet -> /c.jsonnet -> /d.jsonnet -> /a.jsonnet -> /b.jsonnet",
+        "import cycle: b.jsonnet -> c.jsonnet -> d.jsonnet -> a.jsonnet -> b.jsonnet",
       ),
     )
     .with_jsonnet(
@@ -145,7 +145,7 @@ fn bigger_cycle() {
   import 'c.jsonnet'
 ##^^^^^^^^^^^^^^^^^^ diagnostic: <eval>
 ",
-        "import cycle: /c.jsonnet -> /d.jsonnet -> /a.jsonnet -> /b.jsonnet -> /c.jsonnet",
+        "import cycle: c.jsonnet -> d.jsonnet -> a.jsonnet -> b.jsonnet -> c.jsonnet",
       ),
     )
     .with_jsonnet(
@@ -155,7 +155,7 @@ fn bigger_cycle() {
   import 'd.jsonnet'
 ##^^^^^^^^^^^^^^^^^^ diagnostic: <eval>
 ",
-        "import cycle: /d.jsonnet -> /a.jsonnet -> /b.jsonnet -> /c.jsonnet -> /d.jsonnet",
+        "import cycle: d.jsonnet -> a.jsonnet -> b.jsonnet -> c.jsonnet -> d.jsonnet",
       ),
     )
     .with_jsonnet(
@@ -165,7 +165,7 @@ fn bigger_cycle() {
   import 'a.jsonnet'
 ##^^^^^^^^^^^^^^^^^^ diagnostic: <eval>
 ",
-        "import cycle: /a.jsonnet -> /b.jsonnet -> /c.jsonnet -> /d.jsonnet -> /a.jsonnet",
+        "import cycle: a.jsonnet -> b.jsonnet -> c.jsonnet -> d.jsonnet -> a.jsonnet",
       ),
     )
     .add_all()
