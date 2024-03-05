@@ -94,13 +94,7 @@ impl<'a> Input<'a> {
     let to_add: Vec<_> = self.to_add.iter().map(|&path| pwd.join(path)).collect();
     let to_remove: Vec<_> = self.to_remove.iter().map(|&path| pwd.join(path)).collect();
 
-    for (path, ds) in st.update_many(fs, to_remove, to_add) {
-      if let Some(d) = ds.first() {
-        let path = st.paths().get_path(path).as_path();
-        panic!("{} at {}: diagnostic: {}", path.display(), d.range, d.message);
-      }
-    }
-
+    let mut ds_map = st.update_many(fs, to_remove, to_add);
     let expects = self.jsonnet.iter().map(|(&path, jsonnet)| {
       let path = pwd.join(path);
       let path = st.path_id(path);
@@ -112,6 +106,8 @@ impl<'a> Input<'a> {
     for (&path_str, jsonnet) in &self.jsonnet {
       let path = pwd.join(path_str);
       let path = st.path_id(path);
+      let mut ds: FxHashMap<_, _> =
+        ds_map.remove(&path).into_iter().flatten().map(|x| (x.range, x.message)).collect();
 
       let ex_file = &expects[&path];
       for (region, ex) in ex_file.iter() {
@@ -129,6 +125,20 @@ impl<'a> Input<'a> {
             let def_ex = expects[&def_path].get(region).expect("nothing at def site");
             assert_eq!(expect::Kind::Def, def_ex.kind, "{path_str}: not a def");
             assert_eq!(def_ex.msg, ex.msg, "{path_str}: mismatched uses");
+          }
+          expect::Kind::Diagnostic => {
+            let range = text_pos::RangeUtf16 {
+              start: text_pos::PositionUtf16 { line: region.line, col: region.col_start },
+              end: text_pos::PositionUtf16 { line: region.line, col: region.col_end },
+            };
+            let got = ds.remove(&range).expect("no diagnostic at range");
+            let want = if ex.msg == "<eval>" {
+              assert_eq!(OutcomeKind::Error, jsonnet.kind, "{path_str}: mismatched outcome kind");
+              jsonnet.outcome
+            } else {
+              ex.msg.as_str()
+            };
+            assert_eq!(want, got, "{path_str}: mismatched diagnostic");
           }
         }
       }
@@ -158,6 +168,18 @@ impl<'a> Input<'a> {
           panic!("{path_str}: error: {got:?}");
         }
       }
+
+      if let Some((range, msg)) = ds.iter().next() {
+        let n = ds.len();
+        panic!("{path_str} still has {n} diagnostics, e.g. {range}: {msg}");
+      }
+    }
+
+    if let Some((path, ds)) = ds_map.iter().next() {
+      let d = ds.first().expect("empty ds");
+      let n = ds_map.len();
+      let path = st.paths().get_path(*path).as_path().display();
+      panic!("still have {n} files with diagnostics, e.g. {path}: {d:?}");
     }
   }
 }
@@ -191,7 +213,7 @@ impl<'a> JsonnetInput<'a> {
   }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum OutcomeKind {
   Manifest,
   String,

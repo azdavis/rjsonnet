@@ -34,7 +34,10 @@ const COMMENT_START: &str = "##";
 /// - zero or more of any character
 /// - the string `COMMENT_START` (the comment start)
 /// - zero or more spaces
-/// - one arrow character (^ or v)
+/// - one arrow character (^ or v or V)
+///   - ^ points at the line above
+///   - v points at the line below
+///   - V points at the line below, but the range must be zero-width
 /// - zero or more non-spaces (the column range for the arrow. usually these are all the same as the
 ///   arrow character.)
 /// - one space
@@ -50,14 +53,21 @@ fn get_one(line_n: usize, line_s: &str) -> Option<(Region, Expect)> {
   let inner = &inner[non_space_idx..];
   let (col_range, msg) = inner.split_once(' ')?;
   let msg = msg.trim_end();
-  let line = match col_range.chars().next()? {
-    '^' => line_n - 1,
-    'v' => line_n + 1,
+  let (line, zero_width) = match col_range.chars().next()? {
+    '^' => (line_n - 1, false),
+    'v' => (line_n + 1, false),
+    'V' => (line_n + 1, true),
     c => panic!("invalid arrow: {c}"),
   };
   let line = u32::try_from(line).ok()?;
   let start = before.len() + COMMENT_START.len() + non_space_idx;
-  let end = start + col_range.len();
+  let end_extra = if zero_width {
+    assert_eq!(col_range.len(), 1);
+    0
+  } else {
+    col_range.len()
+  };
+  let end = start + end_extra;
   let region =
     Region { line, col_start: u32::try_from(start).ok()?, col_end: u32::try_from(end).ok()? };
   Some((region, Expect::new(msg)))
@@ -95,6 +105,9 @@ impl Expect {
     if let Some(msg) = msg.strip_prefix("use: ") {
       return Self { kind: Kind::Use, msg: msg.to_owned() };
     }
+    if let Some(msg) = msg.strip_prefix("diagnostic: ") {
+      return Self { kind: Kind::Diagnostic, msg: msg.to_owned() };
+    }
     panic!("no prefix: {msg}")
   }
 }
@@ -112,6 +125,8 @@ pub(crate) enum Kind {
   Def,
   /// A usage site.
   Use,
+  /// A diagnostic.
+  Diagnostic,
 }
 
 impl fmt::Display for Kind {
@@ -119,6 +134,7 @@ impl fmt::Display for Kind {
     match self {
       Kind::Def => f.write_str("def"),
       Kind::Use => f.write_str("use"),
+      Kind::Diagnostic => f.write_str("diagnostic"),
     }
   }
 }

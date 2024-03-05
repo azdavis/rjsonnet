@@ -419,6 +419,23 @@ impl St {
               let ptr = art.pointers.get_ptr(*expr);
               (ptr.text_range(), err.to_string())
             }))
+            .chain(self.json.get(&path).and_then(|res| res.as_ref().err()).and_then(|err| {
+              let message = err.display(&self.artifacts.strings, &self.artifacts.paths).to_string();
+              let range = match err {
+                jsonnet_eval::error::Error::Exec { expr, .. } => {
+                  let ptr = art.pointers.get_ptr(*expr);
+                  ptr.text_range()
+                }
+                // should have already been covered by other errors?
+                jsonnet_eval::error::Error::NoPath(_) => return None,
+                _ => {
+                  let syntax = art.syntax.clone().syntax();
+                  // try to avoid massive text range
+                  syntax.first_child_or_token().map_or(syntax.text_range(), |x| x.text_range())
+                }
+              };
+              Some((range, message))
+            }))
             .filter_map(|(range, message)| {
               let Some(range) = art.pos_db.range_utf16(range) else {
                 always!(false, "bad range: {range:?}");

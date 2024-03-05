@@ -18,14 +18,15 @@ fn null() {
 }
 
 #[test]
-#[should_panic = "expected `;`"]
 fn redefine() {
-  JsonnetInput::manifest(
+  JsonnetInput::error(
     r"
+##         v diagnostic: trailing token
 local true = 1;
+##    ^^^^ diagnostic: expected `;`
 2
 ",
-    "0",
+    "no such path: /f.jsonnet",
   )
   .check_one();
 }

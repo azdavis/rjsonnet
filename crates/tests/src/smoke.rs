@@ -29,7 +29,8 @@ fn undef_fn_arg() {
   JsonnetInput::error(
     r"
 local f = function(b, x) if b then x else 1;
-f(false)
+  f(false)
+##^^^^^^^^ diagnostic: <eval>
 ",
     "parameter `x` was not defined at the function call site",
   )
@@ -37,9 +38,15 @@ f(false)
 }
 
 #[test]
-#[should_panic = "expected expression"]
 fn parse_fail() {
-  JsonnetInput::manifest("if else", "0").check_one();
+  JsonnetInput::error(
+    r"
+if else 4
+## ^^^^ diagnostic: expected expression
+",
+    "no such path: /f.jsonnet",
+  )
+  .check_one();
 }
 
 #[test]
@@ -61,7 +68,8 @@ fn if_without_else_no() {
 fn error() {
   JsonnetInput::error(
     r#"
-error "oh no!"
+1 + (error "oh no!")
+##   ^^^^^^^^^^^^^^ diagnostic: <eval>
 "#,
     "explicit `error`: oh no!",
   )

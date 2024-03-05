@@ -113,7 +113,13 @@ fn self_cycle() {
   Input::default()
     .with_jsonnet(
       "a.jsonnet",
-      JsonnetInput::error("import 'a.jsonnet'", "import cycle: /a.jsonnet -> /a.jsonnet"),
+      JsonnetInput::error(
+        r"
+  import 'a.jsonnet'
+##^^^^^^^^^^^^^^^^^^ diagnostic: <eval>
+",
+        "import cycle: /a.jsonnet -> /a.jsonnet",
+      ),
     )
     .add_all()
     .check();
@@ -125,28 +131,40 @@ fn bigger_cycle() {
     .with_jsonnet(
       "a.jsonnet",
       JsonnetInput::error(
-        "import 'b.jsonnet'",
+        r"
+  import 'b.jsonnet'
+##^^^^^^^^^^^^^^^^^^ diagnostic: <eval>
+",
         "import cycle: /b.jsonnet -> /c.jsonnet -> /d.jsonnet -> /a.jsonnet -> /b.jsonnet",
       ),
     )
     .with_jsonnet(
       "b.jsonnet",
       JsonnetInput::error(
-        "import 'c.jsonnet'",
+        r"
+  import 'c.jsonnet'
+##^^^^^^^^^^^^^^^^^^ diagnostic: <eval>
+",
         "import cycle: /c.jsonnet -> /d.jsonnet -> /a.jsonnet -> /b.jsonnet -> /c.jsonnet",
       ),
     )
     .with_jsonnet(
       "c.jsonnet",
       JsonnetInput::error(
-        "import 'd.jsonnet'",
+        r"
+  import 'd.jsonnet'
+##^^^^^^^^^^^^^^^^^^ diagnostic: <eval>
+",
         "import cycle: /d.jsonnet -> /a.jsonnet -> /b.jsonnet -> /c.jsonnet -> /d.jsonnet",
       ),
     )
     .with_jsonnet(
       "d.jsonnet",
       JsonnetInput::error(
-        "import 'a.jsonnet'",
+        r"
+  import 'a.jsonnet'
+##^^^^^^^^^^^^^^^^^^ diagnostic: <eval>
+",
         "import cycle: /a.jsonnet -> /b.jsonnet -> /c.jsonnet -> /d.jsonnet -> /a.jsonnet",
       ),
     )
