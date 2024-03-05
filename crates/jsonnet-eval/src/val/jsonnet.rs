@@ -1,5 +1,6 @@
 //! Jsonnet values.
 
+use crate::error::Cycle;
 use jsonnet_expr::{Expr, Id, Prim, StdFn, Str, Visibility};
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::BTreeMap;
@@ -9,12 +10,25 @@ pub(crate) struct Env {
   /// TODO make priv?
   pub(crate) path: paths::PathId,
   store: FxHashMap<Id, (Env, Expr)>,
+  cur: Vec<paths::PathId>,
   this: Option<Box<Object>>,
 }
 
 impl Env {
-  pub(crate) fn new(path: paths::PathId) -> Self {
-    Self { path, store: FxHashMap::default(), this: None }
+  pub(crate) fn empty(path: paths::PathId) -> Self {
+    Self { path, store: FxHashMap::default(), cur: Vec::new(), this: None }
+  }
+
+  pub(crate) fn empty_with_cur(&self, path: paths::PathId) -> Result<Self, Cycle> {
+    let mut cur = self.cur.clone();
+    let idx = self.cur.iter().position(|&p| p == path);
+    match idx {
+      None => {
+        cur.push(path);
+        Ok(Self { path, store: FxHashMap::default(), cur, this: None })
+      }
+      Some(idx) => Err(Cycle { first_and_last: path, intervening: cur.split_off(idx + 1) }),
+    }
   }
 
   pub(crate) fn insert(&mut self, id: Id, env: Env, expr: Expr) {

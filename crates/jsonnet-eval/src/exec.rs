@@ -290,7 +290,10 @@ pub(crate) fn get(cx: Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
     }
     ExprData::Import { kind, path } => match kind {
       jsonnet_expr::ImportKind::Code => match cx.jsonnet_files.get(path) {
-        Some(file) => get(cx, &Env::new(*path), file.top),
+        Some(file) => match env.empty_with_cur(*path) {
+          Ok(env) => get(cx, &env, file.top),
+          Err(cycle) => Err(error::Error::Exec { expr, kind: error::Kind::Cycle(cycle) }),
+        },
         None => Err(mk_todo(expr, "no code import")),
       },
       jsonnet_expr::ImportKind::String => match cx.importstr.get(path) {

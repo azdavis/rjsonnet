@@ -64,7 +64,7 @@ pub struct Jsonnet(val::jsonnet::Val);
 /// If execution failed.
 pub fn get_exec(cx: Cx<'_>, path: paths::PathId) -> error::Result<Jsonnet> {
   let Some(file) = cx.jsonnet_files.get(&path) else { return Err(error::Error::NoPath(path)) };
-  let env = val::jsonnet::Env::new(path);
+  let env = val::jsonnet::Env::empty(path);
   exec::get(cx, &env, file.top).map(Jsonnet)
 }
 

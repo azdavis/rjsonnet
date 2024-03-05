@@ -31,6 +31,12 @@ impl From<arg::Error> for Error {
 }
 
 #[derive(Debug, Clone)]
+pub struct Cycle {
+  pub first_and_last: paths::PathId,
+  pub intervening: Vec<paths::PathId>,
+}
+
+#[derive(Debug, Clone)]
 pub enum Kind {
   Todo(&'static str),
   ArrayIdxNotInteger,
@@ -43,6 +49,7 @@ pub enum Kind {
   User(Str),
   /// should be caught in statics
   NotInScope(Id),
+  Cycle(Cycle),
 }
 
 impl From<arg::ErrorKind> for Kind {
@@ -73,6 +80,15 @@ impl fmt::Display for DisplayError<'_> {
         Kind::Infinite(inf) => write!(f, "infinite number: {inf}"),
         Kind::User(s) => write!(f, "explicit `error`: {}", self.ar.get(s)),
         Kind::NotInScope(id) => write!(f, "not in scope: {}", id.display(self.ar)),
+        Kind::Cycle(cycle) => {
+          let first_and_last = self.paths.get_path(cycle.first_and_last).as_path().display();
+          write!(f, "import cycle: {first_and_last} -> ")?;
+          for &path in &cycle.intervening {
+            let path = self.paths.get_path(path).as_path().display();
+            write!(f, "{path} -> ")?;
+          }
+          write!(f, "{first_and_last}")
+        }
       },
       Error::ManifestFn => f.write_str("cannot manifest function"),
       Error::NoPath(p) => {
