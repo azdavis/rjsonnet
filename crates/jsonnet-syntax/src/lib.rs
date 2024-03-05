@@ -26,11 +26,16 @@ impl Root {
     Self { green }
   }
 
-  /// Turns this into an ast root and gets its expr out.
+  /// Turns this into a syntax node.
+  #[must_use]
+  pub fn syntax(self) -> kind::SyntaxNode {
+    kind::SyntaxNode::new_root(self.green.clone())
+  }
+
+  /// Turns this into an ast root.
   #[must_use]
   pub fn into_ast(self) -> Option<ast::Root> {
-    let node = rowan::SyntaxNode::new_root(self.green.clone());
-    ast::Root::cast(node)
+    ast::Root::cast(self.syntax())
   }
 }
 
