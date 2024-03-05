@@ -128,7 +128,7 @@ impl<'a> Input<'a> {
             };
             let def_ex = expects[&def_path].get(region).expect("nothing at def site");
             assert_eq!(expect::Kind::Def, def_ex.kind, "{path_str}: not a def");
-            assert_eq!(def_ex.msg, ex.msg, "{path_str}: mismatches uses");
+            assert_eq!(def_ex.msg, ex.msg, "{path_str}: mismatched uses");
           }
         }
       }
