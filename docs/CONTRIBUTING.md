@@ -1,6 +1,6 @@
 # Contributing
 
-Thank you for your interest in contributing to Rjsonnet!
+Thank you for your interest in contributing to rjsonnet!
 
 Note that this project has a [Code of Conduct][coc]. We expect all members of the community (including community leaders) will adhere to this code.
 
