@@ -171,3 +171,23 @@ fn bigger_cycle() {
     .add_all()
     .check();
 }
+
+// TODO fix
+#[test]
+#[should_panic = "a.jsonnet: no error, got json:"]
+fn remove() {
+  MultiInput::default()
+    .with_input(
+      Input::default()
+        .with_jsonnet("a.jsonnet", JsonnetInput::manifest(r"(import 'b.jsonnet') + 3", "5"))
+        .with_jsonnet("b.jsonnet", JsonnetInput::manifest(r"1 + 1", "2"))
+        .add("a.jsonnet"),
+    )
+    .with_input(
+      Input::default()
+        .with_jsonnet("a.jsonnet", JsonnetInput::error(r"(import 'b.jsonnet') + 3", "no import"))
+        .add("a.jsonnet")
+        .remove("b.jsonnet"),
+    )
+    .check();
+}

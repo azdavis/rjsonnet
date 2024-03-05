@@ -67,8 +67,6 @@ impl<'a> Input<'a> {
     self
   }
 
-  /// TODO use
-  #[allow(dead_code)]
   pub(crate) fn remove(mut self, path: &'a str) -> Self {
     assert!(self.to_remove.insert(path));
     self
