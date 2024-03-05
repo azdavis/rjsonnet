@@ -34,9 +34,7 @@ The primary intended way to use this is via the [language server][lsp] and its o
 
 ### Language server
 
-You can also use the language server with any editor that supports language servers.
-
-You'll just have to write your own glue code between this server and your editor.
+You can also use the language server with any editor that supports language servers. You'll just have to write your own glue code between this server and your editor.
 
 ### CLI
 
