@@ -2,9 +2,39 @@
 
 mod expect;
 
+use paths::FileSystem as _;
 use rustc_hash::{FxHashMap, FxHashSet};
 
 const DEFAULT_PATH: &str = "/f.jsonnet";
+
+#[must_use]
+#[derive(Default)]
+pub(crate) struct MultiInput<'a> {
+  inputs: Vec<Input<'a>>,
+}
+
+impl<'a> MultiInput<'a> {
+  pub(crate) fn with_input(mut self, input: Input<'a>) -> Self {
+    self.inputs.push(input);
+    self
+  }
+
+  pub(crate) fn check(self) {
+    _ = env_logger::builder().is_test(true).filter_level(log::LevelFilter::Debug).try_init();
+    let mut fs = paths::MemoryFileSystem::default();
+    let pwd = fs.current_dir().expect("no current dir for in-mem fs");
+    let init = jsonnet_analyze::Init {
+      manifest: true,
+      show_diagnostics: jsonnet_analyze::ShowDiagnostics::All,
+      ..Default::default()
+    };
+    let mut st = jsonnet_analyze::St::new(init);
+    assert!(!self.inputs.is_empty(), "must have an Input to check");
+    for input in self.inputs {
+      input.check_with(&mut st, &mut fs, pwd.as_clean_path());
+    }
+  }
+}
 
 #[must_use]
 #[derive(Default)]
@@ -12,6 +42,7 @@ pub(crate) struct Input<'a> {
   jsonnet: FxHashMap<&'a str, JsonnetInput<'a>>,
   raw: FxHashMap<&'a str, &'a str>,
   to_add: FxHashSet<&'a str>,
+  to_remove: FxHashSet<&'a str>,
 }
 
 impl<'a> Input<'a> {
@@ -35,27 +66,35 @@ impl<'a> Input<'a> {
     self
   }
 
-  pub(crate) fn check(self) {
-    _ = env_logger::builder().is_test(true).filter_level(log::LevelFilter::Debug).try_init();
+  /// TODO use
+  #[allow(dead_code)]
+  pub(crate) fn remove(mut self, path: &'a str) -> Self {
+    assert!(self.to_remove.insert(path));
+    self
+  }
 
-    let pwd = paths::MemoryFileSystem::root();
+  pub(crate) fn check(self) {
+    MultiInput::default().with_input(self).check();
+  }
+
+  fn check_with(
+    self,
+    st: &mut jsonnet_analyze::St,
+    fs: &mut paths::MemoryFileSystem,
+    pwd: &paths::CleanPath,
+  ) {
     let files = std::iter::empty()
       .chain(self.jsonnet.iter().map(|(&path, jsonnet)| (path, jsonnet.text)))
       .chain(self.raw.iter().map(|(&path, &text)| (path, text)))
-      .map(|(path, text)| (pwd.as_clean_path().join(path), text.to_owned()));
-    let fs = paths::MemoryFileSystem::new(files.collect());
+      .map(|(path, text)| (pwd.join(path), text.to_owned()));
+    // keep any existing files
+    fs.inner.extend(files);
 
     assert!(!self.to_add.is_empty(), "must call .add() or .add_all() on the Input");
-    let to_add: Vec<_> = self.to_add.iter().map(|&path| pwd.as_clean_path().join(path)).collect();
+    let to_add: Vec<_> = self.to_add.iter().map(|&path| pwd.join(path)).collect();
+    let to_remove: Vec<_> = self.to_remove.iter().map(|&path| pwd.join(path)).collect();
 
-    let init = jsonnet_analyze::Init {
-      manifest: true,
-      show_diagnostics: jsonnet_analyze::ShowDiagnostics::All,
-      ..Default::default()
-    };
-    let mut st = jsonnet_analyze::St::new(init);
-
-    for (path, ds) in st.update_many(&fs, Vec::new(), to_add) {
+    for (path, ds) in st.update_many(fs, to_remove, to_add) {
       if let Some(d) = ds.first() {
         let path = st.paths().get_path(path).as_path();
         panic!("{} at {}: diagnostic: {}", path.display(), d.range, d.message);
@@ -63,7 +102,7 @@ impl<'a> Input<'a> {
     }
 
     let expects = self.jsonnet.iter().map(|(&path, jsonnet)| {
-      let path = pwd.as_clean_path().join(path);
+      let path = pwd.join(path);
       let path = st.path_id(path);
       let ex_file = expect::File::new(jsonnet.text);
       (path, ex_file)
@@ -71,7 +110,7 @@ impl<'a> Input<'a> {
     let expects: paths::PathMap<_> = expects.collect();
 
     for (&path, jsonnet) in &self.jsonnet {
-      let path = pwd.as_clean_path().join(path);
+      let path = pwd.join(path);
       let path = st.path_id(path);
 
       let ex_file = &expects[&path];

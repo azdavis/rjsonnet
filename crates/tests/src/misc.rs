@@ -2,7 +2,7 @@
 //!
 //! If you're not sure where a test should go, put it here.
 
-use crate::check::{Input, JsonnetInput};
+use crate::check::{Input, JsonnetInput, MultiInput};
 
 #[test]
 fn func_arg_id_not_named_arg() {
@@ -87,5 +87,23 @@ importstr "hi.txt"
     )
     .with_raw("hi.txt", "hello there")
     .add("a.jsonnet")
+    .check();
+}
+
+#[test]
+fn update() {
+  MultiInput::default()
+    .with_input(
+      Input::default()
+        .with_jsonnet("a.jsonnet", JsonnetInput::manifest("(import 'b.jsonnet') + 3", "5"))
+        .with_jsonnet("b.jsonnet", JsonnetInput::manifest("1 + 1", "2"))
+        .add("a.jsonnet"),
+    )
+    .with_input(
+      Input::default()
+        .with_jsonnet("a.jsonnet", JsonnetInput::manifest("(import 'b.jsonnet') + 3", "7"))
+        .with_jsonnet("b.jsonnet", JsonnetInput::manifest("2 + 2", "4"))
+        .add("b.jsonnet"),
+    )
     .check();
 }
