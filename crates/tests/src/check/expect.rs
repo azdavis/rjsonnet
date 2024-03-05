@@ -106,7 +106,7 @@ impl fmt::Display for Expect {
 }
 
 /// A kind of expectation.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum Kind {
   /// This points at a definition site for something.
   Def,

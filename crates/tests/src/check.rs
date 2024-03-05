@@ -109,8 +109,8 @@ impl<'a> Input<'a> {
     });
     let expects: paths::PathMap<_> = expects.collect();
 
-    for (&path, jsonnet) in &self.jsonnet {
-      let path = pwd.join(path);
+    for (&path_str, jsonnet) in &self.jsonnet {
+      let path = pwd.join(path_str);
       let path = st.path_id(path);
 
       let ex_file = &expects[&path];
@@ -127,8 +127,8 @@ impl<'a> Input<'a> {
               col_end: range.end.col,
             };
             let def_ex = expects[&def_path].get(region).expect("nothing at def site");
-            assert!(matches!(def_ex.kind, expect::Kind::Def));
-            assert_eq!(def_ex.msg, ex.msg);
+            assert_eq!(expect::Kind::Def, def_ex.kind, "{path_str}: not a def");
+            assert_eq!(def_ex.msg, ex.msg, "{path_str}: mismatches uses");
           }
         }
       }
@@ -141,7 +141,7 @@ impl<'a> Input<'a> {
           if want != *got {
             let want = want.display(st.strings());
             let got = got.display(st.strings());
-            panic!("want: {want}\ngot:  {got}");
+            panic!("{path_str}: mismatched manifest\nwant: {want}\ngot:  {got}");
           }
         }
 
@@ -149,13 +149,13 @@ impl<'a> Input<'a> {
 
         (OutcomeKind::Error, Err(err)) => {
           let got = err.display(st.strings(), st.paths()).to_string();
-          assert_eq!(jsonnet.outcome, got.as_str());
+          assert_eq!(jsonnet.outcome, got.as_str(), "{path_str}: mismatched errors");
         }
 
-        (OutcomeKind::Error, Ok(got)) => panic!("no error, got json: {got:?}"),
+        (OutcomeKind::Error, Ok(got)) => panic!("{path_str}: no error, got json: {got:?}"),
         (OutcomeKind::Manifest | OutcomeKind::String, Err(err)) => {
           let got = err.display(st.strings(), st.paths()).to_string();
-          panic!("error: {got:?}");
+          panic!("{path_str}: error: {got:?}");
         }
       }
     }
