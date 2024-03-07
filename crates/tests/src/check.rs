@@ -115,7 +115,7 @@ impl<'a> Input<'a> {
           expect::Kind::Use => {
             let pos = text_pos::PositionUtf16 { line: region.line, col: region.col_start };
             let (def_path, range) = st.get_def(path, pos).expect("no def");
-            assert_eq!(range.start.line, range.end.line);
+            assert_eq!(range.start.line, range.end.line, "{path_str}: range spans many lines");
             let region = expect::Region {
               line: range.start.line,
               col_start: range.start.col,
