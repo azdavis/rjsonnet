@@ -85,11 +85,20 @@ pub(crate) fn get_expr(st: &mut St, cx: Cx<'_>, expr: Option<ast::Expr>, in_obj:
       let func = get_expr(st, cx, expr.expr(), in_obj);
       let mut positional = Vec::<Expr>::new();
       let mut named = Vec::<(Id, Expr)>::new();
+      let mut saw_named = false;
       for arg in expr.args() {
         let expr = get_expr(st, cx, arg.expr(), in_obj);
         match arg.id_eq().and_then(|x| x.id()) {
-          None => positional.push(expr),
-          Some(id) => named.push((st.id(id), expr)),
+          None => {
+            if saw_named {
+              st.err(&arg, error::Kind::PositionalArgAfterNamedArg);
+            }
+            positional.push(expr);
+          }
+          Some(id) => {
+            saw_named = true;
+            named.push((st.id(id), expr));
+          }
         }
       }
       ExprData::Call { func, positional, named }

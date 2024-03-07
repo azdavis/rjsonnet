@@ -74,14 +74,13 @@ sub(8, y=9)
   .check();
 }
 
-// TODO should emit error about named then positional arg
 #[test]
-#[should_panic = "duplicate argument: x"]
 fn args_named_then_positional() {
   JsonnetInput::pre_eval_error(
     r"
 local sub(x, y) = x - y;
   sub(x=9, 3)
+##         ^ diagnostic: positional arguments must not appear after named arguments
 ",
   )
   .check();
