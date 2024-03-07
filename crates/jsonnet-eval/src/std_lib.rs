@@ -130,10 +130,7 @@ pub(crate) fn get(
       let _ = std_fn::args::mapWithKey(positional, named, expr)?;
       Err(mk_todo(expr, "std.mapWithKey"))
     }
-    StdFn::abs => {
-      let _ = std_fn::args::abs(positional, named, expr)?;
-      Err(mk_todo(expr, "std.abs"))
-    }
+    StdFn::abs => math_op(cx, env, positional, named, expr, f64::abs),
     StdFn::sign => {
       let _ = std_fn::args::sign(positional, named, expr)?;
       Err(mk_todo(expr, "std.sign"))
@@ -154,10 +151,8 @@ pub(crate) fn get(
       let _ = std_fn::args::exp(positional, named, expr)?;
       Err(mk_todo(expr, "std.exp"))
     }
-    StdFn::log => {
-      let _ = std_fn::args::log(positional, named, expr)?;
-      Err(mk_todo(expr, "std.log"))
-    }
+    // TODO is it log2 or log10?
+    StdFn::log => math_op(cx, env, positional, named, expr, f64::log2),
     StdFn::exponent => {
       let _ = std_fn::args::exponent(positional, named, expr)?;
       Err(mk_todo(expr, "std.exponent"))
@@ -166,59 +161,16 @@ pub(crate) fn get(
       let _ = std_fn::args::mantissa(positional, named, expr)?;
       Err(mk_todo(expr, "std.mantissa"))
     }
-    StdFn::floor => {
-      let _ = std_fn::args::floor(positional, named, expr)?;
-      Err(mk_todo(expr, "std.floor"))
-    }
-    StdFn::ceil => {
-      let _ = std_fn::args::ceil(positional, named, expr)?;
-      Err(mk_todo(expr, "std.ceil"))
-    }
-    StdFn::sqrt => {
-      let arguments = std_fn::args::sqrt(positional, named, expr)?;
-      let x = exec::get(cx, env, arguments.x)?;
-      let Val::Prim(Prim::Number(x)) = x else {
-        return Err(error::Error::Exec {
-          expr: arguments.x.unwrap_or(expr),
-          kind: error::Kind::IncompatibleTypes,
-        });
-      };
-      match Number::try_from(x.value().sqrt()) {
-        Ok(x) => Ok(Val::Prim(Prim::Number(x))),
-        Err(e) => Err(error::Error::Exec {
-          expr: arguments.x.unwrap_or(expr),
-          kind: error::Kind::Infinite(e),
-        }),
-      }
-    }
-    StdFn::sin => {
-      let _ = std_fn::args::sin(positional, named, expr)?;
-      Err(mk_todo(expr, "std.sin"))
-    }
-    StdFn::cos => {
-      let _ = std_fn::args::cos(positional, named, expr)?;
-      Err(mk_todo(expr, "std.cos"))
-    }
-    StdFn::tan => {
-      let _ = std_fn::args::tan(positional, named, expr)?;
-      Err(mk_todo(expr, "std.tan"))
-    }
-    StdFn::asin => {
-      let _ = std_fn::args::asin(positional, named, expr)?;
-      Err(mk_todo(expr, "std.asin"))
-    }
-    StdFn::acos => {
-      let _ = std_fn::args::acos(positional, named, expr)?;
-      Err(mk_todo(expr, "std.acos"))
-    }
-    StdFn::atan => {
-      let _ = std_fn::args::atan(positional, named, expr)?;
-      Err(mk_todo(expr, "std.atan"))
-    }
-    StdFn::round => {
-      let _ = std_fn::args::round(positional, named, expr)?;
-      Err(mk_todo(expr, "std.round"))
-    }
+    StdFn::floor => math_op(cx, env, positional, named, expr, f64::floor),
+    StdFn::ceil => math_op(cx, env, positional, named, expr, f64::ceil),
+    StdFn::sqrt => math_op(cx, env, positional, named, expr, f64::sqrt),
+    StdFn::sin => math_op(cx, env, positional, named, expr, f64::sin),
+    StdFn::cos => math_op(cx, env, positional, named, expr, f64::cos),
+    StdFn::tan => math_op(cx, env, positional, named, expr, f64::tan),
+    StdFn::asin => math_op(cx, env, positional, named, expr, f64::asin),
+    StdFn::acos => math_op(cx, env, positional, named, expr, f64::acos),
+    StdFn::atan => math_op(cx, env, positional, named, expr, f64::atan),
+    StdFn::round => math_op(cx, env, positional, named, expr, f64::round),
     StdFn::mod_ => {
       let _ = std_fn::args::mod_(positional, named, expr)?;
       Err(mk_todo(expr, "std.mod"))
@@ -603,6 +555,30 @@ pub(crate) fn get(
     StdFn::objectHasEx => {
       let _ = std_fn::args::objectHasEx(positional, named, expr)?;
       Err(mk_todo(expr, "std.objectHasEx"))
+    }
+  }
+}
+
+fn math_op(
+  cx: Cx<'_>,
+  env: &Env,
+  positional: &[Expr],
+  named: &[(Id, Expr)],
+  expr: ExprMust,
+  f: fn(f64) -> f64,
+) -> Result<Val> {
+  let arguments = std_fn::params::x::get(positional, named, expr)?;
+  let x = exec::get(cx, env, arguments.x)?;
+  let Val::Prim(Prim::Number(x)) = x else {
+    return Err(error::Error::Exec {
+      expr: arguments.x.unwrap_or(expr),
+      kind: error::Kind::IncompatibleTypes,
+    });
+  };
+  match Number::try_from(f(x.value())) {
+    Ok(x) => Ok(Val::Prim(Prim::Number(x))),
+    Err(e) => {
+      Err(error::Error::Exec { expr: arguments.x.unwrap_or(expr), kind: error::Kind::Infinite(e) })
     }
   }
 }
