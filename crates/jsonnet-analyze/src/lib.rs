@@ -165,12 +165,24 @@ impl St {
     // NOTE: for each r in remove, we DO NOT bother removing r from s for any (_, s) in dependents.
     let updated = remove.into_iter().filter_map(|path| {
       let path_id = self.path_id(path);
+
       let was_in_files = self.files.remove(&path_id).is_some();
       let was_in_files_artifacts = self.file_artifacts.remove(&path_id).is_some();
       always!(
         was_in_files == was_in_files_artifacts,
         "mismatched in-ness for files ({was_in_files}) and artifacts ({was_in_files_artifacts})"
       );
+
+      self.importstr.remove(&path_id);
+      self.importbin.remove(&path_id);
+
+      let was_in_json = self.json.remove(&path_id).is_some();
+      always!(
+        !was_in_json || was_in_files,
+        "{} was in json, but not in files",
+        self.display_path_id(path_id)
+      );
+
       let ret = self.dependents.remove(&path_id);
       always!(
         ret.is_none() || was_in_files,
