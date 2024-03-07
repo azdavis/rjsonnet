@@ -113,7 +113,7 @@ fn self_cycle() {
   Input::default()
     .with_jsonnet(
       "a.jsonnet",
-      JsonnetInput::error(
+      JsonnetInput::eval_error(
         r"
   import 'a.jsonnet'
 ##^^^^^^^^^^^^^^^^^^ diagnostic: <eval>
@@ -130,7 +130,7 @@ fn bigger_cycle() {
   Input::default()
     .with_jsonnet(
       "a.jsonnet",
-      JsonnetInput::error(
+      JsonnetInput::eval_error(
         r"
   import 'b.jsonnet'
 ##^^^^^^^^^^^^^^^^^^ diagnostic: <eval>
@@ -140,7 +140,7 @@ fn bigger_cycle() {
     )
     .with_jsonnet(
       "b.jsonnet",
-      JsonnetInput::error(
+      JsonnetInput::eval_error(
         r"
   import 'c.jsonnet'
 ##^^^^^^^^^^^^^^^^^^ diagnostic: <eval>
@@ -150,7 +150,7 @@ fn bigger_cycle() {
     )
     .with_jsonnet(
       "c.jsonnet",
-      JsonnetInput::error(
+      JsonnetInput::eval_error(
         r"
   import 'd.jsonnet'
 ##^^^^^^^^^^^^^^^^^^ diagnostic: <eval>
@@ -160,7 +160,7 @@ fn bigger_cycle() {
     )
     .with_jsonnet(
       "d.jsonnet",
-      JsonnetInput::error(
+      JsonnetInput::eval_error(
         r"
   import 'a.jsonnet'
 ##^^^^^^^^^^^^^^^^^^ diagnostic: <eval>
@@ -185,7 +185,10 @@ fn remove() {
     )
     .with_input(
       Input::default()
-        .with_jsonnet("a.jsonnet", JsonnetInput::error(r"(import 'b.jsonnet') + 3", "no import"))
+        .with_jsonnet(
+          "a.jsonnet",
+          JsonnetInput::eval_error(r"(import 'b.jsonnet') + 3", "no import"),
+        )
         .add("a.jsonnet")
         .remove("b.jsonnet"),
     )

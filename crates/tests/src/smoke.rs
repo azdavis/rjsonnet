@@ -15,12 +15,11 @@ use crate::check::{Input, JsonnetInput};
 
 #[test]
 fn parse_fail() {
-  JsonnetInput::error(
+  JsonnetInput::pre_eval_error(
     r"
 if else 4
 ## ^^^^ diagnostic: expected expression
 ",
-    "no such path: f.jsonnet",
   )
   .check();
 }
@@ -42,7 +41,7 @@ fn if_without_else_no() {
 
 #[test]
 fn error() {
-  JsonnetInput::error(
+  JsonnetInput::eval_error(
     r#"
 1 + (error "oh no!")
 ##   ^^^^^^^^^^^^^^ diagnostic: <eval>

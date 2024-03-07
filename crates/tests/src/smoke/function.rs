@@ -78,19 +78,18 @@ sub(8, y=9)
 #[test]
 #[should_panic = "duplicate argument: x"]
 fn args_named_then_positional() {
-  JsonnetInput::error(
+  JsonnetInput::pre_eval_error(
     r"
 local sub(x, y) = x - y;
   sub(x=9, 3)
 ",
-    "positional argument after named argument",
   )
   .check();
 }
 
 #[test]
 fn args_positional_extra() {
-  JsonnetInput::error(
+  JsonnetInput::eval_error(
     r"
 local sub(x, y) = x - y;
   sub(1, 2, 3)
@@ -103,7 +102,7 @@ local sub(x, y) = x - y;
 
 #[test]
 fn args_named_extra() {
-  JsonnetInput::error(
+  JsonnetInput::eval_error(
     r"
 local sub(x, y) = x - y;
   sub(x=1, y=2, z=3)
@@ -116,7 +115,7 @@ local sub(x, y) = x - y;
 
 #[test]
 fn args_positional_missing() {
-  JsonnetInput::error(
+  JsonnetInput::eval_error(
     r"
 local sub(x, y) = x - y;
   sub(1)
@@ -129,7 +128,7 @@ local sub(x, y) = x - y;
 
 #[test]
 fn args_named_missing_1() {
-  JsonnetInput::error(
+  JsonnetInput::eval_error(
     r"
 local sub(x, y) = x - y;
   sub(x=1)
@@ -142,7 +141,7 @@ local sub(x, y) = x - y;
 
 #[test]
 fn args_named_missing_2() {
-  JsonnetInput::error(
+  JsonnetInput::eval_error(
     r"
 local sub(x, y) = x - y;
   sub(y=1)
@@ -155,20 +154,19 @@ local sub(x, y) = x - y;
 
 #[test]
 fn args_named_duplicate() {
-  JsonnetInput::error(
+  JsonnetInput::pre_eval_error(
     r"
 local sub(x, y) = x - y;
   sub(x=1, x=2, y=3)
 ##           ^ diagnostic: duplicate named argument: `x`
 ",
-    "no such path: f.jsonnet",
   )
   .check();
 }
 
 #[test]
 fn args_named_positional_duplicate() {
-  JsonnetInput::error(
+  JsonnetInput::eval_error(
     r"
 local sub(x, y) = x - y;
   sub(1, y=2, x=3)

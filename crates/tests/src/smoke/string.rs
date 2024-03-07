@@ -74,11 +74,10 @@ fn double_verbatim_escape() {
 
 #[test]
 fn unclosed() {
-  JsonnetInput::error(
+  JsonnetInput::pre_eval_error(
     r"
 ## V diagnostic: unclosed string
   '",
-    "no such path: f.jsonnet",
   )
   .check();
 }

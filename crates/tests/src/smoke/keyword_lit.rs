@@ -19,14 +19,13 @@ fn null() {
 
 #[test]
 fn redefine() {
-  JsonnetInput::error(
+  JsonnetInput::pre_eval_error(
     r"
 ##         v diagnostic: trailing token
 local true = 1;
 ##    ^^^^ diagnostic: expected `;`
 2
 ",
-    "no such path: f.jsonnet",
   )
   .check();
 }

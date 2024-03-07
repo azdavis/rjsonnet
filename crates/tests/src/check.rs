@@ -76,6 +76,7 @@ impl<'a> Input<'a> {
     MultiInput::default().with_input(self).check();
   }
 
+  #[allow(clippy::too_many_lines)]
   fn check_with(
     self,
     st: &mut jsonnet_analyze::St,
@@ -132,7 +133,11 @@ impl<'a> Input<'a> {
             };
             let got = ds.remove(&range).expect("no diagnostic at range");
             let want = if ex.msg == "<eval>" {
-              assert_eq!(OutcomeKind::Error, jsonnet.kind, "{path_str}: mismatched outcome kind");
+              assert_eq!(
+                OutcomeKind::EvalError,
+                jsonnet.kind,
+                "{path_str}: mismatched outcome kind"
+              );
               jsonnet.outcome
             } else {
               ex.msg.as_str()
@@ -161,12 +166,28 @@ impl<'a> Input<'a> {
 
         (OutcomeKind::String, Ok(got)) => got.assert_is_str(st.strings(), jsonnet.outcome),
 
-        (OutcomeKind::Error, Err(err)) => {
+        (OutcomeKind::EvalError, Err(err)) => {
           let got = err.display(st.strings(), st.paths(), Some(pwd)).to_string();
           assert_eq!(jsonnet.outcome, got.as_str(), "{path_str}: mismatched errors");
         }
 
-        (OutcomeKind::Error, Ok(got)) => panic!("{path_str}: no error, got json: {got:?}"),
+        (OutcomeKind::PreEvalError, Err(err)) => {
+          assert!(
+            jsonnet.outcome.is_empty(),
+            "{}: unexpected outcome for pre eval error: {}",
+            path_str,
+            jsonnet.outcome
+          );
+          let jsonnet_eval::error::Error::NoPath(p) = err else {
+            panic!("{path_str}: unexpected error kind: {err:?}");
+          };
+          let p_display = st.paths().get_path(p).as_path().display();
+          assert_eq!(path, p, "{path_str}: mismatched no-path errors: got {p_display}");
+        }
+
+        (OutcomeKind::EvalError | OutcomeKind::PreEvalError, Ok(got)) => {
+          panic!("{path_str}: no error, got json: {got:?}")
+        }
         (OutcomeKind::Manifest | OutcomeKind::String, Err(err)) => {
           let got = err.display(st.strings(), st.paths(), Some(pwd)).to_string();
           panic!("{path_str}: error: {got:?}");
@@ -203,8 +224,12 @@ impl<'a> JsonnetInput<'a> {
     Self { text, outcome: string, kind: OutcomeKind::String }
   }
 
-  pub(crate) fn error(text: &'a str, message: &'a str) -> Self {
-    Self { text, outcome: message, kind: OutcomeKind::Error }
+  pub(crate) fn eval_error(text: &'a str, message: &'a str) -> Self {
+    Self { text, outcome: message, kind: OutcomeKind::EvalError }
+  }
+
+  pub(crate) fn pre_eval_error(text: &'a str) -> Self {
+    Self { text, outcome: "", kind: OutcomeKind::PreEvalError }
   }
 
   pub(crate) fn check(self) {
@@ -216,5 +241,6 @@ impl<'a> JsonnetInput<'a> {
 enum OutcomeKind {
   Manifest,
   String,
-  Error,
+  EvalError,
+  PreEvalError,
 }
