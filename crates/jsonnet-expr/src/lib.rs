@@ -7,9 +7,11 @@ mod generated {
 }
 
 pub mod arg;
+mod subst;
 
 pub use generated::{std_fn, StdFn};
 pub use la_arena::{Arena, ArenaMap, Idx};
+pub use subst::Subst;
 
 use always::always;
 use generated::{BuiltinStr, NotBuiltinStr};
@@ -106,7 +108,7 @@ impl ExprData {
           id.apply(subst);
         }
       }
-      ExprData::Import { path, .. } => *path = subst.paths[path],
+      ExprData::Import { path, .. } => *path = subst.get_path_id(*path),
       ExprData::Object { .. }
       | ExprData::Array(_)
       | ExprData::Subscript { .. }
@@ -510,7 +512,7 @@ impl CopyStrRepr {
   fn apply(&mut self, subst: &Subst) {
     match self {
       CopyStrRepr::Builtin(_) => {}
-      CopyStrRepr::Idx(idx) => *idx = subst.strings[&idx],
+      CopyStrRepr::Idx(idx) => *idx = subst.get_str_idx(*idx),
     }
   }
 }
@@ -643,33 +645,4 @@ impl Id {
 pub struct Arenas {
   pub str: StrArena,
   pub expr: ExprArena,
-}
-
-/// A substitution, from combining artifacts.
-#[derive(Debug, Default)]
-pub struct Subst {
-  strings: FxHashMap<StrIdx, StrIdx>,
-  paths: FxHashMap<paths::PathId, paths::PathId>,
-}
-
-impl Subst {
-  /// Combine artifacts and produce a substitution to apply to other things.
-  pub fn get(art: &mut Artifacts, other: Artifacts) -> Self {
-    let mut ret = Subst::default();
-    for (idx, s) in other.strings.idx_to_contents.into_iter().enumerate() {
-      let old = StrIdx::from_usize(idx);
-      let new = art.strings.dangerous_mk_idx(s, NotBuiltinStr::from_str_arena());
-      always!(ret.strings.insert(old, new).is_none());
-    }
-    art.paths.combine(other.paths, &mut |old, new| {
-      always!(ret.paths.insert(old, new).is_none());
-    });
-    ret
-  }
-
-  /// Get the path id from the subst.
-  #[must_use]
-  pub fn get_path_id(&self, path: paths::PathId) -> paths::PathId {
-    self.paths.get(&path).copied().unwrap_or(path)
-  }
 }
