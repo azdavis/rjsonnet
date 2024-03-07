@@ -132,6 +132,7 @@ impl<'a> Input<'a> {
               end: text_pos::PositionUtf16 { line: region.line, col: region.col_end },
             };
             let got = ds.remove(&range).expect("no diagnostic at range");
+            let got = make_one_line(&got);
             let want = if ex.msg == "<eval>" {
               assert_eq!(
                 OutcomeKind::EvalError,
@@ -168,6 +169,7 @@ impl<'a> Input<'a> {
 
         (OutcomeKind::EvalError, Err(err)) => {
           let got = err.display(st.strings(), st.paths(), Some(pwd)).to_string();
+          let got = make_one_line(&got);
           assert_eq!(jsonnet.outcome, got.as_str(), "{path_str}: mismatched errors");
         }
 
@@ -243,4 +245,21 @@ enum OutcomeKind {
   String,
   EvalError,
   PreEvalError,
+}
+
+/// this is a bit annoying, but i don't want to pull in iter tools just for intersperse or join or
+/// whatever it's called. the real long term solution to get rid of this is probably a setting for
+/// the error displaying family of functions for how many lines of output we want.
+fn make_one_line(s: &str) -> String {
+  let mut ret = String::with_capacity(s.len());
+  let mut first = true;
+  for line in s.lines() {
+    if first {
+      first = false;
+    } else {
+      ret.push_str("; ");
+    }
+    ret.push_str(line.trim());
+  }
+  ret
 }

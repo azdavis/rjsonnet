@@ -424,7 +424,7 @@ fn mk_get_params(params: &[&str]) -> proc_macro2::TokenStream {
       ) -> Result<Self> {
         let params_iter = #name::PARAMS.iter().copied();
         let named_iter = named.iter().map(|&(id, _)| id);
-        if let Some(tma) = TooMany::new_fancy(params_iter, positional.len(), named_iter) {
+        if let Some(tma) = TooMany::new(params_iter, positional.len(), named_iter) {
           return Err(Error { expr, kind: ErrorKind::TooMany(tma) });
         }
         let mut positional = positional.iter().copied();

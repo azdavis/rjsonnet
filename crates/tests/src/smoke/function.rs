@@ -95,7 +95,7 @@ local sub(x, y) = x - y;
   sub(1, 2, 3)
 ##^^^^^^^^^^^^ diagnostic: <eval>
 ",
-    "too many arguments: have 2 parameters, but got 3 positional and 0 named arguments",
+    "too many arguments; parameters (2): x, y; positional arguments: 3; named arguments: <none>",
   )
   .check();
 }
@@ -108,7 +108,7 @@ local sub(x, y) = x - y;
   sub(x=1, y=2, z=3)
 ##^^^^^^^^^^^^^^^^^^ diagnostic: <eval>
 ",
-    "too many arguments: have 2 parameters, but got 0 positional and 3 named arguments",
+    "too many arguments; parameters (2): x, y; positional arguments: <none>; named arguments (3): x, y, z",
   )
   .check();
 }
@@ -172,7 +172,7 @@ local sub(x, y) = x - y;
   sub(1, y=2, x=3)
 ##^^^^^^^^^^^^^^^^ diagnostic: <eval>
 ",
-    "too many arguments: have 2 parameters, but got 1 positional and 2 named arguments",
+    "too many arguments; parameters (2): x, y; positional arguments: 1; named arguments (2): y, x",
   )
   .check();
 }

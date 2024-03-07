@@ -118,7 +118,11 @@ pub(crate) fn get(cx: Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
     },
     ExprData::Call { func, positional, named } => match get(cx, env, *func)? {
       Val::Function(mut func) => {
-        if let Some(tma) = arg::TooMany::new(func.params.len(), positional.len(), named.len()) {
+        if let Some(tma) = arg::TooMany::new(
+          func.params.iter().map(|&(id, _)| id),
+          positional.len(),
+          named.iter().map(|&(id, _)| id),
+        ) {
           return Err(error::Error::Exec { expr, kind: arg::ErrorKind::TooMany(tma).into() });
         }
         let mut provided = FxHashSet::<Id>::default();

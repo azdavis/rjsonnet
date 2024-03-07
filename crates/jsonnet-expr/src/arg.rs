@@ -4,28 +4,24 @@ use crate::{ExprMust, Id, StrArena};
 use std::fmt;
 
 #[derive(Debug, Clone)]
-pub struct TooMany(Repr);
-
-#[derive(Debug, Clone)]
-enum Repr {
-  Basic { params: usize, positional: usize, named: usize },
-  Fancy { params: Vec<Id>, positional: usize, named: Vec<Id> },
+pub struct TooMany {
+  params: Vec<Id>,
+  positional: usize,
+  named: Vec<Id>,
 }
 
 impl TooMany {
   #[must_use]
-  pub fn new(params: usize, positional: usize, named: usize) -> Option<Self> {
-    (positional + named > params).then_some(Self(Repr::Basic { params, positional, named }))
-  }
-
-  #[must_use]
-  pub fn new_fancy<Params, Named>(params: Params, positional: usize, named: Named) -> Option<Self>
+  pub fn new<Params, Named>(params: Params, positional: usize, named: Named) -> Option<Self>
   where
     Params: ExactSizeIterator<Item = Id>,
     Named: ExactSizeIterator<Item = Id>,
   {
-    (positional + named.len() > params.len())
-      .then(|| Self(Repr::Fancy { params: params.collect(), positional, named: named.collect() }))
+    (positional + named.len() > params.len()).then(|| Self {
+      params: params.collect(),
+      positional,
+      named: named.collect(),
+    })
   }
 }
 
@@ -59,26 +55,23 @@ struct DisplayError<'a> {
 impl fmt::Display for DisplayError<'_> {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     match self.kind {
-      ErrorKind::TooMany(tma) => match &tma.0 {
-        Repr::Basic { params, positional, named } => {
-          write!(f, "too many arguments: ")?;
-          write!(f, "have {params} parameters, ")?;
-          write!(f, "but got {positional} positional ")?;
-          write!(f, "and {named} named arguments")
+      ErrorKind::TooMany(tma) => {
+        writeln!(f, "too many arguments")?;
+
+        let params = DisplayIds { name: "parameters", ar: self.ar, ids: &tma.params };
+        writeln!(f, "  {params}")?;
+
+        write!(f, "  positional arguments: ",)?;
+        if tma.positional == 0 {
+          writeln!(f, "<none>")?;
+        } else {
+          writeln!(f, "{}", tma.positional)?;
         }
-        Repr::Fancy { params, positional, named } => {
-          writeln!(f, "too many arguments")?;
 
-          let params = DisplayIds { name: "parameters", ar: self.ar, ids: params };
-          writeln!(f, "  {params}")?;
-
-          writeln!(f, "  positional arguments: {positional}")?;
-
-          let named = DisplayIds { name: "named arguments", ar: self.ar, ids: named };
-          writeln!(f, "  {named}")?;
-          Ok(())
-        }
-      },
+        let named = DisplayIds { name: "named arguments", ar: self.ar, ids: &tma.named };
+        writeln!(f, "  {named}")?;
+        Ok(())
+      }
       ErrorKind::Duplicate(x) => write!(f, "duplicate argument: {}", x.display(self.ar)),
       ErrorKind::NotRequested(arg) => {
         write!(
@@ -106,7 +99,7 @@ impl<'a> fmt::Display for DisplayIds<'a> {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     let mut iter = self.ids.iter();
     let Some(fst) = iter.next() else {
-      return write!(f, "{}: 0", self.name);
+      return write!(f, "{}: <none>", self.name);
     };
     write!(f, "{} ({}): ", self.name, self.ids.len())?;
     fst.display(self.ar).fmt(f)?;
