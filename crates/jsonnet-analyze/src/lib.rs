@@ -324,7 +324,7 @@ impl St {
         }
       }
 
-      log::info!("get file artifacts for {} files in parallel", new_to_add.len());
+      log::info!("found {} new files to get artifacts in parallel", new_to_add.len());
       let iter = new_to_add.into_par_iter().map(|(importer, import)| {
         let imported_path = self.artifacts.paths.get_path(import.path);
         match get_isolated_fs(imported_path, &self.root_dirs, fs) {
