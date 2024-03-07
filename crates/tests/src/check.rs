@@ -142,6 +142,11 @@ impl<'a> Input<'a> {
         }
       }
 
+      if let Some((range, msg)) = ds.iter().next() {
+        let n = ds.len();
+        panic!("{path_str} still has {n} diagnostics, e.g. {range}: {msg}");
+      }
+
       match (jsonnet.kind, st.get_json(path)) {
         (OutcomeKind::Manifest, Ok(got)) => {
           let want: serde_json::Value =
@@ -166,11 +171,6 @@ impl<'a> Input<'a> {
           let got = err.display(st.strings(), st.paths(), Some(pwd)).to_string();
           panic!("{path_str}: error: {got:?}");
         }
-      }
-
-      if let Some((range, msg)) = ds.iter().next() {
-        let n = ds.len();
-        panic!("{path_str} still has {n} diagnostics, e.g. {range}: {msg}");
       }
     }
 
