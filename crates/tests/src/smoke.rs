@@ -3,6 +3,7 @@
 mod array;
 mod comment;
 mod def;
+mod function;
 mod keyword_lit;
 mod number;
 mod object;
@@ -11,18 +12,6 @@ mod std_lib;
 mod string;
 
 use crate::check::{Input, JsonnetInput};
-
-#[test]
-fn function() {
-  JsonnetInput::manifest(
-    r"
-local inc = function(x) x + 1;
-inc(3)
-",
-    "4",
-  )
-  .check_one();
-}
 
 #[test]
 fn undef_fn_arg() {
