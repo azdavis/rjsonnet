@@ -187,7 +187,12 @@ fn remove() {
       Input::default()
         .with_jsonnet(
           "a.jsonnet",
-          JsonnetInput::eval_error(r"(import 'b.jsonnet') + 3", "no import"),
+          JsonnetInput::pre_eval_error(
+            r"
+  (import 'b.jsonnet') + 2
+## ^^^^^^^^^^^^^^^^^^ diagnostic: path not found: b.jsonnet
+",
+          ),
         )
         .add("a.jsonnet")
         .remove("b.jsonnet"),

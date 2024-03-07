@@ -97,6 +97,14 @@ impl<'a> Input<'a> {
     let to_add: Vec<_> = self.to_add.iter().map(|&path| pwd.join(path)).collect();
     let to_remove: Vec<_> = self.to_remove.iter().map(|&path| pwd.join(path)).collect();
 
+    for path in &to_remove {
+      assert!(
+        fs.inner.remove(path).is_some(),
+        "{}: removed but non-existent",
+        path.as_path().display()
+      );
+    }
+
     let mut ds_map = st.update_many(fs, to_remove, to_add);
     let expects = self.jsonnet.iter().map(|(&path, jsonnet)| {
       let path = pwd.join(path);
