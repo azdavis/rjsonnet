@@ -363,6 +363,10 @@ fn mk_get_params(params: &[&str]) -> proc_macro2::TokenStream {
   let name = format_ident!("{name}");
   let in_progress = format_ident!("TMP{JOINER}{name}");
   let num_params = params.len();
+  let params_const_init = params.iter().map(|&param| {
+    let param = format_ident!("{param}");
+    quote! { Id::#param, }
+  });
   let fields = params.iter().map(|&param| {
     let param = format_ident!("{param}");
     quote! { pub #param: Expr, }
@@ -409,12 +413,18 @@ fn mk_get_params(params: &[&str]) -> proc_macro2::TokenStream {
     }
 
     impl #name {
+      const PARAMS: [Id; #num_params] = [
+        #(#params_const_init)*
+      ];
+
       pub(crate) fn get(
         positional: &[Expr],
         named: &[(Id, Expr)],
         expr: ExprMust,
       ) -> Result<Self> {
-        if let Some(tma) = TooMany::new(#num_params, positional.len(), named.len()) {
+        let params_iter = #name::PARAMS.iter().copied();
+        let named_iter = named.iter().map(|&(id, _)| id);
+        if let Some(tma) = TooMany::new_fancy(params_iter, positional.len(), named_iter) {
           return Err(Error { expr, kind: ErrorKind::TooMany(tma) });
         }
         let mut positional = positional.iter().copied();
