@@ -19,6 +19,7 @@ impl<'a> MultiInput<'a> {
     self
   }
 
+  #[track_caller]
   pub(crate) fn check(self) {
     _ = env_logger::builder().is_test(true).filter_level(log::LevelFilter::Debug).try_init();
     let mut fs = paths::MemoryFileSystem::default();
@@ -72,11 +73,13 @@ impl<'a> Input<'a> {
     self
   }
 
+  #[track_caller]
   pub(crate) fn check(self) {
     MultiInput::default().with_input(self).check();
   }
 
   #[allow(clippy::too_many_lines)]
+  #[track_caller]
   fn check_with(
     self,
     st: &mut jsonnet_analyze::St,
@@ -234,6 +237,7 @@ impl<'a> JsonnetInput<'a> {
     Self { text, outcome: "", kind: OutcomeKind::PreEvalError }
   }
 
+  #[track_caller]
   pub(crate) fn check(self) {
     Input::default().with_jsonnet(DEFAULT_PATH, self).add_all().check();
   }
