@@ -66,8 +66,25 @@ pub(crate) fn get(
       Ok(Val::Prim(Prim::Bool(matches!(v, Val::Prim(Prim::String(_))))))
     }
     StdFn::length => {
-      let _ = std_fn::args::length(positional, named, expr)?;
-      Err(mk_todo(expr, "std.length"))
+      let arguments = std_fn::args::length(positional, named, expr)?;
+      let x = exec::get(cx, env, arguments.x)?;
+      let ret = match x {
+        Val::Prim(prim) => match prim {
+          Prim::Null | Prim::Bool(_) | Prim::Number(_) => {
+            return Err(error::Error::Exec {
+              expr: arguments.x.unwrap_or(expr),
+              kind: error::Kind::IncompatibleTypes,
+            });
+          }
+          // we want "number of codepoints", NOT byte length.
+          Prim::String(s) => cx.str_ar.get(&s).chars().count(),
+        },
+        Val::Object(obj) => obj.fields().len(),
+        Val::Array(arr) => arr.len(),
+        Val::Function(func) => func.params.len(),
+        Val::StdFn(std_fn) => std_fn.params_len(),
+      };
+      Ok(Val::Prim(Prim::Number(Number::from(ret))))
     }
     StdFn::get => {
       let _ = std_fn::args::get(positional, named, expr)?;

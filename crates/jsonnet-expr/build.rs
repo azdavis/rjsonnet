@@ -3,7 +3,7 @@
 #![allow(clippy::disallowed_methods)]
 
 use quote::{format_ident, quote};
-use std::collections::{BTreeSet, HashSet};
+use std::collections::{BTreeMap, BTreeSet, HashSet};
 
 const JOINER: &str = "__";
 
@@ -301,6 +301,20 @@ fn main() {
       let name = format_ident!("{name}");
       quote! { (Str::#name, Self::#name) }
     });
+    let unique_params_lens = {
+      let mut tmp = BTreeMap::<usize, BTreeSet<&str>>::new();
+      for &(S { name, .. }, params) in &std_fns {
+        tmp.entry(params.len()).or_default().insert(name);
+      }
+      tmp
+    };
+    let params_len_arms = unique_params_lens.iter().map(|(&len, names)| {
+      let pats = names.iter().map(|name| {
+        let name = format_ident!("{name}");
+        quote! { | Self::#name }
+      });
+      quote! { #(#pats)* => #len, }
+    });
     let unique_param_lists: BTreeSet<_> = std_fns.iter().map(|&(_, params)| params).collect();
     let get_params = unique_param_lists.iter().map(|&params| mk_get_params(params));
     let get_args = std_fns.iter().map(|&(S { name, .. }, params)| mk_get_args(name, params));
@@ -315,6 +329,14 @@ fn main() {
         pub const ALL: [(Str, Self); #count] = [
           #(#str_variant_tuples,)*
         ];
+
+        #[must_use]
+        #[allow(clippy::too_many_lines)]
+        pub fn params_len(&self) -> usize {
+          match self {
+            #(#params_len_arms)*
+          }
+        }
       }
 
       pub mod std_fn {

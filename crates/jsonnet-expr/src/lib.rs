@@ -445,6 +445,13 @@ impl TryFrom<f64> for Number {
   }
 }
 
+impl From<usize> for Number {
+  fn from(value: usize) -> Self {
+    #[allow(clippy::cast_precision_loss)]
+    Self(value as f64)
+  }
+}
+
 impl std::ops::Neg for Number {
   type Output = Self;
 
