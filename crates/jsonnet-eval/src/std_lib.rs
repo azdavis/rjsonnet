@@ -3,7 +3,7 @@
 use crate::error::Result;
 use crate::val::jsonnet::{Array, Env, Val};
 use crate::{error, exec, mk_todo, Cx};
-use jsonnet_expr::{std_fn, Expr, ExprMust, Id, Number, Prim, StdFn};
+use jsonnet_expr::{std_fn, Expr, ExprMust, Id, Number, Prim, StdFn, Str};
 use std::cmp::Ordering;
 
 pub(crate) fn get(
@@ -20,8 +20,20 @@ pub(crate) fn get(
       Err(mk_todo(expr, "std.extVar"))
     }
     StdFn::type_ => {
-      let _ = std_fn::args::type_(positional, named, expr)?;
-      Err(mk_todo(expr, "std.type"))
+      let arguments = std_fn::args::type_(positional, named, expr)?;
+      let x = exec::get(cx, env, arguments.x)?;
+      let ret = match x {
+        Val::Prim(prim) => match prim {
+          Prim::Null => Str::null,
+          Prim::Bool(_) => Str::boolean,
+          Prim::String(_) => Str::string,
+          Prim::Number(_) => Str::number,
+        },
+        Val::Object(_) => Str::object,
+        Val::Array(_) => Str::array,
+        Val::Function(_) | Val::StdFn(_) => Str::function,
+      };
+      Ok(Val::Prim(Prim::String(ret)))
     }
     StdFn::length => {
       let _ = std_fn::args::length(positional, named, expr)?;

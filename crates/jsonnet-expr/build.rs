@@ -162,7 +162,16 @@ fn main() {
     S::named("super", "super_"),
     S::named("$", "dollar"),
   ];
-  let messages = [S::named("Assertion failed", "ASSERTION_FAILED")];
+  let messages = [
+    S::named("Assertion failed", "ASSERTION_FAILED"),
+    S::new("array"),
+    S::new("boolean"),
+    S::new("function"),
+    S::new("null"),
+    S::new("number"),
+    S::new("object"),
+    S::new("string"),
+  ];
   let strings = || {
     std::iter::once(S::new("thisFile"))
       .chain(std_fns.iter().map(|&(s, _)| s))
