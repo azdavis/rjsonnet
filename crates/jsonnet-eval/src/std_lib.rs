@@ -175,8 +175,21 @@ pub(crate) fn get(
       Err(mk_todo(expr, "std.ceil"))
     }
     StdFn::sqrt => {
-      let _ = std_fn::args::sqrt(positional, named, expr)?;
-      Err(mk_todo(expr, "std.sqrt"))
+      let arguments = std_fn::args::sqrt(positional, named, expr)?;
+      let x = exec::get(cx, env, arguments.x)?;
+      let Val::Prim(Prim::Number(x)) = x else {
+        return Err(error::Error::Exec {
+          expr: arguments.x.unwrap_or(expr),
+          kind: error::Kind::IncompatibleTypes,
+        });
+      };
+      match Number::try_from(x.value().sqrt()) {
+        Ok(x) => Ok(Val::Prim(Prim::Number(x))),
+        Err(e) => Err(error::Error::Exec {
+          expr: arguments.x.unwrap_or(expr),
+          kind: error::Kind::Infinite(e),
+        }),
+      }
     }
     StdFn::sin => {
       let _ = std_fn::args::sin(positional, named, expr)?;
