@@ -378,7 +378,7 @@ fn mk_get_params(params: &[&str]) -> proc_macro2::TokenStream {
   let name = format_ident!("{name}");
   let in_progress = format_ident!("TMP{JOINER}{name}");
   let num_params = params.len();
-  let params_const_init = params.iter().map(|&param| {
+  let ids = params.iter().map(|&param| {
     let param = format_ident!("{param}");
     quote! { Id::#param, }
   });
@@ -428,8 +428,8 @@ fn mk_get_params(params: &[&str]) -> proc_macro2::TokenStream {
     }
 
     impl #name {
-      const PARAMS: [Id; #num_params] = [
-        #(#params_const_init)*
+      const IDS: [Id; #num_params] = [
+        #(#ids)*
       ];
 
       pub(crate) fn get(
@@ -438,7 +438,7 @@ fn mk_get_params(params: &[&str]) -> proc_macro2::TokenStream {
         expr: ExprMust,
       ) -> Result<Self> {
         if let Some(tma) = TooMany::new(
-          #name::PARAMS.iter().copied(),
+          #name::IDS.iter().copied(),
           positional.len(),
           named.iter().map(|&(id, _)| id),
         ) {
