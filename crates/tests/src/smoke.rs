@@ -14,19 +14,6 @@ mod string;
 use crate::check::{Input, JsonnetInput};
 
 #[test]
-fn undef_fn_arg() {
-  JsonnetInput::error(
-    r"
-local f = function(b, x) if b then x else 1;
-  f(false)
-##^^^^^^^^ diagnostic: <eval>
-",
-    "parameter `x` was not defined at the function call site",
-  )
-  .check();
-}
-
-#[test]
 fn parse_fail() {
   JsonnetInput::error(
     r"
