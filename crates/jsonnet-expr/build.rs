@@ -422,9 +422,11 @@ fn mk_get_params(params: &[&str]) -> proc_macro2::TokenStream {
         named: &[(Id, Expr)],
         expr: ExprMust,
       ) -> Result<Self> {
-        let params_iter = #name::PARAMS.iter().copied();
-        let named_iter = named.iter().map(|&(id, _)| id);
-        if let Some(tma) = TooMany::new(params_iter, positional.len(), named_iter) {
+        if let Some(tma) = TooMany::new(
+          #name::PARAMS.iter().copied(),
+          positional.len(),
+          named.iter().map(|&(id, _)| id),
+        ) {
           return Err(Error { expr, kind: ErrorKind::TooMany(tma) });
         }
         let mut positional = positional.iter().copied();
