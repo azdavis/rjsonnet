@@ -50,13 +50,13 @@ struct Display<'a> {
 impl fmt::Display for Display<'_> {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     match &self.kind {
-      Kind::NotInScope(id) => write!(f, "not in scope: {}", id.display(self.ar)),
-      Kind::DuplicateFieldName(s) => write!(f, "duplicate field name: {}", self.ar.get(s)),
+      Kind::NotInScope(id) => write!(f, "not in scope: `{}`", id.display(self.ar)),
+      Kind::DuplicateFieldName(s) => write!(f, "duplicate field name: `{}`", self.ar.get(s)),
       Kind::DuplicateNamedArg(id) => {
-        write!(f, "duplicate named argument: {}", id.display(self.ar))
+        write!(f, "duplicate named argument: `{}`", id.display(self.ar))
       }
       Kind::DuplicateBinding(id) => {
-        write!(f, "duplicate binding: {}", id.display(self.ar))
+        write!(f, "duplicate binding: `{}`", id.display(self.ar))
       }
     }
   }
