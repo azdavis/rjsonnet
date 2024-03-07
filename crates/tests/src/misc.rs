@@ -14,7 +14,7 @@ func(obj.field, 4)
 ",
     "3",
   )
-  .check_one();
+  .check();
 }
 
 #[test]
@@ -34,7 +34,7 @@ fn for_comp_obj() {
 }
 "#,
   )
-  .check_one();
+  .check();
 }
 
 #[test]

@@ -4,17 +4,17 @@ use crate::check::JsonnetInput;
 
 #[test]
 fn bool_true() {
-  JsonnetInput::manifest_self("true").check_one();
+  JsonnetInput::manifest_self("true").check();
 }
 
 #[test]
 fn bool_false() {
-  JsonnetInput::manifest_self("false").check_one();
+  JsonnetInput::manifest_self("false").check();
 }
 
 #[test]
 fn null() {
-  JsonnetInput::manifest_self("null").check_one();
+  JsonnetInput::manifest_self("null").check();
 }
 
 #[test]
@@ -28,5 +28,5 @@ local true = 1;
 ",
     "no such path: f.jsonnet",
   )
-  .check_one();
+  .check();
 }

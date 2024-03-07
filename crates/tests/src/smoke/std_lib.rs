@@ -11,5 +11,5 @@ std.type(3)
 ",
     "number",
   )
-  .check_one();
+  .check();
 }

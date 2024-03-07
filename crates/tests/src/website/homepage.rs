@@ -28,7 +28,7 @@ fn t1() {
 }
 "#,
   )
-  .check_one();
+  .check();
 }
 
 #[test]
@@ -58,5 +58,5 @@ local Person(name='Alice') = {
 }
 "#,
   )
-  .check_one();
+  .check();
 }

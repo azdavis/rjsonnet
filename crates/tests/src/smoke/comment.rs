@@ -11,7 +11,7 @@ fn slash_slash() {
 ",
     "4.0",
   )
-  .check_one();
+  .check();
 }
 
 #[test]
@@ -22,7 +22,7 @@ fn hash() {
 ",
     "1.0",
   )
-  .check_one();
+  .check();
 }
 
 #[test]
@@ -33,5 +33,5 @@ fn slash_star() {
 ",
     "5.0",
   )
-  .check_one();
+  .check();
 }

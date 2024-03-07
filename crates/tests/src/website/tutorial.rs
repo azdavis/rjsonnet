@@ -91,7 +91,7 @@ fn t1() {
   }
 }
 "#,
-  ).check_one();
+  ).check();
 }
 
 #[test]
@@ -181,7 +181,7 @@ local house_rum = 'Banks Rum';
 }
 "#,
   )
-  .check_one();
+  .check();
 }
 
 #[test]
@@ -276,7 +276,7 @@ fn t3() {
 }
 "#,
   )
-  .check_one();
+  .check();
 }
 
 #[test]
@@ -317,7 +317,7 @@ fn t4() {
 }
 "#,
   )
-  .check_one();
+  .check();
 }
 
 #[test]
@@ -388,5 +388,5 @@ fn t5() {
 }
 "#,
   )
-  .check_one();
+  .check();
 }

@@ -207,7 +207,7 @@ impl<'a> JsonnetInput<'a> {
     Self { text, outcome: message, kind: OutcomeKind::Error }
   }
 
-  pub(crate) fn check_one(self) {
+  pub(crate) fn check(self) {
     Input::default().with_jsonnet(DEFAULT_PATH, self).add_all().check();
   }
 }

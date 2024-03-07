@@ -10,12 +10,12 @@ fn double() {
 "#,
     "hi",
   )
-  .check_one();
+  .check();
 }
 
 #[test]
 fn single() {
-  JsonnetInput::string("'hi'", "hi").check_one();
+  JsonnetInput::string("'hi'", "hi").check();
 }
 
 #[test]
@@ -26,7 +26,7 @@ fn double_escape() {
 "#,
     "hi\nthere\"my'friend'buddy",
   )
-  .check_one();
+  .check();
 }
 
 #[test]
@@ -37,7 +37,7 @@ fn single_escape() {
 "#,
     "hi\nthere\"my'friend\"buddy",
   )
-  .check_one();
+  .check();
 }
 
 #[test]
@@ -48,7 +48,7 @@ fn double_verbatim() {
 "#,
     "hi",
   )
-  .check_one();
+  .check();
 }
 
 #[test]
@@ -58,7 +58,7 @@ fn single_verbatim() {
 @'hi'
 ", "hi",
   )
-  .check_one();
+  .check();
 }
 
 #[test]
@@ -69,7 +69,7 @@ fn double_verbatim_escape() {
 "#,
     r#"hi " '' \\ \n there"#,
   )
-  .check_one();
+  .check();
 }
 
 #[test]
@@ -80,7 +80,7 @@ fn unclosed() {
   '",
     "no such path: f.jsonnet",
   )
-  .check_one();
+  .check();
 }
 
 #[test]
@@ -93,5 +93,5 @@ fn text_block() {
 |||",
     "hi there\nbuddy\n",
   )
-  .check_one();
+  .check();
 }

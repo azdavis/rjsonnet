@@ -4,7 +4,7 @@ use crate::check::JsonnetInput;
 
 #[test]
 fn empty() {
-  JsonnetInput::manifest_self("{}").check_one();
+  JsonnetInput::manifest_self("{}").check();
 }
 
 #[test]
@@ -27,7 +27,7 @@ fn non_empty() {
 }
 "#,
   )
-  .check_one();
+  .check();
 }
 
 #[test]
@@ -46,7 +46,7 @@ fn self_() {
 }
 "#,
   )
-  .check_one();
+  .check();
 }
 
 #[test]
@@ -77,7 +77,7 @@ base + {
 }
 "#,
   )
-  .check_one();
+  .check();
 }
 
 #[test]
@@ -90,7 +90,7 @@ fn explicit_plus() {
 { "a": 3, "b": 2, "c": 4 }
 "#,
   )
-  .check_one();
+  .check();
 }
 
 #[test]
@@ -103,7 +103,7 @@ fn implicit_plus() {
 { "a": 1, "b": 2 }
 "#,
   )
-  .check_one();
+  .check();
 }
 
 #[test]
@@ -129,7 +129,7 @@ local x = {
 }
 "#,
   )
-  .check_one();
+  .check();
 }
 
 #[test]
@@ -158,5 +158,5 @@ fn self_3() {
 }
 "#,
   )
-  .check_one();
+  .check();
 }

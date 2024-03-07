@@ -13,7 +13,7 @@ local a = 3;
 ",
     "6",
   )
-  .check_one();
+  .check();
 }
 
 #[test]
@@ -35,7 +35,7 @@ local z = y;
 ",
     "103",
   )
-  .check_one();
+  .check();
 }
 
 #[test]
@@ -53,7 +53,7 @@ a.bar
 ",
     "2",
   )
-  .check_one();
+  .check();
 }
 
 #[test]

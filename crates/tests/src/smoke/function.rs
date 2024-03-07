@@ -11,7 +11,7 @@ inc(3)
 ",
     "4",
   )
-  .check_one();
+  .check();
 }
 
 #[test]
@@ -23,7 +23,7 @@ dec(3)
 ",
     "2",
   )
-  .check_one();
+  .check();
 }
 
 #[test]
@@ -35,7 +35,7 @@ mul(2, 3)
 ",
     "6",
   )
-  .check_one();
+  .check();
 }
 
 #[test]
@@ -47,7 +47,7 @@ mul(x=4, y=5)
 ",
     "20",
   )
-  .check_one();
+  .check();
 }
 
 #[test]
@@ -59,7 +59,7 @@ div(y=3, x=9)
 ",
     "3",
   )
-  .check_one();
+  .check();
 }
 
 #[test]
@@ -71,7 +71,7 @@ sub(8, y=9)
 ",
     "-1",
   )
-  .check_one();
+  .check();
 }
 
 // TODO should emit error about named then positional arg
@@ -85,7 +85,7 @@ local sub(x, y) = x - y;
 ",
     "positional argument after named argument",
   )
-  .check_one();
+  .check();
 }
 
 #[test]
@@ -98,7 +98,7 @@ local sub(x, y) = x - y;
 ",
     "too many arguments: have 2 parameters, but got 3 positional and 0 named arguments",
   )
-  .check_one();
+  .check();
 }
 
 #[test]
@@ -111,7 +111,7 @@ local sub(x, y) = x - y;
 ",
     "too many arguments: have 2 parameters, but got 0 positional and 3 named arguments",
   )
-  .check_one();
+  .check();
 }
 
 #[test]
@@ -124,7 +124,7 @@ local sub(x, y) = x - y;
 ",
     "parameter `y` was not defined at the function call site",
   )
-  .check_one();
+  .check();
 }
 
 #[test]
@@ -137,7 +137,7 @@ local sub(x, y) = x - y;
 ",
     "parameter `y` was not defined at the function call site",
   )
-  .check_one();
+  .check();
 }
 
 #[test]
@@ -150,7 +150,7 @@ local sub(x, y) = x - y;
 ",
     "parameter `x` was not defined at the function call site",
   )
-  .check_one();
+  .check();
 }
 
 #[test]
@@ -163,7 +163,7 @@ local sub(x, y) = x - y;
 ",
     "no such path: f.jsonnet",
   )
-  .check_one();
+  .check();
 }
 
 #[test]
@@ -176,5 +176,5 @@ local sub(x, y) = x - y;
 ",
     "too many arguments: have 2 parameters, but got 1 positional and 2 named arguments",
   )
-  .check_one();
+  .check();
 }

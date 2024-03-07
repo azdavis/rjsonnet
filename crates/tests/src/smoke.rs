@@ -23,7 +23,7 @@ local f = function(b, x) if b then x else 1;
 ",
     "parameter `x` was not defined at the function call site",
   )
-  .check_one();
+  .check();
 }
 
 #[test]
@@ -35,22 +35,22 @@ if else 4
 ",
     "no such path: f.jsonnet",
   )
-  .check_one();
+  .check();
 }
 
 #[test]
 fn if_else() {
-  JsonnetInput::manifest("if 1 < 2 then 3 else 4", "3.0").check_one();
+  JsonnetInput::manifest("if 1 < 2 then 3 else 4", "3.0").check();
 }
 
 #[test]
 fn if_without_else_yes() {
-  JsonnetInput::manifest("if 1 < 2 then 3", "3.0").check_one();
+  JsonnetInput::manifest("if 1 < 2 then 3", "3.0").check();
 }
 
 #[test]
 fn if_without_else_no() {
-  JsonnetInput::manifest("if 1 > 2 then 3", "null").check_one();
+  JsonnetInput::manifest("if 1 > 2 then 3", "null").check();
 }
 
 #[test]
@@ -62,7 +62,7 @@ fn error() {
 "#,
     "explicit `error`: oh no!",
   )
-  .check_one();
+  .check();
 }
 
 #[test]
@@ -74,7 +74,7 @@ assert 2 + 2 < 5 : "math makes sense";
 "#,
     "0.0",
   )
-  .check_one();
+  .check();
 }
 
 #[test]
@@ -86,7 +86,7 @@ x + 1
 ",
     "4.0",
   )
-  .check_one();
+  .check();
 }
 
 #[test]
@@ -99,7 +99,7 @@ fn bool_op() {
 [true, false, false]
 ",
   )
-  .check_one();
+  .check();
 }
 
 #[test]
