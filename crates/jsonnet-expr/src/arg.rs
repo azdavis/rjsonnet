@@ -69,7 +69,7 @@ impl fmt::Display for DisplayError<'_> {
         }
 
         let named = DisplayIds { name: "named arguments", ar: self.ar, ids: &tma.named };
-        writeln!(f, "  {named}")?;
+        write!(f, "  {named}")?;
         Ok(())
       }
       ErrorKind::Duplicate(x) => write!(f, "duplicate argument: {}", x.display(self.ar)),
