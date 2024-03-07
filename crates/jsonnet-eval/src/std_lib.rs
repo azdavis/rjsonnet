@@ -35,6 +35,36 @@ pub(crate) fn get(
       };
       Ok(Val::Prim(Prim::String(ret)))
     }
+    StdFn::isArray => {
+      let arguments = std_fn::args::isArray(positional, named, expr)?;
+      let v = exec::get(cx, env, arguments.v)?;
+      Ok(Val::Prim(Prim::Bool(matches!(v, Val::Array(_)))))
+    }
+    StdFn::isBoolean => {
+      let arguments = std_fn::args::isBoolean(positional, named, expr)?;
+      let v = exec::get(cx, env, arguments.v)?;
+      Ok(Val::Prim(Prim::Bool(matches!(v, Val::Prim(Prim::Bool(_))))))
+    }
+    StdFn::isFunction => {
+      let arguments = std_fn::args::isFunction(positional, named, expr)?;
+      let v = exec::get(cx, env, arguments.v)?;
+      Ok(Val::Prim(Prim::Bool(matches!(v, Val::Function(_) | Val::StdFn(_)))))
+    }
+    StdFn::isNumber => {
+      let arguments = std_fn::args::isNumber(positional, named, expr)?;
+      let v = exec::get(cx, env, arguments.v)?;
+      Ok(Val::Prim(Prim::Bool(matches!(v, Val::Prim(Prim::Number(_))))))
+    }
+    StdFn::isObject => {
+      let arguments = std_fn::args::isObject(positional, named, expr)?;
+      let v = exec::get(cx, env, arguments.v)?;
+      Ok(Val::Prim(Prim::Bool(matches!(v, Val::Object(_)))))
+    }
+    StdFn::isString => {
+      let arguments = std_fn::args::isString(positional, named, expr)?;
+      let v = exec::get(cx, env, arguments.v)?;
+      Ok(Val::Prim(Prim::Bool(matches!(v, Val::Prim(Prim::String(_))))))
+    }
     StdFn::length => {
       let _ = std_fn::args::length(positional, named, expr)?;
       Err(mk_todo(expr, "std.length"))

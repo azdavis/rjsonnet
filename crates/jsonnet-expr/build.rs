@@ -28,6 +28,12 @@ fn main() {
   let std_fns = [
     (S::new("extVar"), &["x"][..]),
     (S::named("type", "type_"), &["x"]),
+    (S::new("isArray"), &["v"]),
+    (S::new("isBoolean"), &["v"]),
+    (S::new("isFunction"), &["v"]),
+    (S::new("isNumber"), &["v"]),
+    (S::new("isObject"), &["v"]),
+    (S::new("isString"), &["v"]),
     (S::new("length"), &["x"]),
     (S::new("get"), &["o", "f", "default", "inc_hidden"]),
     (S::new("objectHas"), &["o", "f"]),
