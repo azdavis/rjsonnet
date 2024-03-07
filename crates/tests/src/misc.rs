@@ -172,9 +172,7 @@ fn bigger_cycle() {
     .check();
 }
 
-// TODO fix
 #[test]
-#[should_panic = "a.jsonnet: no error, got json:"]
 fn remove() {
   MultiInput::default()
     .with_input(

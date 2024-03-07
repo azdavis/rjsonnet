@@ -399,23 +399,34 @@ impl St {
     while !needs_update.is_empty() {
       let updated_vals: PathMap<_> = if self.manifest {
         let cx = self.cx();
-        // manifest in parallel for all updated files. TODO this probably doesn't respect ordering
-        // requirements among the updated. what if one updated file depends on another updated file?
-        let iter = needs_update.par_iter().filter_map(|(&path, errors)| {
-          // only exec if no errors in the file so far.
-          errors.is_empty().then(|| {
+        // manifest in parallel for all updated files. for those that have errors, we note that fact
+        // for later.
+        //
+        // TODO this probably doesn't respect ordering requirements among the updated. what if one
+        // updated file depends on another updated file?
+        let iter = needs_update.iter().map(|(&path, errors)| {
+          let update = errors.is_empty().then(|| {
             let val = jsonnet_eval::get_exec(cx, path);
-            let val = val.and_then(|val| jsonnet_eval::get_manifest(cx, val));
-            (path, val)
-          })
+            val.and_then(|val| jsonnet_eval::get_manifest(cx, val))
+          });
+          (path, update)
         });
         iter.collect()
       } else {
         PathMap::default()
       };
       log::info!("updated {} vals", updated_vals.len());
-      self.json.extend(updated_vals);
-      updated.extend(needs_update.keys().copied());
+      for (path_id, update) in updated_vals {
+        updated.insert(path_id);
+        match update {
+          Some(result) => {
+            self.json.insert(path_id, result);
+          }
+          None => {
+            self.json.remove(&path_id);
+          }
+        }
+      }
 
       if want_diagnostics {
         log::info!("getting diagnostics for {} files", needs_update.len());
