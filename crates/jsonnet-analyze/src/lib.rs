@@ -88,16 +88,6 @@ impl<const DEFAULT: usize> std::str::FromStr for DefaultUsize<DEFAULT> {
   }
 }
 
-/// A trait for a file systems.
-pub trait FileSystem: paths::FileSystem {
-  /// Read the contents of a file as bytes.
-  ///
-  /// # Errors
-  ///
-  /// If the filesystem failed us.
-  fn read_to_bytes(&self, path: &Path) -> io::Result<Vec<u8>>;
-}
-
 /// The state of analysis.
 #[derive(Debug)]
 pub struct St {
