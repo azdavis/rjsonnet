@@ -34,7 +34,19 @@ pub fn run<S: State>() {
   let st = S::new(&fs, init.initialization_options);
   let mut srv = server::Server::new(fs, st);
 
-  let root_url = init.root_uri.expect("no root url");
+  let last_workspace_folder = init
+    .workspace_folders
+    .and_then(|mut xs| {
+      let ret = xs.pop();
+      if !xs.is_empty() {
+        log::warn!("we only support the last workspace folder");
+      }
+      ret
+    })
+    .map(|x| x.uri.clone());
+  #[allow(deprecated)]
+  let root_url = last_workspace_folder.or(init.root_uri).expect("root uri");
+
   let root_path = convert::path_buf(&root_url).expect("root path");
   srv.file_watch = init
     .capabilities
