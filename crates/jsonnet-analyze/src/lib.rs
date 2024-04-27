@@ -416,28 +416,6 @@ impl St {
     }
   }
 
-  /// Returns a path id for this path.
-  pub fn path_id(&mut self, path: paths::CleanPathBuf) -> PathId {
-    self.artifacts.paths.get_id_owned(path)
-  }
-
-  /// Returns the string arena for this.
-  #[must_use]
-  pub fn strings(&self) -> &jsonnet_expr::StrArena {
-    &self.artifacts.strings
-  }
-
-  /// Returns the mutable string arena for this.
-  pub fn strings_mut(&mut self) -> &mut jsonnet_expr::StrArena {
-    &mut self.artifacts.strings
-  }
-
-  /// Returns the paths store for this.
-  #[must_use]
-  pub fn paths(&self) -> &paths::Store {
-    &self.artifacts.paths
-  }
-
   /// Returns the json for this path.
   ///
   /// # Errors
@@ -451,6 +429,12 @@ impl St {
       },
       None => Err(jsonnet_eval::error::Error::NoPath(path_id)),
     }
+  }
+
+  /// Returns the strings for this.
+  #[must_use]
+  pub fn strings(&self) -> &jsonnet_expr::StrArena {
+    &self.artifacts.strings
   }
 
   fn strip<'a>(&self, p: &'a Path) -> &'a Path {
@@ -618,11 +602,12 @@ impl lang_srv_state::State for St {
       Ok(x) => x,
       Err(e) => {
         // NOTE we don't have the relative_to here
-        log::error!("couldn't get json: {}", e.display(self.strings(), self.paths(), None));
+        let e = e.display(&self.artifacts.strings, self.paths(), None);
+        log::error!("couldn't get json: {e}",);
         return None;
       }
     };
-    Some(json.display(self.strings()).to_string())
+    Some(json.display(&self.artifacts.strings).to_string())
   }
 
   /// Get the definition site of a part of a file.
@@ -699,11 +684,11 @@ impl lang_srv_state::State for St {
   }
 
   fn paths(&self) -> &paths::Store {
-    self.paths()
+    &self.artifacts.paths
   }
 
   fn path_id(&mut self, path: paths::CleanPathBuf) -> paths::PathId {
-    self.path_id(path)
+    self.artifacts.paths.get_id_owned(path)
   }
 }
 
