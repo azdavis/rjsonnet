@@ -21,7 +21,7 @@
   ],
   "main": "out/main.js",
   "scripts": {
-    "build-debug": "esbuild src/main.ts --bundle --outfile=out/main.js --external:vscode --format=cjs --platform=node --target=node18",
+    "build-debug": "esbuild src/main.ts --bundle --outfile=out/main.js --external:vscode --format=cjs --platform=node --target=node20",
     "build-release": "npm run build-debug -- --minify",
     "check": "tsc"
   },
@@ -29,11 +29,11 @@
     "vscode-languageclient": "^9.0.1"
   },
   "devDependencies": {
-    "@types/node": "^18.16.19",
+    "@types/node": "^20.12.7",
     "@types/vscode": "^1.79.0",
     "@vscode/vsce": "^2.19.0",
-    "esbuild": "^0.19.8",
-    "ovsx": "^0.8.2",
+    "esbuild": "^0.20.2",
+    "ovsx": "^0.9.1",
     "typescript": "^5.1.6"
   },
   "engines": {
