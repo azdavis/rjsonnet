@@ -88,6 +88,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f538837af36e6f6a9be0faa67f9a314f8119e4e4b5867c6ab40ed60360142519"
 
 [[package]]
+name = "apply-changes"
+version = "0.1.0"
+source = "git+https://github.com/azdavis/language-util.git#b2493b1b04eba8985571fb902e94daec58dfbd42"
+dependencies = [
+ "text-pos",
+]
+
+[[package]]
 name = "autocfg"
 version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -502,6 +510,7 @@ version = "0.1.1"
 dependencies = [
  "always",
  "anyhow",
+ "apply-changes",
  "better-panic",
  "diagnostic",
  "log",
