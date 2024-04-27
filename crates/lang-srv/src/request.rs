@@ -25,7 +25,7 @@ fn go<S: State>(
 ) -> ControlFlowResult<lsp_server::Response> {
   req = try_req::<lsp_types::request::HoverRequest, _, _>(req, |id, params| {
     let path = convert::clean_path_buf(&params.text_document_position_params.text_document.uri)?;
-    let result = srv.st.hover(path).map(|json| lsp_types::Hover {
+    let result = srv.st.hover(&srv.fs, path).map(|json| lsp_types::Hover {
       contents: lsp_types::HoverContents::Markup(lsp_types::MarkupContent {
         kind: lsp_types::MarkupKind::Markdown,
         value: format!("```json\n{json}\n```"),
@@ -38,7 +38,7 @@ fn go<S: State>(
     let td_params = params.text_document_position_params;
     let path = convert::clean_path_buf(&td_params.text_document.uri)?;
     let pos = convert::text_pos_position(td_params.position);
-    let result = srv.st.get_def(path, pos).and_then(|(path_id, range)| {
+    let result = srv.st.get_def(&srv.fs, path, pos).and_then(|(path_id, range)| {
       let uri = convert::url(srv.st.paths().get_path(path_id))?;
       Some(lsp_types::GotoDefinitionResponse::Scalar(lsp_types::Location {
         uri,

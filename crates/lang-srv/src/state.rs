@@ -45,14 +45,19 @@ pub trait State {
   /// # Errors
   ///
   /// If we couldn't show more info about the hovered file.
-  fn hover(&mut self, path: paths::CleanPathBuf) -> Option<String>;
+  fn hover<F>(&mut self, fs: &F, path: paths::CleanPathBuf) -> Option<String>
+  where
+    F: Sync + Send + paths::FileSystem;
 
   /// Get the definition site of a part of a file.
-  fn get_def(
+  fn get_def<F>(
     &mut self,
+    fs: &F,
     path: paths::CleanPathBuf,
     pos: text_pos::PositionUtf16,
-  ) -> Option<(paths::PathId, text_pos::RangeUtf16)>;
+  ) -> Option<(paths::PathId, text_pos::RangeUtf16)>
+  where
+    F: Sync + Send + paths::FileSystem;
 
   /// Returns the paths store for this.
   fn paths(&self) -> &paths::Store;

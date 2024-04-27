@@ -88,7 +88,10 @@ impl lang_srv::State for State {
   }
 
   /// TODO take a text range thing
-  fn hover(&mut self, path: paths::CleanPathBuf) -> Option<String> {
+  fn hover<F>(&mut self, _fs: &F, path: paths::CleanPathBuf) -> Option<String>
+  where
+    F: Sync + Send + paths::FileSystem,
+  {
     let path_id = self.0.path_id(path);
     let json = match self.0.get_json(path_id) {
       Ok(x) => x,
@@ -101,11 +104,16 @@ impl lang_srv::State for State {
     Some(json.display(self.0.strings()).to_string())
   }
 
-  fn get_def(
+  /// Get the definition site of a part of a file.
+  fn get_def<F>(
     &mut self,
+    _fs: &F,
     path: paths::CleanPathBuf,
     pos: text_pos::PositionUtf16,
-  ) -> Option<(paths::PathId, text_pos::RangeUtf16)> {
+  ) -> Option<(paths::PathId, text_pos::RangeUtf16)>
+  where
+    F: Sync + Send + paths::FileSystem,
+  {
     let path_id = self.0.path_id(path);
     self.0.get_def(path_id, pos)
   }
