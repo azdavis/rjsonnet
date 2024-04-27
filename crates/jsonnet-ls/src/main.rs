@@ -9,7 +9,7 @@ fn main() {
 
 struct State(jsonnet_analyze::St);
 
-impl lang_srv::State for State {
+impl lang_srv_state::State for State {
   fn new<F>(fs: &F, val: Option<Value>) -> Self
   where
     F: paths::FileSystem,

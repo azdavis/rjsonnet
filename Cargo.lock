@@ -461,6 +461,7 @@ dependencies = [
  "env_logger",
  "jsonnet-analyze",
  "lang-srv",
+ "lang-srv-state",
  "log",
  "paths",
  "serde_json",
@@ -513,6 +514,7 @@ dependencies = [
  "apply-changes",
  "better-panic",
  "diagnostic",
+ "lang-srv-state",
  "log",
  "lsp-server",
  "lsp-types",
@@ -520,6 +522,16 @@ dependencies = [
  "serde_json",
  "text-pos",
  "walkdir",
+]
+
+[[package]]
+name = "lang-srv-state"
+version = "0.1.1"
+dependencies = [
+ "diagnostic",
+ "paths",
+ "serde_json",
+ "text-pos",
 ]
 
 [[package]]

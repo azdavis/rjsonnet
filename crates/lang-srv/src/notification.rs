@@ -1,11 +1,11 @@
 //! Handling notifications from the client, e.g. "these files changed".
 
 use crate::server::{self, Server};
-use crate::{convert, state::State, util};
+use crate::{convert, util};
 use anyhow::{bail, Result};
 use std::ops::ControlFlow;
 
-pub(crate) fn handle<S: State>(
+pub(crate) fn handle<S: lang_srv_state::State>(
   srv: &mut Server<S>,
   conn: &lsp_server::Connection,
   notif: lsp_server::Notification,
@@ -19,7 +19,7 @@ pub(crate) fn handle<S: State>(
 
 type ControlFlowResult = ControlFlow<Result<()>, lsp_server::Notification>;
 
-fn go<S: State>(
+fn go<S: lang_srv_state::State>(
   srv: &mut Server<S>,
   conn: &lsp_server::Connection,
   mut notif: lsp_server::Notification,

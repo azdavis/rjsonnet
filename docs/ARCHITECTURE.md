@@ -103,6 +103,10 @@ Common types for diagnostics (aka "errors") for programming language implementat
 
 A generic language server scaffold.
 
+### `crates/lang-srv-state`
+
+A trait for the state of a language server.
+
 ## Other code
 
 Most of the code is contained in the Rust crates documented above, but some code lives elsewhere.

@@ -6,11 +6,9 @@ mod notification;
 mod request;
 mod response;
 mod server;
-mod state;
 mod util;
 
 use paths::FileSystem;
-pub use state::State;
 
 /// Sets up and runs the LSP.
 ///
@@ -19,7 +17,7 @@ pub use state::State;
 /// If things failed that it wouldn't make sense to try to recover from, like starting up the LSP or
 /// joining I/O threads.
 #[allow(clippy::disallowed_methods)]
-pub fn run<S: State>() {
+pub fn run<S: lang_srv_state::State>() {
   better_panic::Settings::new()
     .message(S::BUG_REPORT_MSG)
     .verbosity(better_panic::Verbosity::Medium)

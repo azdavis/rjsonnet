@@ -1,11 +1,11 @@
 //! Handling requests from the client, e.g. "compute the hover text for this area of the document".
 
-use crate::{convert, server::Server, state::State, util};
+use crate::{convert, server::Server, util};
 use always::always;
 use anyhow::{bail, Result};
 use std::ops::ControlFlow;
 
-pub(crate) fn handle<S: State>(
+pub(crate) fn handle<S: lang_srv_state::State>(
   srv: &mut Server<S>,
   req: lsp_server::Request,
 ) -> Result<lsp_server::Response> {
@@ -19,7 +19,7 @@ pub(crate) fn handle<S: State>(
 
 type ControlFlowResult<T, C = lsp_server::Request> = ControlFlow<Result<T>, C>;
 
-fn go<S: State>(
+fn go<S: lang_srv_state::State>(
   srv: &mut Server<S>,
   mut req: lsp_server::Request,
 ) -> ControlFlowResult<lsp_server::Response> {

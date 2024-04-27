@@ -23,4 +23,5 @@ text-pos.workspace = true
 always.path = "../always"
 diagnostic.path = "../diagnostic"
 jsonnet-analyze.path = "../jsonnet-analyze"
+lang-srv-state.path = "../lang-srv-state"
 lang-srv.path = "../lang-srv"

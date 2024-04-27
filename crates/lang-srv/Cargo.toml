@@ -26,3 +26,4 @@ walkdir.workspace = true
 
 always.path = "../always"
 diagnostic.path = "../diagnostic"
+lang-srv-state.path = "../lang-srv-state"

@@ -17,6 +17,7 @@
     "codepoints",
     "consts",
     "conv",
+    "descs",
     "desugared",
     "dtolnay",
     "elems",
