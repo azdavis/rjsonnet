@@ -22,3 +22,4 @@ text-pos.workspace = true
 
 jsonnet-analyze = { path = "../jsonnet-analyze", features = ["testing"] } # @ignore
 jsonnet-eval.path = "../jsonnet-eval"
+lang-srv-state.path = "../lang-srv-state"

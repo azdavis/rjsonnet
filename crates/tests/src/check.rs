@@ -2,6 +2,7 @@
 
 mod expect;
 
+use lang_srv_state::State as _;
 use paths::FileSystem as _;
 use rustc_hash::{FxHashMap, FxHashSet};
 
@@ -30,7 +31,7 @@ impl<'a> MultiInput<'a> {
       show_diagnostics: jsonnet_analyze::ShowDiagnostics::All,
       ..Default::default()
     };
-    let mut st = jsonnet_analyze::St::new(init);
+    let mut st = jsonnet_analyze::St::init(init);
     assert!(!self.inputs.is_empty(), "must have an Input to check");
     for input in self.inputs {
       input.check_with(&mut st, &mut fs, pwd.as_clean_path());
@@ -116,17 +117,17 @@ impl<'a> Input<'a> {
 
     for (&path_str, jsonnet) in &self.jsonnet {
       let path = pwd.join(path_str);
-      let path = st.path_id(path);
+      let path_id = st.path_id(path.clone());
       let mut ds: FxHashMap<_, _> =
-        ds_map.remove(&path).into_iter().flatten().map(|x| (x.range, x.message)).collect();
+        ds_map.remove(&path_id).into_iter().flatten().map(|x| (x.range, x.message)).collect();
 
-      let ex_file = &expects[&path];
+      let ex_file = &expects[&path_id];
       for (region, ex) in ex_file.iter() {
         match ex.kind {
           expect::Kind::Def => {}
           expect::Kind::Use => {
             let pos = text_pos::PositionUtf16 { line: region.line, col: region.col_start };
-            let (def_path, range) = st.get_def(path, pos).expect("no def");
+            let (def_path, range) = st.get_def(fs, path.clone(), pos).expect("no def");
             assert_eq!(range.start.line, range.end.line, "{path_str}: range spans many lines");
             let region = expect::Region {
               line: range.start.line,
@@ -164,7 +165,7 @@ impl<'a> Input<'a> {
         panic!("{path_str} still has {n} diagnostics, e.g. {range}: {msg}");
       }
 
-      match (jsonnet.kind, st.get_json(path)) {
+      match (jsonnet.kind, st.get_json(path_id)) {
         (OutcomeKind::Manifest, Ok(got)) => {
           let want: serde_json::Value =
             serde_json::from_str(jsonnet.outcome).expect("test input json");
@@ -195,7 +196,7 @@ impl<'a> Input<'a> {
             panic!("{path_str}: unexpected error kind: {err:?}");
           };
           let p_display = st.paths().get_path(p).as_path().display();
-          assert_eq!(path, p, "{path_str}: mismatched no-path errors: got {p_display}");
+          assert_eq!(path_id, p, "{path_str}: mismatched no-path errors: got {p_display}");
         }
 
         (OutcomeKind::EvalError | OutcomeKind::PreEvalError, Ok(got)) => {

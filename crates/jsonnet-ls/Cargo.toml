@@ -14,14 +14,5 @@ test = false
 doctest = false
 
 [dependencies]
-env_logger.workspace = true
-log.workspace = true
-paths.workspace = true
-serde_json.workspace = true
-text-pos.workspace = true
-
-always.path = "../always"
-diagnostic.path = "../diagnostic"
 jsonnet-analyze.path = "../jsonnet-analyze"
-lang-srv-state.path = "../lang-srv-state"
 lang-srv.path = "../lang-srv"

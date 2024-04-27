@@ -34,7 +34,7 @@ pub trait State {
   fn update_one<F>(
     &mut self,
     fs: &F,
-    path: paths::CleanPathBuf,
+    path: &paths::CleanPath,
     contents: &str,
   ) -> paths::PathMap<Vec<diagnostic::Diagnostic>>
   where

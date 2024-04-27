@@ -122,7 +122,7 @@ pub struct St {
 impl St {
   /// Returns a new `St` with the given init options.
   #[must_use]
-  pub fn new(init: Init) -> Self {
+  pub fn init(init: Init) -> Self {
     log::info!("make new St with {init:?}");
     Self {
       relative_to: init.relative_to,
@@ -138,99 +138,6 @@ impl St {
       json: paths::PathMap::default(),
       dependents: paths::PathMap::default(),
     }
-  }
-
-  /// Updates the state with added and removed Jsonnet paths.
-  #[must_use]
-  pub fn update_many<F>(
-    &mut self,
-    fs: &F,
-    remove: Vec<paths::CleanPathBuf>,
-    add: Vec<paths::CleanPathBuf>,
-  ) -> PathMap<Vec<Diagnostic>>
-  where
-    F: Sync + Send + paths::FileSystem,
-  {
-    log::info!("remove {} files", remove.len());
-    // NOTE: for each r in remove, we DO NOT bother removing r from s for any (_, s) in dependents.
-    let updated = remove.into_iter().filter_map(|path| {
-      let path_id = self.path_id(path);
-
-      let was_in_files = self.files.remove(&path_id).is_some();
-      let was_in_files_artifacts = self.file_artifacts.remove(&path_id).is_some();
-      always!(
-        was_in_files == was_in_files_artifacts,
-        "mismatched in-ness for files ({was_in_files}) and artifacts ({was_in_files_artifacts})"
-      );
-
-      self.importstr.remove(&path_id);
-      self.importbin.remove(&path_id);
-
-      let was_in_json = self.json.remove(&path_id).is_some();
-      always!(
-        !was_in_json || was_in_files,
-        "{} was in json, but not in files",
-        self.display_path_id(path_id)
-      );
-
-      let ret = self.dependents.remove(&path_id);
-      always!(
-        ret.is_none() || was_in_files,
-        "{} was in dependents, but not in files",
-        self.display_path_id(path_id),
-      );
-      ret
-    });
-    // when we remove files, we must reset their diagnostics to nothing.
-    let updated: paths::PathMap<_> =
-      updated.flatten().map(|x| (x, FileErrors::default())).collect();
-
-    log::info!("get {} initial file artifacts in parallel", add.len());
-    let file_artifacts = add.into_par_iter().filter_map(|path| {
-      let path = path.as_clean_path();
-      let mut art = match get_isolated_fs(path, &self.root_dirs, fs) {
-        Ok(x) => x,
-        Err(e) => {
-          always!(false, "{}: i/o error: {}", self.strip(path.as_path()).display(), e);
-          return None;
-        }
-      };
-      let path = art.combine.paths.get_id(path);
-      Some((path, art))
-    });
-    let file_artifacts: Vec<_> = file_artifacts.collect();
-    // NOTE depends on the fact that all the added files in `update_all` are NOT open
-    let want_diagnostics = matches!(self.show_diagnostics, ShowDiagnostics::All);
-    self.update(fs, updated, file_artifacts, want_diagnostics)
-  }
-
-  /// Updates one file.
-  #[must_use]
-  pub fn update_one<F>(
-    &mut self,
-    fs: &F,
-    path: &paths::CleanPath,
-    contents: &str,
-  ) -> PathMap<Vec<Diagnostic>>
-  where
-    F: Sync + Send + paths::FileSystem,
-  {
-    log::info!("update one file: {}", self.strip(path.as_path()).display());
-    let mut art = match get_isolated_str(path, contents, &self.root_dirs, fs) {
-      Ok(x) => x,
-      Err(e) => {
-        always!(false, "{}: i/o error: {}", self.strip(path.as_path()).display(), e);
-        return PathMap::default();
-      }
-    };
-    // since we have &mut self, and no parallelism (as opposed to in update_many), we could get the
-    // path id from self. but instead, we intentionally get the path id from `art`, to uphold the
-    // contract of `update`.
-    let path_id = art.combine.paths.get_id(path);
-    // NOTE depends on the fact that `update_one` is called iff the file is open
-    let want_diagnostics =
-      matches!(self.show_diagnostics, ShowDiagnostics::All | ShowDiagnostics::Open);
-    self.update(fs, paths::PathMap::default(), vec![(path_id, art)], want_diagnostics)
   }
 
   /// invariant: for all `(p, a)` in `to_add`, `p` is the path id, of the path q, **from the path
@@ -546,13 +453,189 @@ impl St {
     }
   }
 
-  /// Returns the def site for the indicated area, if there is one.
-  #[must_use]
-  pub fn get_def(
-    &self,
-    path_id: PathId,
+  fn strip<'a>(&self, p: &'a Path) -> &'a Path {
+    match &self.relative_to {
+      None => p,
+      Some(r) => p.strip_prefix(r.as_path()).unwrap_or(p),
+    }
+  }
+
+  fn display_path_id(&self, path_id: PathId) -> impl std::fmt::Display + '_ {
+    self.strip(self.artifacts.paths.get_path(path_id).as_path()).display()
+  }
+}
+
+impl lang_srv_state::State for St {
+  fn new<F>(fs: &F, val: Option<serde_json::Value>) -> Self
+  where
+    F: paths::FileSystem,
+  {
+    let mut init = Init::default();
+    let pwd = fs.current_dir();
+    let mut logger_env = env_logger::Env::default();
+    // TODO is it correct to use pwd here or should we be using the root dir from the language
+    // server init object (which is NOT the `val` init object passed to us here)?
+    if let Ok(pwd) = &pwd {
+      init.relative_to = Some(pwd.to_owned());
+    }
+    // TODO report errors from bad init object
+    if let Some(serde_json::Value::Object(obj)) = val {
+      if let Some(filter) = obj.get("logger_filter").and_then(serde_json::Value::as_str) {
+        if !filter.is_empty() {
+          logger_env = logger_env.default_filter_or(filter.to_owned());
+        }
+      }
+
+      init.manifest = obj.get("manifest").and_then(serde_json::Value::as_bool).unwrap_or_default();
+      init.root_dirs = obj
+        .get("root_dirs")
+        .and_then(|x| {
+          let ary = x.as_array()?;
+          let pwd = pwd.ok()?;
+          ary
+            .iter()
+            .map(|x| x.as_str().map(|x| pwd.as_clean_path().join(x)))
+            .collect::<Option<Vec<_>>>()
+        })
+        .unwrap_or_default();
+      init.show_diagnostics = obj
+        .get("show_diagnostics")
+        .and_then(|x| x.as_str()?.parse::<ShowDiagnostics>().ok())
+        .unwrap_or_default();
+    }
+
+    if let Err(e) = env_logger::try_init_from_env(logger_env) {
+      always!(false, "couldn't init logger: {e}");
+    }
+
+    Self::init(init)
+  }
+
+  const BUG_REPORT_MSG: &'static str = always::BUG_REPORT_MSG;
+
+  const GLOB: &'static str = "**/*.{jsonnet,libsonnet,TEMPLATE}";
+
+  fn is_ext(&self, s: &str) -> bool {
+    matches!(s, "jsonnet" | "libsonnet" | "TEMPLATE")
+  }
+
+  fn update_many<F>(
+    &mut self,
+    fs: &F,
+    remove: Vec<paths::CleanPathBuf>,
+    add: Vec<paths::CleanPathBuf>,
+  ) -> paths::PathMap<Vec<diagnostic::Diagnostic>>
+  where
+    F: Sync + Send + paths::FileSystem,
+  {
+    log::info!("remove {} files", remove.len());
+    // NOTE: for each r in remove, we DO NOT bother removing r from s for any (_, s) in dependents.
+    let updated = remove.into_iter().filter_map(|path| {
+      let path_id = self.path_id(path);
+
+      let was_in_files = self.files.remove(&path_id).is_some();
+      let was_in_files_artifacts = self.file_artifacts.remove(&path_id).is_some();
+      always!(
+        was_in_files == was_in_files_artifacts,
+        "mismatched in-ness for files ({was_in_files}) and artifacts ({was_in_files_artifacts})"
+      );
+
+      self.importstr.remove(&path_id);
+      self.importbin.remove(&path_id);
+
+      let was_in_json = self.json.remove(&path_id).is_some();
+      always!(
+        !was_in_json || was_in_files,
+        "{} was in json, but not in files",
+        self.display_path_id(path_id)
+      );
+
+      let ret = self.dependents.remove(&path_id);
+      always!(
+        ret.is_none() || was_in_files,
+        "{} was in dependents, but not in files",
+        self.display_path_id(path_id),
+      );
+      ret
+    });
+    // when we remove files, we must reset their diagnostics to nothing.
+    let updated: paths::PathMap<_> =
+      updated.flatten().map(|x| (x, FileErrors::default())).collect();
+
+    log::info!("get {} initial file artifacts in parallel", add.len());
+    let file_artifacts = add.into_par_iter().filter_map(|path| {
+      let path = path.as_clean_path();
+      let mut art = match get_isolated_fs(path, &self.root_dirs, fs) {
+        Ok(x) => x,
+        Err(e) => {
+          always!(false, "{}: i/o error: {}", self.strip(path.as_path()).display(), e);
+          return None;
+        }
+      };
+      let path = art.combine.paths.get_id(path);
+      Some((path, art))
+    });
+    let file_artifacts: Vec<_> = file_artifacts.collect();
+    // NOTE depends on the fact that all the added files in `update_all` are NOT open
+    let want_diagnostics = matches!(self.show_diagnostics, ShowDiagnostics::All);
+    self.update(fs, updated, file_artifacts, want_diagnostics)
+  }
+
+  fn update_one<F>(
+    &mut self,
+    fs: &F,
+    path: &paths::CleanPath,
+    contents: &str,
+  ) -> paths::PathMap<Vec<diagnostic::Diagnostic>>
+  where
+    F: Sync + Send + paths::FileSystem,
+  {
+    log::info!("update one file: {}", self.strip(path.as_path()).display());
+    let mut art = match get_isolated_str(path, contents, &self.root_dirs, fs) {
+      Ok(x) => x,
+      Err(e) => {
+        always!(false, "{}: i/o error: {}", self.strip(path.as_path()).display(), e);
+        return PathMap::default();
+      }
+    };
+    // since we have &mut self, and no parallelism (as opposed to in update_many), we could get the
+    // path id from self. but instead, we intentionally get the path id from `art`, to uphold the
+    // contract of `update`.
+    let path_id = art.combine.paths.get_id(path);
+    // NOTE depends on the fact that `update_one` is called iff the file is open
+    let want_diagnostics =
+      matches!(self.show_diagnostics, ShowDiagnostics::All | ShowDiagnostics::Open);
+    self.update(fs, paths::PathMap::default(), vec![(path_id, art)], want_diagnostics)
+  }
+
+  /// TODO take a text range thing
+  fn hover<F>(&mut self, _fs: &F, path: paths::CleanPathBuf) -> Option<String>
+  where
+    F: Sync + Send + paths::FileSystem,
+  {
+    let path_id = self.path_id(path);
+    let json = match self.get_json(path_id) {
+      Ok(x) => x,
+      Err(e) => {
+        // NOTE we don't have the relative_to here
+        log::error!("couldn't get json: {}", e.display(self.strings(), self.paths(), None));
+        return None;
+      }
+    };
+    Some(json.display(self.strings()).to_string())
+  }
+
+  /// Get the definition site of a part of a file.
+  fn get_def<F>(
+    &mut self,
+    _fs: &F,
+    path: paths::CleanPathBuf,
     pos: text_pos::PositionUtf16,
-  ) -> Option<(paths::PathId, text_pos::RangeUtf16)> {
+  ) -> Option<(paths::PathId, text_pos::RangeUtf16)>
+  where
+    F: Sync + Send + paths::FileSystem,
+  {
+    let path_id = self.path_id(path);
     let ce = {
       let art = self.file_artifacts.get(&path_id)?;
       let ts = art.pos_db.text_size_utf16(pos)?;
@@ -615,15 +698,12 @@ impl St {
     Some((ce.ewp.path_id, range))
   }
 
-  fn strip<'a>(&self, p: &'a Path) -> &'a Path {
-    match &self.relative_to {
-      None => p,
-      Some(r) => p.strip_prefix(r.as_path()).unwrap_or(p),
-    }
+  fn paths(&self) -> &paths::Store {
+    self.paths()
   }
 
-  fn display_path_id(&self, path_id: PathId) -> impl std::fmt::Display + '_ {
-    self.strip(self.artifacts.paths.get_path(path_id).as_path()).display()
+  fn path_id(&mut self, path: paths::CleanPathBuf) -> paths::PathId {
+    self.path_id(path)
   }
 }
 

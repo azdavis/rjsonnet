@@ -55,7 +55,7 @@ fn go<S: lang_srv_state::State>(
   notif = try_notif::<lsp_types::notification::DidOpenTextDocument, _>(notif, |params| {
     let path = convert::clean_path_buf(&params.text_document.uri)?;
     let id = srv.st.path_id(path.clone());
-    let ds = srv.st.update_one(&srv.fs, path, &params.text_document.text);
+    let ds = srv.st.update_one(&srv.fs, path.as_clean_path(), &params.text_document.text);
     server::diagnose(conn, srv.st.paths(), ds);
     srv.open_files.insert(id, params.text_document.text);
     Ok(())
@@ -83,7 +83,7 @@ fn go<S: lang_srv_state::State>(
       .map(|x| apply_changes::Change { range: x.range.map(convert::text_pos_range), text: x.text })
       .collect();
     apply_changes::get(contents, changes);
-    let ds = srv.st.update_one(&srv.fs, path, contents);
+    let ds = srv.st.update_one(&srv.fs, path.as_clean_path(), contents);
     server::diagnose(conn, srv.st.paths(), ds);
     Ok(())
   })?;

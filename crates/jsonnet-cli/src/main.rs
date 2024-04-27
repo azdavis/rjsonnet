@@ -2,6 +2,7 @@
 
 #![allow(clippy::disallowed_methods)]
 
+use lang_srv_state::State as _;
 use pico_args::Arguments;
 use std::process::ExitCode;
 
@@ -37,7 +38,7 @@ fn run() -> usize {
     show_diagnostics,
     max_diagnostics_per_file,
   };
-  let mut st = jsonnet_analyze::St::new(init);
+  let mut st = jsonnet_analyze::St::init(init);
   let fs = paths::RealFileSystem::default();
 
   for arg in files {

@@ -368,6 +368,7 @@ version = "0.1.1"
 dependencies = [
  "always",
  "diagnostic",
+ "env_logger",
  "jsonnet-desugar",
  "jsonnet-escape",
  "jsonnet-eval",
@@ -376,10 +377,12 @@ dependencies = [
  "jsonnet-parse",
  "jsonnet-statics",
  "jsonnet-syntax",
+ "lang-srv-state",
  "log",
  "paths",
  "rayon",
  "rustc-hash",
+ "serde_json",
  "text-pos",
  "text-size",
 ]
@@ -390,6 +393,7 @@ version = "0.1.1"
 dependencies = [
  "env_logger",
  "jsonnet-analyze",
+ "lang-srv-state",
  "paths",
  "pico-args",
 ]
@@ -456,16 +460,8 @@ dependencies = [
 name = "jsonnet-ls"
 version = "0.1.1"
 dependencies = [
- "always",
- "diagnostic",
- "env_logger",
  "jsonnet-analyze",
  "lang-srv",
- "lang-srv-state",
- "log",
- "paths",
- "serde_json",
- "text-pos",
 ]
 
 [[package]]
@@ -875,6 +871,7 @@ dependencies = [
  "env_logger",
  "jsonnet-analyze",
  "jsonnet-eval",
+ "lang-srv-state",
  "log",
  "paths",
  "pretty_assertions",
