@@ -140,6 +140,27 @@ impl St {
     }
   }
 
+  /// Returns the json for this path.
+  ///
+  /// # Errors
+  ///
+  /// If this path couldn't be evaluated to json.
+  pub fn get_json(&self, path_id: PathId) -> jsonnet_eval::error::Result<&jsonnet_eval::Json> {
+    match self.json.get(&path_id) {
+      Some(x) => match x {
+        Ok(x) => Ok(x),
+        Err(e) => Err(e.clone()),
+      },
+      None => Err(jsonnet_eval::error::Error::NoPath(path_id)),
+    }
+  }
+
+  /// Returns the strings for this.
+  #[must_use]
+  pub fn strings(&self) -> &jsonnet_expr::StrArena {
+    &self.artifacts.strings
+  }
+
   /// invariant: for all `(p, a)` in `to_add`, `p` is the path id, of the path q, **from the path
   /// store contained in a**, of that path q that yielded a. this path id may **or may not**
   /// (usually not) be the path id from the store in self. (a will be combined with the path store
@@ -293,9 +314,15 @@ impl St {
 
     log::info!("repeatedly update files");
     let mut ret = PathMap::<Vec<Diagnostic>>::default();
+    let cx = jsonnet_eval::Cx {
+      jsonnet_files: &self.files,
+      importstr: &self.importstr,
+      importbin: &self.importbin,
+      paths: &self.artifacts.paths,
+      str_ar: &self.artifacts.strings,
+    };
     while !needs_update.is_empty() {
       let updated_vals: PathMap<_> = if self.manifest {
-        let cx = self.cx();
         // manifest in parallel for all updated files. for those that have errors, we note that fact
         // for later.
         //
@@ -403,38 +430,6 @@ impl St {
 
     log::info!("finish update for {} files", ret.len());
     ret
-  }
-
-  /// Return an evaluation context from this.
-  fn cx(&self) -> jsonnet_eval::Cx<'_> {
-    jsonnet_eval::Cx {
-      jsonnet_files: &self.files,
-      importstr: &self.importstr,
-      importbin: &self.importbin,
-      paths: &self.artifacts.paths,
-      str_ar: &self.artifacts.strings,
-    }
-  }
-
-  /// Returns the json for this path.
-  ///
-  /// # Errors
-  ///
-  /// If this path couldn't be evaluated to json.
-  pub fn get_json(&self, path_id: PathId) -> jsonnet_eval::error::Result<&jsonnet_eval::Json> {
-    match self.json.get(&path_id) {
-      Some(x) => match x {
-        Ok(x) => Ok(x),
-        Err(e) => Err(e.clone()),
-      },
-      None => Err(jsonnet_eval::error::Error::NoPath(path_id)),
-    }
-  }
-
-  /// Returns the strings for this.
-  #[must_use]
-  pub fn strings(&self) -> &jsonnet_expr::StrArena {
-    &self.artifacts.strings
   }
 
   fn strip<'a>(&self, p: &'a Path) -> &'a Path {
