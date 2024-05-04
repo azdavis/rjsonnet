@@ -131,12 +131,12 @@ impl St {
       show_diagnostics: init.show_diagnostics,
       max_diagnostics_per_file: init.max_diagnostics_per_file.0,
       artifacts: jsonnet_expr::Artifacts::default(),
-      importstr: paths::PathMap::default(),
-      importbin: paths::PathMap::default(),
-      files: paths::PathMap::default(),
-      file_artifacts: paths::PathMap::default(),
-      json: paths::PathMap::default(),
-      dependents: paths::PathMap::default(),
+      importstr: PathMap::default(),
+      importbin: PathMap::default(),
+      files: PathMap::default(),
+      file_artifacts: PathMap::default(),
+      json: PathMap::default(),
+      dependents: PathMap::default(),
     }
   }
 
@@ -168,14 +168,14 @@ impl St {
   fn update<F>(
     &mut self,
     fs: &F,
-    mut needs_update: paths::PathMap<FileErrors>,
-    mut to_add: Vec<(paths::PathId, IsolatedFile)>,
+    mut needs_update: PathMap<FileErrors>,
+    mut to_add: Vec<(PathId, IsolatedFile)>,
     want_diagnostics: bool,
   ) -> PathMap<Vec<Diagnostic>>
   where
     F: Sync + Send + paths::FileSystem,
   {
-    let mut added = paths::PathMap::<FileErrors>::default();
+    let mut added = PathMap::<FileErrors>::default();
     log::info!("repeatedly add the new files and any relevant imports");
     while !to_add.is_empty() {
       let did_add = to_add.drain(..).map(|(mut path_id, mut art)| {
@@ -503,7 +503,7 @@ impl lang_srv_state::State for St {
     fs: &F,
     remove: Vec<paths::CleanPathBuf>,
     add: Vec<paths::CleanPathBuf>,
-  ) -> paths::PathMap<Vec<diagnostic::Diagnostic>>
+  ) -> PathMap<Vec<diagnostic::Diagnostic>>
   where
     F: Sync + Send + paths::FileSystem,
   {
@@ -538,8 +538,7 @@ impl lang_srv_state::State for St {
       ret
     });
     // when we remove files, we must reset their diagnostics to nothing.
-    let updated: paths::PathMap<_> =
-      updated.flatten().map(|x| (x, FileErrors::default())).collect();
+    let updated: PathMap<_> = updated.flatten().map(|x| (x, FileErrors::default())).collect();
 
     log::info!("get {} initial file artifacts in parallel", add.len());
     let file_artifacts = add.into_par_iter().filter_map(|path| {
@@ -565,7 +564,7 @@ impl lang_srv_state::State for St {
     fs: &F,
     path: &paths::CleanPath,
     contents: &str,
-  ) -> paths::PathMap<Vec<diagnostic::Diagnostic>>
+  ) -> PathMap<Vec<diagnostic::Diagnostic>>
   where
     F: Sync + Send + paths::FileSystem,
   {
@@ -584,7 +583,7 @@ impl lang_srv_state::State for St {
     // NOTE depends on the fact that `update_one` is called iff the file is open
     let want_diagnostics =
       matches!(self.show_diagnostics, ShowDiagnostics::All | ShowDiagnostics::Open);
-    self.update(fs, paths::PathMap::default(), vec![(path_id, art)], want_diagnostics)
+    self.update(fs, PathMap::default(), vec![(path_id, art)], want_diagnostics)
   }
 
   /// TODO take a text range thing
@@ -611,7 +610,7 @@ impl lang_srv_state::State for St {
     _fs: &F,
     path: paths::CleanPathBuf,
     pos: text_pos::PositionUtf16,
-  ) -> Option<(paths::PathId, text_pos::RangeUtf16)>
+  ) -> Option<(PathId, text_pos::RangeUtf16)>
   where
     F: Sync + Send + paths::FileSystem,
   {
@@ -682,7 +681,7 @@ impl lang_srv_state::State for St {
     &self.artifacts.paths
   }
 
-  fn path_id(&mut self, path: paths::CleanPathBuf) -> paths::PathId {
+  fn path_id(&mut self, path: paths::CleanPathBuf) -> PathId {
     self.artifacts.paths.get_id_owned(path)
   }
 }
