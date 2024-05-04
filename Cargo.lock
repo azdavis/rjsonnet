@@ -367,6 +367,7 @@ name = "jsonnet-analyze"
 version = "0.1.1"
 dependencies = [
  "always",
+ "apply-changes",
  "diagnostic",
  "env_logger",
  "jsonnet-desugar",
@@ -524,6 +525,7 @@ dependencies = [
 name = "lang-srv-state"
 version = "0.1.1"
 dependencies = [
+ "apply-changes",
  "diagnostic",
  "paths",
  "serde_json",

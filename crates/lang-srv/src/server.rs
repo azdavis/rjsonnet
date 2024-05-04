@@ -10,18 +10,11 @@ pub(crate) struct Server<S> {
   pub(crate) st: S,
   pub(crate) queue: lsp_server::ReqQueue<(), ()>,
   pub(crate) file_watch: bool,
-  pub(crate) open_files: paths::PathMap<String>,
 }
 
 impl<S> Server<S> {
   pub(crate) fn new(fs: paths::RealFileSystem, st: S) -> Self {
-    Self {
-      fs,
-      st,
-      queue: lsp_server::ReqQueue::default(),
-      file_watch: false,
-      open_files: paths::PathMap::default(),
-    }
+    Self { fs, st, queue: lsp_server::ReqQueue::default(), file_watch: false }
   }
 
   #[allow(dead_code)]

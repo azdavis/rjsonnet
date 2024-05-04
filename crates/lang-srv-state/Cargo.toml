@@ -9,6 +9,7 @@ publish.workspace = true
 workspace = true
 
 [dependencies]
+apply-changes.workspace = true
 paths.workspace = true
 serde_json.workspace = true
 text-pos.workspace = true

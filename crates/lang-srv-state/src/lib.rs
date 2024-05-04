@@ -12,13 +12,13 @@ pub trait State {
   /// What to say to ask for a bug report.
   const BUG_REPORT_MSG: &'static str;
 
-  /// A glob for all files that should be considered.
+  /// A glob for all paths that should be considered.
   const GLOB: &'static str;
 
-  /// Whether this file extension should be considered.
+  /// Whether this file path extension should be considered.
   fn is_ext(&self, s: &str) -> bool;
 
-  /// Update many files at once.
+  /// Update many paths at once.
   #[must_use]
   fn update_many<F>(
     &mut self,
@@ -29,16 +29,35 @@ pub trait State {
   where
     F: Sync + Send + paths::FileSystem;
 
-  /// Updates one file.
+  /// Updates one path.
   #[must_use]
   fn update_one<F>(
     &mut self,
     fs: &F,
-    path: &paths::CleanPath,
-    contents: &str,
+    path: paths::CleanPathBuf,
+    changes: Vec<apply_changes::Change>,
   ) -> paths::PathMap<Vec<diagnostic::Diagnostic>>
   where
     F: Sync + Send + paths::FileSystem;
+
+  /// Opens a path.
+  #[must_use]
+  fn open<F>(
+    &mut self,
+    fs: &F,
+    path: paths::CleanPathBuf,
+    contents: String,
+  ) -> paths::PathMap<Vec<diagnostic::Diagnostic>>
+  where
+    F: Sync + Send + paths::FileSystem;
+
+  /// Closes a path.
+  #[must_use]
+  fn close(&mut self, path: paths::CleanPathBuf) -> paths::PathMap<Vec<diagnostic::Diagnostic>>;
+
+  /// Returns whether the path is open.
+  #[must_use]
+  fn is_open(&mut self, path: &paths::CleanPath) -> bool;
 
   /// Hover over a file.
   ///

@@ -97,6 +97,8 @@ pub struct St {
   show_diagnostics: ShowDiagnostics,
   max_diagnostics_per_file: usize,
   artifacts: jsonnet_expr::Artifacts,
+  /// these are all the currently open jsonnet files
+  open_files: PathMap<String>,
   /// these are the non-jsonnet imported files via `importstr`
   importstr: PathMap<String>,
   /// these are the non-jsonnet imported files via `importbin`
@@ -130,6 +132,7 @@ impl St {
       root_dirs: init.root_dirs,
       show_diagnostics: init.show_diagnostics,
       max_diagnostics_per_file: init.max_diagnostics_per_file.0,
+      open_files: PathMap::default(),
       artifacts: jsonnet_expr::Artifacts::default(),
       importstr: PathMap::default(),
       importbin: PathMap::default(),
@@ -562,14 +565,17 @@ impl lang_srv_state::State for St {
   fn update_one<F>(
     &mut self,
     fs: &F,
-    path: &paths::CleanPath,
-    contents: &str,
+    path: paths::CleanPathBuf,
+    changes: Vec<apply_changes::Change>,
   ) -> PathMap<Vec<diagnostic::Diagnostic>>
   where
     F: Sync + Send + paths::FileSystem,
   {
     log::info!("update one file: {}", self.strip(path.as_path()).display());
-    let mut art = match get_isolated_str(path, contents, &self.root_dirs, fs) {
+    let path_id = self.path_id(path.clone());
+    let Some(contents) = self.open_files.get_mut(&path_id) else { return PathMap::default() };
+    apply_changes::get(contents, changes);
+    let mut art = match get_isolated_str(path.as_clean_path(), contents, &self.root_dirs, fs) {
       Ok(x) => x,
       Err(e) => {
         always!(false, "{}: i/o error: {}", self.strip(path.as_path()).display(), e);
@@ -579,11 +585,42 @@ impl lang_srv_state::State for St {
     // since we have &mut self, and no parallelism (as opposed to in update_many), we could get the
     // path id from self. but instead, we intentionally get the path id from `art`, to uphold the
     // contract of `update`.
-    let path_id = art.combine.paths.get_id(path);
+    let path_id = art.combine.paths.get_id(path.as_clean_path());
     // NOTE depends on the fact that `update_one` is called iff the file is open
     let want_diagnostics =
       matches!(self.show_diagnostics, ShowDiagnostics::All | ShowDiagnostics::Open);
     self.update(fs, PathMap::default(), vec![(path_id, art)], want_diagnostics)
+  }
+
+  /// Opens a path.
+  #[must_use]
+  fn open<F>(
+    &mut self,
+    fs: &F,
+    path: paths::CleanPathBuf,
+    contents: String,
+  ) -> PathMap<Vec<diagnostic::Diagnostic>>
+  where
+    F: Sync + Send + paths::FileSystem,
+  {
+    let path_id = self.path_id(path.clone());
+    self.open_files.insert(path_id, contents);
+    self.update_one(fs, path, Vec::new())
+  }
+
+  /// Closes a path.
+  #[must_use]
+  fn close(&mut self, path: paths::CleanPathBuf) -> PathMap<Vec<diagnostic::Diagnostic>> {
+    let path_id = self.path_id(path.clone());
+    self.open_files.remove(&path_id);
+    std::iter::once((path_id, Vec::new())).collect()
+  }
+
+  /// Returns whether the path is open.
+  #[must_use]
+  fn is_open(&mut self, path: &paths::CleanPath) -> bool {
+    let path_id = self.path_id(path.to_owned());
+    self.open_files.contains_key(&path_id)
   }
 
   /// TODO take a text range thing
