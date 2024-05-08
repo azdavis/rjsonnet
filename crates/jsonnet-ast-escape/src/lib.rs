@@ -3,35 +3,14 @@
 use always::always;
 use jsonnet_syntax::{ast, kind::SyntaxToken};
 
-struct EscapeOutput {
-  bytes: Vec<u8>,
-}
-
-impl EscapeOutput {
-  fn new(token: &jsonnet_syntax::kind::SyntaxToken) -> EscapeOutput {
-    // usually has at least 2 delimiter bytes (1 at start, 1 at end), but may not if the token was
-    // malformed (lex/parse error)
-    let cap = token.text().len().saturating_sub(2);
-    EscapeOutput { bytes: Vec::with_capacity(cap) }
-  }
-}
-
-impl jsonnet_escape::Output for EscapeOutput {
-  fn err(&mut self, _: usize, _: jsonnet_escape::Error) {
-    // should have already been emitted as an error when lexing
-  }
-
-  fn byte(&mut self, b: u8) {
-    self.bytes.push(b);
-  }
-}
-
-pub(crate) fn get(string: ast::String) -> String {
+/// Get the escaped string from the ast string.
+#[must_use]
+pub fn get(string: &ast::String) -> String {
   match string.kind {
-    ast::StringKind::DoubleQuotedString => slash(string.token, b'"'),
-    ast::StringKind::SingleQuotedString => slash(string.token, b'\''),
-    ast::StringKind::DoubleQuotedVerbatimString => verbatim(string.token, b'"'),
-    ast::StringKind::SingleQuotedVerbatimString => verbatim(string.token, b'\''),
+    ast::StringKind::DoubleQuotedString => slash(&string.token, b'"'),
+    ast::StringKind::SingleQuotedString => slash(&string.token, b'\''),
+    ast::StringKind::DoubleQuotedVerbatimString => verbatim(&string.token, b'"'),
+    ast::StringKind::SingleQuotedVerbatimString => verbatim(&string.token, b'\''),
     ast::StringKind::TextBlock => {
       let mut sp_st = str_process::St::new(string.token.text());
       let mut out = EscapeOutput::new(&string.token);
@@ -48,9 +27,9 @@ pub(crate) fn get(string: ast::String) -> String {
   }
 }
 
-fn slash(token: SyntaxToken, delim: u8) -> String {
+fn slash(token: &SyntaxToken, delim: u8) -> String {
   let mut sp_st = str_process::St::new(token.text());
-  let mut out = EscapeOutput::new(&token);
+  let mut out = EscapeOutput::new(token);
   if sp_st.cur().is_some_and(|x| x == delim) {
     sp_st.bump();
   } else {
@@ -68,9 +47,9 @@ fn slash(token: SyntaxToken, delim: u8) -> String {
   }
 }
 
-fn verbatim(token: SyntaxToken, delim: u8) -> String {
+fn verbatim(token: &SyntaxToken, delim: u8) -> String {
   let mut sp_st = str_process::St::new(token.text());
-  let mut out = EscapeOutput::new(&token);
+  let mut out = EscapeOutput::new(token);
   if sp_st.cur().is_some_and(|x| x == b'@') {
     sp_st.bump();
   } else {
@@ -91,5 +70,28 @@ fn verbatim(token: SyntaxToken, delim: u8) -> String {
       always!(false, "invalid utf-8: {e}");
       String::new()
     }
+  }
+}
+
+struct EscapeOutput {
+  bytes: Vec<u8>,
+}
+
+impl EscapeOutput {
+  fn new(token: &jsonnet_syntax::kind::SyntaxToken) -> EscapeOutput {
+    // usually has at least 2 delimiter bytes (1 at start, 1 at end), but may not if the token was
+    // malformed (lex/parse error)
+    let cap = token.text().len().saturating_sub(2);
+    EscapeOutput { bytes: Vec::with_capacity(cap) }
+  }
+}
+
+impl jsonnet_escape::Output for EscapeOutput {
+  fn err(&mut self, _: usize, _: jsonnet_escape::Error) {
+    // should have already been emitted as an error when lexing
+  }
+
+  fn byte(&mut self, b: u8) {
+    self.bytes.push(b);
   }
 }

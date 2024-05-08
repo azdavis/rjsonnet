@@ -52,7 +52,11 @@ These implement Jsonnet-specific things, but aren't really "big" enough to be a 
 
 ### `crates/jsonnet-escape`
 
-Handles string escape sequences, like \n and \r.
+Handles string escape sequences, like `\n` and `\r`.
+
+### `crates/jsonnet-ast-escape`
+
+A thin wrapper over jsonnet-escape, integrating it with the types from jsonnet-syntax.
 
 ## Overall crates
 

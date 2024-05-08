@@ -1,6 +1,6 @@
 //! The internal impl.
 
-use crate::{cx::Cx, error, escape, st::St};
+use crate::{cx::Cx, error, st::St};
 use jsonnet_expr::{
   BinaryOp, Expr, ExprData, Id, ImportKind, Number, Prim, Str, UnaryOp, Visibility,
 };
@@ -19,7 +19,7 @@ pub(crate) fn get_expr(st: &mut St, cx: Cx<'_>, expr: Option<ast::Expr>, in_obj:
     ast::Expr::ExprDollar(_) => ExprData::Id(Id::dollar),
     ast::Expr::ExprString(expr) => {
       let string = expr.string()?;
-      let string = escape::get(string);
+      let string = jsonnet_ast_escape::get(&string);
       ExprData::Prim(Prim::String(st.str(string.as_str())))
     }
     ast::Expr::ExprNumber(expr) => {
@@ -151,7 +151,7 @@ pub(crate) fn get_expr(st: &mut St, cx: Cx<'_>, expr: Option<ast::Expr>, in_obj:
         ast::ImportKind::ImportbinKw => ImportKind::Binary,
       };
       let import_str = expr.string()?;
-      let import_str = escape::get(import_str);
+      let import_str = jsonnet_ast_escape::get(&import_str);
       let import_path = std::path::Path::new(import_str.as_str());
       let full_path = cx.dirs().find_map(|dir| {
         let path = dir.join(import_path);
@@ -347,7 +347,7 @@ fn get_object_literal(st: &mut St, cx: Cx<'_>, inside: ast::Object, in_obj: bool
           },
           Some(ast::FieldName::FieldNameString(name)) => match name.string() {
             Some(string) => {
-              let string = escape::get(string);
+              let string = jsonnet_ast_escape::get(&string);
               let expr = ExprData::Prim(Prim::String(st.str(string.as_str())));
               let ptr = ast::SyntaxNodePtr::new(name.syntax());
               Some(st.expr(ptr, expr))

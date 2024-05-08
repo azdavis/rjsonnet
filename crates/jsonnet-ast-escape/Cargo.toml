@@ -1,5 +1,5 @@
 [package]
-name = "jsonnet-desugar"
+name = "jsonnet-ast-escape"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -8,18 +8,9 @@ publish.workspace = true
 [lints]
 workspace = true
 
-[lib]
-test = false
-doctest = false
-
 [dependencies]
-paths.workspace = true
-rustc-hash.workspace = true
 str-process.workspace = true
-text-size.workspace = true
 
 always.path = "../always"
-jsonnet-ast-escape.path = "../jsonnet-ast-escape"
 jsonnet-escape.path = "../jsonnet-escape"
-jsonnet-expr.path = "../jsonnet-expr"
 jsonnet-syntax.path = "../jsonnet-syntax"

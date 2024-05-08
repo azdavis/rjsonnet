@@ -4,7 +4,6 @@
 
 mod cx;
 mod error;
-mod escape;
 mod internal;
 mod st;
 
