@@ -8,6 +8,10 @@ publish.workspace = true
 [lints]
 workspace = true
 
+[lib]
+test = false
+doctest = false
+
 [dependencies]
 apply-changes.workspace = true
 paths.workspace = true
