@@ -1,8 +1,9 @@
 //! Analyze jsonnet files.
 
 #![allow(clippy::too_many_lines)]
+#![allow(unused)]
 
-mod const_eval;
+// mod const_eval;
 
 use always::always;
 use diagnostic::Diagnostic;
@@ -99,26 +100,6 @@ pub struct St {
   artifacts: jsonnet_expr::Artifacts,
   /// these are all the currently open jsonnet files
   open_files: PathMap<String>,
-  /// these are the non-jsonnet imported files via `importstr`
-  importstr: PathMap<String>,
-  /// these are the non-jsonnet imported files via `importbin`
-  importbin: PathMap<Vec<u8>>,
-  /// note: a file may be in files and importstr if it is imported twice in both ways (rare)
-  files: PathMap<jsonnet_eval::JsonnetFile>,
-  /// invariant: `x` in `files` iff `x` in `file_artifacts`.
-  file_artifacts: PathMap<FileArtifacts>,
-  /// invariant: if `x` in `json`, then `x` in `files`.
-  json: PathMap<jsonnet_eval::error::Result<jsonnet_eval::Json>>,
-  /// invariants:
-  /// - if `x` in `dependents`, at least one of the following is true:
-  ///   - `x` in `files`
-  ///   - `x` in `importstr`
-  ///   - `x` in `importbin`
-  /// - if `a` depends on `b`, `a` in `dependents[b]`. (note: NOT a bi-implication)
-  ///
-  /// NON-invariants:
-  /// - for all `(_, s)` in `dependents`, for all `x` in `s`, `x` in `files`.
-  dependents: PathMap<FxHashSet<PathId>>,
 }
 
 impl St {
@@ -134,12 +115,6 @@ impl St {
       max_diagnostics_per_file: init.max_diagnostics_per_file.0,
       open_files: PathMap::default(),
       artifacts: jsonnet_expr::Artifacts::default(),
-      importstr: PathMap::default(),
-      importbin: PathMap::default(),
-      files: PathMap::default(),
-      file_artifacts: PathMap::default(),
-      json: PathMap::default(),
-      dependents: PathMap::default(),
     }
   }
 
@@ -149,6 +124,8 @@ impl St {
   ///
   /// If this path couldn't be evaluated to json.
   pub fn get_json(&self, path_id: PathId) -> jsonnet_eval::error::Result<&jsonnet_eval::Json> {
+    /*
+    TODO re-impl
     match self.json.get(&path_id) {
       Some(x) => match x {
         Ok(x) => Ok(x),
@@ -156,6 +133,8 @@ impl St {
       },
       None => Err(jsonnet_eval::error::Error::NoPath(path_id)),
     }
+     */
+    Err(jsonnet_eval::error::Error::NoPath(path_id))
   }
 
   /// Returns the strings for this.
@@ -164,6 +143,8 @@ impl St {
     &self.artifacts.strings
   }
 
+  /*
+  TODO re-impl/remove
   /// invariant: for all `(p, a)` in `to_add`, `p` is the path id, of the path q, **from the path
   /// store contained in a**, of that path q that yielded a. this path id may **or may not**
   /// (usually not) be the path id from the store in self. (a will be combined with the path store
@@ -434,6 +415,7 @@ impl St {
     log::info!("finish update for {} files", ret.len());
     ret
   }
+   */
 
   fn strip<'a>(&self, p: &'a Path) -> &'a Path {
     match &self.relative_to {
@@ -510,6 +492,9 @@ impl lang_srv_state::State for St {
   where
     F: Sync + Send + paths::FileSystem,
   {
+    PathMap::default()
+    /*
+    TODO re-impl
     log::info!("remove {} files", remove.len());
     // NOTE: for each r in remove, we DO NOT bother removing r from s for any (_, s) in dependents.
     let updated = remove.into_iter().filter_map(|path| {
@@ -560,6 +545,7 @@ impl lang_srv_state::State for St {
     // NOTE depends on the fact that all the added files in `update_all` are NOT open
     let want_diagnostics = matches!(self.show_diagnostics, ShowDiagnostics::All);
     self.update(fs, updated, file_artifacts, want_diagnostics)
+     */
   }
 
   fn update_one<F>(
@@ -571,6 +557,9 @@ impl lang_srv_state::State for St {
   where
     F: Sync + Send + paths::FileSystem,
   {
+    PathMap::default()
+    /*
+    TODO re-impl
     log::info!("update one file: {}", self.strip(path.as_path()).display());
     let path_id = self.path_id(path.clone());
     let Some(contents) = self.open_files.get_mut(&path_id) else { return PathMap::default() };
@@ -590,6 +579,7 @@ impl lang_srv_state::State for St {
     let want_diagnostics =
       matches!(self.show_diagnostics, ShowDiagnostics::All | ShowDiagnostics::Open);
     self.update(fs, PathMap::default(), vec![(path_id, art)], want_diagnostics)
+     */
   }
 
   /// Opens a path.
@@ -628,6 +618,9 @@ impl lang_srv_state::State for St {
   where
     F: Sync + Send + paths::FileSystem,
   {
+    None
+    /*
+    TODO re-impl
     let path_id = self.path_id(path);
     let json = match self.get_json(path_id) {
       Ok(x) => x,
@@ -639,6 +632,7 @@ impl lang_srv_state::State for St {
       }
     };
     Some(json.display(&self.artifacts.strings).to_string())
+     */
   }
 
   /// Get the definition site of a part of a file.
@@ -651,6 +645,9 @@ impl lang_srv_state::State for St {
   where
     F: Sync + Send + paths::FileSystem,
   {
+    None
+    /*
+    TODO re-impl
     let path_id = self.path_id(path);
     let ce = {
       let art = self.file_artifacts.get(&path_id)?;
@@ -712,6 +709,7 @@ impl lang_srv_state::State for St {
     };
     let range = art.pos_db.range_utf16(tr)?;
     Some((ce.ewp.path_id, range))
+     */
   }
 
   fn paths(&self) -> &paths::Store {
