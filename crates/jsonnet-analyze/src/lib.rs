@@ -66,21 +66,21 @@ impl fmt::Display for ShowDiagnosticsFromStrError {
 /// Same as a `usize` but carries the default value in a const generic.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(transparent)]
-pub struct DefaultUsize<const DEFAULT: usize>(pub usize);
+pub struct DefaultUsize<const D: usize>(pub usize);
 
-impl<const DEFAULT: usize> Default for DefaultUsize<DEFAULT> {
+impl<const D: usize> Default for DefaultUsize<D> {
   fn default() -> Self {
-    Self(DEFAULT)
+    Self(D)
   }
 }
 
-impl<const DEFAULT: usize> From<usize> for DefaultUsize<DEFAULT> {
+impl<const D: usize> From<usize> for DefaultUsize<D> {
   fn from(value: usize) -> Self {
     Self(value)
   }
 }
 
-impl<const DEFAULT: usize> std::str::FromStr for DefaultUsize<DEFAULT> {
+impl<const D: usize> std::str::FromStr for DefaultUsize<D> {
   type Err = <usize as std::str::FromStr>::Err;
 
   fn from_str(s: &str) -> Result<Self, Self::Err> {
