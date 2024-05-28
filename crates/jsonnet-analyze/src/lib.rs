@@ -557,29 +557,24 @@ impl lang_srv_state::State for St {
   where
     F: Sync + Send + paths::FileSystem,
   {
-    PathMap::default()
-    /*
-    TODO re-impl
     log::info!("update one file: {}", self.strip(path.as_path()).display());
     let path_id = self.path_id(path.clone());
     let Some(contents) = self.open_files.get_mut(&path_id) else { return PathMap::default() };
     apply_changes::get(contents, changes);
-    let mut art = match get_isolated_str(path.as_clean_path(), contents, &self.root_dirs, fs) {
+    let mut file = match get_isolated_str(path.as_clean_path(), contents, &self.root_dirs, fs) {
       Ok(x) => x,
       Err(e) => {
         always!(false, "{}: i/o error: {}", self.strip(path.as_path()).display(), e);
         return PathMap::default();
       }
     };
-    // since we have &mut self, and no parallelism (as opposed to in update_many), we could get the
-    // path id from self. but instead, we intentionally get the path id from `art`, to uphold the
-    // contract of `update`.
-    let path_id = art.combine.paths.get_id(path.as_clean_path());
-    // NOTE depends on the fact that `update_one` is called iff the file is open
-    let want_diagnostics =
-      matches!(self.show_diagnostics, ShowDiagnostics::All | ShowDiagnostics::Open);
-    self.update(fs, PathMap::default(), vec![(path_id, art)], want_diagnostics)
-     */
+    let subst = jsonnet_expr::Subst::get(&mut self.artifacts, file.combine);
+    for err in &mut file.errors.statics {
+      err.apply(&subst);
+    }
+    let ds: Vec<_> =
+      file_diagnostics(&file.errors, &file.artifacts, &self.artifacts.strings).collect();
+    PathMap::from_iter([(path_id, ds)])
   }
 
   /// Opens a path.
@@ -830,4 +825,32 @@ where
     return Err(io::Error::other("path has no parent"));
   };
   Ok(IsolatedFile::new(contents, parent, root_dirs, &FsAdapter(fs)))
+}
+
+fn file_diagnostics<'a>(
+  errors: &'a FileErrors,
+  art: &'a FileArtifacts,
+  strings: &'a jsonnet_expr::StrArena,
+) -> impl Iterator<Item = Diagnostic> + 'a {
+  std::iter::empty()
+    .chain(errors.lex.iter().map(|err| (err.range(), err.to_string())))
+    .chain(errors.parse.iter().map(|err| (err.range(), err.to_string())))
+    .chain(errors.desugar.iter().map(|err| (err.range(), err.to_string())))
+    .chain(errors.statics.iter().map(|err| {
+      let expr = err.expr();
+      let ptr = art.pointers.get_ptr(expr);
+      let err = err.display(strings);
+      (ptr.text_range(), err.to_string())
+    }))
+    .chain(errors.imports.iter().map(|(expr, err)| {
+      let ptr = art.pointers.get_ptr(*expr);
+      (ptr.text_range(), err.to_string())
+    }))
+    .filter_map(|(range, message)| {
+      let Some(range) = art.pos_db.range_utf16(range) else {
+        always!(false, "bad range: {range:?}");
+        return None;
+      };
+      Some(Diagnostic { range, message })
+    })
 }
