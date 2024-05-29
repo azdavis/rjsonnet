@@ -10,7 +10,7 @@ use diagnostic::Diagnostic;
 use jsonnet_syntax::ast::AstNode as _;
 use paths::{PathId, PathMap};
 use std::collections::hash_map::Entry;
-use std::{fmt, io, path::Path};
+use std::fmt;
 
 /// Options for initialization.
 #[derive(Debug, Default)]
@@ -346,7 +346,7 @@ impl St {
   }
    */
 
-  fn strip<'a>(&self, p: &'a Path) -> &'a Path {
+  fn strip<'a>(&self, p: &'a std::path::Path) -> &'a std::path::Path {
     match &self.relative_to {
       None => p,
       Some(r) => p.strip_prefix(r.as_path()).unwrap_or(p),
@@ -699,7 +699,7 @@ struct FileErrors {
   parse: Vec<jsonnet_parse::Error>,
   desugar: Vec<jsonnet_desugar::Error>,
   statics: Vec<jsonnet_statics::error::Error>,
-  imports: Vec<(jsonnet_expr::ExprMust, io::Error)>,
+  imports: Vec<(jsonnet_expr::ExprMust, std::io::Error)>,
 }
 
 /// An adaptor between file system traits.
@@ -709,7 +709,7 @@ impl<'a, F> jsonnet_desugar::FileSystem for FsAdapter<'a, F>
 where
   F: paths::FileSystem,
 {
-  fn is_file(&self, p: &Path) -> bool {
+  fn is_file(&self, p: &std::path::Path) -> bool {
     paths::FileSystem::is_file(self.0, p)
   }
 }
@@ -770,7 +770,7 @@ impl IsolatedFile {
     root_dirs: &[paths::CleanPathBuf],
     artifacts: &mut jsonnet_expr::Artifacts,
     fs: &F,
-  ) -> io::Result<IsolatedFile>
+  ) -> std::io::Result<IsolatedFile>
   where
     F: paths::FileSystem,
   {
@@ -784,12 +784,12 @@ impl IsolatedFile {
     root_dirs: &[paths::CleanPathBuf],
     artifacts: &mut jsonnet_expr::Artifacts,
     fs: &F,
-  ) -> io::Result<IsolatedFile>
+  ) -> std::io::Result<IsolatedFile>
   where
     F: paths::FileSystem,
   {
     let Some(parent) = path.parent() else {
-      return Err(io::Error::other("path has no parent"));
+      return Err(std::io::Error::other("path has no parent"));
     };
     Ok(Self::new(contents, parent, root_dirs, artifacts, &FsAdapter(fs)))
   }
