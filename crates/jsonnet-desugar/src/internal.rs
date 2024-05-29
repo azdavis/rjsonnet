@@ -318,7 +318,7 @@ fn get_object_literal(st: &mut St, cx: Cx<'_>, inside: ast::Object, in_obj: bool
   }
   // then get the asserts and fields
   let mut asserts = Vec::<Expr>::new();
-  let mut fields = Vec::<(Expr, Visibility, Expr)>::new();
+  let mut fields = Vec::<jsonnet_expr::Field>::new();
   for member in inside.members() {
     let Some(member_kind) = member.member_kind() else { continue };
     match member_kind {
@@ -335,7 +335,7 @@ fn get_object_literal(st: &mut St, cx: Cx<'_>, inside: ast::Object, in_obj: bool
         asserts.push(assert);
       }
       ast::MemberKind::Field(field) => {
-        let name = match field.field_name() {
+        let key = match field.field_name() {
           None => continue,
           Some(ast::FieldName::FieldNameId(name)) => match name.id() {
             Some(id) => {
@@ -364,7 +364,7 @@ fn get_object_literal(st: &mut St, cx: Cx<'_>, inside: ast::Object, in_obj: bool
           },
           None => Visibility::Default,
         };
-        let mut body = match field.field_extra() {
+        let mut val = match field.field_extra() {
           None => get_expr(st, cx, field.expr(), true),
           Some(ast::FieldExtra::FieldPlus(fp)) => {
             // TODO the spec says do substitution with self and super and outerself and
@@ -383,9 +383,9 @@ fn get_object_literal(st: &mut St, cx: Cx<'_>, inside: ast::Object, in_obj: bool
         };
         if !binds.is_empty() {
           let ptr = ast::SyntaxNodePtr::new(field.syntax());
-          body = Some(st.expr(ptr, ExprData::Local { binds: binds.clone(), body }));
+          val = Some(st.expr(ptr, ExprData::Local { binds: binds.clone(), body: val }));
         }
-        fields.push((name, vis, body));
+        fields.push(jsonnet_expr::Field { key, vis, val });
       }
     }
   }

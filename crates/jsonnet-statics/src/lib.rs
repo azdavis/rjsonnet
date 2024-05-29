@@ -98,13 +98,13 @@ fn check(st: &mut St, cx: &Cx, ars: &Arenas, expr: Expr) {
         cx
       };
       let mut field_names = FxHashSet::<&Str>::default();
-      for &(name, _, body) in fields {
-        check(st, cx, ars, name);
-        check(st, &cx_big, ars, body);
-        let Some(name) = name else { continue };
-        if let ExprData::Prim(Prim::String(s)) = &ars.expr[name] {
+      for field in fields {
+        check(st, cx, ars, field.key);
+        check(st, &cx_big, ars, field.val);
+        let Some(key) = field.key else { continue };
+        if let ExprData::Prim(Prim::String(s)) = &ars.expr[key] {
           if !field_names.insert(s) {
-            st.err(name, error::Kind::DuplicateFieldName(s.clone()));
+            st.err(key, error::Kind::DuplicateFieldName(s.clone()));
           }
         }
       }

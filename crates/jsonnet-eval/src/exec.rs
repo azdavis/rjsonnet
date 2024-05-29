@@ -21,10 +21,10 @@ pub(crate) fn get(cx: Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
     ExprData::Prim(p) => Ok(Val::Prim(p.clone())),
     ExprData::Object { asserts, fields } => {
       let mut named_fields = BTreeMap::<Str, (Visibility, Expr)>::default();
-      for &(key, hid, val) in fields {
-        match get(cx, env, key)? {
+      for field in fields {
+        match get(cx, env, field.key)? {
           Val::Prim(Prim::String(s)) => {
-            if named_fields.insert(s.clone(), (hid, val)).is_some() {
+            if named_fields.insert(s.clone(), (field.vis, field.val)).is_some() {
               return Err(error::Error::Exec { expr, kind: error::Kind::DuplicateField(s) });
             }
           }

@@ -106,8 +106,8 @@ where
     let ExprData::Prim(Prim::String(idx)) = &arts.eval.expr_ar[idx.expr] else { return None };
     idx.clone()
   };
-  for (key, _, val) in fields {
-    let key = get(st, fs, on.path_id, key)?;
+  for field in fields {
+    let key = get(st, fs, on.path_id, field.key)?;
     if !matches!(key.kind, Kind::Expr) {
       continue;
     }
@@ -116,7 +116,7 @@ where
       continue;
     };
     if *key == idx {
-      return get(st, fs, on.path_id, val);
+      return get(st, fs, on.path_id, field.val);
     }
   }
   None

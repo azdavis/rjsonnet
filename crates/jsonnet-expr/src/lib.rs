@@ -32,11 +32,18 @@ pub struct Artifacts {
 }
 
 #[derive(Debug, Clone)]
+pub struct Field {
+  pub key: Expr,
+  pub vis: Visibility,
+  pub val: Expr,
+}
+
+#[derive(Debug, Clone)]
 pub enum ExprData {
   Prim(Prim),
   Object {
     asserts: Vec<Expr>,
-    fields: Vec<(Expr, Visibility, Expr)>,
+    fields: Vec<Field>,
   },
   ObjectComp {
     name: Expr,
@@ -161,8 +168,11 @@ impl<'a> fmt::Display for DisplayExpr<'a> {
         for &a in asserts {
           write!(f, "assert {}; ", self.with(a))?;
         }
-        for &(key, vis, val) in fields {
-          write!(f, "{}{} {}, ", self.with(key), vis, self.with(val))?;
+        for field in fields {
+          let key = self.with(field.key);
+          let vis = field.vis;
+          let val = self.with(field.val);
+          write!(f, "{key}{vis} {val}, ")?;
         }
         f.write_str("}")
       }
