@@ -20,11 +20,10 @@ For more mature alternatives, consider:
 
 - Inline diagnostics
 - Go-to-definition
-- Hover for info
 
 ## Demo
 
-https://github.com/azdavis/rjsonnet/assets/6496454/cfe6d355-ce4f-4ca6-9411-0394ee3d394d
+https://github.com/azdavis/rjsonnet/assets/6496454/a57fe696-c3d1-4249-93c2-be1db0459b62
 
 ## Ways to use
 
