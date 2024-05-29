@@ -36,10 +36,6 @@ The primary intended way to use this is via the [language server][lsp] and its o
 
 You can also use the language server with any editor that supports language servers. You'll just have to write your own glue code between this server and your editor.
 
-### CLI
-
-There is also a CLI that can translate Jsonnet files into JSON.
-
 ## Try it
 
 ### First time repo setup
@@ -57,16 +53,6 @@ $ cargo clippy
 $ cargo fmt
 $ cargo xtask ci
 ```
-
-### CLI
-
-Run:
-
-```
-$ cargo run --bin jsonnet-cli -- --manifest foo.jsonnet
-```
-
-to turn `foo.jsonnet` into JSON and report any errors.
 
 ### Language server + VS Code extension
 
