@@ -1,5 +1,8 @@
 //! Testing infra.
 
+// TODO remove when tests are back on
+#![allow(unused)]
+
 mod expect;
 
 use lang_srv_state::State as _;
@@ -25,12 +28,7 @@ impl<'a> MultiInput<'a> {
     _ = env_logger::builder().is_test(true).filter_level(log::LevelFilter::Debug).try_init();
     let mut fs = paths::MemoryFileSystem::default();
     let pwd = fs.current_dir().expect("no current dir for in-mem fs");
-    let init = jsonnet_analyze::Init {
-      relative_to: Some(pwd.clone()),
-      manifest: true,
-      show_diagnostics: jsonnet_analyze::ShowDiagnostics::All,
-      ..Default::default()
-    };
+    let init = jsonnet_analyze::Init { relative_to: Some(pwd.clone()), ..Default::default() };
     let mut st = jsonnet_analyze::St::init(init);
     assert!(!self.inputs.is_empty(), "must have an Input to check");
     for input in self.inputs {

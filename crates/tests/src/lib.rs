@@ -5,7 +5,7 @@
 
 // TODO add back tests
 
-// mod check;
+mod check;
 // mod misc;
 mod repo;
 // mod smoke;
