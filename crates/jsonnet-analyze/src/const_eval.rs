@@ -6,20 +6,9 @@ use jsonnet_statics::Def;
 use paths::PathId;
 
 #[derive(Debug)]
-pub(crate) struct ExprWithPath {
+pub(crate) struct ConstEval {
   pub(crate) path_id: PathId,
   pub(crate) expr: ExprMust,
-}
-
-impl ExprWithPath {
-  fn expr_data<'s>(&self, st: &'s St) -> &'s ExprData {
-    &st.files[&self.path_id].expr_ar[self.expr]
-  }
-}
-
-#[derive(Debug)]
-pub(crate) struct ConstEval {
-  pub(crate) ewp: ExprWithPath,
   pub(crate) kind: Kind,
 }
 
@@ -31,18 +20,22 @@ pub(crate) enum Kind {
   FunctionParam(usize),
 }
 
-pub(crate) fn get(st: &St, path_id: PathId, expr: Expr) -> Option<ConstEval> {
-  let ewp = ExprWithPath { path_id, expr: expr? };
-  if let Some(&def) = st.file_artifacts[&path_id].defs.get(&ewp.expr) {
-    return from_def(st, path_id, def);
+pub(crate) fn get<F>(st: &mut St, fs: &F, path_id: PathId, expr: Expr) -> Option<ConstEval>
+where
+  F: paths::FileSystem,
+{
+  let expr = expr?;
+  let arts = st.get_file_artifacts(fs, path_id)?;
+  if let Some(&def) = arts.defs.get(&expr) {
+    return from_def(st, fs, path_id, def);
   }
-  let ret = ConstEval { ewp, kind: Kind::Expr };
-  match ret.ewp.expr_data(st) {
+  let ret = ConstEval { path_id, expr, kind: Kind::Expr };
+  match arts.eval.expr_ar[expr].clone() {
     ExprData::Subscript { on, idx } => {
-      let subscript = from_subscript(st, path_id, *on, *idx);
+      let subscript = from_subscript(st, fs, path_id, on, idx);
       Some(subscript.unwrap_or(ret))
     }
-    ExprData::Local { body, .. } => get(st, path_id, *body),
+    ExprData::Local { body, .. } => get(st, fs, path_id, body),
     // Id, Import: would have been covered by defs.get above if we knew anything about them
     // Prim, Object, Array, Function: literals are values, they do not evaluate further
     // Error: errors do not evaluate to values
@@ -62,51 +55,68 @@ pub(crate) fn get(st: &St, path_id: PathId, expr: Expr) -> Option<ConstEval> {
   }
 }
 
-fn from_def(st: &St, path_id: PathId, def: Def) -> Option<ConstEval> {
+fn from_def<F>(st: &mut St, fs: &F, path_id: PathId, def: Def) -> Option<ConstEval>
+where
+  F: paths::FileSystem,
+{
   match def {
     Def::LocalBind(expr, idx) => {
-      let ewp = ExprWithPath { path_id, expr };
-      let local = from_local(st, path_id, Some(expr), idx);
-      Some(local.unwrap_or(ConstEval { ewp, kind: Kind::LocalBind(idx) }))
+      let local = from_local(st, fs, path_id, Some(expr), idx);
+      Some(local.unwrap_or(ConstEval { path_id, expr, kind: Kind::LocalBind(idx) }))
     }
     Def::Builtin => None,
-    Def::ObjectCompId(expr) => {
-      let ewp = ExprWithPath { path_id, expr };
-      Some(ConstEval { ewp, kind: Kind::ObjectCompId })
-    }
+    Def::ObjectCompId(expr) => Some(ConstEval { path_id, expr, kind: Kind::ObjectCompId }),
     Def::FunctionParam(expr, idx) => {
-      let ewp = ExprWithPath { path_id, expr };
-      Some(ConstEval { ewp, kind: Kind::FunctionParam(idx) })
+      Some(ConstEval { path_id, expr, kind: Kind::FunctionParam(idx) })
     }
-    Def::Import(path_id) => get(st, path_id, st.files[&path_id].top),
+    Def::Import(path_id) => {
+      let top = st.get_file_artifacts(fs, path_id)?.eval.top;
+      get(st, fs, path_id, top)
+    }
   }
 }
 
-fn from_local(st: &St, path_id: PathId, expr: Expr, idx: usize) -> Option<ConstEval> {
-  let ewp = ExprWithPath { path_id, expr: expr? };
-  let ExprData::Local { binds, .. } = ewp.expr_data(st) else { return None };
+fn from_local<F>(st: &mut St, fs: &F, path_id: PathId, expr: Expr, idx: usize) -> Option<ConstEval>
+where
+  F: paths::FileSystem,
+{
+  let expr = expr?;
+  let arts = st.get_file_artifacts(fs, path_id)?;
+  let ExprData::Local { binds, .. } = &arts.eval.expr_ar[expr] else { return None };
   let &(_, expr) = binds.get(idx)?;
-  get(st, path_id, expr)
+  get(st, fs, path_id, expr)
 }
 
-fn from_subscript(st: &St, path_id: PathId, on: Expr, idx: Expr) -> Option<ConstEval> {
-  let on = get(st, path_id, on)?;
-  let idx = get(st, path_id, idx)?;
+fn from_subscript<F>(st: &mut St, fs: &F, path_id: PathId, on: Expr, idx: Expr) -> Option<ConstEval>
+where
+  F: paths::FileSystem,
+{
+  let on = get(st, fs, path_id, on)?;
+  let idx = get(st, fs, path_id, idx)?;
   if !matches!(on.kind, Kind::Expr) || !matches!(idx.kind, Kind::Expr) {
     return None;
   }
-  let ExprData::Object { fields, .. } = on.ewp.expr_data(st) else { return None };
-  let ExprData::Prim(Prim::String(idx)) = idx.ewp.expr_data(st) else { return None };
-  for &(key, _, val) in fields {
-    let key = get(st, on.ewp.path_id, key)?;
+  let fields = {
+    let arts = st.get_file_artifacts(fs, on.path_id)?;
+    let ExprData::Object { fields, .. } = &arts.eval.expr_ar[on.expr] else { return None };
+    fields.clone()
+  };
+  let idx = {
+    let arts = st.get_file_artifacts(fs, idx.path_id)?;
+    let ExprData::Prim(Prim::String(idx)) = &arts.eval.expr_ar[idx.expr] else { return None };
+    idx.clone()
+  };
+  for (key, _, val) in fields {
+    let key = get(st, fs, on.path_id, key)?;
     if !matches!(key.kind, Kind::Expr) {
       continue;
     }
-    let ExprData::Prim(Prim::String(key)) = key.ewp.expr_data(st) else {
+    let key_arts = st.get_file_artifacts(fs, key.path_id)?;
+    let ExprData::Prim(Prim::String(key)) = &key_arts.eval.expr_ar[key.expr] else {
       continue;
     };
-    if key == idx {
-      return get(st, on.ewp.path_id, val);
+    if *key == idx {
+      return get(st, fs, on.path_id, val);
     }
   }
   None

@@ -3,14 +3,13 @@
 #![allow(clippy::too_many_lines)]
 #![allow(unused)]
 
-// mod const_eval;
+mod const_eval;
 
 use always::always;
 use diagnostic::Diagnostic;
 use jsonnet_syntax::ast::AstNode as _;
 use paths::{PathId, PathMap};
-use rayon::iter::{IntoParallelIterator as _, IntoParallelRefIterator as _, ParallelIterator as _};
-use rustc_hash::FxHashSet;
+use std::collections::hash_map::Entry;
 use std::{fmt, io, path::Path};
 
 /// Options for initialization.
@@ -98,8 +97,8 @@ pub struct St {
   show_diagnostics: ShowDiagnostics,
   max_diagnostics_per_file: usize,
   artifacts: jsonnet_expr::Artifacts,
-  /// these are all the currently open jsonnet files
   open_files: PathMap<String>,
+  file_artifacts: PathMap<FileArtifacts>,
 }
 
 impl St {
@@ -115,6 +114,7 @@ impl St {
       max_diagnostics_per_file: init.max_diagnostics_per_file.0,
       open_files: PathMap::default(),
       artifacts: jsonnet_expr::Artifacts::default(),
+      file_artifacts: PathMap::default(),
     }
   }
 
@@ -427,6 +427,22 @@ impl St {
   fn display_path_id(&self, path_id: PathId) -> impl std::fmt::Display + '_ {
     self.strip(self.artifacts.paths.get_path(path_id).as_path()).display()
   }
+
+  fn get_file_artifacts<F>(&mut self, fs: &F, path_id: PathId) -> Option<&FileArtifacts>
+  where
+    F: paths::FileSystem,
+  {
+    match self.file_artifacts.entry(path_id) {
+      Entry::Vacant(entry) => {
+        let path = self.artifacts.paths.get_path(path_id).to_owned();
+        let file =
+          IsolatedFile::from_fs(path.as_clean_path(), &self.root_dirs, &mut self.artifacts, fs)
+            .ok()?;
+        Some(entry.insert(file.artifacts))
+      }
+      Entry::Occupied(entry) => Some(&*entry.into_mut()),
+    }
+  }
 }
 
 impl lang_srv_state::State for St {
@@ -485,13 +501,17 @@ impl lang_srv_state::State for St {
 
   fn update_many<F>(
     &mut self,
-    fs: &F,
+    _fs: &F,
     remove: Vec<paths::CleanPathBuf>,
     add: Vec<paths::CleanPathBuf>,
   ) -> PathMap<Vec<diagnostic::Diagnostic>>
   where
     F: Sync + Send + paths::FileSystem,
   {
+    for x in remove.into_iter().chain(add) {
+      let path_id = self.path_id(x);
+      self.file_artifacts.remove(&path_id);
+    }
     PathMap::default()
     /*
     TODO re-impl
@@ -561,19 +581,23 @@ impl lang_srv_state::State for St {
     let path_id = self.path_id(path.clone());
     let Some(contents) = self.open_files.get_mut(&path_id) else { return PathMap::default() };
     apply_changes::get(contents, changes);
-    let mut file = match get_isolated_str(path.as_clean_path(), contents, &self.root_dirs, fs) {
+    let file = IsolatedFile::from_str(
+      path.as_clean_path(),
+      contents,
+      &self.root_dirs,
+      &mut self.artifacts,
+      fs,
+    );
+    let mut file = match file {
       Ok(x) => x,
       Err(e) => {
         always!(false, "{}: i/o error: {}", self.strip(path.as_path()).display(), e);
         return PathMap::default();
       }
     };
-    let subst = jsonnet_expr::Subst::get(&mut self.artifacts, file.combine);
-    for err in &mut file.errors.statics {
-      err.apply(&subst);
-    }
     let ds: Vec<_> =
       file_diagnostics(&file.errors, &file.artifacts, &self.artifacts.strings).collect();
+    self.file_artifacts.insert(path_id, file.artifacts);
     PathMap::from_iter([(path_id, ds)])
   }
 
@@ -609,7 +633,7 @@ impl lang_srv_state::State for St {
   }
 
   /// TODO take a text range thing
-  fn hover<F>(&mut self, _fs: &F, path: paths::CleanPathBuf) -> Option<String>
+  fn hover<F>(&mut self, _fs: &F, _path: paths::CleanPathBuf) -> Option<String>
   where
     F: Sync + Send + paths::FileSystem,
   {
@@ -633,33 +657,31 @@ impl lang_srv_state::State for St {
   /// Get the definition site of a part of a file.
   fn get_def<F>(
     &mut self,
-    _fs: &F,
+    fs: &F,
     path: paths::CleanPathBuf,
     pos: text_pos::PositionUtf16,
   ) -> Option<(PathId, text_pos::RangeUtf16)>
   where
     F: Sync + Send + paths::FileSystem,
   {
-    None
-    /*
-    TODO re-impl
     let path_id = self.path_id(path);
+    let contents = self.open_files.get(&path_id)?;
     let ce = {
-      let art = self.file_artifacts.get(&path_id)?;
-      let ts = art.pos_db.text_size_utf16(pos)?;
-      let root = art.syntax.clone().into_ast()?;
+      let arts = self.file_artifacts.get(&path_id)?;
+      let ts = arts.pos_db.text_size_utf16(pos)?;
+      let root = arts.syntax.clone().into_ast()?;
       let tok = jsonnet_syntax::node_token(root.syntax(), ts)?;
       let node = tok.parent()?;
       let ptr = jsonnet_syntax::ast::SyntaxNodePtr::new(&node);
-      let expr = art.pointers.get_idx(ptr);
-      const_eval::get(self, path_id, expr)?
+      let expr = arts.pointers.get_idx(ptr);
+      const_eval::get(self, fs, path_id, expr)?
     };
-    let art = self.file_artifacts.get(&ce.ewp.path_id)?;
-    let root = art.syntax.clone().into_ast()?;
+    let arts = self.get_file_artifacts(fs, ce.path_id)?;
+    let root = arts.syntax.clone().into_ast()?;
     let tr = match ce.kind {
-      const_eval::Kind::Expr => art.pointers.get_ptr(ce.ewp.expr).text_range(),
+      const_eval::Kind::Expr => arts.pointers.get_ptr(ce.expr).text_range(),
       const_eval::Kind::ObjectCompId => {
-        let obj = art.pointers.get_ptr(ce.ewp.expr);
+        let obj = arts.pointers.get_ptr(ce.expr);
         let obj = obj.cast::<jsonnet_syntax::ast::Object>()?;
         let obj = obj.try_to_node(root.syntax())?;
         let comp_spec = obj.comp_specs().next()?;
@@ -669,7 +691,7 @@ impl lang_srv_state::State for St {
         }
       }
       const_eval::Kind::LocalBind(idx) => {
-        let local = art.pointers.get_ptr(ce.ewp.expr);
+        let local = arts.pointers.get_ptr(ce.expr);
         // NOTE because of desugaring, not all expr locals are actually from ast locals. we try to
         // get the exact location first and then fall back.
         local
@@ -686,7 +708,7 @@ impl lang_srv_state::State for St {
           })?
       }
       const_eval::Kind::FunctionParam(idx) => {
-        let func = art.pointers.get_ptr(ce.ewp.expr);
+        let func = arts.pointers.get_ptr(ce.expr);
         // NOTE because of desugaring, possibly not all expr fns are actually from ast fns
         func
           .cast::<jsonnet_syntax::ast::ExprFunction>()
@@ -702,9 +724,8 @@ impl lang_srv_state::State for St {
           })?
       }
     };
-    let range = art.pos_db.range_utf16(tr)?;
-    Some((ce.ewp.path_id, range))
-     */
+    let range = arts.pos_db.range_utf16(tr)?;
+    Some((ce.path_id, range))
   }
 
   fn paths(&self) -> &paths::Store {
@@ -723,6 +744,7 @@ struct FileArtifacts {
   syntax: jsonnet_syntax::Root,
   pointers: jsonnet_desugar::Pointers,
   defs: jsonnet_statics::DefMap,
+  eval: jsonnet_eval::JsonnetFile,
 }
 
 /// Errors from a file analyzed in isolation.
@@ -733,59 +755,6 @@ struct FileErrors {
   desugar: Vec<jsonnet_desugar::Error>,
   statics: Vec<jsonnet_statics::error::Error>,
   imports: Vec<(jsonnet_expr::ExprMust, io::Error)>,
-}
-
-impl FileErrors {
-  fn is_empty(&self) -> bool {
-    self.lex.is_empty()
-      && self.parse.is_empty()
-      && self.desugar.is_empty()
-      && self.statics.is_empty()
-      && self.imports.is_empty()
-  }
-}
-
-/// Artifacts from a file analyzed in isolation.
-#[derive(Debug)]
-struct IsolatedFile {
-  eval: jsonnet_eval::JsonnetFile,
-  combine: jsonnet_expr::Artifacts,
-  artifacts: FileArtifacts,
-  errors: FileErrors,
-}
-
-impl IsolatedFile {
-  /// Returns artifacts for a file contained in the given directory.
-  fn new(
-    contents: &str,
-    current_dir: &paths::CleanPath,
-    other_dirs: &[paths::CleanPathBuf],
-    fs: &dyn jsonnet_desugar::FileSystem,
-  ) -> Self {
-    let lex = jsonnet_lex::get(contents);
-    let parse = jsonnet_parse::get(&lex.tokens);
-    let root = parse.root.clone().into_ast().and_then(|x| x.expr());
-    let desugar = jsonnet_desugar::get(current_dir, other_dirs, fs, root);
-    let mut st = jsonnet_statics::St::default();
-    jsonnet_statics::get(&mut st, &desugar.arenas, desugar.top);
-    Self {
-      eval: jsonnet_eval::JsonnetFile { expr_ar: desugar.arenas.expr, top: desugar.top },
-      combine: jsonnet_expr::Artifacts { paths: desugar.ps, strings: desugar.arenas.str },
-      artifacts: FileArtifacts {
-        pos_db: text_pos::PositionDb::new(contents),
-        syntax: parse.root,
-        pointers: desugar.pointers,
-        defs: st.defs,
-      },
-      errors: FileErrors {
-        lex: lex.errors,
-        parse: parse.errors,
-        desugar: desugar.errors,
-        statics: st.errors,
-        imports: Vec::new(),
-      },
-    }
-  }
 }
 
 /// An adaptor between file system traits.
@@ -800,31 +769,84 @@ where
   }
 }
 
-fn get_isolated_fs<F>(
-  path: &paths::CleanPath,
-  root_dirs: &[paths::CleanPathBuf],
-  fs: &F,
-) -> io::Result<IsolatedFile>
-where
-  F: paths::FileSystem,
-{
-  let contents = fs.read_to_string(path.as_path())?;
-  get_isolated_str(path, contents.as_str(), root_dirs, fs)
+/// A single isolated file.
+struct IsolatedFile {
+  artifacts: FileArtifacts,
+  errors: FileErrors,
 }
 
-fn get_isolated_str<F>(
-  path: &paths::CleanPath,
-  contents: &str,
-  root_dirs: &[paths::CleanPathBuf],
-  fs: &F,
-) -> io::Result<IsolatedFile>
-where
-  F: paths::FileSystem,
-{
-  let Some(parent) = path.parent() else {
-    return Err(io::Error::other("path has no parent"));
-  };
-  Ok(IsolatedFile::new(contents, parent, root_dirs, &FsAdapter(fs)))
+impl IsolatedFile {
+  fn new(
+    contents: &str,
+    current_dir: &paths::CleanPath,
+    other_dirs: &[paths::CleanPathBuf],
+    artifacts: &mut jsonnet_expr::Artifacts,
+    fs: &dyn jsonnet_desugar::FileSystem,
+  ) -> Self {
+    let lex = jsonnet_lex::get(contents);
+    let parse = jsonnet_parse::get(&lex.tokens);
+    let root = parse.root.clone().into_ast().and_then(|x| x.expr());
+    let desugar = jsonnet_desugar::get(current_dir, other_dirs, fs, root);
+    let mut st = jsonnet_statics::St::default();
+    jsonnet_statics::get(&mut st, &desugar.arenas, desugar.top);
+    let combine = jsonnet_expr::Artifacts { paths: desugar.ps, strings: desugar.arenas.str };
+    let mut ret = Self {
+      artifacts: FileArtifacts {
+        eval: jsonnet_eval::JsonnetFile { expr_ar: desugar.arenas.expr, top: desugar.top },
+        pos_db: text_pos::PositionDb::new(contents),
+        syntax: parse.root,
+        pointers: desugar.pointers,
+        defs: st.defs,
+      },
+      errors: FileErrors {
+        lex: lex.errors,
+        parse: parse.errors,
+        desugar: desugar.errors,
+        statics: st.errors,
+        imports: Vec::new(),
+      },
+    };
+    let subst = jsonnet_expr::Subst::get(artifacts, combine);
+    for err in &mut ret.errors.statics {
+      err.apply(&subst);
+    }
+    for (_, ed) in ret.artifacts.eval.expr_ar.iter_mut() {
+      ed.apply(&subst);
+    }
+    for def in ret.artifacts.defs.values_mut() {
+      def.apply(&subst);
+    }
+    ret
+  }
+
+  fn from_fs<F>(
+    path: &paths::CleanPath,
+    root_dirs: &[paths::CleanPathBuf],
+    artifacts: &mut jsonnet_expr::Artifacts,
+    fs: &F,
+  ) -> io::Result<IsolatedFile>
+  where
+    F: paths::FileSystem,
+  {
+    let contents = fs.read_to_string(path.as_path())?;
+    Self::from_str(path, contents.as_str(), root_dirs, artifacts, fs)
+  }
+
+  fn from_str<F>(
+    path: &paths::CleanPath,
+    contents: &str,
+    root_dirs: &[paths::CleanPathBuf],
+    artifacts: &mut jsonnet_expr::Artifacts,
+    fs: &F,
+  ) -> io::Result<IsolatedFile>
+  where
+    F: paths::FileSystem,
+  {
+    let Some(parent) = path.parent() else {
+      return Err(io::Error::other("path has no parent"));
+    };
+    Ok(Self::new(contents, parent, root_dirs, artifacts, &FsAdapter(fs)))
+  }
 }
 
 fn file_diagnostics<'a>(

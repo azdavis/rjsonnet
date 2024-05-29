@@ -31,7 +31,7 @@ pub struct Artifacts {
   pub strings: StrArena,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum ExprData {
   Prim(Prim),
   Object {
@@ -89,6 +89,8 @@ pub enum ExprData {
     path: paths::PathId,
   },
 }
+
+const _: () = assert!(std::mem::size_of::<ExprData>() == 64);
 
 impl ExprData {
   pub fn apply(&mut self, subst: &Subst) {
