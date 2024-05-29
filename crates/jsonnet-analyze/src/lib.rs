@@ -56,16 +56,7 @@ impl St {
   ///
   /// If this path couldn't be evaluated to json.
   pub fn get_json(&self, path_id: PathId) -> jsonnet_eval::error::Result<&jsonnet_eval::Json> {
-    /*
-    TODO re-impl
-    match self.json.get(&path_id) {
-      Some(x) => match x {
-        Ok(x) => Ok(x),
-        Err(e) => Err(e.clone()),
-      },
-      None => Err(jsonnet_eval::error::Error::NoPath(path_id)),
-    }
-     */
+    // TODO re-impl
     Err(jsonnet_eval::error::Error::NoPath(path_id))
   }
 
@@ -74,280 +65,6 @@ impl St {
   pub fn strings(&self) -> &jsonnet_expr::StrArena {
     &self.artifacts.strings
   }
-
-  /*
-  TODO re-impl/remove
-  /// invariant: for all `(p, a)` in `to_add`, `p` is the path id, of the path q, **from the path
-  /// store contained in a**, of that path q that yielded a. this path id may **or may not**
-  /// (usually not) be the path id from the store in self. (a will be combined with the path store
-  /// in self, and p will be updated appropriately.)
-  fn update<F>(
-    &mut self,
-    fs: &F,
-    mut needs_update: PathMap<FileErrors>,
-    mut to_add: Vec<(PathId, IsolatedFile)>,
-    want_diagnostics: bool,
-  ) -> PathMap<Vec<Diagnostic>>
-  where
-    F: Sync + Send + paths::FileSystem,
-  {
-    let mut added = PathMap::<FileErrors>::default();
-    log::info!("repeatedly add the new files and any relevant imports");
-    while !to_add.is_empty() {
-      let did_add = to_add.drain(..).map(|(mut path_id, mut art)| {
-        let subst = jsonnet_expr::Subst::get(&mut self.artifacts, art.combine);
-        log::debug!("subst: {subst:?}");
-
-        for (_, ed) in art.eval.expr_ar.iter_mut() {
-          ed.apply(&subst);
-        }
-        for err in &mut art.errors.statics {
-          err.apply(&subst);
-        }
-        for def in art.artifacts.defs.values_mut() {
-          def.apply(&subst);
-        }
-        path_id = subst.get_path_id(path_id);
-
-        self.files.insert(path_id, art.eval);
-        self.file_artifacts.insert(path_id, art.artifacts);
-        added.insert(path_id, art.errors);
-
-        path_id
-      });
-      let did_add: FxHashSet<_> = did_add.collect();
-      log::info!("did add {} files", did_add.len());
-
-      // the next set of things to add is imports from the added files that do not exist and were
-      // not themselves already added.
-      //
-      // `new_to_add` is the jsonnet importer paths and their imports. the string and binary paths
-      // are handled separately.
-      //
-      // we actually do the importing and processing of the jsonnet paths in parallel. TODO this
-      // could be in parallel for string and binary with a bit more work.
-      let mut new_to_add = Vec::<(PathId, jsonnet_eval::Import)>::default();
-      for &importer in &did_add {
-        for import in self.files[&importer].imports() {
-          if added.contains_key(&import.path) || self.files.contains_key(&import.path) {
-            continue;
-          }
-          match import.kind {
-            jsonnet_expr::ImportKind::Code => new_to_add.push((importer, import)),
-            jsonnet_expr::ImportKind::String => {
-              let path = self.artifacts.paths.get_path(import.path);
-              match fs.read_to_string(path.as_path()) {
-                Ok(contents) => {
-                  self.importstr.insert(import.path, contents);
-                }
-                Err(e) => {
-                  let Some(errors) = added.get_mut(&importer) else {
-                    let path = self.display_path_id(importer);
-                    always!(false, "couldn't get errors: {path}");
-                    continue;
-                  };
-                  errors.imports.push((import.expr, e));
-                }
-              }
-            }
-            jsonnet_expr::ImportKind::Binary => {
-              let path = self.artifacts.paths.get_path(import.path);
-              match fs.read_to_string(path.as_path()) {
-                Ok(contents) => {
-                  self.importstr.insert(import.path, contents);
-                }
-                Err(e) => {
-                  let Some(errors) = added.get_mut(&importer) else {
-                    let path = self.display_path_id(importer);
-                    always!(false, "couldn't get errors: {path}");
-                    continue;
-                  };
-                  errors.imports.push((import.expr, e));
-                }
-              }
-            }
-          }
-        }
-      }
-
-      log::info!("found {} new files to get artifacts in parallel", new_to_add.len());
-      let iter = new_to_add.into_par_iter().map(|(importer, import)| {
-        let imported_path = self.artifacts.paths.get_path(import.path);
-        match get_isolated_fs(imported_path, &self.root_dirs, fs) {
-          Ok(mut art) => {
-            // intentionally turn it into the one from `art`
-            let art_import_path = art.combine.paths.get_id(imported_path);
-            Ok((art_import_path, art))
-          }
-          Err(e) => Err((importer, import.expr, e)),
-        }
-      });
-      let file_artifacts: Vec<_> = iter.collect();
-      for result in file_artifacts {
-        match result {
-          Ok((path_id, art)) => to_add.push((path_id, art)),
-          Err((importer, expr, e)) => {
-            let Some(errors) = added.get_mut(&importer) else {
-              let path = self.display_path_id(importer);
-              always!(false, "couldn't get errors: {path}");
-              continue;
-            };
-            errors.imports.push((expr, e));
-          }
-        }
-      }
-    }
-
-    // compute a mapping from path id p to non-empty set of path ids S, s.t. for all q in S, q was
-    // just added, and p depends on q.
-    log::info!("compute dependency mapping on {} files", self.files.len());
-    let added_dependencies = self.files.par_iter().filter_map(|(&path, file)| {
-      let dependencies: FxHashSet<_> = file
-        .imports()
-        .filter_map(|import| added.contains_key(&import.path).then_some(import.path))
-        .collect();
-      if dependencies.is_empty() {
-        None
-      } else {
-        Some((path, dependencies))
-      }
-    });
-    let added_dependencies: PathMap<_> = added_dependencies.collect();
-
-    log::info!("update {} dependents", added_dependencies.len());
-    for (&dependent, dependencies) in &added_dependencies {
-      for &dependency in dependencies {
-        if dependency != dependent {
-          self.dependents.entry(dependency).or_default().insert(dependent);
-        }
-      }
-    }
-
-    // added files need an update.
-    needs_update.extend(added);
-
-    let mut updated = FxHashSet::<PathId>::default();
-
-    log::info!("repeatedly update files");
-    let mut ret = PathMap::<Vec<Diagnostic>>::default();
-    let cx = jsonnet_eval::Cx {
-      jsonnet_files: &self.files,
-      importstr: &self.importstr,
-      importbin: &self.importbin,
-      paths: &self.artifacts.paths,
-      str_ar: &self.artifacts.strings,
-    };
-    while !needs_update.is_empty() {
-      let updated_vals: PathMap<_> = if self.manifest {
-        // manifest in parallel for all updated files. for those that have errors, we note that fact
-        // for later.
-        //
-        // TODO this probably doesn't respect ordering requirements among the updated. what if one
-        // updated file depends on another updated file?
-        let iter = needs_update.iter().map(|(&path, errors)| {
-          let update = errors.is_empty().then(|| {
-            let val = jsonnet_eval::get_exec(cx, path);
-            val.and_then(|val| jsonnet_eval::get_manifest(cx, val))
-          });
-          (path, update)
-        });
-        iter.collect()
-      } else {
-        PathMap::default()
-      };
-      log::info!("updated {} vals", updated_vals.len());
-      for (path_id, update) in updated_vals {
-        updated.insert(path_id);
-        match update {
-          Some(result) => {
-            self.json.insert(path_id, result);
-          }
-          None => {
-            self.json.remove(&path_id);
-          }
-        }
-      }
-
-      if want_diagnostics {
-        log::info!("getting diagnostics for {} files", needs_update.len());
-        let iter = needs_update.iter().map(|(&path, errors)| {
-          let art = &self.file_artifacts[&path];
-          let ds: Vec<_> = std::iter::empty()
-            .chain(errors.lex.iter().map(|err| (err.range(), err.to_string())))
-            .chain(errors.parse.iter().map(|err| (err.range(), err.to_string())))
-            .chain(errors.desugar.iter().map(|err| (err.range(), err.to_string())))
-            .chain(errors.statics.iter().map(|err| {
-              let expr = err.expr();
-              let ptr = art.pointers.get_ptr(expr);
-              let err = err.display(&self.artifacts.strings);
-              (ptr.text_range(), err.to_string())
-            }))
-            .chain(errors.imports.iter().map(|(expr, err)| {
-              let ptr = art.pointers.get_ptr(*expr);
-              (ptr.text_range(), err.to_string())
-            }))
-            .chain(self.json.get(&path).and_then(|res| res.as_ref().err()).and_then(|err| {
-              let relative_to = self.relative_to.as_ref().map(paths::CleanPathBuf::as_clean_path);
-              let message = err
-                .display(&self.artifacts.strings, &self.artifacts.paths, relative_to)
-                .to_string();
-              let range = match err {
-                jsonnet_eval::error::Error::Exec { expr, .. } => {
-                  let ptr = art.pointers.get_ptr(*expr);
-                  ptr.text_range()
-                }
-                // should have already been covered by other errors?
-                jsonnet_eval::error::Error::NoPath(_) => return None,
-                _ => {
-                  let syntax = art.syntax.clone().syntax();
-                  // try to avoid massive text range
-                  syntax.first_child_or_token().map_or(syntax.text_range(), |x| x.text_range())
-                }
-              };
-              Some((range, message))
-            }))
-            .filter_map(|(range, message)| {
-              let Some(range) = art.pos_db.range_utf16(range) else {
-                always!(false, "bad range: {range:?}");
-                return None;
-              };
-              Some(Diagnostic { range, message })
-            })
-            .take(self.max_diagnostics_per_file)
-            .collect();
-          (path, ds)
-        });
-        let old_len: usize = ret.par_iter().map(|(_, xs)| xs.len()).sum();
-        ret.extend(iter);
-        let new_len: usize = ret.par_iter().map(|(_, xs)| xs.len()).sum();
-        log::info!("added {} diagnostics", new_len - old_len);
-      }
-
-      let iter = needs_update
-        .keys()
-        .flat_map(|&path_id| {
-          // TODO could check if new json == old json and not add dependents if same
-          let dependents = self.dependents.get(&path_id);
-          dependents.into_iter().flatten().copied()
-        })
-        .filter(|path_id| !updated.contains(path_id))
-        .map(|x| (x, FileErrors::default()));
-
-      // TODO: when we do FileErrors::default above, that is probably not correct. we should
-      // probably instead compute the file errors for the new set of need-update files.
-      //
-      // in fact, we should probably compute some or all of the other isolated file artifacts, like
-      // the eval result for that file. since that could change if the imported files for that file
-      // changed. and we know that the imported files did change, because the new round of
-      // needs_update is computed as the (transitive) dependents of all the changed (updated) files.
-      needs_update = iter.collect();
-      log::info!("found {} dependents", needs_update.len());
-    }
-
-    log::info!("finish update for {} files", ret.len());
-    ret
-  }
-   */
 
   fn strip<'a>(&self, p: &'a std::path::Path) -> &'a std::path::Path {
     match &self.relative_to {
@@ -504,6 +221,7 @@ impl lang_srv_state::State for St {
   where
     F: Sync + Send + paths::FileSystem,
   {
+    // TODO have this not take a fs and not return a PathMap?
     for x in remove.into_iter().chain(add) {
       let path_id = self.path_id(x);
       self.file_artifacts.remove(&path_id);
@@ -512,59 +230,6 @@ impl lang_srv_state::State for St {
       self.import_bin.remove(&path_id);
     }
     PathMap::default()
-    /*
-    TODO re-impl
-    log::info!("remove {} files", remove.len());
-    // NOTE: for each r in remove, we DO NOT bother removing r from s for any (_, s) in dependents.
-    let updated = remove.into_iter().filter_map(|path| {
-      let path_id = self.path_id(path);
-
-      let was_in_files = self.files.remove(&path_id).is_some();
-      let was_in_files_artifacts = self.file_artifacts.remove(&path_id).is_some();
-      always!(
-        was_in_files == was_in_files_artifacts,
-        "mismatched in-ness for files ({was_in_files}) and artifacts ({was_in_files_artifacts})"
-      );
-
-      self.importstr.remove(&path_id);
-      self.importbin.remove(&path_id);
-
-      let was_in_json = self.json.remove(&path_id).is_some();
-      always!(
-        !was_in_json || was_in_files,
-        "{} was in json, but not in files",
-        self.display_path_id(path_id)
-      );
-
-      let ret = self.dependents.remove(&path_id);
-      always!(
-        ret.is_none() || was_in_files,
-        "{} was in dependents, but not in files",
-        self.display_path_id(path_id),
-      );
-      ret
-    });
-    // when we remove files, we must reset their diagnostics to nothing.
-    let updated: PathMap<_> = updated.flatten().map(|x| (x, FileErrors::default())).collect();
-
-    log::info!("get {} initial file artifacts in parallel", add.len());
-    let file_artifacts = add.into_par_iter().filter_map(|path| {
-      let path = path.as_clean_path();
-      let mut art = match get_isolated_fs(path, &self.root_dirs, fs) {
-        Ok(x) => x,
-        Err(e) => {
-          always!(false, "{}: i/o error: {}", self.strip(path.as_path()).display(), e);
-          return None;
-        }
-      };
-      let path = art.combine.paths.get_id(path);
-      Some((path, art))
-    });
-    let file_artifacts: Vec<_> = file_artifacts.collect();
-    // NOTE depends on the fact that all the added files in `update_all` are NOT open
-    let want_diagnostics = matches!(self.show_diagnostics, ShowDiagnostics::All);
-    self.update(fs, updated, file_artifacts, want_diagnostics)
-     */
   }
 
   fn update_one<F>(
@@ -642,21 +307,8 @@ impl lang_srv_state::State for St {
   where
     F: Sync + Send + paths::FileSystem,
   {
+    // TODO re-impl
     None
-    /*
-    TODO re-impl
-    let path_id = self.path_id(path);
-    let json = match self.get_json(path_id) {
-      Ok(x) => x,
-      Err(e) => {
-        // NOTE we don't have the relative_to here
-        let e = e.display(&self.artifacts.strings, self.paths(), None);
-        log::error!("couldn't get json: {e}",);
-        return None;
-      }
-    };
-    Some(json.display(&self.artifacts.strings).to_string())
-     */
   }
 
   /// Get the definition site of a part of a file.
