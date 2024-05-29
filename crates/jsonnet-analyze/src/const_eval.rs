@@ -94,9 +94,7 @@ where
 {
   let on = get(st, fs, path_id, on)?;
   let idx = get(st, fs, path_id, idx)?;
-  if !matches!(on.kind, Kind::Expr) || !matches!(idx.kind, Kind::Expr) {
-    return None;
-  }
+  let (Kind::Expr, Kind::Expr) = (on.kind, idx.kind) else { return None };
   let fields = {
     let file = st.get_file_exprs(fs, on.path_id)?;
     let ExprData::Object { fields, .. } = &file.expr_ar[on.expr] else { return None };
@@ -109,9 +107,7 @@ where
   };
   for field in fields {
     let key = get(st, fs, on.path_id, field.key)?;
-    if !matches!(key.kind, Kind::Expr) {
-      continue;
-    }
+    let Kind::Expr = key.kind else { continue };
     let file = st.get_file_exprs(fs, key.path_id)?;
     let ExprData::Prim(Prim::String(key)) = &file.expr_ar[key.expr] else {
       continue;
