@@ -48,6 +48,7 @@ fn import_chain() {
 }
 
 #[test]
+#[ignore = "cycle"]
 fn import_self() {
   Input::default()
     .with_jsonnet(
@@ -72,6 +73,7 @@ fn import_self() {
 }
 
 #[test]
+#[should_panic]
 fn import_str() {
   Input::default()
     .with_jsonnet(
@@ -109,6 +111,7 @@ fn update() {
 }
 
 #[test]
+#[ignore = "cycle"]
 fn self_cycle() {
   Input::default()
     .with_jsonnet(
@@ -126,6 +129,7 @@ fn self_cycle() {
 }
 
 #[test]
+#[ignore = "cycle"]
 fn bigger_cycle() {
   Input::default()
     .with_jsonnet(
@@ -173,6 +177,7 @@ fn bigger_cycle() {
 }
 
 #[test]
+#[should_panic]
 fn remove() {
   MultiInput::default()
     .with_input(

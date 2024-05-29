@@ -135,7 +135,6 @@ fn licenses() {
     "MIT",
     "MIT/Apache-2.0",
     "Unlicense OR MIT",
-    "Unlicense/MIT",
     "Zlib OR Apache-2.0 OR MIT",
   ];
   let mut allowed: FxHashMap<_, _> = allowed.iter().map(|&x| (x, false)).collect();

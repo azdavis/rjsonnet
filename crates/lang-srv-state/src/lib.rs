@@ -18,16 +18,8 @@ pub trait State {
   /// Whether this file path extension should be considered.
   fn is_ext(&self, s: &str) -> bool;
 
-  /// Update many paths at once.
-  #[must_use]
-  fn update_many<F>(
-    &mut self,
-    fs: &F,
-    remove: Vec<paths::CleanPathBuf>,
-    add: Vec<paths::CleanPathBuf>,
-  ) -> paths::PathMap<Vec<diagnostic::Diagnostic>>
-  where
-    F: Sync + Send + paths::FileSystem;
+  /// Mark many paths as updated.
+  fn mark_as_updated(&mut self, updated: Vec<paths::CleanPathBuf>);
 
   /// Updates one path.
   #[must_use]
@@ -36,7 +28,7 @@ pub trait State {
     fs: &F,
     path: paths::CleanPathBuf,
     changes: Vec<apply_changes::Change>,
-  ) -> paths::PathMap<Vec<diagnostic::Diagnostic>>
+  ) -> (paths::PathId, Vec<diagnostic::Diagnostic>)
   where
     F: Sync + Send + paths::FileSystem;
 
@@ -47,7 +39,7 @@ pub trait State {
     fs: &F,
     path: paths::CleanPathBuf,
     contents: String,
-  ) -> paths::PathMap<Vec<diagnostic::Diagnostic>>
+  ) -> (paths::PathId, Vec<diagnostic::Diagnostic>)
   where
     F: Sync + Send + paths::FileSystem;
 

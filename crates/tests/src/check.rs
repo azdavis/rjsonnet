@@ -104,7 +104,7 @@ impl<'a> Input<'a> {
       );
     }
 
-    let mut ds_map = st.update_many(fs, to_remove, to_add);
+    st.mark_as_updated(to_remove.into_iter().chain(to_add).collect());
     let expects = self.jsonnet.iter().map(|(&path, jsonnet)| {
       let path = pwd.join(path);
       let path = st.path_id(path);
@@ -115,9 +115,10 @@ impl<'a> Input<'a> {
 
     for (&path_str, jsonnet) in &self.jsonnet {
       let path = pwd.join(path_str);
-      let path_id = st.path_id(path.clone());
-      let mut ds: FxHashMap<_, _> =
-        ds_map.remove(&path_id).into_iter().flatten().map(|x| (x.range, x.message)).collect();
+      let (path_id, ds) = st.open(fs, path.clone(), jsonnet.text.to_owned());
+      let mut ds: FxHashMap<_, _> = ds.into_iter().map(|x| (x.range, x.message)).collect();
+
+      st.get_all_deps(fs, path_id);
 
       let ex_file = &expects[&path_id];
       for (region, ex) in ex_file.iter() {
@@ -168,7 +169,7 @@ impl<'a> Input<'a> {
           let want: serde_json::Value =
             serde_json::from_str(jsonnet.outcome).expect("test input json");
           let want = jsonnet_eval::Json::from_serde(st.strings(), want);
-          if want != *got {
+          if want != got {
             let want = want.display(st.strings());
             let got = got.display(st.strings());
             panic!("{path_str}: mismatched manifest\nwant: {want}\ngot:  {got}");
@@ -205,13 +206,6 @@ impl<'a> Input<'a> {
           panic!("{path_str}: error: {got:?}");
         }
       }
-    }
-
-    if let Some((path, ds)) = ds_map.iter().next() {
-      let d = ds.first().expect("empty ds");
-      let n = ds_map.len();
-      let path = st.paths().get_path(*path).as_path().display();
-      panic!("still have {n} files with diagnostics, e.g. {path}: {d:?}");
     }
   }
 }

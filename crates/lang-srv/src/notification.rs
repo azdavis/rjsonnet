@@ -25,8 +25,7 @@ fn go<S: lang_srv_state::State>(
   mut notif: lsp_server::Notification,
 ) -> ControlFlowResult {
   notif = try_notif::<lsp_types::notification::DidChangeWatchedFiles, _>(notif, |params| {
-    let mut add = Vec::<paths::CleanPathBuf>::new();
-    let mut remove = Vec::<paths::CleanPathBuf>::new();
+    let mut updated = Vec::<paths::CleanPathBuf>::new();
     for change in params.changes {
       let path = convert::clean_path_buf(&change.uri)?;
       if srv.st.is_open(path.as_clean_path()) {
@@ -36,25 +35,15 @@ fn go<S: lang_srv_state::State>(
         // > the document's truth using the document's uri.
         continue;
       }
-      // TODO cut down on converting back into path buf just to then pass to update_many which
-      // re-converts back into path id?
-      // let path = path.into_path_buf();
-      if change.typ == lsp_types::FileChangeType::CREATED
-        || change.typ == lsp_types::FileChangeType::CHANGED
-      {
-        add.push(path);
-      } else if change.typ == lsp_types::FileChangeType::DELETED {
-        remove.push(path);
-      }
+      updated.push(path);
     }
-    let ds = srv.st.update_many(&srv.fs, remove, add);
-    server::diagnose(conn, srv.st.paths(), ds);
+    srv.st.mark_as_updated(updated);
     Ok(())
   })?;
   notif = try_notif::<lsp_types::notification::DidOpenTextDocument, _>(notif, |params| {
     let path = convert::clean_path_buf(&params.text_document.uri)?;
     let ds = srv.st.open(&srv.fs, path, params.text_document.text);
-    server::diagnose(conn, srv.st.paths(), ds);
+    server::diagnose(conn, srv.st.paths(), paths::PathMap::from_iter([ds]));
     Ok(())
   })?;
   notif = try_notif::<lsp_types::notification::DidCloseTextDocument, _>(notif, |params| {
@@ -75,7 +64,7 @@ fn go<S: lang_srv_state::State>(
       .map(|x| apply_changes::Change { range: x.range.map(convert::text_pos_range), text: x.text })
       .collect();
     let ds = srv.st.update_one(&srv.fs, path, changes);
-    server::diagnose(conn, srv.st.paths(), ds);
+    server::diagnose(conn, srv.st.paths(), paths::PathMap::from_iter([ds]));
     Ok(())
   })?;
   ControlFlow::Continue(notif)

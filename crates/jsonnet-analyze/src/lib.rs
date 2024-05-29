@@ -55,9 +55,17 @@ impl St {
   /// # Errors
   ///
   /// If this path couldn't be evaluated to json.
-  pub fn get_json(&self, path_id: PathId) -> jsonnet_eval::error::Result<&jsonnet_eval::Json> {
-    // TODO re-impl
-    Err(jsonnet_eval::error::Error::NoPath(path_id))
+  pub fn get_json(&self, path_id: PathId) -> jsonnet_eval::error::Result<jsonnet_eval::Json> {
+    // TODO more caching?
+    let cx = jsonnet_eval::Cx {
+      paths: &self.artifacts.paths,
+      jsonnet_files: &self.file_exprs,
+      importstr: &self.import_str,
+      importbin: &self.import_bin,
+      str_ar: &self.artifacts.strings,
+    };
+    let val = jsonnet_eval::get_exec(cx, path_id)?;
+    jsonnet_eval::get_manifest(cx, val)
   }
 
   /// Returns the strings for this.
@@ -77,18 +85,18 @@ impl St {
     self.strip(self.artifacts.paths.get_path(path_id).as_path()).display()
   }
 
-  /// NOTE: this brings all the transitive deps of the `path_id` into memory. it is NOT recommended
-  /// to bring a massive amount of files into memory at once.
-  fn get_all_deps<F>(
-    &mut self,
-    fs: &F,
-    path_id: PathId,
-    kind: jsonnet_expr::ImportKind,
-  ) -> Result<(), PathIoError>
+  /// Brings all the transitive deps of the Jsonnet file with path id `path_id` into memory.
+  ///
+  /// It is NOT recommended to bring a massive amount of files into memory at once.
+  ///
+  /// # Errors
+  ///
+  /// When a path had an I/O error.
+  pub fn get_all_deps<F>(&mut self, fs: &F, path_id: PathId) -> Result<(), PathIoError>
   where
     F: paths::FileSystem,
   {
-    let mut work = vec![(path_id, kind)];
+    let mut work = vec![(path_id, jsonnet_expr::ImportKind::Code)];
     while let Some((path_id, import_kind)) = work.pop() {
       match import_kind {
         jsonnet_expr::ImportKind::Code => {
@@ -212,24 +220,15 @@ impl lang_srv_state::State for St {
     matches!(s, "jsonnet" | "libsonnet" | "TEMPLATE")
   }
 
-  fn update_many<F>(
-    &mut self,
-    _fs: &F,
-    remove: Vec<paths::CleanPathBuf>,
-    add: Vec<paths::CleanPathBuf>,
-  ) -> PathMap<Vec<diagnostic::Diagnostic>>
-  where
-    F: Sync + Send + paths::FileSystem,
-  {
+  fn mark_as_updated(&mut self, updated: Vec<paths::CleanPathBuf>) {
     // TODO have this not take a fs and not return a PathMap?
-    for x in remove.into_iter().chain(add) {
+    for x in updated {
       let path_id = self.path_id(x);
       self.file_artifacts.remove(&path_id);
       self.file_exprs.remove(&path_id);
       self.import_str.remove(&path_id);
       self.import_bin.remove(&path_id);
     }
-    PathMap::default()
   }
 
   fn update_one<F>(
@@ -237,13 +236,13 @@ impl lang_srv_state::State for St {
     fs: &F,
     path: paths::CleanPathBuf,
     changes: Vec<apply_changes::Change>,
-  ) -> PathMap<Vec<diagnostic::Diagnostic>>
+  ) -> (paths::PathId, Vec<diagnostic::Diagnostic>)
   where
     F: Sync + Send + paths::FileSystem,
   {
     log::info!("update one file: {}", self.strip(path.as_path()).display());
     let path_id = self.path_id(path.clone());
-    let Some(contents) = self.open_files.get_mut(&path_id) else { return PathMap::default() };
+    let Some(contents) = self.open_files.get_mut(&path_id) else { return (path_id, Vec::new()) };
     apply_changes::get(contents, changes);
     let file = IsolatedFile::from_str(
       path.as_clean_path(),
@@ -257,14 +256,14 @@ impl lang_srv_state::State for St {
       Err(e) => {
         // TODO expose a PathIoError?
         always!(false, "{}: i/o error: {}", self.strip(path.as_path()).display(), e);
-        return PathMap::default();
+        return (path_id, Vec::new());
       }
     };
-    let ds: Vec<_> =
+    let ret: Vec<_> =
       file_diagnostics(&file.errors, &file.artifacts, &self.artifacts.strings).collect();
     self.file_artifacts.insert(path_id, file.artifacts);
     self.file_exprs.insert(path_id, file.eval);
-    PathMap::from_iter([(path_id, ds)])
+    (path_id, ret)
   }
 
   /// Opens a path.
@@ -274,7 +273,7 @@ impl lang_srv_state::State for St {
     fs: &F,
     path: paths::CleanPathBuf,
     contents: String,
-  ) -> PathMap<Vec<diagnostic::Diagnostic>>
+  ) -> (paths::PathId, Vec<diagnostic::Diagnostic>)
   where
     F: Sync + Send + paths::FileSystem,
   {
@@ -331,7 +330,7 @@ impl lang_srv_state::State for St {
       let ptr = jsonnet_syntax::ast::SyntaxNodePtr::new(&node);
       let expr = arts.pointers.get_idx(ptr);
       // TODO expose any errors here?
-      self.get_all_deps(fs, path_id, jsonnet_expr::ImportKind::Code).ok()?;
+      self.get_all_deps(fs, path_id).ok()?;
       const_eval::get(&*self, path_id, expr)?
     };
     let arts = self.get_file_artifacts(ce.path_id)?;

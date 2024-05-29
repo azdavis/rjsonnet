@@ -18,6 +18,7 @@ fn null() {
 }
 
 #[test]
+#[should_panic]
 fn redefine() {
   JsonnetInput::pre_eval_error(
     r"

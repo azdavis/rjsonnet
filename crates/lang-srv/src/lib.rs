@@ -8,8 +8,6 @@ mod response;
 mod server;
 mod util;
 
-use paths::FileSystem;
-
 /// Sets up and runs the LSP.
 ///
 /// # Panics
@@ -45,7 +43,6 @@ pub fn run<S: lang_srv_state::State>() {
   #[allow(deprecated)]
   let root_url = last_workspace_folder.or(init.root_uri).expect("root uri");
 
-  let root_path = convert::path_buf(&root_url).expect("root path");
   srv.file_watch = init
     .capabilities
     .workspace
@@ -67,21 +64,6 @@ pub fn run<S: lang_srv_state::State>() {
     let params = lsp_types::RegistrationParams { registrations: vec![registration] };
     srv.request::<lsp_types::request::RegisterCapability>(&conn, params);
   }
-
-  let paths: Vec<_> = {
-    let wd = walkdir::WalkDir::new(root_path.as_path());
-    let iter = wd.into_iter().filter_map(|entry| {
-      let entry = entry.ok()?;
-      let ext = entry.path().extension()?.to_str()?;
-      if !srv.st.is_ext(ext) || !srv.fs.is_file(entry.path()) {
-        return None;
-      }
-      paths::CleanPathBuf::new(entry.path())
-    });
-    iter.collect()
-  };
-  let ds = srv.st.update_many(&srv.fs, Vec::new(), paths);
-  server::diagnose(&conn, srv.st.paths(), ds);
 
   for msg in &conn.receiver {
     log::debug!("recv {msg:?}");
