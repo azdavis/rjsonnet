@@ -12,24 +12,6 @@ Edit `.vscode/settings.json` or use the built-in settings editor for the followi
 
 <!-- @begin vscode-config -->
 
-#### `rjsonnet.server.diagnostics.maxPerFile`
-
-- Type: `number`
-- Default: `5`
-
-Max number of diagnostics to show per file.
-
-#### `rjsonnet.server.diagnostics.show`
-
-- Type: `string`
-- Default: `"open"`
-- Valid values:
-  - `"all"`: Show all diagnostics.
-  - `"open"`: Show diagnostics only on open files.
-  - `"none"`: Show no diagnostics.
-
-How to show diagnostics.
-
 #### `rjsonnet.server.enable`
 
 - Type: `boolean`
@@ -43,13 +25,6 @@ Enable the language server.
 - Default: `[]`
 
 Extra directories in which to search for import paths.
-
-#### `rjsonnet.server.manifest.enable`
-
-- Type: `boolean`
-- Default: `false`
-
-Manifest into JSON.
 
 #### `rjsonnet.server.path`
 

@@ -57,35 +57,10 @@
           "default": "",
           "markdownDescription": "Path to the `jsonnet-ls` executable.\n\nWhen set to the empty string `\"\"` (the default), use the path to the one that's pre-built and bundled with the extension."
         },
-        "rjsonnet.server.manifest.enable": {
-          "type": "boolean",
-          "default": false,
-          "markdownDescription": "Manifest into JSON."
-        },
         "rjsonnet.server.importDirs.extra": {
           "type": "array",
           "default": [],
           "markdownDescription": "Extra directories in which to search for import paths."
-        },
-        "rjsonnet.server.diagnostics.show": {
-          "type": "string",
-          "default": "open",
-          "enum": [
-            "all",
-            "open",
-            "none"
-          ],
-          "markdownEnumDescriptions": [
-            "Show all diagnostics.",
-            "Show diagnostics only on open files.",
-            "Show no diagnostics."
-          ],
-          "markdownDescription": "How to show diagnostics."
-        },
-        "rjsonnet.server.diagnostics.maxPerFile": {
-          "type": "number",
-          "default": 5,
-          "markdownDescription": "Max number of diagnostics to show per file."
         },
         "rjsonnet.unstable.server.logFilter": {
           "type": "string",

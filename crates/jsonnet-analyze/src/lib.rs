@@ -17,14 +17,8 @@ use std::{fmt, io, path::Path};
 pub struct Init {
   /// Path to which other paths may be displayed relative.
   pub relative_to: Option<paths::CleanPathBuf>,
-  /// Manifest into JSON.
-  pub manifest: bool,
   /// Extra directories in which to search for import paths.
   pub root_dirs: Vec<paths::CleanPathBuf>,
-  /// How to show diagnostics.
-  pub show_diagnostics: ShowDiagnostics,
-  /// Maximum number of diagnostics per file we may show.
-  pub max_diagnostics_per_file: DefaultUsize<5>,
 }
 
 /// How to show diagnostics.
@@ -63,39 +57,11 @@ impl fmt::Display for ShowDiagnosticsFromStrError {
   }
 }
 
-/// Same as a `usize` but carries the default value in a const generic.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[repr(transparent)]
-pub struct DefaultUsize<const D: usize>(pub usize);
-
-impl<const D: usize> Default for DefaultUsize<D> {
-  fn default() -> Self {
-    Self(D)
-  }
-}
-
-impl<const D: usize> From<usize> for DefaultUsize<D> {
-  fn from(value: usize) -> Self {
-    Self(value)
-  }
-}
-
-impl<const D: usize> std::str::FromStr for DefaultUsize<D> {
-  type Err = <usize as std::str::FromStr>::Err;
-
-  fn from_str(s: &str) -> Result<Self, Self::Err> {
-    s.parse::<usize>().map(Self)
-  }
-}
-
 /// The state of analysis.
 #[derive(Debug)]
 pub struct St {
   relative_to: Option<paths::CleanPathBuf>,
-  manifest: bool,
   root_dirs: Vec<paths::CleanPathBuf>,
-  show_diagnostics: ShowDiagnostics,
-  max_diagnostics_per_file: usize,
   artifacts: jsonnet_expr::Artifacts,
   open_files: PathMap<String>,
   file_artifacts: PathMap<FileArtifacts>,
@@ -108,10 +74,7 @@ impl St {
     log::info!("make new St with {init:?}");
     Self {
       relative_to: init.relative_to,
-      manifest: init.manifest,
       root_dirs: init.root_dirs,
-      show_diagnostics: init.show_diagnostics,
-      max_diagnostics_per_file: init.max_diagnostics_per_file.0,
       open_files: PathMap::default(),
       artifacts: jsonnet_expr::Artifacts::default(),
       file_artifacts: PathMap::default(),
@@ -466,7 +429,6 @@ impl lang_srv_state::State for St {
         }
       }
 
-      init.manifest = obj.get("manifest").and_then(serde_json::Value::as_bool).unwrap_or_default();
       init.root_dirs = obj
         .get("root_dirs")
         .and_then(|x| {
@@ -477,10 +439,6 @@ impl lang_srv_state::State for St {
             .map(|x| x.as_str().map(|x| pwd.as_clean_path().join(x)))
             .collect::<Option<Vec<_>>>()
         })
-        .unwrap_or_default();
-      init.show_diagnostics = obj
-        .get("show_diagnostics")
-        .and_then(|x| x.as_str()?.parse::<ShowDiagnostics>().ok())
         .unwrap_or_default();
     }
 
