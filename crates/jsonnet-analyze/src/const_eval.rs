@@ -30,7 +30,8 @@ where
     return from_def(st, fs, path_id, def);
   }
   let ret = ConstEval { path_id, expr, kind: Kind::Expr };
-  match arts.eval.expr_ar[expr].clone() {
+  let file = st.get_file_exprs(fs, path_id)?;
+  match file.expr_ar[expr].clone() {
     ExprData::Subscript { on, idx } => {
       let subscript = from_subscript(st, fs, path_id, on, idx);
       Some(subscript.unwrap_or(ret))
@@ -70,7 +71,7 @@ where
       Some(ConstEval { path_id, expr, kind: Kind::FunctionParam(idx) })
     }
     Def::Import(path_id) => {
-      let top = st.get_file_artifacts(fs, path_id)?.eval.top;
+      let top = st.get_file_exprs(fs, path_id)?.top;
       get(st, fs, path_id, top)
     }
   }
@@ -81,8 +82,8 @@ where
   F: paths::FileSystem,
 {
   let expr = expr?;
-  let arts = st.get_file_artifacts(fs, path_id)?;
-  let ExprData::Local { binds, .. } = &arts.eval.expr_ar[expr] else { return None };
+  let file = st.get_file_exprs(fs, path_id)?;
+  let ExprData::Local { binds, .. } = &file.expr_ar[expr] else { return None };
   let &(_, expr) = binds.get(idx)?;
   get(st, fs, path_id, expr)
 }
@@ -97,13 +98,13 @@ where
     return None;
   }
   let fields = {
-    let arts = st.get_file_artifacts(fs, on.path_id)?;
-    let ExprData::Object { fields, .. } = &arts.eval.expr_ar[on.expr] else { return None };
+    let file = st.get_file_exprs(fs, on.path_id)?;
+    let ExprData::Object { fields, .. } = &file.expr_ar[on.expr] else { return None };
     fields.clone()
   };
   let idx = {
-    let arts = st.get_file_artifacts(fs, idx.path_id)?;
-    let ExprData::Prim(Prim::String(idx)) = &arts.eval.expr_ar[idx.expr] else { return None };
+    let file = st.get_file_exprs(fs, idx.path_id)?;
+    let ExprData::Prim(Prim::String(idx)) = &file.expr_ar[idx.expr] else { return None };
     idx.clone()
   };
   for field in fields {
@@ -111,8 +112,8 @@ where
     if !matches!(key.kind, Kind::Expr) {
       continue;
     }
-    let key_arts = st.get_file_artifacts(fs, key.path_id)?;
-    let ExprData::Prim(Prim::String(key)) = &key_arts.eval.expr_ar[key.expr] else {
+    let file = st.get_file_exprs(fs, key.path_id)?;
+    let ExprData::Prim(Prim::String(key)) = &file.expr_ar[key.expr] else {
       continue;
     };
     if *key == idx {

@@ -65,6 +65,7 @@ pub struct St {
   artifacts: jsonnet_expr::Artifacts,
   open_files: PathMap<String>,
   file_artifacts: PathMap<FileArtifacts>,
+  file_exprs: PathMap<jsonnet_eval::JsonnetFile>,
 }
 
 impl St {
@@ -78,6 +79,7 @@ impl St {
       open_files: PathMap::default(),
       artifacts: jsonnet_expr::Artifacts::default(),
       file_artifacts: PathMap::default(),
+      file_exprs: PathMap::default(),
     }
   }
 
@@ -401,7 +403,25 @@ impl St {
         let file =
           IsolatedFile::from_fs(path.as_clean_path(), &self.root_dirs, &mut self.artifacts, fs)
             .ok()?;
+        self.file_exprs.insert(path_id, file.eval);
         Some(entry.insert(file.artifacts))
+      }
+      Entry::Occupied(entry) => Some(&*entry.into_mut()),
+    }
+  }
+
+  fn get_file_exprs<F>(&mut self, fs: &F, path_id: PathId) -> Option<&jsonnet_eval::JsonnetFile>
+  where
+    F: paths::FileSystem,
+  {
+    match self.file_exprs.entry(path_id) {
+      Entry::Vacant(entry) => {
+        let path = self.artifacts.paths.get_path(path_id).to_owned();
+        let file =
+          IsolatedFile::from_fs(path.as_clean_path(), &self.root_dirs, &mut self.artifacts, fs)
+            .ok()?;
+        self.file_artifacts.insert(path_id, file.artifacts);
+        Some(entry.insert(file.eval))
       }
       Entry::Occupied(entry) => Some(&*entry.into_mut()),
     }
@@ -706,7 +726,6 @@ struct FileArtifacts {
   syntax: jsonnet_syntax::Root,
   pointers: jsonnet_desugar::Pointers,
   defs: jsonnet_statics::DefMap,
-  eval: jsonnet_eval::JsonnetFile,
 }
 
 /// Errors from a file analyzed in isolation.
@@ -735,6 +754,7 @@ where
 struct IsolatedFile {
   artifacts: FileArtifacts,
   errors: FileErrors,
+  eval: jsonnet_eval::JsonnetFile,
 }
 
 impl IsolatedFile {
@@ -754,7 +774,6 @@ impl IsolatedFile {
     let combine = jsonnet_expr::Artifacts { paths: desugar.ps, strings: desugar.arenas.str };
     let mut ret = Self {
       artifacts: FileArtifacts {
-        eval: jsonnet_eval::JsonnetFile { expr_ar: desugar.arenas.expr, top: desugar.top },
         pos_db: text_pos::PositionDb::new(contents),
         syntax: parse.root,
         pointers: desugar.pointers,
@@ -767,12 +786,13 @@ impl IsolatedFile {
         statics: st.errors,
         imports: Vec::new(),
       },
+      eval: jsonnet_eval::JsonnetFile { expr_ar: desugar.arenas.expr, top: desugar.top },
     };
     let subst = jsonnet_expr::Subst::get(artifacts, combine);
     for err in &mut ret.errors.statics {
       err.apply(&subst);
     }
-    for (_, ed) in ret.artifacts.eval.expr_ar.iter_mut() {
+    for (_, ed) in ret.eval.expr_ar.iter_mut() {
       ed.apply(&subst);
     }
     for def in ret.artifacts.defs.values_mut() {
