@@ -364,28 +364,30 @@ fn get_object_literal(st: &mut St, cx: Cx<'_>, inside: ast::Object, in_obj: bool
           },
           None => Visibility::Default,
         };
-        let mut val = match field.field_extra() {
-          None => get_expr(st, cx, field.expr(), true),
-          Some(ast::FieldExtra::FieldPlus(fp)) => {
-            // TODO the spec says do substitution with self and super and outerself and
-            // outersuper. maybe something with the same effect would be to have the env have
-            // another 'this' field for the 'outer this', and we could set that up correctly in
-            // the corresponding place in the spec where we set outerself and outersuper. then
-            // here we could replace the regular 'this' with that 'outer this'.
-            st.err(&fp, error::Kind::Todo("FieldPlus"));
-            None
+        let (plus, mut val) = match field.field_extra() {
+          None => (false, get_expr(st, cx, field.expr(), true)),
+          Some(ast::FieldExtra::FieldPlus(_)) => {
+            // TODO: the spec says do substitution with self and super and outerself and outersuper,
+            // and afterwards remove the distinction between regular fields and field-plus fields,
+            // when desugaring. instead, maybe something with the same effect would be to carry
+            // through the field-plus-ness of the field past desugaring (as we do here), and then
+            // during evaluation, have the env have another 'this' field for the 'outer this', and
+            // we could set that up correctly in the corresponding place in the spec where we set
+            // outerself and outersuper. then when evaluating "field plus" fields we would replace
+            // the regular 'this' with that 'outer this'.
+            (true, get_expr(st, cx, field.expr(), true))
           }
           Some(ast::FieldExtra::ParenParams(paren_params)) => {
             let ptr = ast::SyntaxNodePtr::new(paren_params.syntax());
             let expr = get_fn(st, cx, Some(paren_params), field.expr(), true);
-            Some(st.expr(ptr, expr))
+            (false, Some(st.expr(ptr, expr)))
           }
         };
         if !binds.is_empty() {
           let ptr = ast::SyntaxNodePtr::new(field.syntax());
           val = Some(st.expr(ptr, ExprData::Local { binds: binds.clone(), body: val }));
         }
-        fields.push(jsonnet_expr::Field { key, vis, val });
+        fields.push(jsonnet_expr::Field { key, plus, vis, val });
       }
     }
   }

@@ -34,6 +34,7 @@ pub struct Artifacts {
 #[derive(Debug, Clone)]
 pub struct Field {
   pub key: Expr,
+  pub plus: bool,
   pub vis: Visibility,
   pub val: Expr,
 }
@@ -170,9 +171,10 @@ impl<'a> fmt::Display for DisplayExpr<'a> {
         }
         for field in fields {
           let key = self.with(field.key);
+          let plus = if field.plus { "+" } else { "" };
           let vis = field.vis;
           let val = self.with(field.val);
-          write!(f, "{key}{vis} {val}, ")?;
+          write!(f, "{key}{plus}{vis} {val}, ")?;
         }
         f.write_str("}")
       }

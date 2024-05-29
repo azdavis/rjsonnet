@@ -19,7 +19,6 @@ impl Error {
 
 #[derive(Debug)]
 pub(crate) enum Kind {
-  Todo(&'static str),
   CannotRepresentNumber,
   ArrayCompNotOne,
   FirstCompSpecNotFor,
@@ -35,7 +34,6 @@ pub(crate) enum Kind {
 impl fmt::Display for Error {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     match &self.kind {
-      Kind::Todo(s) => write!(f, "not yet implemented: {s}"),
       Kind::CannotRepresentNumber => f.write_str("cannot represent number"),
       Kind::ArrayCompNotOne => f.write_str("array comprehension must contain exactly one element"),
       Kind::FirstCompSpecNotFor => {
