@@ -1,7 +1,6 @@
 //! Analyze jsonnet files.
 
 #![allow(clippy::too_many_lines)]
-#![allow(unused)]
 
 mod const_eval;
 
@@ -30,6 +29,8 @@ pub struct St {
   open_files: PathMap<String>,
   file_artifacts: PathMap<FileArtifacts>,
   file_exprs: PathMap<jsonnet_eval::JsonnetFile>,
+  import_str: PathMap<String>,
+  import_bin: PathMap<Vec<u8>>,
 }
 
 impl St {
@@ -44,6 +45,8 @@ impl St {
       artifacts: jsonnet_expr::Artifacts::default(),
       file_artifacts: PathMap::default(),
       file_exprs: PathMap::default(),
+      import_str: PathMap::default(),
+      import_bin: PathMap::default(),
     }
   }
 
@@ -357,38 +360,89 @@ impl St {
     self.strip(self.artifacts.paths.get_path(path_id).as_path()).display()
   }
 
-  fn get_file_artifacts<F>(&mut self, fs: &F, path_id: PathId) -> Option<&FileArtifacts>
+  /// NOTE: this brings all the transitive deps of the `path_id` into memory. it is NOT recommended
+  /// to bring a massive amount of files into memory at once.
+  fn get_all_deps<F>(
+    &mut self,
+    fs: &F,
+    path_id: PathId,
+    kind: jsonnet_expr::ImportKind,
+  ) -> Result<(), PathIoError>
   where
     F: paths::FileSystem,
   {
-    match self.file_artifacts.entry(path_id) {
-      Entry::Vacant(entry) => {
-        let path = self.artifacts.paths.get_path(path_id).to_owned();
-        let file =
-          IsolatedFile::from_fs(path.as_clean_path(), &self.root_dirs, &mut self.artifacts, fs)
-            .ok()?;
-        self.file_exprs.insert(path_id, file.eval);
-        Some(entry.insert(file.artifacts))
+    let mut work = vec![(path_id, kind)];
+    while let Some((path_id, import_kind)) = work.pop() {
+      match import_kind {
+        jsonnet_expr::ImportKind::Code => {
+          // invariant: file artifacts and file_exprs will BOTH be populated after this
+          let file = match (self.file_exprs.entry(path_id), self.file_artifacts.entry(path_id)) {
+            (Entry::Occupied(entry), Entry::Occupied(_)) => &*entry.into_mut(),
+            (file_entry, arts) => {
+              let path = self.artifacts.paths.get_path(path_id).to_owned();
+              let path = path.as_clean_path();
+              let file = IsolatedFile::from_fs(path, &self.root_dirs, &mut self.artifacts, fs);
+              let file = match file {
+                Ok(x) => x,
+                Err(error) => {
+                  return Err(PathIoError { path: self.strip(path.as_path()).to_owned(), error })
+                }
+              };
+              entry_insert(arts, file.artifacts);
+              &*entry_insert(file_entry, file.eval)
+            }
+          };
+          work.extend(file.imports().map(|import| (import.path, import_kind)));
+        }
+        jsonnet_expr::ImportKind::String => match self.import_str.entry(path_id) {
+          Entry::Occupied(_) => {}
+          Entry::Vacant(entry) => {
+            let path = self.artifacts.paths.get_path(path_id).to_owned();
+            match fs.read_to_string(path.as_path()) {
+              Ok(x) => {
+                entry.insert(x);
+              }
+              Err(error) => {
+                return Err(PathIoError { path: self.strip(path.as_path()).to_owned(), error })
+              }
+            }
+          }
+        },
+        jsonnet_expr::ImportKind::Binary => match self.import_bin.entry(path_id) {
+          Entry::Occupied(_) => {}
+          Entry::Vacant(entry) => {
+            let path = self.artifacts.paths.get_path(path_id).to_owned();
+            match fs.read_to_bytes(path.as_path()) {
+              Ok(x) => {
+                entry.insert(x);
+              }
+              Err(error) => {
+                return Err(PathIoError { path: self.strip(path.as_path()).to_owned(), error })
+              }
+            }
+          }
+        },
       }
-      Entry::Occupied(entry) => Some(&*entry.into_mut()),
     }
+    Ok(())
   }
 
-  fn get_file_exprs<F>(&mut self, fs: &F, path_id: PathId) -> Option<&jsonnet_eval::JsonnetFile>
-  where
-    F: paths::FileSystem,
-  {
-    match self.file_exprs.entry(path_id) {
-      Entry::Vacant(entry) => {
-        let path = self.artifacts.paths.get_path(path_id).to_owned();
-        let file =
-          IsolatedFile::from_fs(path.as_clean_path(), &self.root_dirs, &mut self.artifacts, fs)
-            .ok()?;
-        self.file_artifacts.insert(path_id, file.artifacts);
-        Some(entry.insert(file.eval))
-      }
-      Entry::Occupied(entry) => Some(&*entry.into_mut()),
+  pub(crate) fn get_file_expr(&self, path_id: PathId) -> Option<&jsonnet_eval::JsonnetFile> {
+    let ret = self.file_exprs.get(&path_id);
+    if ret.is_none() {
+      let path = self.display_path_id(path_id);
+      always!(false, "no file expr for {path}");
     }
+    ret
+  }
+
+  pub(crate) fn get_file_artifacts(&self, path_id: PathId) -> Option<&FileArtifacts> {
+    let ret = self.file_artifacts.get(&path_id);
+    if ret.is_none() {
+      let path = self.display_path_id(path_id);
+      always!(false, "no file artifacts for {path}");
+    }
+    ret
   }
 }
 
@@ -453,6 +507,9 @@ impl lang_srv_state::State for St {
     for x in remove.into_iter().chain(add) {
       let path_id = self.path_id(x);
       self.file_artifacts.remove(&path_id);
+      self.file_exprs.remove(&path_id);
+      self.import_str.remove(&path_id);
+      self.import_bin.remove(&path_id);
     }
     PathMap::default()
     /*
@@ -530,9 +587,10 @@ impl lang_srv_state::State for St {
       &mut self.artifacts,
       fs,
     );
-    let mut file = match file {
+    let file = match file {
       Ok(x) => x,
       Err(e) => {
+        // TODO expose a PathIoError?
         always!(false, "{}: i/o error: {}", self.strip(path.as_path()).display(), e);
         return PathMap::default();
       }
@@ -540,6 +598,7 @@ impl lang_srv_state::State for St {
     let ds: Vec<_> =
       file_diagnostics(&file.errors, &file.artifacts, &self.artifacts.strings).collect();
     self.file_artifacts.insert(path_id, file.artifacts);
+    self.file_exprs.insert(path_id, file.eval);
     PathMap::from_iter([(path_id, ds)])
   }
 
@@ -578,7 +637,7 @@ impl lang_srv_state::State for St {
     &mut self,
     _fs: &F,
     _path: paths::CleanPathBuf,
-    pos: text_pos::PositionUtf16,
+    _pos: text_pos::PositionUtf16,
   ) -> Option<String>
   where
     F: Sync + Send + paths::FileSystem,
@@ -611,18 +670,19 @@ impl lang_srv_state::State for St {
     F: Sync + Send + paths::FileSystem,
   {
     let path_id = self.path_id(path);
-    let contents = self.open_files.get(&path_id)?;
     let ce = {
-      let arts = self.file_artifacts.get(&path_id)?;
+      let arts = self.get_file_artifacts(path_id)?;
       let ts = arts.pos_db.text_size_utf16(pos)?;
       let root = arts.syntax.clone().into_ast()?;
       let tok = jsonnet_syntax::node_token(root.syntax(), ts)?;
       let node = tok.parent()?;
       let ptr = jsonnet_syntax::ast::SyntaxNodePtr::new(&node);
       let expr = arts.pointers.get_idx(ptr);
-      const_eval::get(self, fs, path_id, expr)?
+      // TODO expose any errors here?
+      self.get_all_deps(fs, path_id, jsonnet_expr::ImportKind::Code).ok()?;
+      const_eval::get(&*self, path_id, expr)?
     };
-    let arts = self.get_file_artifacts(fs, ce.path_id)?;
+    let arts = self.get_file_artifacts(ce.path_id)?;
     let root = arts.syntax.clone().into_ast()?;
     let tr = match ce.kind {
       const_eval::Kind::Expr => arts.pointers.get_ptr(ce.expr).text_range(),
@@ -699,7 +759,6 @@ struct FileErrors {
   parse: Vec<jsonnet_parse::Error>,
   desugar: Vec<jsonnet_desugar::Error>,
   statics: Vec<jsonnet_statics::error::Error>,
-  imports: Vec<(jsonnet_expr::ExprMust, std::io::Error)>,
 }
 
 /// An adaptor between file system traits.
@@ -748,7 +807,6 @@ impl IsolatedFile {
         parse: parse.errors,
         desugar: desugar.errors,
         statics: st.errors,
-        imports: Vec::new(),
       },
       eval: jsonnet_eval::JsonnetFile { expr_ar: desugar.arenas.expr, top: desugar.top },
     };
@@ -810,10 +868,6 @@ fn file_diagnostics<'a>(
       let err = err.display(strings);
       (ptr.text_range(), err.to_string())
     }))
-    .chain(errors.imports.iter().map(|(expr, err)| {
-      let ptr = art.pointers.get_ptr(*expr);
-      (ptr.text_range(), err.to_string())
-    }))
     .filter_map(|(range, message)| {
       let Some(range) = art.pos_db.range_utf16(range) else {
         always!(false, "bad range: {range:?}");
@@ -821,4 +875,33 @@ fn file_diagnostics<'a>(
       };
       Some(Diagnostic { range, message })
     })
+}
+
+/// An I/O error with an associated path.
+#[derive(Debug)]
+pub struct PathIoError {
+  path: std::path::PathBuf,
+  error: std::io::Error,
+}
+
+impl fmt::Display for PathIoError {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    write!(f, "{}: I/O error: {}", self.path.display(), self.error)
+  }
+}
+
+impl std::error::Error for PathIoError {
+  fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+    Some(&self.error)
+  }
+}
+
+fn entry_insert<K, V>(entry: Entry<'_, K, V>, value: V) -> &mut V {
+  match entry {
+    Entry::Occupied(mut entry) => {
+      entry.insert(value);
+      entry.into_mut()
+    }
+    Entry::Vacant(entry) => entry.insert(value),
+  }
 }
