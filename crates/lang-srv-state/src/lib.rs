@@ -59,12 +59,13 @@ pub trait State {
   #[must_use]
   fn is_open(&mut self, path: &paths::CleanPath) -> bool;
 
-  /// Hover over a file.
-  ///
-  /// # Errors
-  ///
-  /// If we couldn't show more info about the hovered file.
-  fn hover<F>(&mut self, fs: &F, path: paths::CleanPathBuf) -> Option<String>
+  /// Hover over part of a file.
+  fn hover<F>(
+    &mut self,
+    fs: &F,
+    path: paths::CleanPathBuf,
+    pos: text_pos::PositionUtf16,
+  ) -> Option<String>
   where
     F: Sync + Send + paths::FileSystem;
 

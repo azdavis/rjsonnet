@@ -632,8 +632,12 @@ impl lang_srv_state::State for St {
     self.open_files.contains_key(&path_id)
   }
 
-  /// TODO take a text range thing
-  fn hover<F>(&mut self, _fs: &F, _path: paths::CleanPathBuf) -> Option<String>
+  fn hover<F>(
+    &mut self,
+    _fs: &F,
+    _path: paths::CleanPathBuf,
+    pos: text_pos::PositionUtf16,
+  ) -> Option<String>
   where
     F: Sync + Send + paths::FileSystem,
   {
