@@ -247,7 +247,7 @@ impl<'a> fmt::Display for DisplayExpr<'a> {
   }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ImportKind {
   Code,
   String,

@@ -6,7 +6,7 @@ use always::always;
 use jsonnet_eval::JsonnetFile;
 use jsonnet_syntax::ast::AstNode as _;
 use paths::{PathId, PathMap};
-use rustc_hash::FxHashMap;
+use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::hash_map::Entry;
 use std::sync::OnceLock;
 
@@ -113,7 +113,13 @@ impl St {
     F: paths::FileSystem,
   {
     let mut work = vec![(path_id, jsonnet_expr::ImportKind::Code)];
+    let mut seen = FxHashSet::<(PathId, jsonnet_expr::ImportKind)>::default();
     while let Some((path_id, import_kind)) = work.pop() {
+      // prevent infinite looping on import cycles. no need to report a cycle error here - we'll
+      // warn when evaluating.
+      if !seen.insert((path_id, import_kind)) {
+        continue;
+      }
       match import_kind {
         jsonnet_expr::ImportKind::Code => {
           let file = match self.file_exprs.entry(path_id) {
