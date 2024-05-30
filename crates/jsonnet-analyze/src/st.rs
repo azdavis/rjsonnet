@@ -332,7 +332,9 @@ impl lang_srv_state::State for St {
       let ptr = jsonnet_syntax::ast::SyntaxNodePtr::new(&node);
       let expr = arts.pointers.get_idx(ptr);
       // TODO expose any errors here?
-      const_eval::get(self, fs, path_id, expr)?
+      let ce = const_eval::get(self, fs, path_id, expr);
+      let Some(const_eval::ConstEval::Real(ce)) = ce else { return None };
+      ce
     };
     let arts = self.get_file_artifacts(fs, ce.path_id).ok()?;
     let root = arts.syntax.clone().into_ast()?;

@@ -6,20 +6,46 @@ use jsonnet_statics::Def;
 use paths::PathId;
 
 #[derive(Debug)]
-pub(crate) struct ConstEval {
+pub(crate) enum ConstEval {
+  /// A real result - somewhere in user code.
+  Real(Real),
+  /// The std lib, perhaps narrowed down by selecting a field off of it.
+  Std(Option<jsonnet_expr::Str>),
+}
+
+/// Somewhere in "real", user-written code.
+#[derive(Debug)]
+pub(crate) struct Real {
   pub(crate) path_id: PathId,
   pub(crate) expr: ExprMust,
   pub(crate) kind: Kind,
 }
 
+impl From<Real> for ConstEval {
+  fn from(r: Real) -> Self {
+    Self::Real(r)
+  }
+}
+
+/// A kind of place in real user code.
 #[derive(Debug)]
 pub(crate) enum Kind {
+  /// An arbitrary expression.
   Expr,
+  /// The identifier def site in an object comprehension.
+  ///
+  /// ```jsonnet
+  /// { [k]: 3 for k in ks }
+  /// //           ^ here
+  /// ```
   ObjectCompId,
+  /// The nth binding in a `local`.
   LocalBind(usize),
+  /// The nth function parameter.
   FunctionParam(usize),
 }
 
+/// Get some approximate info about this expr, notably, where it approximately was defined.
 pub(crate) fn get<F>(st: &mut St, fs: &F, path_id: PathId, expr: Expr) -> Option<ConstEval>
 where
   F: paths::FileSystem,
@@ -29,12 +55,12 @@ where
   if let Some(&def) = arts.defs.get(&expr) {
     return from_def(st, fs, path_id, def);
   }
-  let ret = ConstEval { path_id, expr, kind: Kind::Expr };
+  let ret = Real { path_id, expr, kind: Kind::Expr };
   let file = st.get_file_expr(fs, path_id).ok()?;
   match file.expr_ar[expr].clone() {
     ExprData::Subscript { on, idx } => {
       let subscript = from_subscript(st, fs, path_id, on, idx);
-      Some(subscript.unwrap_or(ret))
+      Some(subscript.unwrap_or(ret.into()))
     }
     ExprData::Local { body, .. } => get(st, fs, path_id, body),
     // Id, Import: would have been covered by defs.get above if we knew anything about them
@@ -52,7 +78,7 @@ where
     | ExprData::Call { .. }
     | ExprData::If { .. }
     | ExprData::BinaryOp { .. }
-    | ExprData::UnaryOp { .. } => Some(ret),
+    | ExprData::UnaryOp { .. } => Some(ret.into()),
   }
 }
 
@@ -63,12 +89,13 @@ where
   match def {
     Def::LocalBind(expr, idx) => {
       let local = from_local(st, fs, path_id, Some(expr), idx);
-      Some(local.unwrap_or(ConstEval { path_id, expr, kind: Kind::LocalBind(idx) }))
+      Some(local.unwrap_or(Real { path_id, expr, kind: Kind::LocalBind(idx) }.into()))
     }
-    Def::Std | Def::KwIdent => None,
-    Def::ObjectCompId(expr) => Some(ConstEval { path_id, expr, kind: Kind::ObjectCompId }),
+    Def::Std => Some(ConstEval::Std(None)),
+    Def::KwIdent => None,
+    Def::ObjectCompId(expr) => Some(Real { path_id, expr, kind: Kind::ObjectCompId }.into()),
     Def::FunctionParam(expr, idx) => {
-      Some(ConstEval { path_id, expr, kind: Kind::FunctionParam(idx) })
+      Some(Real { path_id, expr, kind: Kind::FunctionParam(idx) }.into())
     }
     Def::Import(path_id) => {
       let top = st.get_file_expr(fs, path_id).ok()?.top;
@@ -92,23 +119,28 @@ fn from_subscript<F>(st: &mut St, fs: &F, path_id: PathId, on: Expr, idx: Expr) 
 where
   F: paths::FileSystem,
 {
-  let on = get(st, fs, path_id, on)?;
-  let idx = get(st, fs, path_id, idx)?;
-  let (Kind::Expr, Kind::Expr) = (on.kind, idx.kind) else { return None };
-  let fields = {
-    let file = st.get_file_expr(fs, on.path_id).ok()?;
-    let ExprData::Object { fields, .. } = &file.expr_ar[on.expr] else { return None };
-    fields.clone()
-  };
+  let ConstEval::Real(idx) = get(st, fs, path_id, idx)? else { return None };
+  let Kind::Expr = idx.kind else { return None };
   let idx = {
     let file = st.get_file_expr(fs, idx.path_id).ok()?;
     let ExprData::Prim(Prim::String(idx)) = &file.expr_ar[idx.expr] else { return None };
     idx.clone()
   };
+  let on = match get(st, fs, path_id, on)? {
+    ConstEval::Std(None) => return Some(ConstEval::Std(Some(idx))),
+    ConstEval::Std(Some(_)) => return None,
+    ConstEval::Real(on) => on,
+  };
+  let Kind::Expr = on.kind else { return None };
+  let fields = {
+    let file = st.get_file_expr(fs, on.path_id).ok()?;
+    let ExprData::Object { fields, .. } = &file.expr_ar[on.expr] else { return None };
+    fields.clone()
+  };
   for field in fields {
-    let key = get(st, fs, on.path_id, field.key)?;
+    let Some(ConstEval::Real(key)) = get(st, fs, on.path_id, field.key) else { continue };
     let Kind::Expr = key.kind else { continue };
-    let file = st.get_file_expr(fs, key.path_id).ok()?;
+    let Ok(file) = st.get_file_expr(fs, key.path_id) else { continue };
     let ExprData::Prim(Prim::String(key)) = &file.expr_ar[key.expr] else {
       continue;
     };
