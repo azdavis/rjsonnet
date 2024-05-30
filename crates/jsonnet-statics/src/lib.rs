@@ -8,8 +8,10 @@ use rustc_hash::{FxHashMap, FxHashSet};
 /// A definition site for an identifier.
 #[derive(Debug, Clone, Copy)]
 pub enum Def {
-  /// Things like std, self, and super.
-  Builtin,
+  /// The standard library, `std`.
+  Std,
+  /// Keyword identifiers, `self` and `super`.
+  KwIdent,
   /// An object comprehension, which are handled somewhat specially.
   ObjectCompId(jsonnet_expr::ExprMust),
   /// A `local` bind.
@@ -24,7 +26,11 @@ impl Def {
   /// Apply a subst.
   pub fn apply(&mut self, subst: &Subst) {
     match self {
-      Def::Builtin | Def::ObjectCompId(_) | Def::LocalBind(_, _) | Def::FunctionParam(_, _) => {}
+      Def::Std
+      | Def::KwIdent
+      | Def::ObjectCompId(_)
+      | Def::LocalBind(_, _)
+      | Def::FunctionParam(_, _) => {}
       Def::Import(path_id) => *path_id = subst.get_path_id(*path_id),
     }
   }
@@ -63,8 +69,8 @@ struct Cx {
 impl Default for Cx {
   fn default() -> Self {
     let mut ret = Self { store: FxHashMap::default() };
-    ret.define(Id::std, Def::Builtin);
-    ret.define(Id::std_unutterable, Def::Builtin);
+    ret.define(Id::std, Def::Std);
+    ret.define(Id::std_unutterable, Def::Std);
     ret
   }
 }
@@ -93,8 +99,8 @@ fn check(st: &mut St, cx: &Cx, ars: &Arenas, expr: Expr) {
     ExprData::Object { asserts, fields } => {
       let cx_big = {
         let mut cx = cx.clone();
-        cx.define(Id::self_, Def::Builtin);
-        cx.define(Id::super_, Def::Builtin);
+        cx.define(Id::self_, Def::KwIdent);
+        cx.define(Id::super_, Def::KwIdent);
         cx
       };
       let mut field_names = FxHashSet::<&Str>::default();
@@ -117,8 +123,8 @@ fn check(st: &mut St, cx: &Cx, ars: &Arenas, expr: Expr) {
       let mut cx = cx.clone();
       cx.define(*id, Def::ObjectCompId(expr));
       check(st, &cx, ars, *name);
-      cx.define(Id::self_, Def::Builtin);
-      cx.define(Id::super_, Def::Builtin);
+      cx.define(Id::self_, Def::KwIdent);
+      cx.define(Id::super_, Def::KwIdent);
       check(st, &cx, ars, *body);
     }
     ExprData::Array(exprs) => {

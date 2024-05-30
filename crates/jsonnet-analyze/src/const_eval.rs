@@ -65,7 +65,7 @@ where
       let local = from_local(st, fs, path_id, Some(expr), idx);
       Some(local.unwrap_or(ConstEval { path_id, expr, kind: Kind::LocalBind(idx) }))
     }
-    Def::Builtin => None,
+    Def::Std | Def::KwIdent => None,
     Def::ObjectCompId(expr) => Some(ConstEval { path_id, expr, kind: Kind::ObjectCompId }),
     Def::FunctionParam(expr, idx) => {
       Some(ConstEval { path_id, expr, kind: Kind::FunctionParam(idx) })
