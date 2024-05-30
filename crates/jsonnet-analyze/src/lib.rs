@@ -6,6 +6,7 @@ mod const_eval;
 
 use always::always;
 use diagnostic::Diagnostic;
+use jsonnet_eval::JsonnetFile;
 use jsonnet_syntax::ast::AstNode as _;
 use paths::{PathId, PathMap};
 use std::collections::hash_map::Entry;
@@ -28,7 +29,7 @@ pub struct St {
   artifacts: jsonnet_expr::Artifacts,
   open_files: PathMap<String>,
   file_artifacts: PathMap<FileArtifacts>,
-  file_exprs: PathMap<jsonnet_eval::JsonnetFile>,
+  file_exprs: PathMap<JsonnetFile>,
   import_str: PathMap<String>,
   import_bin: PathMap<Vec<u8>>,
 }
@@ -92,7 +93,7 @@ impl St {
   /// # Errors
   ///
   /// When a path had an I/O error.
-  pub fn get_all_deps<F>(&mut self, fs: &F, path_id: PathId) -> Result<(), PathIoError>
+  pub fn get_all_deps<F>(&mut self, fs: &F, path_id: PathId) -> Result<()>
   where
     F: paths::FileSystem,
   {
@@ -152,22 +153,40 @@ impl St {
     Ok(())
   }
 
-  pub(crate) fn get_file_expr(&self, path_id: PathId) -> Option<&jsonnet_eval::JsonnetFile> {
-    let ret = self.file_exprs.get(&path_id);
-    if ret.is_none() {
-      let path = self.display_path_id(path_id);
-      always!(false, "no file expr for {path}");
+  pub(crate) fn get_file_expr<F>(&mut self, fs: &F, path_id: PathId) -> Result<&JsonnetFile>
+  where
+    F: paths::FileSystem,
+  {
+    match self.file_exprs.entry(path_id) {
+      Entry::Occupied(entry) => Ok(&*entry.into_mut()),
+      Entry::Vacant(entry) => {
+        let path = self.artifacts.paths.get_path(path_id).to_owned();
+        let path = path.as_clean_path();
+        let file = match IsolatedFile::from_fs(path, &self.root_dirs, &mut self.artifacts, fs) {
+          Ok(x) => x,
+          Err(error) => return Err(PathIoError { path: path.as_path().to_owned(), error }),
+        };
+        Ok(&*entry.insert(file.eval))
+      }
     }
-    ret
   }
 
-  pub(crate) fn get_file_artifacts(&self, path_id: PathId) -> Option<&FileArtifacts> {
-    let ret = self.file_artifacts.get(&path_id);
-    if ret.is_none() {
-      let path = self.display_path_id(path_id);
-      always!(false, "no file artifacts for {path}");
+  pub(crate) fn get_file_artifacts<F>(&mut self, fs: &F, path_id: PathId) -> Result<&FileArtifacts>
+  where
+    F: paths::FileSystem,
+  {
+    match self.file_artifacts.entry(path_id) {
+      Entry::Occupied(entry) => Ok(&*entry.into_mut()),
+      Entry::Vacant(entry) => {
+        let path = self.artifacts.paths.get_path(path_id).to_owned();
+        let path = path.as_clean_path();
+        let file = match IsolatedFile::from_fs(path, &self.root_dirs, &mut self.artifacts, fs) {
+          Ok(x) => x,
+          Err(error) => return Err(PathIoError { path: path.as_path().to_owned(), error }),
+        };
+        Ok(&*entry.insert(file.artifacts))
+      }
     }
-    ret
   }
 }
 
@@ -322,7 +341,7 @@ impl lang_srv_state::State for St {
   {
     let path_id = self.path_id(path);
     let ce = {
-      let arts = self.get_file_artifacts(path_id)?;
+      let arts = self.get_file_artifacts(fs, path_id).ok()?;
       let ts = arts.pos_db.text_size_utf16(pos)?;
       let root = arts.syntax.clone().into_ast()?;
       let tok = jsonnet_syntax::node_token(root.syntax(), ts)?;
@@ -330,10 +349,9 @@ impl lang_srv_state::State for St {
       let ptr = jsonnet_syntax::ast::SyntaxNodePtr::new(&node);
       let expr = arts.pointers.get_idx(ptr);
       // TODO expose any errors here?
-      self.get_all_deps(fs, path_id).ok()?;
-      const_eval::get(&*self, path_id, expr)?
+      const_eval::get(self, fs, path_id, expr)?
     };
-    let arts = self.get_file_artifacts(ce.path_id)?;
+    let arts = self.get_file_artifacts(fs, ce.path_id).ok()?;
     let root = arts.syntax.clone().into_ast()?;
     let tr = match ce.kind {
       const_eval::Kind::Expr => arts.pointers.get_ptr(ce.expr).text_range(),
@@ -428,7 +446,7 @@ where
 struct IsolatedFile {
   artifacts: FileArtifacts,
   errors: FileErrors,
-  eval: jsonnet_eval::JsonnetFile,
+  eval: JsonnetFile,
 }
 
 impl IsolatedFile {
@@ -459,7 +477,7 @@ impl IsolatedFile {
         desugar: desugar.errors,
         statics: st.errors,
       },
-      eval: jsonnet_eval::JsonnetFile { expr_ar: desugar.arenas.expr, top: desugar.top },
+      eval: JsonnetFile { expr_ar: desugar.arenas.expr, top: desugar.top },
     };
     let subst = jsonnet_expr::Subst::get(artifacts, combine);
     for err in &mut ret.errors.statics {
@@ -546,6 +564,9 @@ impl std::error::Error for PathIoError {
     Some(&self.error)
   }
 }
+
+/// A [`std::result::Result`] with the error type defaulting to [`PathIoError`].
+pub type Result<T, E = PathIoError> = std::result::Result<T, E>;
 
 fn entry_insert<K, V>(entry: Entry<'_, K, V>, value: V) -> &mut V {
   match entry {

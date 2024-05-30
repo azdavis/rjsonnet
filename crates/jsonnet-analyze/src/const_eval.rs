@@ -21,11 +21,14 @@ pub(crate) enum Kind {
   FunctionParam(usize),
 }
 
-pub(crate) fn get(st: &St, path_id: PathId, expr: Expr) -> Option<ConstEval> {
+pub(crate) fn get<F>(st: &mut St, fs: &F, path_id: PathId, expr: Expr) -> Option<ConstEval>
+where
+  F: paths::FileSystem,
+{
   let expr = expr?;
-  let arts = st.get_file_artifacts(path_id)?;
+  let arts = st.get_file_artifacts(fs, path_id).ok()?;
   if let Some(&def) = arts.defs.get(&expr) {
-    return from_def(st, path_id, def);
+    return from_def(st, fs, path_id, def);
   }
   let ret = ConstEval { path_id, expr, kind: Kind::Expr };
   let Some(file) = st.file_exprs.get(&path_id) else {
@@ -35,10 +38,10 @@ pub(crate) fn get(st: &St, path_id: PathId, expr: Expr) -> Option<ConstEval> {
   };
   match file.expr_ar[expr].clone() {
     ExprData::Subscript { on, idx } => {
-      let subscript = from_subscript(st, path_id, on, idx);
+      let subscript = from_subscript(st, fs, path_id, on, idx);
       Some(subscript.unwrap_or(ret))
     }
-    ExprData::Local { body, .. } => get(st, path_id, body),
+    ExprData::Local { body, .. } => get(st, fs, path_id, body),
     // Id, Import: would have been covered by defs.get above if we knew anything about them
     // Prim, Object, Array, Function: literals are values, they do not evaluate further
     // Error: errors do not evaluate to values
@@ -58,10 +61,13 @@ pub(crate) fn get(st: &St, path_id: PathId, expr: Expr) -> Option<ConstEval> {
   }
 }
 
-fn from_def(st: &St, path_id: PathId, def: Def) -> Option<ConstEval> {
+fn from_def<F>(st: &mut St, fs: &F, path_id: PathId, def: Def) -> Option<ConstEval>
+where
+  F: paths::FileSystem,
+{
   match def {
     Def::LocalBind(expr, idx) => {
-      let local = from_local(st, path_id, Some(expr), idx);
+      let local = from_local(st, fs, path_id, Some(expr), idx);
       Some(local.unwrap_or(ConstEval { path_id, expr, kind: Kind::LocalBind(idx) }))
     }
     Def::Builtin => None,
@@ -70,43 +76,49 @@ fn from_def(st: &St, path_id: PathId, def: Def) -> Option<ConstEval> {
       Some(ConstEval { path_id, expr, kind: Kind::FunctionParam(idx) })
     }
     Def::Import(path_id) => {
-      let top = st.get_file_expr(path_id)?.top;
-      get(st, path_id, top)
+      let top = st.get_file_expr(fs, path_id).ok()?.top;
+      get(st, fs, path_id, top)
     }
   }
 }
 
-fn from_local(st: &St, path_id: PathId, expr: Expr, idx: usize) -> Option<ConstEval> {
+fn from_local<F>(st: &mut St, fs: &F, path_id: PathId, expr: Expr, idx: usize) -> Option<ConstEval>
+where
+  F: paths::FileSystem,
+{
   let expr = expr?;
-  let file = st.get_file_expr(path_id)?;
+  let file = st.get_file_expr(fs, path_id).ok()?;
   let ExprData::Local { binds, .. } = &file.expr_ar[expr] else { return None };
   let &(_, expr) = binds.get(idx)?;
-  get(st, path_id, expr)
+  get(st, fs, path_id, expr)
 }
 
-fn from_subscript(st: &St, path_id: PathId, on: Expr, idx: Expr) -> Option<ConstEval> {
-  let on = get(st, path_id, on)?;
-  let idx = get(st, path_id, idx)?;
+fn from_subscript<F>(st: &mut St, fs: &F, path_id: PathId, on: Expr, idx: Expr) -> Option<ConstEval>
+where
+  F: paths::FileSystem,
+{
+  let on = get(st, fs, path_id, on)?;
+  let idx = get(st, fs, path_id, idx)?;
   let (Kind::Expr, Kind::Expr) = (on.kind, idx.kind) else { return None };
   let fields = {
-    let file = st.get_file_expr(on.path_id)?;
+    let file = st.get_file_expr(fs, on.path_id).ok()?;
     let ExprData::Object { fields, .. } = &file.expr_ar[on.expr] else { return None };
     fields.clone()
   };
   let idx = {
-    let file = st.get_file_expr(idx.path_id)?;
+    let file = st.get_file_expr(fs, idx.path_id).ok()?;
     let ExprData::Prim(Prim::String(idx)) = &file.expr_ar[idx.expr] else { return None };
     idx.clone()
   };
   for field in fields {
-    let key = get(st, on.path_id, field.key)?;
+    let key = get(st, fs, on.path_id, field.key)?;
     let Kind::Expr = key.kind else { continue };
-    let file = st.get_file_expr(key.path_id)?;
+    let file = st.get_file_expr(fs, key.path_id).ok()?;
     let ExprData::Prim(Prim::String(key)) = &file.expr_ar[key.expr] else {
       continue;
     };
     if *key == idx {
-      return get(st, on.path_id, field.val);
+      return get(st, fs, on.path_id, field.val);
     }
   }
   None
