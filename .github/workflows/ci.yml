@@ -87,7 +87,6 @@ jobs:
           name: binary
           path: |
             binary/jsonnet-ls-${{ matrix.rust }}.gz
-            binary/jsonnet-cli-${{ matrix.rust }}.gz
       - name: Upload VSIX artifacts
         uses: actions/upload-artifact@v3
         with:

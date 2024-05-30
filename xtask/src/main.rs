@@ -99,7 +99,6 @@ struct DistArgs {
 }
 
 const LANG_SRV_NAME: &str = "jsonnet-ls";
-const CLI_NAME: &str = "jsonnet-cli";
 
 fn cmd_exe(fst: &str) -> Command {
   if cfg!(windows) {
@@ -132,7 +131,7 @@ fn dist(args: &DistArgs) {
     c.arg("--release");
   }
   if let Some(target) = &args.target {
-    c.args(["--bin", CLI_NAME, "--target", target.as_str()]);
+    c.args(["--target", target.as_str()]);
   }
   run(&mut c);
   let kind = if args.release { "release" } else { "debug" };
@@ -142,14 +141,12 @@ fn dist(args: &DistArgs) {
   if let Some(target) = &args.target {
     dst = PathBuf::from("binary");
     fs::create_dir_all(&dst).expect("create dirs");
-    for name in [LANG_SRV_NAME, CLI_NAME] {
-      let gz = format!("{name}-{target}.gz");
-      src.push(exe(name).as_str());
-      dst.push(gz.as_str());
-      gzip(&src, &dst);
-      assert!(src.pop());
-      assert!(dst.pop());
-    }
+    let gz = format!("{LANG_SRV_NAME}-{target}.gz");
+    src.push(exe(LANG_SRV_NAME).as_str());
+    dst.push(gz.as_str());
+    gzip(&src, &dst);
+    assert!(src.pop());
+    assert!(dst.pop());
   }
   dst = ["editors", "vscode", "out"].into_iter().collect();
   // ignore errors if it exists already. if we have permission errors we're about to report them
