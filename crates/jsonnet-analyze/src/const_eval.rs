@@ -1,7 +1,6 @@
 //! Try to "evaluate" without actually evaluating, using statically-known information.
 
-use crate::St;
-use always::always;
+use crate::st::St;
 use jsonnet_expr::{Expr, ExprData, ExprMust, Prim};
 use jsonnet_statics::Def;
 use paths::PathId;
@@ -31,11 +30,7 @@ where
     return from_def(st, fs, path_id, def);
   }
   let ret = ConstEval { path_id, expr, kind: Kind::Expr };
-  let Some(file) = st.file_exprs.get(&path_id) else {
-    let path = st.with_fs.display_path_id(path_id);
-    always!(false, "no file exprs for {path}");
-    return None;
-  };
+  let file = st.get_file_expr(fs, path_id).ok()?;
   match file.expr_ar[expr].clone() {
     ExprData::Subscript { on, idx } => {
       let subscript = from_subscript(st, fs, path_id, on, idx);
