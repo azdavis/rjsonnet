@@ -56,6 +56,7 @@ pub struct St {
   file_exprs: PathMap<JsonnetFile>,
   import_str: PathMap<String>,
   import_bin: PathMap<Vec<u8>>,
+  has_errors: paths::PathSet,
 }
 
 impl St {
@@ -74,6 +75,7 @@ impl St {
       file_exprs: PathMap::default(),
       import_str: PathMap::default(),
       import_bin: PathMap::default(),
+      has_errors: paths::PathSet::default(),
     }
   }
 
@@ -83,6 +85,9 @@ impl St {
   ///
   /// If this path couldn't be evaluated to json.
   pub fn get_json(&self, path_id: PathId) -> jsonnet_eval::error::Result<jsonnet_eval::Json> {
+    if self.has_errors.contains(&path_id) {
+      return Err(jsonnet_eval::error::Error::NoPath(path_id));
+    }
     // TODO more caching?
     let cx = jsonnet_eval::Cx {
       paths: &self.with_fs.artifacts.paths,
@@ -126,6 +131,9 @@ impl St {
             Entry::Occupied(entry) => &*entry.into_mut(),
             Entry::Vacant(entry) => {
               let file = self.with_fs.get_one_file(fs, path_id)?;
+              if !file.errors.is_empty() {
+                self.has_errors.insert(path_id);
+              }
               entry.insert(file.eval)
             }
           };
@@ -168,6 +176,9 @@ impl St {
       Entry::Occupied(entry) => Ok(&*entry.into_mut()),
       Entry::Vacant(entry) => {
         let file = self.with_fs.get_one_file(fs, path_id)?;
+        if !file.errors.is_empty() {
+          self.has_errors.insert(path_id);
+        }
         Ok(&*entry.insert(file.eval))
       }
     }
@@ -181,6 +192,9 @@ impl St {
       Entry::Occupied(entry) => Ok(&*entry.into_mut()),
       Entry::Vacant(entry) => {
         let file = self.with_fs.get_one_file(fs, path_id)?;
+        if !file.errors.is_empty() {
+          self.has_errors.insert(path_id);
+        }
         Ok(&*entry.insert(file.artifacts))
       }
     }
@@ -244,6 +258,7 @@ impl lang_srv_state::State for St {
       self.file_exprs.remove(&path_id);
       self.import_str.remove(&path_id);
       self.import_bin.remove(&path_id);
+      self.has_errors.remove(&path_id);
     }
   }
 
@@ -278,6 +293,9 @@ impl lang_srv_state::State for St {
     let ret: Vec<_> = file.diagnostics(&self.with_fs.artifacts.strings).collect();
     self.file_artifacts.insert(path_id, file.artifacts);
     self.file_exprs.insert(path_id, file.eval);
+    if !file.errors.is_empty() {
+      self.has_errors.insert(path_id);
+    }
     (path_id, ret)
   }
 

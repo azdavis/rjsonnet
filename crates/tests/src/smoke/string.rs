@@ -73,7 +73,6 @@ fn double_verbatim_escape() {
 }
 
 #[test]
-#[should_panic]
 fn unclosed() {
   JsonnetInput::pre_eval_error(
     r"

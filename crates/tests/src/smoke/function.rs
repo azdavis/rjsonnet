@@ -75,7 +75,6 @@ sub(8, y=9)
 }
 
 #[test]
-#[should_panic]
 fn args_named_then_positional() {
   JsonnetInput::pre_eval_error(
     r"
@@ -158,7 +157,6 @@ local sub(x, y) = x - y;
 }
 
 #[test]
-#[should_panic]
 fn args_named_duplicate() {
   JsonnetInput::pre_eval_error(
     r"

@@ -32,6 +32,15 @@ pub(crate) struct FileErrors {
   pub(crate) statics: Vec<jsonnet_statics::error::Error>,
 }
 
+impl FileErrors {
+  pub(crate) fn is_empty(&self) -> bool {
+    self.lex.is_empty()
+      && self.parse.is_empty()
+      && self.desugar.is_empty()
+      && self.statics.is_empty()
+  }
+}
+
 /// An adaptor between file system traits.
 struct FsAdapter<'a, F>(&'a F);
 

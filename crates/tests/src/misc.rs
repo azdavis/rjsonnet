@@ -176,7 +176,6 @@ fn bigger_cycle() {
 }
 
 #[test]
-#[should_panic]
 fn remove() {
   MultiInput::default()
     .with_input(

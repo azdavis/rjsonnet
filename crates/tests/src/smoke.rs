@@ -14,7 +14,6 @@ mod string;
 use crate::check::{Input, JsonnetInput};
 
 #[test]
-#[should_panic]
 fn parse_fail() {
   JsonnetInput::pre_eval_error(
     r"
