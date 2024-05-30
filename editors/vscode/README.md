@@ -4,7 +4,7 @@
 
 ## Warning
 
-This project is pre-MVP. Most IDE features are not implemented. Some **language** features haven't even been implemented. There are a lot of TODOs and probably a good amount of latent bugs.
+This project is a very minimal MVP. Most IDE features are not implemented. Some **language** features haven't even been implemented. There are a lot of TODOs and probably a good amount of latent bugs.
 
 For more mature alternatives, consider:
 
@@ -15,7 +15,6 @@ For more mature alternatives, consider:
 
 - Inline diagnostics
 - Go-to-definition
-- Hover for info
 
 [jsonnet]: https://jsonnet.org
 [carl]: https://marketplace.visualstudio.com/items?itemName=cverge.jsonnet-lsp
