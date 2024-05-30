@@ -6,7 +6,7 @@ use jsonnet_expr::{
 };
 use jsonnet_syntax::ast::{self, AstNode as _};
 
-/// TODO only allow super/$/tailstrict sometimes?
+/// TODO only allow super/$ sometimes?
 pub(crate) fn get_expr(st: &mut St, cx: Cx<'_>, expr: Option<ast::Expr>, in_obj: bool) -> Expr {
   let expr = expr?;
   let ptr = ast::SyntaxNodePtr::new(expr.syntax());
@@ -169,7 +169,6 @@ pub(crate) fn get_expr(st: &mut St, cx: Cx<'_>, expr: Option<ast::Expr>, in_obj:
       let inner = get_expr(st, cx, expr.expr(), in_obj);
       ExprData::Error(inner)
     }
-    ast::Expr::ExprTailstrict(expr) => return get_expr(st, cx, expr.expr(), in_obj),
   };
   Some(st.expr(ptr, data))
 }
