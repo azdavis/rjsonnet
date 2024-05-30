@@ -848,7 +848,7 @@ Reverses an array.
 
 _Available since version 0.10.0._
 
-`std.sort(arr, keyF=function(x) x)` sorts the array using the `<=` operator.
+`std.sort(arr, keyF=id)` sorts the array using the `<=` operator.
 
 Optional argument `keyF` is a single argument function used to extract comparison key from each array element.
 
@@ -856,7 +856,7 @@ Optional argument `keyF` is a single argument function used to extract compariso
 
 _Available since version 0.10.0._
 
-`uniq(arr, keyF=function(x) x)` removes successive duplicates. When given a sorted array, removes all duplicates.
+`uniq(arr, keyF=id)` removes successive duplicates. When given a sorted array, removes all duplicates.
 
 Optional argument `keyF` is a single argument function used to extract comparison key from each array element.
 
@@ -886,4 +886,196 @@ Returns the sum of all the elements.
 
 _Available since version 0.20.0._
 
-Return average of all element in arr.
+Returns the average of all the elements.
+
+## `set`
+
+_Available since version 0.10.0._
+
+`set(arr, keyF=id)` is a shortcut for `uniq(sort(arr))`.
+
+## `setInter`
+
+_Available since version 0.10.0._
+
+`setInter(a, b, keyF=id)` is the set intersection operation (values in both `a` and `b`).
+
+## `setUnion`
+
+_Available since version 0.10.0._
+
+`setUnion(a, b, keyF=id)` is the set union operation (values in any of `a` or `b`).
+
+Note that `+` on sets will simply concatenate the arrays, possibly forming an array that is not a set (due to not being ordered without duplicates).
+
+Examples:
+
+- `setUnion([1, 2], [2, 3]) == [ 1, 2, 3 ]`
+- `setUnion([{n:"A", v:1}, {n:"B"}], [{n:"A", v: 9999}, {n:"C"}], keyF=function(x) x.n) == [ { "n": "A", "v": 1 }, { "n": "B" }, { "n": "C" } ]`
+
+## `setDiff`
+
+_Available since version 0.10.0._
+
+`setDiff(a, b, keyF=id)` is the set difference operation (values in `a` but not `b`).
+
+## `setMember`
+
+_Available since version 0.10.0._
+
+`setMember(x, set, keyF=id)` returns `true` if `x` is a member of the `set`, otherwise `false`.
+
+## `get`
+
+_Available since version 0.18.0._
+
+`get(o, f, default=null, inc_hidden=true)` returns the object `o`'s field `f` if it exists or `default` value otherwise. `inc_hidden` controls whether to include hidden fields.
+
+## `objectHas`
+
+_Available since version 0.10.0._
+
+`objectHas(o, f)` returns `true` if the given object `o` has the field `f` (given as a string), otherwise `false`.
+
+Raises an error if the arguments are not object and string respectively.
+
+Returns `false` if the field is hidden.
+
+## `objectFields`
+
+_Available since version 0.10.0._
+
+Returns an array of strings, each element being a field from the given object.
+
+**Does not** include hidden fields.
+
+## `objectValues`
+
+_Available since version 0.17.0._
+
+Returns an array of the values in the given object.
+
+**Does not** include hidden fields.
+
+## `objectKeysValues`
+
+_Available since version 0.20.0._
+
+Returns an array of objects from the given object, each object having two fields: key (string) and value (object).
+
+**Does not** include hidden fields.
+
+## `objectHasAll`
+
+_Available since version 0.10.0._
+
+Like `objectHas` but also includes hidden fields.
+
+## `objectFieldsAll`
+
+_Available since version 0.10.0._
+
+Like `objectFields` but also includes hidden fields.
+
+## `objectValuesAll`
+
+_Available since version 0.17.0._
+
+Like `objectValues` but also includes hidden fields.
+
+## `objectKeysValuesAll`
+
+_Available since version 0.20.0._
+
+Like `objectKeysValues` but also includes hidden fields.
+
+## `mapWithKey`
+
+_Available since version 0.10.0._
+
+`mapWithKey(func, obj)` applies the given `func` to all fields of the given `obj`, also passing the field name.
+
+The function `func` is expected to take the field name as the first parameter and the field value as the second.
+
+## `base64`
+
+_Available since version 0.10.0._
+
+Encodes the given value into a base64 string.
+
+The encoding sequence is `A-Za-z0-9+/` with `=` to pad the output to a multiple of 4 characters.
+
+The value can be a string or an array of numbers, but the codepoints / numbers must be in the 0 to 255 range.
+
+The resulting string has no line breaks.
+
+## `base64DecodeBytes`
+
+_Available since version 0.10.0._
+
+`base64DecodeBytes(str)` decodes the given base64 string into an array of bytes (number values).
+
+Currently assumes the input string has no linebreaks and is padded to a multiple of 4 (with the `=` character). In other words, it consumes the output of `base64`.
+
+## `base64Decode`
+
+_Available since version 0.10.0._
+
+**Deprecated**, use `base64DecodeBytes` and decode the string explicitly (e.g. with `decodeUTF8`) instead.
+
+Behaves like `base64DecodeBytes` except returns a naively encoded string instead of an array of bytes.
+
+## `md5`
+
+_Available since version 0.10.0._
+
+Encodes the given value into an MD5 string.
+
+## `xor`
+
+_Available since version 0.20.0._
+
+Returns the xor (exclusive or) of the two given booleans.
+
+## `xnor`
+
+_Available since version 0.20.0._
+
+Returns the xnor (exclusive nor) of the two given booleans.
+
+## `mergePatch`
+
+_Available since version 0.10.0._
+
+`mergePatch(target, patch)` applies `patch` to `target` according to [RFC7396](https://tools.ietf.org/html/rfc7396).
+
+## `trace`
+
+_Available since version 0.11.0._
+
+`trace(str, rest)` outputs the given string `str` to stderr and returns `rest` as the result.
+
+Example:
+
+```jsonnet
+local conditionalReturn(cond, in1, in2) =
+  if cond then
+    std.trace('cond is true, returning ' + std.toString(in1), in1)
+  else
+    std.trace('cond is false, returning ' + std.toString(in2), in2);
+
+{
+  a: conditionalReturn(true, { b: 1 }, { c: 2 }),
+}
+```
+
+Prints:
+
+```
+TRACE: test.jsonnet:3 cond is true, returning {"b": 1}
+{
+  "a": {
+    "b": 1
+  }
+}
+```
