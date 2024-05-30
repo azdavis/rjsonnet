@@ -15,7 +15,7 @@ type StdLibDoc = FxHashMap<&'static str, String>;
 fn std_lib_doc() -> &'static StdLibDoc {
   static LOCK: OnceLock<StdLibDoc> = OnceLock::new();
   fn init() -> StdLibDoc {
-    code_h2_md_map::get(include_str!("../../../docs/stdlib.md"), |x| format!("`std.{x}`"))
+    code_h2_md_map::get(include_str!("../../../docs/std_lib.md"), |x| format!("`std.{x}`"))
   }
   LOCK.get_or_init(init)
 }
