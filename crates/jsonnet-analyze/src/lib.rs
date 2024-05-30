@@ -161,7 +161,7 @@ impl St {
     Ok(())
   }
 
-  pub(crate) fn get_file_expr<F>(&mut self, fs: &F, path_id: PathId) -> Result<&JsonnetFile>
+  fn get_file_expr<F>(&mut self, fs: &F, path_id: PathId) -> Result<&JsonnetFile>
   where
     F: paths::FileSystem,
   {
@@ -174,7 +174,7 @@ impl St {
     }
   }
 
-  pub(crate) fn get_file_artifacts<F>(&mut self, fs: &F, path_id: PathId) -> Result<&FileArtifacts>
+  fn get_file_artifacts<F>(&mut self, fs: &F, path_id: PathId) -> Result<&FileArtifacts>
   where
     F: paths::FileSystem,
   {
