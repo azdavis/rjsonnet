@@ -32,7 +32,7 @@ where
   }
   let ret = ConstEval { path_id, expr, kind: Kind::Expr };
   let Some(file) = st.file_exprs.get(&path_id) else {
-    let path = st.display_path_id(path_id);
+    let path = st.with_fs.display_path_id(path_id);
     always!(false, "no file exprs for {path}");
     return None;
   };
