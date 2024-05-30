@@ -4,7 +4,7 @@ An implementation of [Jsonnet][] in [Rust][], which aims to conform to the [spec
 
 ## Warning
 
-This project is pre-MVP. Most IDE features are not implemented. Some **language** features haven't even been implemented. There are a lot of TODOs and probably a good amount of latent bugs.
+This project is a very minimal MVP. Most IDE features are not implemented. Some **language** features haven't even been implemented. There are a lot of TODOs and probably a good amount of latent bugs.
 
 For more mature alternatives, consider:
 
