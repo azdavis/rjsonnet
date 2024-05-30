@@ -9,8 +9,6 @@ These are docs for the Jsonnet standard library, available on the global `std` o
 - Filled in some doc of my own for less-documented functions
 - Removed doc for not yet implemented functions
 
-NOTE: not all items are here yet.
-
 ## `extVar`
 
 _Available since version 0.10.0._
@@ -900,6 +898,10 @@ _Available since version 0.10.0._
 
 `setInter(a, b, keyF=id)` is the set intersection operation (values in both `a` and `b`).
 
+`a` and `b` must be sets, i.e. sorted arrays with no duplicates. If that is not the case, this function will quietly return non-meaningful results.
+
+The optional `keyF` function can be used to extract a key to use from each element. This key is used for the purpose of identifying uniqueness.
+
 ## `setUnion`
 
 _Available since version 0.10.0._
@@ -913,17 +915,29 @@ Examples:
 - `setUnion([1, 2], [2, 3]) == [ 1, 2, 3 ]`
 - `setUnion([{n:"A", v:1}, {n:"B"}], [{n:"A", v: 9999}, {n:"C"}], keyF=function(x) x.n) == [ { "n": "A", "v": 1 }, { "n": "B" }, { "n": "C" } ]`
 
+`a` and `b` must be sets, i.e. sorted arrays with no duplicates. If that is not the case, this function will quietly return non-meaningful results.
+
+The optional `keyF` function can be used to extract a key to use from each element. This key is used for the purpose of identifying uniqueness.
+
 ## `setDiff`
 
 _Available since version 0.10.0._
 
 `setDiff(a, b, keyF=id)` is the set difference operation (values in `a` but not `b`).
 
+`a` and `b` must be sets, i.e. sorted arrays with no duplicates. If that is not the case, this function will quietly return non-meaningful results.
+
+The optional `keyF` function can be used to extract a key to use from each element. This key is used for the purpose of identifying uniqueness.
+
 ## `setMember`
 
 _Available since version 0.10.0._
 
-`setMember(x, set, keyF=id)` returns `true` if `x` is a member of the `set`, otherwise `false`.
+`setMember(x, s, keyF=id)` returns `true` if `x` is a member of `s`, otherwise `false`.
+
+`s` must be a set, i.e. a sorted array with no duplicates. If that is not the case, this function will quietly return non-meaningful results.
+
+The optional `keyF` function can be used to extract a key to use from each element. This key is used for the purpose of identifying uniqueness.
 
 ## `get`
 
