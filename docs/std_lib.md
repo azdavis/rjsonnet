@@ -92,7 +92,7 @@ Returns the absolute value of the number.
 
 ## `sign`
 
-Returns -1, 0, or 1 if the number is negative, zero, or positive.
+Returns `-1`, `0`, or `1` if the number is negative, zero, or positive respectively.
 
 ## `max`
 
@@ -108,11 +108,11 @@ Returns the minimum of the two arguments.
 
 ## `exp`
 
-`exp(x)` returns $e^x$, i.e. $e$ (2.71828...) to the $x$ power.
+`exp(x)` returns $e^x$, i.e. $e$ to the $x$ power, where [$e \approx 2.71828$](<https://en.wikipedia.org/wiki/E_(mathematical_constant)>).
 
 ## `log`
 
-`log(x)` returns the natural logarithm of $x$, i.e. the solution $y$ in $e^y = x$.
+`log(x)` returns the natural logarithm of $x$, i.e. the solution $y$ in $e^y = x$, where [$e \approx 2.71828$](<https://en.wikipedia.org/wiki/E_(mathematical_constant)>).
 
 ## `exponent`
 
@@ -164,19 +164,27 @@ This is a trig function.
 
 ## `isEven`
 
-Returns `true` if this is an even number, else `false`.
+Returns `true` if the argument is an even number, else `false`.
+
+Raises if the argument is not a number.
 
 ## `isOdd`
 
-Returns `true` if this is an odd number, else `false`.
+Returns `true` if the argument is an odd number, else `false`.
+
+Raises if the argument is not a number.
 
 ## `isInteger`
 
-Returns `true` if this is an integer number, else `false`.
+Returns `true` if the argument is an integer number, else `false`.
+
+Raises if the argument is not a number.
 
 ## `isDecimal`
 
-Returns TODO
+Returns `true` if the argument is a decimal number (i.e. one with non-zero digits after the decimal point), else `false`.
+
+Raises if the argument is not a number.
 
 ## `mod`
 
@@ -192,15 +200,17 @@ Equivalent to `max(minVal, min(x, maxVal))`.
 
 Examples:
 
-- `clamp(-3, 0, 5) == 0`
-- `clamp(4, 0, 5) == 4`
-- `clamp(7, 0, 5) == 5`
+```jsonnet
+clamp(-3, 0, 5) == 0
+clamp(4, 0, 5) == 4
+clamp(7, 0, 5) == 5
+```
 
 ## `assertEqual`
 
 _Available since version 0.10.0._
 
-`assertEqual(a, b)` ensures that a == b. Returns true or throws an error message.
+`assertEqual(a, b)` ensures that `a == b` holds. Returns `true` if so, else throws an error message.
 
 ## `toString`
 
@@ -254,9 +264,11 @@ _Available since version 0.15.0._
 
 Examples:
 
-- `stripChars(" test test test ", " ") == "test test test"`
-- `stripChars("aaabbbbcccc", "ac") == "bbbb"`
-- `stripChars("cacabbbbaacc", "ac") == "bbbb"`
+```jsonnet
+stripChars(" test test test ", " ") == "test test test"
+stripChars("aaabbbbcccc", "ac") == "bbbb"
+stripChars("cacabbbbaacc", "ac") == "bbbb"
+```
 
 ## `lstripChars`
 
@@ -266,19 +278,23 @@ _Available since version 0.15.0._
 
 Examples:
 
-- `lstripChars(" test test test ", " ") == "test test test "`
-- `lstripChars("aaabbbbcccc", "ac") == "bbbbcccc"`
-- `lstripChars("cacabbbbaacc", "ac") == "bbbbaacc"`
+```jsonnet
+lstripChars(" test test test ", " ") == "test test test "
+lstripChars("aaabbbbcccc", "ac") == "bbbbcccc"
+lstripChars("cacabbbbaacc", "ac") == "bbbbaacc"
+```
 
-## rstripChars
+## `rstripChars`
 
 _Available since version 0.15.0._
 
 `rstripChars(str, chars)` removes characters `chars` from the end of `str`.
 
-- `rstripChars(" test test test ", " ") == " test test test"`
-- `rstripChars("aaabbbbcccc", "ac") == "aaabbbb"`
-- `rstripChars("cacabbbbaacc", "ac") == "cacabbbb"`
+```jsonnet
+rstripChars(" test test test ", " ") == " test test test"
+rstripChars("aaabbbbcccc", "ac") == "aaabbbb"
+rstripChars("cacabbbbaacc", "ac") == "cacabbbb"
+```
 
 ## `split`
 
@@ -290,8 +306,10 @@ Note: Versions up to and including 0.18.0 require `c` to be a single character.
 
 Examples:
 
-- `split("foo/_bar", "/_") == [ "foo", "bar" ]`
-- `split("/_foo/\_bar", "/_") == [ "", "foo", "bar" ]`
+```jsonnet
+split("foo/_bar", "/_") == [ "foo", "bar" ]
+split("/_foo/\_bar", "/_") == [ "", "foo", "bar" ]
+```
 
 ## `splitLimit`
 
@@ -303,16 +321,22 @@ Note: Versions up to and including 0.18.0 require `c` to be a single character.
 
 Examples:
 
-- `splitLimit("foo/_bar", "/_", 1) == [ "foo", "bar" ]`
-- `splitLimit("/_foo/\_bar", "/_", 1) == [ "", "foo/_bar" ]`
+```jsonnet
+splitLimit("foo/_bar", "/_", 1) == [ "foo", "bar" ]
+splitLimit("/_foo/\_bar", "/_", 1) == [ "", "foo/_bar" ]
+```
 
 ## `splitLimitR`
 
 _Available since version 0.19.0._
 
-`splitLimitR(str, c, maxsplits)` is the same as `std.splitLimit(str, c, maxsplits)` but will split from right to left.
+`splitLimitR(str, c, maxsplits)` is the same as `splitLimit(str, c, maxsplits)` but will split from right to left.
 
-Example: `std.splitLimitR("/_foo/\_bar", "/_", 1) == [ "/_foo", "bar" ]`
+Example:
+
+```jsonnet
+splitLimitR("/_foo/\_bar", "/_", 1) == [ "/_foo", "bar" ]
+```
 
 ## `strReplace`
 
@@ -320,7 +344,11 @@ _Available since version 0.10.0._
 
 `strReplace(str, from, to)` returns a copy of the string `str` in which all occurrences of string `from` have been replaced with string `to`.
 
-Example: `strReplace('I like to skate with my skateboard', 'skate', 'surf') == "I like to surf with my surfboard"`
+Example:
+
+```jsonnet
+strReplace('I like to skate with my skateboard', 'skate', 'surf') == "I like to surf with my surfboard"
+```
 
 ## `isEmpty`
 
@@ -334,7 +362,11 @@ _Available since version 0.10.0._
 
 Returns a copy of the string in which all ASCII letters are capitalized.
 
-Example: `asciiUpper('100 Cats!') == "100 CATS!"`
+Example:
+
+```jsonnet
+asciiUpper('100 Cats!') == "100 CATS!"
+```
 
 ## `asciiLower`
 
@@ -342,7 +374,11 @@ _Available since version 0.10.0._
 
 Returns a copy of the string in which all ASCII letters are lower cased.
 
-Example: `asciiLower('100 Cats!') == "100 cats!"`
+Example:
+
+```jsonnet
+asciiLower('100 Cats!') == "100 cats!"
+```
 
 ## `stringChars`
 
@@ -350,13 +386,17 @@ _Available since version 0.10.0._
 
 Split the string into an array of strings, each containing a single codepoint.
 
-Example: `std.stringChars("foo") == [ "f", "o", "o" ]`
+Example:
+
+```jsonnet
+stringChars("foo") == [ "f", "o", "o" ]
+```
 
 ## `format`
 
 _Available since version 0.10.0._
 
-`std.format(str, vals)` format the string `str` using the values in `vals`.
+`format(str, vals)` format the string `str` using the values in `vals`.
 
 The `vals` can be an array, an object, or in other cases are treated as if they were provided in a singleton array.
 
@@ -366,10 +406,12 @@ The `%` operator can be used as a shorthand for this function.
 
 Examples:
 
-- `std.format("Hello %03d", 12) yields "Hello 012"`
-- `"Hello %03d" % 12 == "Hello 012"`
-- `"Hello %s, age %d" % ["Foo", 25] == "Hello Foo, age 25"`
-- `"Hello %(name)s, age %(age)d" % {age: 25, name: "Foo"} == "Hello Foo, age 25"`
+```jsonnet
+format("Hello %03d", 12) == "Hello 012"
+"Hello %03d" % 12 == "Hello 012"
+"Hello %s, age %d" % ["Foo", 25] == "Hello Foo, age 25"
+"Hello %(name)s, age %(age)d" % {age: 25, name: "Foo"} == "Hello Foo, age 25"
+```
 
 ## `escapeStringBash`
 
@@ -392,9 +434,7 @@ Converts the string to allow it to be embedded in a JSON representation, within 
 Example:
 
 ```jsonnet
-local description = "Multiline\nc:\\path";
-"{name: %s}" % std.escapeStringJson(description)
-// "{name: \"Multiline\\nc:\\\\path\"}"
+"{name: %s}" % escapeStringJson("Multiline\nc:\\path") == "{name: \"Multiline\\nc:\\\\path\"}"
 ```
 
 ## `escapeStringPython`
@@ -423,8 +463,12 @@ _Available since version 0.10.0._
 
 Parses a signed decimal integer from the input string.
 
-- `parseInt("123") == 123`
-- `parseInt("-123") == -123`
+Examples:
+
+```jsonnet
+parseInt("123") == 123
+parseInt("-123") == -123
+```
 
 ## `parseOctal`
 
@@ -432,7 +476,11 @@ _Available since version 0.10.0._
 
 Parses an unsigned octal integer from the input string. Initial zeroes are tolerated.
 
-Example: `std.parseOctal("755") == 493`
+Example:
+
+```jsonnet
+parseOctal("755") == 493
+```
 
 ## `parseHex`
 
@@ -440,7 +488,11 @@ _Available since version 0.10.0._
 
 Parses an unsigned hexadecimal integer, from the input string. Case insensitive.
 
-Example: `std.parseHex("ff") == 255`
+Example:
+
+```jsonnet
+parseHex("ff") == 255
+```
 
 ## `parseJson`
 
@@ -448,7 +500,11 @@ _Available since version 0.13.0._
 
 Parses a JSON string.
 
-Example: `std.parseJson('{"foo": "bar"}') == { "foo": "bar" }`
+Example:
+
+```jsonnet
+parseJson('{"foo": "bar"}') == { "foo": "bar" }
+```
 
 ## `parseYaml`
 
@@ -462,7 +518,11 @@ YAML is a superset of JSON, consequently "downcasting" or manifestation of YAML 
 
 The parser does not support YAML documents with scalar values at the root. The root node of a YAML document must start with either a YAML sequence or map to be successfully parsed.
 
-Example: `std.parseYaml('foo: bar') == { "foo": "bar" }`
+Example:
+
+```jsonnet
+parseYaml('foo: bar') == { "foo": "bar" }
+```
 
 ## `encodeUTF8`
 
@@ -484,17 +544,17 @@ Convert the given structure to a string in INI format.
 
 This allows using Jsonnet's object model to build a configuration to be consumed by an application expecting an INI file. The data is in the form of a set of sections, each containing a key/value mapping.
 
-These examples should make it clear:
+This example:
 
 ```jsonnet
-{
+manifestIni({
   main: { a: "1", b: "2" },
   sections: {
     s1: { x: "11", y: "22", z: "33" },
     s2: { p: "yes", q: ""},
     empty: {},
   }
-}
+})
 ```
 
 Yields a string containing this INI file:
@@ -519,12 +579,12 @@ _Available since version 0.10.0._
 Convert the given value to a JSON-like form that is compatible with Python. The chief differences are `True` / `False` / `None` instead of `true` / `false` / `null`.
 
 ```jsonnet
-{
+manifestPython({
   b: ["foo", "bar"],
   c: true,
   d: null,
   e: { f1: false, f2: 42 },
-}
+})
 ```
 
 Yields a string containing Python code like:
@@ -545,12 +605,12 @@ _Available since version 0.10.0._
 Convert the given object to a JSON-like form that is compatible with Python. The key difference to `manifestPython` is that the top level is represented as a list of Python global variables.
 
 ```jsonnet
-{
+manifestPythonVars({
   b: ["foo", "bar"],
   c: true,
   d: null,
   e: { f1: false, f2: 42 },
-}
+})
 ```
 
 Yields a string containing this Python code:
@@ -568,7 +628,7 @@ _Available since version 0.10.0._
 
 `manifestJsonEx(value, indent, newline, key_val_sep)` convert the given object to a JSON form.
 
-`indent` is a string containing one or more whitespaces that are used for indentation.
+`indent` is a string containing one or more whitespace characters that are used for indentation.
 
 `newline` is by default `"\n"` and is inserted where a newline would normally be used to break long lines.
 
@@ -595,11 +655,11 @@ _Available since version 0.10.0._
 ```jsonnet
 manifestYamlDoc(
   {
-      x: [1, 2, 3, true, false, null,
-          "string\nstring\n"],
-      y: { a: 1, b: 2, c: [1, 2] },
+    x: [1, 2, 3, true, false, null, "string\nstring\n"],
+    y: { a: 1, b: 2, c: [1, 2] },
   },
-  indent_array_in_object=false)
+  indent_array_in_object=false,
+)
 ```
 
 Yields a string containing this YAML:
@@ -700,15 +760,21 @@ manifestXmlJsonml([
 
 ## `manifestTomlEx`
 
-`std.manifestTomlEx(toml, indent)` convert the given object to a TOML form. `indent` is a string containing one or more whitespaces that are used for indentation.
+`manifestTomlEx(toml, indent)` convert the given object to a TOML form. `indent` is a string containing one or more whitespace characters that are used for indentation.
 
 ## `makeArray`
 
 _Available since version 0.10.0._
 
-`makeArray(sz, func)` creates a new array of `sz` elements by calling `func(i)` to initialize each element. `func` is a function that takes a single parameter, the index of the element it should initialize.
+`makeArray(sz, func)` creates a new array of `sz` elements by calling `func(i)` to initialize each element.
 
-Example: `std.makeArray(3,function(x) x * x) == [ 0, 1, 4 ]`
+`func` is a function that takes a single parameter, the index of the element it should initialize.
+
+Example:
+
+```jsonnet
+makeArray(3,function(x) x * x) == [ 0, 1, 4 ]
+```
 
 ## `member`
 
@@ -722,7 +788,7 @@ Argument `arr` may be an array or a string.
 
 _Available since version 0.10.0._
 
-`count(arr, x)` returns the number of times that x occurs in arr.
+`count(arr, x)` returns the number of times that `x` occurs in `arr`.
 
 ## `find`
 
@@ -740,7 +806,7 @@ _Available since version 0.10.0._
 
 _Available since version 0.10.0._
 
-Similar to map above, but it also passes to the function the element's index in the array. The function is expected to take the index as the first parameter and the element as the second.
+Similar to `map`, but it also passes to the function the element's index in the array. The function is expected to take the index as the first parameter and the element as the second.
 
 ## `filterMap`
 
@@ -752,14 +818,23 @@ _Available since version 0.10.0._
 
 _Available since version 0.10.0._
 
-`flatMap(func, arr)` applies the given function to every element of `arr` to form a new array then flatten the result. The argument `arr` must be an array or a string. If `arr` is an array, `func` must return an array. If `arr` is a string, `func` must return an `string`.
+`flatMap(func, arr)` applies the given function to every element of `arr` to form a new array then flatten the result.
+
+The argument `arr` must be an array or a string.
+
+- If `arr` is an array, `func` must return an array.
+- If `arr` is a string, `func` must return a string.
 
 `flatMap` can be thought of as a generalized `map`, with each element mapped to 0, 1 or more elements.
 
-- `flatMap(function(x) [x, x], [1, 2, 3]) == [ 1, 1, 2, 2, 3, 3 ]`
-- `flatMap(function(x) if x == 2 then [] else [x], [1, 2, 3]) == [ 1, 3 ]`
-- `flatMap(function(x) if x == 2 then [] else [x * 3, x * 2], [1, 2, 3]) == [ 3, 2, 9, 6 ]`
-- `flatMap(function(x) x+x, "foo") == "ffoooo"`
+Examples:
+
+```jsonnet
+flatMap(function(x) [x, x], [1, 2, 3]) == [ 1, 1, 2, 2, 3, 3 ]
+flatMap(function(x) if x == 2 then [] else [x], [1, 2, 3]) == [ 1, 3 ]
+flatMap(function(x) if x == 2 then [] else [x * 3, x * 2], [1, 2, 3]) == [ 3, 2, 9, 6 ]
+flatMap(function(x) x+x, "foo") == "ffoooo"
+```
 
 ## `filter`
 
@@ -793,8 +868,10 @@ _Available since version 0.15.0._
 
 Examples:
 
-- `repeat([1, 2, 3], 3) == [ 1, 2, 3, 1, 2, 3, 1, 2, 3 ]`
-- `repeat("blah", 2) == "blahblah"`
+```jsonnet
+repeat([1, 2, 3], 3) == [ 1, 2, 3, 1, 2, 3, 1, 2, 3 ]
+repeat("blah", 2) == "blahblah"
+```
 
 ## `slice`
 
@@ -806,10 +883,12 @@ Note that it's recommended to use dedicated slicing syntax both for arrays and s
 
 Examples:
 
-- `slice([1, 2, 3, 4, 5, 6], 0, 4, 1) == [ 1, 2, 3, 4 ]`
-- `slice([1, 2, 3, 4, 5, 6], 1, 6, 2) == [ 2, 4, 6 ]`
-- `slice("jsonnet", 0, 4, 1) == "json"`
-- `slice("jsonnet", -3, null, null) == "net"`
+```jsonnet
+slice([1, 2, 3, 4, 5, 6], 0, 4, 1) == [ 1, 2, 3, 4 ]
+slice([1, 2, 3, 4, 5, 6], 1, 6, 2) == [ 2, 4, 6 ]
+slice("jsonnet", 0, 4, 1) == "json"
+slice("jsonnet", -3, null, null) == "net"
+```
 
 ## `join`
 
@@ -819,8 +898,12 @@ For `join(sep, arr)`, if `sep` is a string, then `arr` must be an array of strin
 
 If `sep` is an array, then `arr` must be an array of arrays, in which case the arrays are concatenated in the same way, to produce a single array.
 
-- `join(".", ["www", "google", "com"]) == "www.google.com"`
-- `join([9, 9], [[1], [2, 3]]) == [ 1, 9, 9, 2, 3 ]`
+Examples:
+
+```jsonnet
+join(".", ["www", "google", "com"]) == "www.google.com"
+join([9, 9], [[1], [2, 3]]) == [ 1, 9, 9, 2, 3 ]
+```
 
 ## `lines`
 
@@ -834,19 +917,23 @@ _Available since version 0.10.0._
 
 Concatenate an array of arrays into a single array.
 
-Example: `flattenArrays([[1, 2], [3, 4], [[5, 6], [7, 8]]]) == [ 1, 2, 3, 4, [ 5, 6 ], [ 7, 8 ] ]`
+Example:
+
+```jsonnet
+flattenArrays([[1, 2], [3, 4], [[5, 6], [7, 8]]]) == [ 1, 2, 3, 4, [ 5, 6 ], [ 7, 8 ] ]
+```
 
 ## `reverse`
 
 _Available since version 0.13.0._
 
-Reverses an array.
+Returns the argument array reversed.
 
 ## `sort`
 
 _Available since version 0.10.0._
 
-`std.sort(arr, keyF=id)` sorts the array using the `<=` operator.
+`sort(arr, keyF=id)` sorts the array using the `<=` operator.
 
 Optional argument `keyF` is a single argument function used to extract comparison key from each array element.
 
@@ -864,7 +951,7 @@ _Available since version 0.19.0._
 
 `all(arr)` returns `true` if all elements of the input array are `true`, `false` otherwise. `all([])` evaluates to `true`.
 
-It's an error if `arr` is not an array, or `arr` contains non-boolean values.
+Raises if `arr` is not an array, or `arr` contains non-boolean values.
 
 ## `any`
 
@@ -872,7 +959,7 @@ _Available since version 0.19.0._
 
 `any(arr)` return `true` if any element of `arr` is `true`, `false` otherwise. `any([])` evaluates to `false`.
 
-It's an error if `arr` is not an array, or `arr` contains non-boolean values.
+Raises if `arr` is not an array, or `arr` contains non-boolean values.
 
 ## `sum`
 
@@ -912,8 +999,10 @@ Note that `+` on sets will simply concatenate the arrays, possibly forming an ar
 
 Examples:
 
-- `setUnion([1, 2], [2, 3]) == [ 1, 2, 3 ]`
-- `setUnion([{n:"A", v:1}, {n:"B"}], [{n:"A", v: 9999}, {n:"C"}], keyF=function(x) x.n) == [ { "n": "A", "v": 1 }, { "n": "B" }, { "n": "C" } ]`
+```jsonnet
+setUnion([1, 2], [2, 3]) == [ 1, 2, 3 ]
+setUnion([{n:"A", v:1}, {n:"B"}], [{n:"A", v: 9999}, {n:"C"}], keyF=function(x) x.n) == [ { "n": "A", "v": 1 }, { "n": "B" }, { "n": "C" } ]
+```
 
 `a` and `b` must be sets, i.e. sorted arrays with no duplicates. If that is not the case, this function will quietly return non-meaningful results.
 
@@ -1029,13 +1118,13 @@ _Available since version 0.10.0._
 
 `base64DecodeBytes(str)` decodes the given base64 string into an array of bytes (number values).
 
-Currently assumes the input string has no linebreaks and is padded to a multiple of 4 (with the `=` character). In other words, it consumes the output of `base64`.
+Currently assumes the input string has no line breaks and is padded to a multiple of 4 (with the `=` character). In other words, it consumes the output of `base64`.
 
 ## `base64Decode`
 
 _Available since version 0.10.0._
 
-**Deprecated**, use `base64DecodeBytes` and decode the string explicitly (e.g. with `decodeUTF8`) instead.
+**Deprecated**: use `base64DecodeBytes` and decode the string explicitly (e.g. with `decodeUTF8`) instead.
 
 Behaves like `base64DecodeBytes` except returns a naively encoded string instead of an array of bytes.
 
@@ -1072,24 +1161,24 @@ _Available since version 0.11.0._
 Example:
 
 ```jsonnet
-local conditionalReturn(cond, in1, in2) =
-  if cond then
-    std.trace('cond is true, returning ' + std.toString(in1), in1)
+local choose(c, yes, no) =
+  if c then
+    std.trace('c is true, returning ' + std.toString(yes), yes)
   else
-    std.trace('cond is false, returning ' + std.toString(in2), in2);
+    std.trace('c is false, returning ' + std.toString(no), no);
 
 {
-  a: conditionalReturn(true, { b: 1 }, { c: 2 }),
+  foo: choose(true, { bar: 1 }, { quz: 2 }),
 }
 ```
 
 Prints:
 
 ```
-TRACE: test.jsonnet:3 cond is true, returning {"b": 1}
+TRACE: test.jsonnet:3 c is true, returning {"bar": 1}
 {
-  "a": {
-    "b": 1
+  "foo": {
+    "bar": 1
   }
 }
 ```
