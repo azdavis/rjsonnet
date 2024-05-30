@@ -14,8 +14,7 @@ pub(crate) fn get() -> lsp_types::ServerCapabilities {
       },
     )),
     definition_provider: Some(lsp_types::OneOf::Left(true)),
-    // TODO enable
-    // hover_provider: Some(lsp_types::HoverProviderCapability::Simple(true)),
+    hover_provider: Some(lsp_types::HoverProviderCapability::Simple(true)),
     ..Default::default()
   }
 }

@@ -296,15 +296,20 @@ impl lang_srv_state::State for St {
 
   fn hover<F>(
     &mut self,
-    _fs: &F,
-    _path: paths::CleanPathBuf,
-    _pos: text_pos::PositionUtf16,
+    fs: &F,
+    path: paths::CleanPathBuf,
+    pos: text_pos::PositionUtf16,
   ) -> Option<String>
   where
     F: Sync + Send + paths::FileSystem,
   {
-    // TODO re-impl
-    None
+    // TODO re-impl with more
+    let path_id = self.path_id(path);
+    let arts = self.get_file_artifacts(fs, path_id).ok()?;
+    let ts = arts.pos_db.text_size_utf16(pos)?;
+    let root = arts.syntax.clone().into_ast()?;
+    let tok = jsonnet_syntax::node_token(root.syntax(), ts)?;
+    tok.kind().token_doc().map(ToOwned::to_owned)
   }
 
   /// Get the definition site of a part of a file.
