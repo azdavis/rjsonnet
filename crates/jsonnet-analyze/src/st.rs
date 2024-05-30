@@ -347,18 +347,23 @@ impl lang_srv_state::State for St {
       let root = arts.syntax.clone().into_ast()?;
       jsonnet_syntax::node_token(root.syntax(), ts)?
     };
-    let std_field = {
-      let node = tok.parent()?;
-      let ptr = jsonnet_syntax::ast::SyntaxNodePtr::new(&node);
-      let expr = arts.pointers.get_idx(ptr);
-      // TODO expose any errors here?
-      let ce = const_eval::get(self, fs, path_id, expr);
-      let Some(const_eval::ConstEval::Std(f)) = ce else { return None };
-      f
+    // have to manually impl `and_then` because `self` is immutably borrowed up to when `arts` is
+    // last used
+    let std_field = match tok.parent() {
+      None => None,
+      Some(node) => {
+        let ptr = jsonnet_syntax::ast::SyntaxNodePtr::new(&node);
+        let expr = arts.pointers.get_idx(ptr);
+        // TODO expose any errors here?
+        const_eval::get(self, fs, path_id, expr)
+      }
     };
     let from_std_field = match std_field {
-      Some(x) => std_lib_doc().get(self.with_fs.artifacts.strings.get(&x)).map(String::as_str),
-      None => Some("The standard library."),
+      Some(const_eval::ConstEval::Std(Some(x))) => {
+        std_lib_doc().get(self.with_fs.artifacts.strings.get(&x)).map(String::as_str)
+      }
+      Some(const_eval::ConstEval::Std(None)) => Some("The standard library."),
+      None | Some(const_eval::ConstEval::Real(_)) => None,
     };
     // we can't have something be both a token and a std lib function
     from_std_field.or_else(|| tok.kind().token_doc()).map(ToOwned::to_owned)
