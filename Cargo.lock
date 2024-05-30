@@ -343,6 +343,7 @@ version = "0.2.0"
 dependencies = [
  "always",
  "apply-changes",
+ "code-h2-md-map",
  "diagnostic",
  "env_logger",
  "jsonnet-desugar",

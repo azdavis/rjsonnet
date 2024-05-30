@@ -6,7 +6,19 @@ use always::always;
 use jsonnet_eval::JsonnetFile;
 use jsonnet_syntax::ast::AstNode as _;
 use paths::{PathId, PathMap};
+use rustc_hash::FxHashMap;
 use std::collections::hash_map::Entry;
+use std::sync::OnceLock;
+
+// TODO replace with new std lib goodies when they're in
+type StdLibDoc = FxHashMap<&'static str, String>;
+fn std_lib_doc() -> &'static StdLibDoc {
+  static LOCK: OnceLock<StdLibDoc> = OnceLock::new();
+  fn init() -> StdLibDoc {
+    code_h2_md_map::get(include_str!("../../../docs/stdlib.md"), |x| format!("`std.{x}`"))
+  }
+  LOCK.get_or_init(init)
+}
 
 #[derive(Debug)]
 struct WithFs {
@@ -306,10 +318,26 @@ impl lang_srv_state::State for St {
     // TODO re-impl with more
     let path_id = self.path_id(path);
     let arts = self.get_file_artifacts(fs, path_id).ok()?;
-    let ts = arts.pos_db.text_size_utf16(pos)?;
-    let root = arts.syntax.clone().into_ast()?;
-    let tok = jsonnet_syntax::node_token(root.syntax(), ts)?;
-    tok.kind().token_doc().map(ToOwned::to_owned)
+    let tok = {
+      let ts = arts.pos_db.text_size_utf16(pos)?;
+      let root = arts.syntax.clone().into_ast()?;
+      jsonnet_syntax::node_token(root.syntax(), ts)?
+    };
+    let std_field = {
+      let node = tok.parent()?;
+      let ptr = jsonnet_syntax::ast::SyntaxNodePtr::new(&node);
+      let expr = arts.pointers.get_idx(ptr);
+      // TODO expose any errors here?
+      let ce = const_eval::get(self, fs, path_id, expr);
+      let Some(const_eval::ConstEval::Std(f)) = ce else { return None };
+      f
+    };
+    let from_std_field = match std_field {
+      Some(x) => std_lib_doc().get(self.with_fs.artifacts.strings.get(&x)).map(String::as_str),
+      None => Some("The standard library."),
+    };
+    // we can't have something be both a token and a std lib function
+    from_std_field.or_else(|| tok.kind().token_doc()).map(ToOwned::to_owned)
   }
 
   /// Get the definition site of a part of a file.
