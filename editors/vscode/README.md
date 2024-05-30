@@ -15,6 +15,7 @@ For more mature alternatives, consider:
 
 - Inline diagnostics
 - Go-to-definition
+- Hover for info
 
 [jsonnet]: https://jsonnet.org
 [carl]: https://marketplace.visualstudio.com/items?itemName=cverge.jsonnet-lsp

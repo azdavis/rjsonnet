@@ -16,7 +16,14 @@ Logical and. Short-circuits.
 
 ## `::`
 
-A kind of field marker. Fields with this marker will not be included in the output JSON when materialized.
+A kind of field marker.
+
+Fields with this marker will not be included in the output JSON when materialized.
+
+```jsonnet
+{ hm:: "where'd i go?", s: "hi" }
+// { s: "hi" }
+```
 
 ## `<<`
 
@@ -87,11 +94,11 @@ Multiplication.
 Addition, for numbers, strings, arrays, or objects.
 
 ```jsonnet
-local two = 1 + 2;
-local greeting = "hello, " + "world";
-local one_two_eight_nine = [1, 2] + [8, 9];
-{ a: 1, b: 2 } + { a: 3, c: 4 }
-// { a: 3, b: 2, c: 4 }
+local num = 1 + 2;
+local str = "hello, " + "world";
+local ary = [1, 2] + [8, 9];
+{ a: -321, b: str } + { a: num, c: ary }
+// { a: 3, b: "hello, world", c: [1, 2, 8, 9] }
 ```
 
 ## `,`
@@ -104,7 +111,12 @@ Numerical negation.
 
 ## `.`
 
-Get an object's field.
+Get an object's field. Can be chained.
+
+```jsonnet
+local a = { foo: { bar: "quz" } };
+a.foo.bar // "quz"
+```
 
 ## `/`
 
@@ -113,6 +125,10 @@ Numerical division.
 ## `:`
 
 The default field marker.
+
+```jsonnet
+{ a: 3 }
+```
 
 ## `;`
 
@@ -237,11 +253,36 @@ The "no" boolean. Opposite of `true`.
 
 ## `local`
 
-Create a binding.
+Create some bindings (usually just one).
+
+```jsonnet
+local three = 1 + 2;
+three + 4 // 7
+```
+
+The bindings, separated by `,`, may be mutually recursive.
+
+```jsonnet
+local
+  isOdd(x) =
+    if x == 0 then false
+    else x == 1 || isEven(x - 1)
+, isEven(x) =
+    assert x >= 0 : "cannot figure out negative numbers";
+    x == 0 || isOdd(x - 1)
+;
+
+isOdd(4) // false
+```
 
 ## `super`
 
 The parent (left) object in a chain of objects connected together with `+`.
+
+```jsonnet
+{ a: 3 } + { b: super.a + 1 }
+// { a: 3, b: 4 }
+```
 
 ## `else`
 
@@ -278,6 +319,20 @@ lengths(["foo", "hi"]) // { foo: 3, hi: 2 }
 ## `if`
 
 Branch on a boolean.
+
+```jsonnet
+local hm(x) = if x then 4 else 5;
+[hm(true), hm(false)]
+// [4, 5]
+```
+
+You can skip the `else`. It defaults to `else null`.
+
+```jsonnet
+local hm(x) = if x then 4;
+[hm(true), hm(false)]
+// [4, null]
+```
 
 ## `in`
 
