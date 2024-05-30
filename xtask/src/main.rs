@@ -158,6 +158,23 @@ fn dist(args: &DistArgs) {
   fs::copy(&src, &dst).expect("copy");
   assert!(dst.pop());
   assert!(dst.pop());
+
+  let changelog = include_str!("../../docs/CHANGELOG.md");
+  dst.push("CHANGELOG.md");
+  fs::write(&dst, changelog).expect("write changelog");
+  assert!(dst.pop());
+
+  let license = {
+    let header =
+      "Millet is licensed under either the MIT license or the Apache license v2.0, at your option.";
+    let apache = include_str!("../../LICENSE-APACHE.md");
+    let mit = include_str!("../../LICENSE-MIT.md");
+    format!("{header}\n\n{apache}\n{mit}")
+  };
+  dst.push("LICENSE.md");
+  fs::write(&dst, license).expect("write combined license");
+  assert!(dst.pop());
+
   env::set_current_dir(&dst).expect("set dir");
   if fs::metadata("node_modules").is_err() {
     run(cmd_exe("npm").arg("ci"));
