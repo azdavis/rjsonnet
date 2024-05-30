@@ -104,13 +104,11 @@ impl St {
     while let Some((path_id, import_kind)) = work.pop() {
       match import_kind {
         jsonnet_expr::ImportKind::Code => {
-          // invariant: file artifacts and file_exprs will BOTH be populated after this
-          let file = match (self.file_exprs.entry(path_id), self.file_artifacts.entry(path_id)) {
-            (Entry::Occupied(entry), Entry::Occupied(_)) => &*entry.into_mut(),
-            (file_entry, arts) => {
+          let file = match self.file_exprs.entry(path_id) {
+            Entry::Occupied(entry) => &*entry.into_mut(),
+            Entry::Vacant(entry) => {
               let file = self.with_fs.get_one_file(fs, path_id)?;
-              entry_insert(arts, file.artifacts);
-              &*entry_insert(file_entry, file.eval)
+              entry.insert(file.eval)
             }
           };
           work.extend(file.imports().map(|import| (import.path, import_kind)));
@@ -389,15 +387,5 @@ impl lang_srv_state::State for St {
 
   fn path_id(&mut self, path: paths::CleanPathBuf) -> PathId {
     self.with_fs.artifacts.paths.get_id_owned(path)
-  }
-}
-
-fn entry_insert<K, V>(entry: Entry<'_, K, V>, value: V) -> &mut V {
-  match entry {
-    Entry::Occupied(mut entry) => {
-      entry.insert(value);
-      entry.into_mut()
-    }
-    Entry::Vacant(entry) => entry.insert(value),
   }
 }
