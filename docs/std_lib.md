@@ -65,7 +65,7 @@ _Available since version 0.10.0._
 
 Depending on the type of the value given, this functions returns the number of _something_ in that argument value. The table below describes the _something_:
 
-| type     | something  |
+| Type     | Something  |
 | -------- | ---------- |
 | array    | elements   |
 | string   | codepoints |
@@ -104,15 +104,15 @@ Returns the minimum of the two arguments.
 
 ## `pow`
 
-`pow(x, y)` returns $x^y$, i.e. $x$ to the $y$ power.
+`std.pow(x, y)` returns $x^y$, i.e. $x$ to the $y$ power.
 
 ## `exp`
 
-`exp(x)` returns $e^x$, i.e. $e$ to the $x$ power, where [$e \approx 2.71828$](<https://en.wikipedia.org/wiki/E_(mathematical_constant)>).
+`std.exp(x)` returns $e^x$, i.e. $e$ to the $x$ power, where [$e \approx 2.71828$](<https://en.wikipedia.org/wiki/E_(mathematical_constant)>).
 
 ## `log`
 
-`log(x)` returns the natural logarithm of $x$, i.e. the solution $y$ in $e^y = x$, where [$e \approx 2.71828$](<https://en.wikipedia.org/wiki/E_(mathematical_constant)>).
+`std.log(x)` returns the natural logarithm of $x$, i.e. the solution $y$ in $e^y = x$, where [$e \approx 2.71828$](<https://en.wikipedia.org/wiki/E_(mathematical_constant)>).
 
 ## `exponent`
 
@@ -136,31 +136,43 @@ Returns the square root of the argument.
 
 ## `sin`
 
-This is a trig function.
+Returns the sine of the argument.
+
+This is a trigonometry function.
 
 ## `cos`
 
-This is a trig function.
+Returns the cosine of its argument.
+
+This is a trigonometry function.
 
 ## `tan`
 
-This is a trig function.
+Returns the tangent of its argument.
+
+This is a trigonometry function.
 
 ## `asin`
 
-This is a trig function.
+Returns the arcsine of its argument.
+
+This is a trigonometry function.
 
 ## `acos`
 
-This is a trig function.
+Returns the arccosine of its argument.
+
+This is a trigonometry function.
 
 ## `atan`
 
-This is a trig function.
+Returns the arctangent of its argument.
+
+This is a trigonometry function.
 
 ## `round`
 
-This is a trig function.
+Returns the argument rounded to the nearest integer.
 
 ## `isEven`
 
@@ -188,29 +200,29 @@ Raises if the argument is not a number.
 
 ## `mod`
 
-This is what the `%` operator is desugared to. It performs modulo arithmetic if the left hand side is a number, or if the left hand side is a string, it does Python-style string formatting with `format`.
+This is what the `%` operator is desugared to. It performs modulo arithmetic if the left hand side is a number, or if the left hand side is a string, it does Python-style string formatting with `std.format`.
 
 ## `clamp`
 
 _Available since version 0.15.0._
 
-`clamp(x, minVal, maxVal)` clamps a value to fit within the range `[minVal,maxVal]`.
+`std.clamp(x, minVal, maxVal)` clamps a value to fit within the range `[minVal,maxVal]`.
 
-Equivalent to `max(minVal, min(x, maxVal))`.
+Equivalent to `std.max(minVal, std.min(x, maxVal))`.
 
 Examples:
 
 ```jsonnet
-clamp(-3, 0, 5) == 0
-clamp(4, 0, 5) == 4
-clamp(7, 0, 5) == 5
+std.clamp(-3, 0, 5) == 0
+std.clamp(4, 0, 5) == 4
+std.clamp(7, 0, 5) == 5
 ```
 
 ## `assertEqual`
 
 _Available since version 0.10.0._
 
-`assertEqual(a, b)` ensures that `a == b` holds. Returns `true` if so, else throws an error message.
+`std.assertEqual(a, b)` ensures that `a == b` holds. Returns `true` if so, else throws an error message.
 
 ## `toString`
 
@@ -228,13 +240,13 @@ Returns the positive integer representing the unicode codepoint of the character
 
 _Available since version 0.10.0._
 
-Returns a string of length one whose only unicode codepoint has integer id n. This function is the inverse of `codepoint`.
+Returns a string of length one whose only unicode codepoint has integer id n. This function is the inverse of `std.codepoint`.
 
 ## `substr`
 
 _Available since version 0.10.0._
 
-`substr(str, from, len)` returns a string that is the part of `s` that starts at `offset` from and is `len` codepoints long.
+`std.substr(str, from, len)` returns a string that is the part of `s` that starts at `offset` from and is `len` codepoints long.
 
 If the string `s` is shorter than `from + len`, the suffix starting at position `from` will be returned.
 
@@ -242,119 +254,120 @@ If the string `s` is shorter than `from + len`, the suffix starting at position 
 
 _Available since version 0.10.0._
 
-`findSubstr(pat, str)` returns an array that contains the indexes of all occurrences of pat in str.
+`std.findSubstr(pat, str)` returns an array that contains the indexes of all occurrences of pat in str.
 
 ## `startsWith`
 
 _Available since version 0.10.0._
 
-`startsWith(a, b)` returns whether the string `a` is prefixed by the string `b`.
+`std.startsWith(a, b)` returns whether the string `a` is prefixed by the string `b`.
 
 ## `endsWith`
 
 _Available since version 0.10.0._
 
-`endsWith(a, b)` returns whether the string `a` is suffixed by the string `b`.
+`std.endsWith(a, b)` returns whether the string `a` is suffixed by the string `b`.
 
 ## `stripChars`
 
 _Available since version 0.15.0._
 
-`stripChars(str, chars)` removes characters `chars` from the beginning and from the end of `str`.
+`std.stripChars(str, chars)` removes characters `chars` from the beginning and from the end of `str`.
 
 Examples:
 
 ```jsonnet
-stripChars(" test test test ", " ") == "test test test"
-stripChars("aaabbbbcccc", "ac") == "bbbb"
-stripChars("cacabbbbaacc", "ac") == "bbbb"
+assert std.stripChars(" test test test ", " ") == "test test test";
+assert std.stripChars("aaabbbbcccc", "ac") == "bbbb";
+assert std.stripChars("cacabbbbaacc", "ac") == "bbbb";
 ```
 
 ## `lstripChars`
 
 _Available since version 0.15.0._
 
-`lstripChars(str, chars)` removes characters `chars` from the beginning of `str`.
+`std.lstripChars(str, chars)` removes characters `chars` from the beginning of `str`.
 
 Examples:
 
 ```jsonnet
-lstripChars(" test test test ", " ") == "test test test "
-lstripChars("aaabbbbcccc", "ac") == "bbbbcccc"
-lstripChars("cacabbbbaacc", "ac") == "bbbbaacc"
+assert std.lstripChars(" test test test ", " ") == "test test test ";
+assert std.lstripChars("aaabbbbcccc", "ac") == "bbbbcccc";
+assert std.lstripChars("cacabbbbaacc", "ac") == "bbbbaacc";
 ```
 
-## `rstripChars`
+## `std.rstripChars`
 
 _Available since version 0.15.0._
 
-`rstripChars(str, chars)` removes characters `chars` from the end of `str`.
+`std.rstripChars(str, chars)` removes characters `chars` from the end of `str`.
 
 ```jsonnet
-rstripChars(" test test test ", " ") == " test test test"
-rstripChars("aaabbbbcccc", "ac") == "aaabbbb"
-rstripChars("cacabbbbaacc", "ac") == "cacabbbb"
+assert std.rstripChars(" test test test ", " ") == " test test test";
+assert std.rstripChars("aaabbbbcccc", "ac") == "aaabbbb";
+assert std.rstripChars("cacabbbbaacc", "ac") == "cacabbbb";
 ```
 
 ## `split`
 
 _Available since version 0.10.0._
 
-`split(str, c)` splits the string `str` into an array of strings, divided by the string `c`.
+`std.split(str, c)` splits the string `str` into an array of strings, divided by the string `c`.
 
 Note: Versions up to and including 0.18.0 require `c` to be a single character.
 
 Examples:
 
 ```jsonnet
-split("foo/_bar", "/_") == [ "foo", "bar" ]
-split("/_foo/\_bar", "/_") == [ "", "foo", "bar" ]
+assert std.split("foo/_bar", "/_") == [ "foo", "bar" ];
+assert std.split("/_foo/\_bar", "/_") == [ "", "foo", "bar" ];
 ```
 
 ## `splitLimit`
 
 _Available since version 0.10.0._
 
-`splitLimit(str, c, maxsplits)` is the same as `split(str, c)` but will stop after `maxsplits` splits, thereby the largest array it will return has length `maxsplits + 1`. A limit of `-1` means unlimited.
+`std.splitLimit(str, c, maxsplits)` is the same as `std.split(str, c)` but will stop after `maxsplits` splits, thereby the largest array it will return has length `maxsplits + 1`. A limit of `-1` means unlimited.
 
 Note: Versions up to and including 0.18.0 require `c` to be a single character.
 
 Examples:
 
 ```jsonnet
-splitLimit("foo/_bar", "/_", 1) == [ "foo", "bar" ]
-splitLimit("/_foo/\_bar", "/_", 1) == [ "", "foo/_bar" ]
+assert splitLimit("foo/_bar", "/_", 1) == [ "foo", "bar" ];
+assert splitLimit("/_foo/\_bar", "/_", 1) == [ "", "foo/_bar" ];
 ```
 
 ## `splitLimitR`
 
 _Available since version 0.19.0._
 
-`splitLimitR(str, c, maxsplits)` is the same as `splitLimit(str, c, maxsplits)` but will split from right to left.
+`std.splitLimitR(str, c, maxsplits)` is the same as `std.splitLimit(str, c, maxsplits)` but will split from right to left.
 
 Example:
 
 ```jsonnet
-splitLimitR("/_foo/\_bar", "/_", 1) == [ "/_foo", "bar" ]
+assert splitLimitR("/_foo/\_bar", "/_", 1) == [ "/_foo", "bar" ];
 ```
 
 ## `strReplace`
 
 _Available since version 0.10.0._
 
-`strReplace(str, from, to)` returns a copy of the string `str` in which all occurrences of string `from` have been replaced with string `to`.
+`std.strReplace(str, from, to)` returns a copy of the string `str` in which all occurrences of string `from` have been replaced with string `to`.
 
 Example:
 
 ```jsonnet
-strReplace('I like to skate with my skateboard', 'skate', 'surf') == "I like to surf with my surfboard"
+assert std.strReplace('I like to skate with my skateboard', 'skate', 'surf')
+  == "I like to surf with my surfboard";
 ```
 
 ## `isEmpty`
 
 _Available since version 0.20.0._
 
-Returns true if the given string is of zero length.
+Returns `true` if the given string is of zero length.
 
 ## `asciiUpper`
 
@@ -365,7 +378,7 @@ Returns a copy of the string in which all ASCII letters are capitalized.
 Example:
 
 ```jsonnet
-asciiUpper('100 Cats!') == "100 CATS!"
+assert std.asciiUpper('100 Cats!') == "100 CATS!";
 ```
 
 ## `asciiLower`
@@ -377,7 +390,7 @@ Returns a copy of the string in which all ASCII letters are lower cased.
 Example:
 
 ```jsonnet
-asciiLower('100 Cats!') == "100 cats!"
+assert std.asciiLower('100 Cats!') == "100 cats!";
 ```
 
 ## `stringChars`
@@ -389,14 +402,14 @@ Split the string into an array of strings, each containing a single codepoint.
 Example:
 
 ```jsonnet
-stringChars("foo") == [ "f", "o", "o" ]
+assert std.stringChars("foo") == [ "f", "o", "o" ];
 ```
 
 ## `format`
 
 _Available since version 0.10.0._
 
-`format(str, vals)` format the string `str` using the values in `vals`.
+`std.format(str, vals)` format the string `str` using the values in `vals`.
 
 The `vals` can be an array, an object, or in other cases are treated as if they were provided in a singleton array.
 
@@ -407,41 +420,51 @@ The `%` operator can be used as a shorthand for this function.
 Examples:
 
 ```jsonnet
-format("Hello %03d", 12) == "Hello 012"
-"Hello %03d" % 12 == "Hello 012"
-"Hello %s, age %d" % ["Foo", 25] == "Hello Foo, age 25"
-"Hello %(name)s, age %(age)d" % {age: 25, name: "Foo"} == "Hello Foo, age 25"
+assert std.format("Hello %03d", 12) == "Hello 012";
+assert "Hello %03d" % 12 == "Hello 012";
+assert "Hello %s, age %d" % ["Foo", 25] == "Hello Foo, age 25";
+assert "Hello %(name)s, age %(age)d" % {age: 25, name: "Foo"}
+  == "Hello Foo, age 25";
 ```
 
 ## `escapeStringBash`
 
 _Available since version 0.10.0._
 
-Wraps the string in single quotes, and escapes any single quotes within `str` by changing them to a sequence `'"'"'`. This allows injection of arbitrary strings as arguments of commands in bash scripts.
+Wraps the string in single quotes, and escapes any single quotes within `str` by changing them to a sequence `'"'"'`.
+
+This allows injection of arbitrary strings as arguments of commands in bash scripts.
 
 ## `escapeStringDollars`
 
 _Available since version 0.10.0._
 
-Converts `$` to `$$` in the string. This allows injection of arbitrary strings into systems that use `$` for string interpolation (like Terraform).
+Converts `$` to `$$` in the string.
+
+This allows injection of arbitrary strings into systems that use `$` for string interpolation, like Terraform.
 
 ## `escapeStringJson`
 
 _Available since version 0.10.0._
 
-Converts the string to allow it to be embedded in a JSON representation, within a string. This adds quotes, escapes backslashes, and escapes unprintable characters.
+Converts the string to allow it to be embedded in a JSON representation, within a string.
+
+This adds quotes, escapes backslashes, and escapes unprintable characters.
 
 Example:
 
 ```jsonnet
-"{name: %s}" % escapeStringJson("Multiline\nc:\\path") == "{name: \"Multiline\\nc:\\\\path\"}"
+assert "{name: %s}" % std.escapeStringJson("Multiline\nc:\\path")
+  == "{name: \"Multiline\\nc:\\\\path\"}";
 ```
 
 ## `escapeStringPython`
 
 _Available since version 0.10.0._
 
-Converts the string to allow it to be embedded in Python. This is an alias for `escapeStringJson`.
+Converts the string to allow it to be embedded in Python.
+
+This is an alias for `escapeStringJson`.
 
 ## `escapeStringXml`
 
@@ -466,8 +489,8 @@ Parses a signed decimal integer from the input string.
 Examples:
 
 ```jsonnet
-parseInt("123") == 123
-parseInt("-123") == -123
+assert std.parseInt("123") == 123;
+assert std.parseInt("-123") == -123;
 ```
 
 ## `parseOctal`
@@ -479,7 +502,7 @@ Parses an unsigned octal integer from the input string. Initial zeroes are toler
 Example:
 
 ```jsonnet
-parseOctal("755") == 493
+assert std.parseOctal("755") == 493;
 ```
 
 ## `parseHex`
@@ -491,7 +514,7 @@ Parses an unsigned hexadecimal integer, from the input string. Case insensitive.
 Example:
 
 ```jsonnet
-parseHex("ff") == 255
+assert std.parseHex("ff") == 255;
 ```
 
 ## `parseJson`
@@ -503,7 +526,7 @@ Parses a JSON string.
 Example:
 
 ```jsonnet
-parseJson('{"foo": "bar"}') == { "foo": "bar" }
+assert std.parseJson('{"foo": "bar"}') == { "foo": "bar" };
 ```
 
 ## `parseYaml`
@@ -521,7 +544,7 @@ The parser does not support YAML documents with scalar values at the root. The r
 Example:
 
 ```jsonnet
-parseYaml('foo: bar') == { "foo": "bar" }
+assert std.parseYaml('foo: bar') == { "foo": "bar" };
 ```
 
 ## `encodeUTF8`
@@ -547,7 +570,7 @@ This allows using Jsonnet's object model to build a configuration to be consumed
 This example:
 
 ```jsonnet
-manifestIni({
+std.manifestIni({
   main: { a: "1", b: "2" },
   sections: {
     s1: { x: "11", y: "22", z: "33" },
@@ -576,10 +599,18 @@ q =
 
 _Available since version 0.10.0._
 
-Convert the given value to a JSON-like form that is compatible with Python. The chief differences are `True` / `False` / `None` instead of `true` / `false` / `null`.
+Convert the given value to a JSON-like form that is compatible with Python. The chief differences are:
+
+| Replace | With    |
+| ------- | ------- |
+| `true`  | `True`  |
+| `false` | `False` |
+| `null`  | `None`  |
+
+This example:
 
 ```jsonnet
-manifestPython({
+std.manifestPython({
   b: ["foo", "bar"],
   c: true,
   d: null,
@@ -602,10 +633,12 @@ Yields a string containing Python code like:
 
 _Available since version 0.10.0._
 
-Convert the given object to a JSON-like form that is compatible with Python. The key difference to `manifestPython` is that the top level is represented as a list of Python global variables.
+Convert the given object to a JSON-like form that is compatible with Python. The key difference to `std.manifestPython` is that the top level is represented as a list of Python global variables.
+
+This example:
 
 ```jsonnet
-manifestPythonVars({
+std.manifestPythonVars({
   b: ["foo", "bar"],
   c: true,
   d: null,
@@ -626,7 +659,7 @@ e = {"f1": False, "f2": 42}
 
 _Available since version 0.10.0._
 
-`manifestJsonEx(value, indent, newline, key_val_sep)` convert the given object to a JSON form.
+`std.manifestJsonEx(value, indent, newline, key_val_sep)` convert the given object to a JSON form.
 
 `indent` is a string containing one or more whitespace characters that are used for indentation.
 
@@ -638,22 +671,34 @@ _Available since version 0.10.0._
 
 _Available since version 0.10.0._
 
-Convert the given object to a JSON form. Under the covers, it calls `manifestJsonEx` with a 4-space indent.
+Convert the given object to a JSON form.
+
+Under the covers, it calls `std.manifestJsonEx` with a 4-space indent.
 
 ## `manifestJsonMinified`
 
 _Available since version 0.18.0._
 
-Convert the given object to a minified JSON form. Under the covers, it calls `manifestJsonEx`.
+Convert the given object to a minified JSON form, with no extra whitespace.
+
+Under the covers, it calls `std.manifestJsonEx`.
 
 ## `manifestYamlDoc`
 
 _Available since version 0.10.0._
 
-`manifestYamlDoc(value, indent_array_in_object=false, quote_keys=true)` convert the given value to a YAML form. Note that `manifestJson` could also be used for this purpose, because any JSON is also valid YAML. But this function will produce more canonical-looking YAML.
+`std.manifestYamlDoc(value, indent_array_in_object=false, quote_keys=true)` convert the given value to a YAML form.
+
+Note that `manifestJson` could also be used for this purpose, because any JSON is also valid YAML. But this function will produce more canonical-looking YAML.
+
+The `indent_array_in_object` parameter adds additional indentation which some people may find easier to read.
+
+The `quote_keys` parameter controls whether YAML identifiers are always quoted or only when necessary.
+
+This example:
 
 ```jsonnet
-manifestYamlDoc(
+std.manifestYamlDoc(
   {
     x: [1, 2, 3, true, false, null, "string\nstring\n"],
     y: { a: 1, b: 2, c: [1, 2] },
@@ -683,18 +728,20 @@ Yields a string containing this YAML:
     - 2
 ```
 
-The `indent_array_in_object` param adds additional indentation which some people may find easier to read.
-
-The `quote_keys` parameter controls whether YAML identifiers are always quoted or only when necessary.
-
 ## `manifestYamlStream`
 
 _Available since version 0.10.0._
 
-Given an array of values, `manifestYamlStream(value, indent_array_in_object=false, c_document_end=false, quote_keys=true)` emits a YAML "stream", which is a sequence of documents separated by `---` and ending with `...`.
+Given an array of values, `std.manifestYamlStream(value, indent_array_in_object=false, c_document_end=false, quote_keys=true)` emits a YAML "stream", which is a sequence of documents separated by `---` and ending with `...`.
+
+The `indent_array_in_object` and `quote_keys` params are the same as in `std.manifestYamlDoc`.
+
+The `c_document_end` param adds the optional terminating `...`.
+
+This example:
 
 ```jsonnet
-manifestYamlStream( ['a', 1, []], indent_array_in_object=false, c_document_end=true)
+std.manifestYamlStream( ['a', 1, []], indent_array_in_object=false, c_document_end=true)
 ```
 
 Yields this string:
@@ -708,18 +755,16 @@ Yields this string:
 []
 ```
 
-The `indent_array_in_object` and `quote_keys` params are the same as in `manifestYamlDoc`.
-
-The `c_document_end` param adds the optional terminating `...`.
-
 ## `manifestXmlJsonml`
 
 _Available since version 0.10.0._
 
 Convert the given [JsonML](http://www.jsonml.org)-encoded value to a string containing the XML.
 
+This example:
+
 ```jsonnet
-manifestXmlJsonml([
+std.manifestXmlJsonml([
   'svg', { height: 100, width: 100 },
   [
     'circle', {
@@ -744,7 +789,7 @@ Yields a string containing this XML (all on one line):
 JsonML is designed to preserve "mixed-mode content" (i.e., textual data outside of or next to elements). This includes the whitespace needed to avoid having all the XML on one line, which is meaningful in XML. In order to have whitespace in the XML output, it must be present in the JsonML input:
 
 ```jsonnet
-manifestXmlJsonml([
+std.manifestXmlJsonml([
   'svg',
   { height: 100, width: 100 },
   '\n  ',
@@ -760,27 +805,29 @@ manifestXmlJsonml([
 
 ## `manifestTomlEx`
 
-`manifestTomlEx(toml, indent)` convert the given object to a TOML form. `indent` is a string containing one or more whitespace characters that are used for indentation.
+`std.manifestTomlEx(toml, indent)` convert the given `toml` to a TOML form.
+
+`indent` is a string containing one or more whitespace characters that are used for indentation.
 
 ## `makeArray`
 
 _Available since version 0.10.0._
 
-`makeArray(sz, func)` creates a new array of `sz` elements by calling `func(i)` to initialize each element.
+`std.makeArray(sz, func)` creates a new array of `sz` elements by calling `func` to initialize each element.
 
 `func` is a function that takes a single parameter, the index of the element it should initialize.
 
 Example:
 
 ```jsonnet
-makeArray(3,function(x) x * x) == [ 0, 1, 4 ]
+assert std.makeArray(3,function(x) x * x) == [ 0, 1, 4 ];
 ```
 
 ## `member`
 
 _Available since version 0.15.0._
 
-`member(arr, x)` returns whether `x` occurs in `arr`.
+`std.member(arr, x)` returns whether `x` occurs in `arr`.
 
 Argument `arr` may be an array or a string.
 
@@ -788,121 +835,127 @@ Argument `arr` may be an array or a string.
 
 _Available since version 0.10.0._
 
-`count(arr, x)` returns the number of times that `x` occurs in `arr`.
+`std.count(arr, x)` returns the number of times that `x` occurs in `arr`.
 
 ## `find`
 
 _Available since version 0.10.0._
 
-`find(value, arr)` returns an array that contains the indexes of all occurrences of `value` in `arr`.
+`std.find(value, arr)` returns an array that contains the indexes of all occurrences of `value` in `arr`.
 
 ## `map`
 
 _Available since version 0.10.0._
 
-`map(func, arr)` applies the given `func` to every element of `arr` to form a new array.
+`std.map(func, arr)` applies the given `func` to every element of `arr` to form a new array.
 
 ## `mapWithIndex`
 
 _Available since version 0.10.0._
 
-Similar to `map`, but it also passes to the function the element's index in the array. The function is expected to take the index as the first parameter and the element as the second.
+Similar to `std.map`, but it also passes to the function the element's index in the array. The function is expected to take the index as the first parameter and the element as the second.
 
 ## `filterMap`
 
 _Available since version 0.10.0._
 
-`filterMap(filter_func, map_func, arr)` first filters, then maps the given array, using the two functions provided.
+`std.filterMap(filter_func, map_func, arr)` first filters with `filter_func`, then maps with `map_func`, the given array `arr`.
 
 ## `flatMap`
 
 _Available since version 0.10.0._
 
-`flatMap(func, arr)` applies the given function to every element of `arr` to form a new array then flatten the result.
+`std.flatMap(func, arr)` applies the given function to every element of `arr` to form a new array then flatten the result.
 
 The argument `arr` must be an array or a string.
 
 - If `arr` is an array, `func` must return an array.
 - If `arr` is a string, `func` must return a string.
 
-`flatMap` can be thought of as a generalized `map`, with each element mapped to 0, 1 or more elements.
+`std.flatMap` can be thought of as a generalized `map`, with each element mapped to 0, 1 or more elements.
 
 Examples:
 
 ```jsonnet
-flatMap(function(x) [x, x], [1, 2, 3]) == [ 1, 1, 2, 2, 3, 3 ]
-flatMap(function(x) if x == 2 then [] else [x], [1, 2, 3]) == [ 1, 3 ]
-flatMap(function(x) if x == 2 then [] else [x * 3, x * 2], [1, 2, 3]) == [ 3, 2, 9, 6 ]
-flatMap(function(x) x+x, "foo") == "ffoooo"
+assert std.flatMap(function(x) [x, x], [1, 2, 3])
+  == [ 1, 1, 2, 2, 3, 3 ];
+assert std.flatMap(function(x) if x == 2 then [] else [x], [1, 2, 3])
+  == [ 1, 3 ];
+assert std.flatMap(function(x) if x == 2 then [] else [x * 3, x * 2], [1, 2, 3])
+  == [ 3, 2, 9, 6 ];
+assert std.flatMap(function(x) x+x, "foo")
+  == "ffoooo";
 ```
 
 ## `filter`
 
 _Available since version 0.10.0._
 
-`filter(func, arr)` return a new array containing all the elements of `arr` for which the `func` function returns `true`.
+`std.filter(func, arr)` return a new array containing all the elements of `arr` for which the `func` function returns `true`.
 
 ## `foldl`
 
 _Available since version 0.10.0._
 
-`foldl(func, arr, init)` calls the function `func` on the result of the previous function call and each array element of `arr`, or `init` in the case of the initial element. Traverses `arr` from left to right.
+`std.foldl(func, arr, init)` calls the function `func` on the result of the previous function call and each array element of `arr`, or `init` in the case of the initial element. Traverses `arr` from left to right.
 
 ## `foldr`
 
 _Available since version 0.10.0._
 
-`foldr(func, arr, init)` calls the function `func` on the result of the previous function call and each array element of `arr`, or `init` in the case of the initial element. Traverses `arr` from right to left.
+`std.foldr(func, arr, init)` calls the function `func` on the result of the previous function call and each array element of `arr`, or `init` in the case of the initial element. Traverses `arr` from right to left.
 
 ## `range`
 
 _Available since version 0.10.0._
 
-`range(from, to)` returns an array of ascending numbers between `from` and `to`, inclusively.
+`std.range(from, to)` returns an array of ascending numbers between `from` and `to`, inclusively.
 
 ## `repeat`
 
 _Available since version 0.15.0._
 
-`repeat(what, count)` repeats an array or a string `what` a number of times specified by an integer `count`.
+`std.repeat(what, count)` repeats an array or a string `what` a number of times specified by an integer `count`.
 
 Examples:
 
 ```jsonnet
-repeat([1, 2, 3], 3) == [ 1, 2, 3, 1, 2, 3, 1, 2, 3 ]
-repeat("blah", 2) == "blahblah"
+assert std.repeat([1, 2, 3], 3)
+  == [ 1, 2, 3, 1, 2, 3, 1, 2, 3 ];
+assert std.repeat("blah", 2)
+  == "blahblah";
 ```
 
 ## `slice`
 
 _Available since version 0.10.0._
 
-`slice(indexable, index, end, step)` selects the elements of `indexable`, an array or a string, from `index` to `end` with `step`, and returns an array or a string respectively.
+`std.slice(indexable, index, end, step)` selects the elements of `indexable`, an array or a string, from `index` to `end` with `step`, and returns an array or a string respectively.
 
 Note that it's recommended to use dedicated slicing syntax both for arrays and strings (e.g. `arr[0:4:1]` instead of `slice(arr, 0, 4, 1)`).
 
 Examples:
 
 ```jsonnet
-slice([1, 2, 3, 4, 5, 6], 0, 4, 1) == [ 1, 2, 3, 4 ]
-slice([1, 2, 3, 4, 5, 6], 1, 6, 2) == [ 2, 4, 6 ]
-slice("jsonnet", 0, 4, 1) == "json"
-slice("jsonnet", -3, null, null) == "net"
+assert std.slice([1, 2, 3, 4, 5, 6], 0, 4, 1) == [ 1, 2, 3, 4 ];
+assert std.slice([1, 2, 3, 4, 5, 6], 1, 6, 2) == [ 2, 4, 6 ];
+assert std.slice("jsonnet", 0, 4, 1) == "json";
+assert std.slice("jsonnet", -3, null, null) == "net";
 ```
 
 ## `join`
 
 _Available since version 0.10.0._
 
-For `join(sep, arr)`, if `sep` is a string, then `arr` must be an array of strings, in which case they are concatenated with `sep` used as a delimiter.
+For `std.join(sep, arr)`, if `sep` is a string, then `arr` must be an array of strings, in which case they are concatenated with `sep` used as a delimiter.
 
 If `sep` is an array, then `arr` must be an array of arrays, in which case the arrays are concatenated in the same way, to produce a single array.
 
 Examples:
 
 ```jsonnet
-join(".", ["www", "google", "com"]) == "www.google.com"
-join([9, 9], [[1], [2, 3]]) == [ 1, 9, 9, 2, 3 ]
+assert std.join(".", ["www", "google", "com"]) == "www.google.com";
+assert std.join([9, 9], [[1], [2, 3]]) == [ 1, 9, 9, 2, 3 ];
 ```
 
 ## `lines`
@@ -920,7 +973,8 @@ Concatenate an array of arrays into a single array.
 Example:
 
 ```jsonnet
-flattenArrays([[1, 2], [3, 4], [[5, 6], [7, 8]]]) == [ 1, 2, 3, 4, [ 5, 6 ], [ 7, 8 ] ]
+assert std.flattenArrays([[1, 2], [3, 4], [[5, 6], [7, 8]]])
+  == [ 1, 2, 3, 4, [ 5, 6 ], [ 7, 8 ] ];
 ```
 
 ## `reverse`
@@ -933,23 +987,23 @@ Returns the argument array reversed.
 
 _Available since version 0.10.0._
 
-`sort(arr, keyF=id)` sorts the array using the `<=` operator.
+`std.sort(arr, keyF=id)` sorts the array using the `<=` operator.
 
-Optional argument `keyF` is a single argument function used to extract comparison key from each array element.
+The optional argument `keyF` is a single argument function used to extract comparison key from each array element.
 
 ## `uniq`
 
 _Available since version 0.10.0._
 
-`uniq(arr, keyF=id)` removes successive duplicates. When given a sorted array, removes all duplicates.
+`std.uniq(arr, keyF=id)` removes successive duplicates. When given a sorted array, removes all duplicates.
 
-Optional argument `keyF` is a single argument function used to extract comparison key from each array element.
+The optional argument `keyF` is a single argument function used to extract comparison key from each array element.
 
 ## `all`
 
 _Available since version 0.19.0._
 
-`all(arr)` returns `true` if all elements of the input array are `true`, `false` otherwise. `all([])` evaluates to `true`.
+`std.all(arr)` returns `true` if all elements of the input array are `true`, `false` otherwise. `std.all([])` evaluates to `true`.
 
 Raises if `arr` is not an array, or `arr` contains non-boolean values.
 
@@ -957,7 +1011,7 @@ Raises if `arr` is not an array, or `arr` contains non-boolean values.
 
 _Available since version 0.19.0._
 
-`any(arr)` return `true` if any element of `arr` is `true`, `false` otherwise. `any([])` evaluates to `false`.
+`std.any(arr)` return `true` if any element of `arr` is `true`, `false` otherwise. `std.any([])` evaluates to `false`.
 
 Raises if `arr` is not an array, or `arr` contains non-boolean values.
 
@@ -977,13 +1031,13 @@ Returns the average of all the elements.
 
 _Available since version 0.10.0._
 
-`set(arr, keyF=id)` is a shortcut for `uniq(sort(arr))`.
+`std.set(arr, keyF=id)` is a shortcut for `std.uniq(std.sort(arr))`.
 
 ## `setInter`
 
 _Available since version 0.10.0._
 
-`setInter(a, b, keyF=id)` is the set intersection operation (values in both `a` and `b`).
+`std.setInter(a, b, keyF=id)` is the set intersection operation (values in both `a` and `b`).
 
 `a` and `b` must be sets, i.e. sorted arrays with no duplicates. If that is not the case, this function will quietly return non-meaningful results.
 
@@ -993,15 +1047,19 @@ The optional `keyF` function can be used to extract a key to use from each eleme
 
 _Available since version 0.10.0._
 
-`setUnion(a, b, keyF=id)` is the set union operation (values in any of `a` or `b`).
+`std.setUnion(a, b, keyF=id)` is the set union operation (values in any of `a` or `b`).
 
 Note that `+` on sets will simply concatenate the arrays, possibly forming an array that is not a set (due to not being ordered without duplicates).
 
 Examples:
 
 ```jsonnet
-setUnion([1, 2], [2, 3]) == [ 1, 2, 3 ]
-setUnion([{n:"A", v:1}, {n:"B"}], [{n:"A", v: 9999}, {n:"C"}], keyF=function(x) x.n) == [ { "n": "A", "v": 1 }, { "n": "B" }, { "n": "C" } ]
+assert std.setUnion([1, 2], [2, 3]) == [ 1, 2, 3 ];
+assert std.setUnion(
+  [{n:"A", v:1}, {n:"B"}],
+  [{n:"A", v: 9999}, {n:"C"}],
+  keyF=function(x) x.n
+) == [ { "n": "A", "v": 1 }, { "n": "B" }, { "n": "C" } ];
 ```
 
 `a` and `b` must be sets, i.e. sorted arrays with no duplicates. If that is not the case, this function will quietly return non-meaningful results.
@@ -1012,7 +1070,7 @@ The optional `keyF` function can be used to extract a key to use from each eleme
 
 _Available since version 0.10.0._
 
-`setDiff(a, b, keyF=id)` is the set difference operation (values in `a` but not `b`).
+`std.setDiff(a, b, keyF=id)` is the set difference operation (values in `a` but not `b`).
 
 `a` and `b` must be sets, i.e. sorted arrays with no duplicates. If that is not the case, this function will quietly return non-meaningful results.
 
@@ -1022,7 +1080,7 @@ The optional `keyF` function can be used to extract a key to use from each eleme
 
 _Available since version 0.10.0._
 
-`setMember(x, s, keyF=id)` returns `true` if `x` is a member of `s`, otherwise `false`.
+`std.setMember(x, s, keyF=id)` returns `true` if `x` is a member of `s`, otherwise `false`.
 
 `s` must be a set, i.e. a sorted array with no duplicates. If that is not the case, this function will quietly return non-meaningful results.
 
@@ -1032,13 +1090,13 @@ The optional `keyF` function can be used to extract a key to use from each eleme
 
 _Available since version 0.18.0._
 
-`get(o, f, default=null, inc_hidden=true)` returns the object `o`'s field `f` if it exists or `default` value otherwise. `inc_hidden` controls whether to include hidden fields.
+`std.get(o, f, default=null, inc_hidden=true)` returns the object `o`'s field `f` if it exists or `default` value otherwise. `inc_hidden` controls whether to include hidden fields.
 
 ## `objectHas`
 
 _Available since version 0.10.0._
 
-`objectHas(o, f)` returns `true` if the given object `o` has the field `f` (given as a string), otherwise `false`.
+`std.objectHas(o, f)` returns `true` if the given object `o` has the field `f` (given as a string), otherwise `false`.
 
 Raises an error if the arguments are not object and string respectively.
 
@@ -1072,31 +1130,31 @@ Returns an array of objects from the given object, each object having two fields
 
 _Available since version 0.10.0._
 
-Like `objectHas` but also includes hidden fields.
+Like `std.objectHas` but also includes hidden fields.
 
 ## `objectFieldsAll`
 
 _Available since version 0.10.0._
 
-Like `objectFields` but also includes hidden fields.
+Like `std.objectFields` but also includes hidden fields.
 
 ## `objectValuesAll`
 
 _Available since version 0.17.0._
 
-Like `objectValues` but also includes hidden fields.
+Like `std.objectValues` but also includes hidden fields.
 
 ## `objectKeysValuesAll`
 
 _Available since version 0.20.0._
 
-Like `objectKeysValues` but also includes hidden fields.
+Like `std.objectKeysValues` but also includes hidden fields.
 
 ## `mapWithKey`
 
 _Available since version 0.10.0._
 
-`mapWithKey(func, obj)` applies the given `func` to all fields of the given `obj`, also passing the field name.
+`std.mapWithKey(func, obj)` applies the given `func` to all fields of the given `obj`, also passing the field name.
 
 The function `func` is expected to take the field name as the first parameter and the field value as the second.
 
@@ -1116,7 +1174,7 @@ The resulting string has no line breaks.
 
 _Available since version 0.10.0._
 
-`base64DecodeBytes(str)` decodes the given base64 string into an array of bytes (number values).
+`std.base64DecodeBytes(str)` decodes the given base64 string into an array of bytes (number values).
 
 Currently assumes the input string has no line breaks and is padded to a multiple of 4 (with the `=` character). In other words, it consumes the output of `base64`.
 
@@ -1124,9 +1182,9 @@ Currently assumes the input string has no line breaks and is padded to a multipl
 
 _Available since version 0.10.0._
 
-**Deprecated**: use `base64DecodeBytes` and decode the string explicitly (e.g. with `decodeUTF8`) instead.
+**Deprecated**: use `std.base64DecodeBytes` and decode the string explicitly (e.g. with `std.decodeUTF8`) instead.
 
-Behaves like `base64DecodeBytes` except returns a naively encoded string instead of an array of bytes.
+Behaves like `std.base64DecodeBytes` except returns a naively encoded string instead of an array of bytes.
 
 ## `md5`
 
@@ -1150,13 +1208,13 @@ Returns the xnor (exclusive nor) of the two given booleans.
 
 _Available since version 0.10.0._
 
-`mergePatch(target, patch)` applies `patch` to `target` according to [RFC7396](https://tools.ietf.org/html/rfc7396).
+`std.mergePatch(target, patch)` applies `patch` to `target` according to [RFC7396](https://tools.ietf.org/html/rfc7396).
 
 ## `trace`
 
 _Available since version 0.11.0._
 
-`trace(str, rest)` outputs the given string `str` to stderr and returns `rest` as the result.
+`std.trace(str, rest)` outputs the given string `str` to stderr and returns `rest` as the result.
 
 Example:
 
