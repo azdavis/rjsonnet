@@ -81,13 +81,13 @@ impl Cx {
     self.store.entry(id).or_default().push(def);
   }
 
-  fn undefine(&mut self, id: Id) {
-    self.store.entry(id).or_default().pop();
-  }
-
   fn get(&self, id: Id) -> Option<Def> {
     self.store.get(&id)?.last().copied()
   }
+}
+
+fn undefine(cx: &mut Cx, id: Id) {
+  cx.store.entry(id).or_default().pop();
 }
 
 /// Performs the checks.
@@ -108,8 +108,8 @@ fn check(st: &mut St, cx: &mut Cx, ars: &Arenas, expr: Expr) {
         cx.define(Id::self_, Def::KwIdent);
         cx.define(Id::super_, Def::KwIdent);
         check(st, cx, ars, field.val);
-        cx.undefine(Id::self_);
-        cx.undefine(Id::super_);
+        undefine(cx, Id::self_);
+        undefine(cx, Id::super_);
         let Some(key) = field.key else { continue };
         if let ExprData::Prim(Prim::String(s)) = &ars.expr[key] {
           if !field_names.insert(s) {
@@ -130,9 +130,9 @@ fn check(st: &mut St, cx: &mut Cx, ars: &Arenas, expr: Expr) {
       cx.define(Id::self_, Def::KwIdent);
       cx.define(Id::super_, Def::KwIdent);
       check(st, cx, ars, *body);
-      cx.undefine(*id);
-      cx.undefine(Id::self_);
-      cx.undefine(Id::super_);
+      undefine(cx, *id);
+      undefine(cx, Id::self_);
+      undefine(cx, Id::super_);
     }
     ExprData::Array(exprs) => {
       for &arg in exprs {
@@ -175,7 +175,7 @@ fn check(st: &mut St, cx: &mut Cx, ars: &Arenas, expr: Expr) {
       }
       check(st, cx, ars, *body);
       for &(id, _) in binds {
-        cx.undefine(id);
+        undefine(cx, id);
       }
     }
     ExprData::Function { params, body } => {
@@ -192,7 +192,7 @@ fn check(st: &mut St, cx: &mut Cx, ars: &Arenas, expr: Expr) {
       }
       check(st, cx, ars, *body);
       for &(id, _) in params {
-        cx.undefine(id);
+        undefine(cx, id);
       }
     }
     ExprData::If { cond, yes, no } => {
