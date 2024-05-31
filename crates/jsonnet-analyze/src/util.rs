@@ -181,7 +181,7 @@ impl std::error::Error for PathIoError {
 }
 
 /// A [`std::result::Result`] with the error type defaulting to [`PathIoError`].
-pub type Result<T, E = PathIoError> = std::result::Result<T, E>;
+pub(crate) type Result<T, E = PathIoError> = std::result::Result<T, E>;
 
 pub(crate) fn expr_range(
   pointers: &jsonnet_desugar::Pointers,
