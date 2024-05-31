@@ -12,10 +12,10 @@ pub struct Init {
   pub relative_to: Option<paths::CleanPathBuf>,
   /// Extra directories in which to search for import paths.
   pub root_dirs: Vec<paths::CleanPathBuf>,
-  /// Whether to manifest into JSON on hover.
+  /// Whether to manifest into JSON.
   ///
   /// Might be slow when enabled.
-  pub manifest_hover: bool,
+  pub manifest: bool,
 }
 
 /// Artifacts from a file whose shared artifacts have been combined into the global ones.

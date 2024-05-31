@@ -19,21 +19,21 @@ Edit `.vscode/settings.json` or use the built-in settings editor for the followi
 
 Enable the language server.
 
-#### `rjsonnet.server.hover.manifest.enabled`
-
-- Type: `boolean`
-- Default: `false`
-
-Whether to manifest into JSON on hover.
-
-Might be slow when enabled.
-
 #### `rjsonnet.server.importDirs.extra`
 
 - Type: `array`
 - Default: `[]`
 
 Extra directories in which to search for import paths.
+
+#### `rjsonnet.server.manifest.enabled`
+
+- Type: `boolean`
+- Default: `false`
+
+Whether to manifest into JSON.
+
+Might be slow when enabled.
 
 #### `rjsonnet.server.path`
 

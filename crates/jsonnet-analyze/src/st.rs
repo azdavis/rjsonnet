@@ -79,7 +79,7 @@ pub struct St {
   file_exprs: PathMap<JsonnetFile>,
   import_str: PathMap<String>,
   import_bin: PathMap<Vec<u8>>,
-  manifest_hover: bool,
+  manifest: bool,
 }
 
 impl St {
@@ -99,7 +99,7 @@ impl St {
       file_exprs: PathMap::default(),
       import_str: PathMap::default(),
       import_bin: PathMap::default(),
-      manifest_hover: init.manifest_hover,
+      manifest: init.manifest,
     }
   }
 
@@ -249,8 +249,7 @@ impl lang_srv_state::State for St {
         })
         .unwrap_or_default();
 
-      init.manifest_hover =
-        obj.get("manifest_hover").and_then(serde_json::Value::as_bool).unwrap_or_default();
+      init.manifest = obj.get("manifest").and_then(serde_json::Value::as_bool).unwrap_or_default();
     }
 
     if let Err(e) = env_logger::try_init_from_env(logger_env) {
@@ -383,7 +382,7 @@ impl lang_srv_state::State for St {
       Some(const_eval::ConstEval::Std(None)) => Some("The standard library."),
       None | Some(const_eval::ConstEval::Real(_)) => None,
     };
-    let json = self.manifest_hover.then(|| match self.get_all_deps(fs, path_id) {
+    let json = self.manifest.then(|| match self.get_all_deps(fs, path_id) {
       Ok(()) => match self.get_json(path_id) {
         Ok(json) => {
           let json = json.display(&self.with_fs.artifacts.strings);
