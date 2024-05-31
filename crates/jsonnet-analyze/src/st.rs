@@ -4,6 +4,7 @@ use crate::const_eval;
 use crate::util::{FileArtifacts, Init, IsolatedFile, PathIoError, Result};
 use always::always;
 use jsonnet_eval::JsonnetFile;
+use jsonnet_statics::def::ExprDefKind;
 use jsonnet_syntax::ast::AstNode as _;
 use paths::{PathId, PathMap};
 use rustc_hash::{FxHashMap, FxHashSet};
@@ -452,10 +453,10 @@ fn expr_def_range(
   pointers: &jsonnet_desugar::Pointers,
   root: &jsonnet_syntax::kind::SyntaxNode,
   expr: jsonnet_expr::ExprMust,
-  kind: jsonnet_statics::ExprDefKind,
+  kind: ExprDefKind,
 ) -> Option<text_size::TextRange> {
   match kind {
-    jsonnet_statics::ExprDefKind::ObjectCompId => {
+    ExprDefKind::ObjectCompId => {
       let obj = pointers.get_ptr(expr);
       let obj = obj.cast::<jsonnet_syntax::ast::Object>()?;
       let obj = obj.try_to_node(root)?;
@@ -465,7 +466,7 @@ fn expr_def_range(
         jsonnet_syntax::ast::CompSpec::IfSpec(_) => None,
       }
     }
-    jsonnet_statics::ExprDefKind::LocalBind(idx) => {
+    ExprDefKind::LocalBind(idx) => {
       let local = pointers.get_ptr(expr);
       // NOTE because of desugaring, not all expr locals are actually from ast locals. we try to
       // get the exact location first and then fall back.
@@ -482,7 +483,7 @@ fn expr_def_range(
           Some(node.text_range())
         })
     }
-    jsonnet_statics::ExprDefKind::FunctionParam(idx) => {
+    ExprDefKind::FunctionParam(idx) => {
       let func = pointers.get_ptr(expr);
       // NOTE because of desugaring, possibly not all expr fns are actually from ast fns
       func

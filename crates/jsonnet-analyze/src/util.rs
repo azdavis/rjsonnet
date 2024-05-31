@@ -24,7 +24,7 @@ pub(crate) struct FileArtifacts {
   pub(crate) pos_db: text_pos::PositionDb,
   pub(crate) syntax: jsonnet_syntax::Root,
   pub(crate) pointers: jsonnet_desugar::Pointers,
-  pub(crate) defs: jsonnet_statics::DefMap,
+  pub(crate) defs: jsonnet_statics::def::Map,
 }
 
 /// Errors from a file analyzed in isolation.

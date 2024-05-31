@@ -2,7 +2,7 @@
 
 use crate::st::St;
 use jsonnet_expr::{Expr, ExprData, ExprMust, Prim};
-use jsonnet_statics::{Def, ExprDefKind};
+use jsonnet_statics::def::{Def, ExprDefKind};
 use paths::PathId;
 
 #[derive(Debug)]
