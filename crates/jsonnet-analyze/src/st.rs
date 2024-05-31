@@ -35,6 +35,12 @@ impl WithFs {
     }
   }
 
+  /// useful for debugging, so let's keep it around.
+  #[allow(dead_code)]
+  fn display_path_id(&self, p: PathId) -> impl std::fmt::Display + '_ {
+    self.strip(self.artifacts.paths.get_path(p).as_path()).display()
+  }
+
   fn get_one_file<F>(&mut self, fs: &F, path_id: PathId) -> Result<IsolatedFile>
   where
     F: paths::FileSystem,
