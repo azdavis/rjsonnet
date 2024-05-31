@@ -9,7 +9,7 @@ fn func_arg_id_not_named_arg() {
   JsonnetInput::manifest(
     r"
 local obj = { field: 3 };
-local func(x, y) = x;
+local func(x, y) = if y == 4 then x;
 func(obj.field, 4)
 ",
     "3",
@@ -17,8 +17,9 @@ func(obj.field, 4)
   .check();
 }
 
+// TODO fix. `x` is indeed used
 #[test]
-#[should_panic = "not yet implemented: std.makeArray"]
+#[should_panic = "unused: `x`"]
 fn for_comp_obj() {
   JsonnetInput::manifest(
     r#"

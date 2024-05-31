@@ -7,4 +7,5 @@ mod check;
 mod misc;
 mod repo;
 mod smoke;
+mod unused;
 mod website;

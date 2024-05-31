@@ -69,13 +69,11 @@ fn undefine(st: &mut St, cx: &mut Cx, id: Id) {
     always!(false, "undefine without previous define: {id:?}");
     return;
   };
-  if id.is_builtin() || tracked.usages != 0 {
+  if id == Id::dollar || tracked.usages != 0 {
     return;
   }
   match tracked.def {
-    Def::Std | Def::KwIdent | Def::Import(_) => {
-      always!(false, "{:?} doesn't make sense for non-builtin {:?}", tracked.def, id);
-    }
+    Def::Std | Def::KwIdent | Def::Import(_) => {}
     // TODO turn down the severity of this diagnostic to "warning"
     Def::Expr(expr, kind) => st.err(expr, error::Kind::Unused(id, kind)),
   }

@@ -632,11 +632,6 @@ pub struct Id(CopyStrRepr);
 
 impl Id {
   #[must_use]
-  pub fn is_builtin(self) -> bool {
-    matches!(self.0, CopyStrRepr::Builtin(_))
-  }
-
-  #[must_use]
   pub fn display(self, ar: &StrArena) -> impl fmt::Display + '_ {
     DisplayCopyStrRepr { repr: self.0, ar }
   }
