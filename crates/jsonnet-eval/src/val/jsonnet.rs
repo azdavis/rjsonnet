@@ -110,6 +110,12 @@ impl Object {
     })
   }
 
+  /// same as [`ancestry`], but without itself if this is super.
+  fn ancestry_considering_superness(&self) -> impl Iterator<Item = &Self> {
+    // skip itself (the first one) if this is super. boolean converts to 1 if true, 0 if false.
+    self.ancestry().skip(self.is_super.into())
+  }
+
   #[must_use]
   pub(crate) fn new(
     env: Env,
@@ -154,7 +160,7 @@ impl Object {
   pub(crate) fn fields(&self) -> Vec<(Str, Visibility, Field)> {
     let mut ret = Vec::<(Str, Visibility, Field)>::new();
     let mut seen = FxHashSet::<Str>::default();
-    for this in self.ancestry().skip(self.is_super.into()) {
+    for this in self.ancestry_considering_superness() {
       match &this.kind {
         ObjectKind::Regular(this) => {
           for (name, &(vis, expr)) in &this.fields {
@@ -179,7 +185,7 @@ impl Object {
 
   #[must_use]
   pub(crate) fn get_field(&self, name: &Str) -> Option<(Visibility, Field)> {
-    self.ancestry().skip(self.is_super.into()).find_map(|this| match &this.kind {
+    self.ancestry_considering_superness().find_map(|this| match &this.kind {
       ObjectKind::Std => {
         let field = StdField::try_from(name).ok()?;
         Some((Visibility::Hidden, Field::Std(field)))
