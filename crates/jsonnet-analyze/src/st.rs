@@ -20,6 +20,13 @@ fn std_lib_doc() -> &'static StdLibDoc {
   LOCK.get_or_init(init)
 }
 
+/// The part of the state that vaguely has to do with the filesystem.
+///
+/// But honestly, the only real reason this exists is so we can factor some things into methods
+/// without getting annoying borrowing errors when shoving everything on [`St`].
+///
+/// Essentially, by having a separate struct and a method that takes `&mut self`, we can ensure the
+/// borrow checker knows that only those fields may be affected.
 #[derive(Debug)]
 struct WithFs {
   relative_to: Option<paths::CleanPathBuf>,
