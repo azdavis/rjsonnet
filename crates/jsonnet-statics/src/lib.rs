@@ -61,9 +61,10 @@ impl St {
 }
 
 /// The context. Stores the identifiers currently in scope.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 struct Cx {
-  store: FxHashMap<Id, Def>,
+  /// This is a vec because things go in and out of scope in stacks.
+  store: FxHashMap<Id, Vec<Def>>,
 }
 
 impl Default for Cx {
@@ -77,36 +78,38 @@ impl Default for Cx {
 
 impl Cx {
   fn define(&mut self, id: Id, def: Def) {
-    self.store.insert(id, def);
+    self.store.entry(id).or_default().push(def);
+  }
+
+  fn undefine(&mut self, id: Id) {
+    self.store.entry(id).or_default().pop();
   }
 
   fn get(&self, id: Id) -> Option<Def> {
-    self.store.get(&id).copied()
+    self.store.get(&id)?.last().copied()
   }
 }
 
 /// Performs the checks.
 pub fn get(st: &mut St, ars: &Arenas, expr: Expr) {
-  let cx = Cx::default();
-  check(st, &cx, ars, expr);
+  let mut cx = Cx::default();
+  check(st, &mut cx, ars, expr);
 }
 
 #[allow(clippy::too_many_lines)]
-fn check(st: &mut St, cx: &Cx, ars: &Arenas, expr: Expr) {
+fn check(st: &mut St, cx: &mut Cx, ars: &Arenas, expr: Expr) {
   let Some(expr) = expr else { return };
   match &ars.expr[expr] {
     ExprData::Prim(_) => {}
     ExprData::Object { asserts, fields } => {
-      let cx_big = {
-        let mut cx = cx.clone();
-        cx.define(Id::self_, Def::KwIdent);
-        cx.define(Id::super_, Def::KwIdent);
-        cx
-      };
       let mut field_names = FxHashSet::<&Str>::default();
       for field in fields {
         check(st, cx, ars, field.key);
-        check(st, &cx_big, ars, field.val);
+        cx.define(Id::self_, Def::KwIdent);
+        cx.define(Id::super_, Def::KwIdent);
+        check(st, cx, ars, field.val);
+        cx.undefine(Id::self_);
+        cx.undefine(Id::super_);
         let Some(key) = field.key else { continue };
         if let ExprData::Prim(Prim::String(s)) = &ars.expr[key] {
           if !field_names.insert(s) {
@@ -114,18 +117,22 @@ fn check(st: &mut St, cx: &Cx, ars: &Arenas, expr: Expr) {
           }
         }
       }
+      cx.define(Id::self_, Def::KwIdent);
+      cx.define(Id::super_, Def::KwIdent);
       for &cond in asserts {
-        check(st, &cx_big, ars, cond);
+        check(st, cx, ars, cond);
       }
     }
     ExprData::ObjectComp { name, body, id, ary } => {
       check(st, cx, ars, *ary);
-      let mut cx = cx.clone();
       cx.define(*id, Def::ObjectCompId(expr));
-      check(st, &cx, ars, *name);
+      check(st, cx, ars, *name);
       cx.define(Id::self_, Def::KwIdent);
       cx.define(Id::super_, Def::KwIdent);
-      check(st, &cx, ars, *body);
+      check(st, cx, ars, *body);
+      cx.undefine(*id);
+      cx.undefine(Id::self_);
+      cx.undefine(Id::super_);
     }
     ExprData::Array(exprs) => {
       for &arg in exprs {
@@ -156,7 +163,6 @@ fn check(st: &mut St, cx: &Cx, ars: &Arenas, expr: Expr) {
       None => st.err(expr, error::Kind::NotInScope(*id)),
     },
     ExprData::Local { binds, body } => {
-      let mut cx = cx.clone();
       let mut bound_names = FxHashSet::<Id>::default();
       for (idx, &(id, rhs)) in binds.iter().enumerate() {
         cx.define(id, Def::LocalBind(expr, idx));
@@ -165,12 +171,14 @@ fn check(st: &mut St, cx: &Cx, ars: &Arenas, expr: Expr) {
         }
       }
       for &(_, rhs) in binds {
-        check(st, &cx, ars, rhs);
+        check(st, cx, ars, rhs);
       }
-      check(st, &cx, ars, *body);
+      check(st, cx, ars, *body);
+      for &(id, _) in binds {
+        cx.undefine(id);
+      }
     }
     ExprData::Function { params, body } => {
-      let mut cx = cx.clone();
       let mut bound_names = FxHashSet::<Id>::default();
       for (idx, &(id, rhs)) in params.iter().enumerate() {
         cx.define(id, Def::FunctionParam(expr, idx));
@@ -180,9 +188,12 @@ fn check(st: &mut St, cx: &Cx, ars: &Arenas, expr: Expr) {
       }
       for &(_, rhs) in params {
         let Some(rhs) = rhs else { continue };
-        check(st, &cx, ars, rhs);
+        check(st, cx, ars, rhs);
       }
-      check(st, &cx, ars, *body);
+      check(st, cx, ars, *body);
+      for &(id, _) in params {
+        cx.undefine(id);
+      }
     }
     ExprData::If { cond, yes, no } => {
       check(st, cx, ars, *cond);
