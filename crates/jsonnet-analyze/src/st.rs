@@ -369,7 +369,8 @@ impl lang_srv_state::State for St {
       Some(const_eval::ConstEval::Std(None)) => Some("The standard library."),
       None | Some(const_eval::ConstEval::Real(_)) => None,
     };
-    let parts: Vec<_> = [tok.kind().token_doc(), from_std_field].into_iter().flatten().collect();
+    let parts = [from_std_field, tok.kind().token_doc()];
+    let parts: Vec<_> = parts.into_iter().flatten().collect();
     if parts.is_empty() {
       None
     } else {
