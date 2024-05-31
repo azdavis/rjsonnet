@@ -20,11 +20,6 @@ A kind of field marker.
 
 Fields with this marker will not be included in the output JSON when materialized.
 
-```jsonnet
-{ hm:: "where'd i go?", s: "hi" }
-// { s: "hi" }
-```
-
 ## `<<`
 
 Bit-shift left.
@@ -62,14 +57,14 @@ A variable that refers to the root object.
 1. Compute numerical modulus.
 
    ```jsonnet
-   10 % 3 // 1
+   assert 10 % 3 == 1;
    ```
 
 2. Format things into a string.
 
    ```jsonnet
-   "hi %s, how are you doing %s?" % ["there", "today"]
-   // "hi there, how are you doing today?"
+   assert "hi %s, how are you doing %s?" % ["there", "today"]
+     == "hi there, how are you doing today?";
    ```
 
 ## `&`
@@ -97,8 +92,8 @@ Addition, for numbers, strings, arrays, or objects.
 local num = 1 + 2;
 local str = "hello, " + "world";
 local ary = [1, 2] + [8, 9];
-{ a: -321, b: str } + { a: num, c: ary }
-// { a: 3, b: "hello, world", c: [1, 2, 8, 9] }
+assert { a: -321, b: str } + { a: num, c: ary }
+  == { a: 3, b: "hello, world", c: [1, 2, 8, 9] };
 ```
 
 ## `,`
@@ -115,7 +110,7 @@ Get an object's field. Can be chained.
 
 ```jsonnet
 local a = { foo: { bar: "quz" } };
-a.foo.bar // "quz"
+assert a.foo.bar == "quz";
 ```
 
 ## `/`
@@ -125,10 +120,6 @@ Numerical division.
 ## `:`
 
 The default field marker.
-
-```jsonnet
-{ a: 3 }
-```
 
 ## `;`
 
@@ -180,7 +171,7 @@ Import a file as raw bytes.
 
 ```jsonnet
 local f = importbin "foo.o";
-std.length(f)
+assert std.length(f) == 123;
 ```
 
 ## `importstr`
@@ -189,7 +180,7 @@ Import a file as a string.
 
 ```jsonnet
 local f = importbin "hi.txt";
-std.length(f)
+assert std.length(f) == 456;
 ```
 
 ## `function`
@@ -197,9 +188,11 @@ std.length(f)
 Begin a function expression.
 
 ```jsonnet
-function(a, b)
+local hm = function(a, b)
   local c = a + b;
-  c * c
+  c * c;
+
+assert hm(1, 2) == 9;
 ```
 
 ## `assert`
@@ -209,10 +202,6 @@ Begin an assert expression.
 ```jsonnet
 assert 2 + 2 == 4;
 assert 1 < 2 : "one is smaller than two";
-
-{
-  foo: 3,
-}
 ```
 
 Can appear inside objects too.
@@ -257,7 +246,7 @@ Create some bindings (usually just one).
 
 ```jsonnet
 local three = 1 + 2;
-three + 4 // 7
+assert three + 4 == 7;
 ```
 
 The bindings, separated by `,`, may be mutually recursive.
@@ -272,7 +261,7 @@ local
     x == 0 || isOdd(x - 1)
 ;
 
-isOdd(4) // false
+assert isOdd(4) == false;
 ```
 
 ## `super`
@@ -280,8 +269,8 @@ isOdd(4) // false
 The parent (left) object in a chain of objects connected together with `+`.
 
 ```jsonnet
-{ a: 3 } + { b: super.a + 1 }
-// { a: 3, b: 4 }
+assert { a: 3 } + { b: super.a + 1 }
+  == { a: 3, b: 4 };
 ```
 
 ## `else`
@@ -306,14 +295,15 @@ The "yes" boolean. Opposite of `false`.
 
 ## `for`
 
-Loop over an array to create an array or object comprehension.
+Loop over an array to create an array or object via a comprehension.
 
 ```jsonnet
 local addOne(xs) = [x + 1 for x in xs];
-local ys = addOne([2, 5]); // [3, 6]
+assert addOne([2, 5]) == [3, 6];
 
 local lengths(xs) = { [x]: std.length(x) for x in xs };
-lengths(["foo", "hi"]) // { foo: 3, hi: 2 }
+assert lengths(["foo", "hi"])
+  == { foo: 3, hi: 2 };
 ```
 
 ## `if`
@@ -322,16 +312,16 @@ Branch on a boolean.
 
 ```jsonnet
 local hm(x) = if x then 4 else 5;
-[hm(true), hm(false)]
-// [4, 5]
+assert hm(true) == 4;
+assert hm(false) == 5;
 ```
 
 You can skip the `else`. It defaults to `else null`.
 
 ```jsonnet
 local hm(x) = if x then 4;
-[hm(true), hm(false)]
-// [4, null]
+assert hm(true) == 4;
+assert hm(false) == null;
 ```
 
 ## `in`
