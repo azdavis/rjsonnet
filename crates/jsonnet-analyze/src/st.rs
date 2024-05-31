@@ -32,6 +32,7 @@ struct WithFs {
   relative_to: Option<paths::CleanPathBuf>,
   root_dirs: Vec<paths::CleanPathBuf>,
   artifacts: jsonnet_expr::Artifacts,
+  has_errors: paths::PathSet,
 }
 
 impl WithFs {
@@ -69,7 +70,6 @@ pub struct St {
   file_exprs: PathMap<JsonnetFile>,
   import_str: PathMap<String>,
   import_bin: PathMap<Vec<u8>>,
-  has_errors: paths::PathSet,
   manifest_hover: bool,
 }
 
@@ -83,13 +83,13 @@ impl St {
         relative_to: init.relative_to,
         root_dirs: init.root_dirs,
         artifacts: jsonnet_expr::Artifacts::default(),
+        has_errors: paths::PathSet::default(),
       },
       open_files: PathMap::default(),
       file_artifacts: PathMap::default(),
       file_exprs: PathMap::default(),
       import_str: PathMap::default(),
       import_bin: PathMap::default(),
-      has_errors: paths::PathSet::default(),
       manifest_hover: init.manifest_hover,
     }
   }
@@ -100,7 +100,7 @@ impl St {
   ///
   /// If this path couldn't be evaluated to json.
   pub fn get_json(&self, path_id: PathId) -> jsonnet_eval::error::Result<jsonnet_eval::Json> {
-    if self.has_errors.contains(&path_id) {
+    if self.with_fs.has_errors.contains(&path_id) {
       return Err(jsonnet_eval::error::Error::NoPath(path_id));
     }
     // TODO more caching?
@@ -147,7 +147,7 @@ impl St {
             Entry::Vacant(entry) => {
               let file = self.with_fs.get_one_file(fs, path_id)?;
               if !file.errors.is_empty() {
-                self.has_errors.insert(path_id);
+                self.with_fs.has_errors.insert(path_id);
               }
               entry.insert(file.eval)
             }
@@ -192,7 +192,7 @@ impl St {
       Entry::Vacant(entry) => {
         let file = self.with_fs.get_one_file(fs, path_id)?;
         if !file.errors.is_empty() {
-          self.has_errors.insert(path_id);
+          self.with_fs.has_errors.insert(path_id);
         }
         Ok(&*entry.insert(file.eval))
       }
@@ -208,7 +208,7 @@ impl St {
       Entry::Vacant(entry) => {
         let file = self.with_fs.get_one_file(fs, path_id)?;
         if !file.errors.is_empty() {
-          self.has_errors.insert(path_id);
+          self.with_fs.has_errors.insert(path_id);
         }
         Ok(&*entry.insert(file.artifacts))
       }
@@ -275,7 +275,7 @@ impl lang_srv_state::State for St {
       self.file_exprs.remove(&path_id);
       self.import_str.remove(&path_id);
       self.import_bin.remove(&path_id);
-      self.has_errors.remove(&path_id);
+      self.with_fs.has_errors.remove(&path_id);
     }
   }
 
@@ -311,7 +311,7 @@ impl lang_srv_state::State for St {
     self.file_artifacts.insert(path_id, file.artifacts);
     self.file_exprs.insert(path_id, file.eval);
     if !file.errors.is_empty() {
-      self.has_errors.insert(path_id);
+      self.with_fs.has_errors.insert(path_id);
     }
     (path_id, ret)
   }
