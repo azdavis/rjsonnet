@@ -32,6 +32,8 @@ struct WithFs {
   relative_to: Option<paths::CleanPathBuf>,
   root_dirs: Vec<paths::CleanPathBuf>,
   artifacts: jsonnet_expr::Artifacts,
+  /// INVARIANT: this is exactly the set of files that do have errors that have been loaded into
+  /// either `file_artifacts` or `file_exprs` on the [`St`] that contains this.
   has_errors: paths::PathSet,
 }
 
@@ -56,7 +58,9 @@ impl WithFs {
     let path = self.artifacts.paths.get_path(path_id).to_owned();
     match IsolatedFile::from_fs(path.as_clean_path(), &self.root_dirs, &mut self.artifacts, fs) {
       Ok(file) => {
-        if !file.errors.is_empty() {
+        if file.errors.is_empty() {
+          self.has_errors.remove(&path_id);
+        } else {
           self.has_errors.insert(path_id);
         }
         Ok(file)
@@ -306,7 +310,9 @@ impl lang_srv_state::State for St {
     let ret: Vec<_> = file.diagnostics(&self.with_fs.artifacts.strings).collect();
     self.file_artifacts.insert(path_id, file.artifacts);
     self.file_exprs.insert(path_id, file.eval);
-    if !file.errors.is_empty() {
+    if file.errors.is_empty() {
+      self.with_fs.has_errors.remove(&path_id);
+    } else {
       self.with_fs.has_errors.insert(path_id);
     }
     (path_id, ret)
