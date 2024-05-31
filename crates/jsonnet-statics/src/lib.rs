@@ -112,16 +112,14 @@ fn undefine(st: &mut St, cx: &mut Cx, id: Id) {
   if id.is_builtin() || tracked.usages != 0 {
     return;
   }
-  let expr = match tracked.def {
+  match tracked.def {
     Def::Std | Def::KwIdent | Def::Import(_) => {
       always!(false, "{:?} doesn't make sense for non-builtin {:?}", tracked.def, id);
-      return;
     }
-    // reduces the precision a bit
-    Def::Expr(e, _) => e,
-  };
-  // TODO turn down the severity of this diagnostic to "warning"
-  st.err(expr, error::Kind::Unused(id));
+    // ignoring the kind reduces the precision a bit. TODO turn down the severity of this diagnostic
+    // to "warning"
+    Def::Expr(expr, _) => st.err(expr, error::Kind::Unused(id)),
+  }
 }
 
 /// Performs the checks.
