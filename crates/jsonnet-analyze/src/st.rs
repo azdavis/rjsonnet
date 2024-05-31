@@ -432,10 +432,7 @@ impl lang_srv_state::State for St {
     };
     let arts = self.get_file_artifacts(fs, ce.path_id).ok()?;
     let root = arts.syntax.clone().into_ast()?;
-    let tr = match ce.kind {
-      None => arts.pointers.get_ptr(ce.expr).text_range(),
-      Some(kind) => expr_def_range(&arts.pointers, root.syntax(), ce.expr, kind)?,
-    };
+    let tr = expr_range(&arts.pointers, root.syntax(), ce.expr, ce.kind);
     let range = arts.pos_db.range_utf16(tr)?;
     Some((ce.path_id, range))
   }
@@ -447,6 +444,16 @@ impl lang_srv_state::State for St {
   fn path_id(&mut self, path: paths::CleanPathBuf) -> PathId {
     self.with_fs.artifacts.paths.get_id_owned(path)
   }
+}
+
+fn expr_range(
+  pointers: &jsonnet_desugar::Pointers,
+  root: &jsonnet_syntax::kind::SyntaxNode,
+  expr: jsonnet_expr::ExprMust,
+  kind: Option<ExprDefKind>,
+) -> text_size::TextRange {
+  let maybe_more_precise = kind.and_then(|kind| expr_def_range(pointers, root, expr, kind));
+  maybe_more_precise.unwrap_or_else(|| pointers.get_ptr(expr).text_range())
 }
 
 fn expr_def_range(
