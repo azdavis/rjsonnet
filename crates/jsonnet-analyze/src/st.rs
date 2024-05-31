@@ -55,7 +55,12 @@ impl WithFs {
   {
     let path = self.artifacts.paths.get_path(path_id).to_owned();
     match IsolatedFile::from_fs(path.as_clean_path(), &self.root_dirs, &mut self.artifacts, fs) {
-      Ok(x) => Ok(x),
+      Ok(file) => {
+        if !file.errors.is_empty() {
+          self.has_errors.insert(path_id);
+        }
+        Ok(file)
+      }
       Err(error) => Err(PathIoError { path: path.into_path_buf(), error }),
     }
   }
@@ -146,9 +151,6 @@ impl St {
             Entry::Occupied(entry) => &*entry.into_mut(),
             Entry::Vacant(entry) => {
               let file = self.with_fs.get_one_file(fs, path_id)?;
-              if !file.errors.is_empty() {
-                self.with_fs.has_errors.insert(path_id);
-              }
               entry.insert(file.eval)
             }
           };
@@ -191,9 +193,6 @@ impl St {
       Entry::Occupied(entry) => Ok(&*entry.into_mut()),
       Entry::Vacant(entry) => {
         let file = self.with_fs.get_one_file(fs, path_id)?;
-        if !file.errors.is_empty() {
-          self.with_fs.has_errors.insert(path_id);
-        }
         Ok(&*entry.insert(file.eval))
       }
     }
@@ -207,9 +206,6 @@ impl St {
       Entry::Occupied(entry) => Ok(&*entry.into_mut()),
       Entry::Vacant(entry) => {
         let file = self.with_fs.get_one_file(fs, path_id)?;
-        if !file.errors.is_empty() {
-          self.with_fs.has_errors.insert(path_id);
-        }
         Ok(&*entry.insert(file.artifacts))
       }
     }
