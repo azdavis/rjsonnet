@@ -87,13 +87,11 @@ local sub(x, y) = x - y;
 }
 
 #[test]
-#[should_panic]
 fn args_positional_extra() {
   JsonnetInput::eval_error(
     r"
 local sub(x, y) = x - y;
   sub(1, 2, 3)
-##^^^^^^^^^^^^ diagnostic: <eval>
 ",
     "too many arguments; parameters (2): x, y; positional arguments: 3; named arguments: <none>",
   )
@@ -101,13 +99,11 @@ local sub(x, y) = x - y;
 }
 
 #[test]
-#[should_panic]
 fn args_named_extra() {
   JsonnetInput::eval_error(
     r"
 local sub(x, y) = x - y;
   sub(x=1, y=2, z=3)
-##^^^^^^^^^^^^^^^^^^ diagnostic: <eval>
 ",
     "too many arguments; parameters (2): x, y; positional arguments: <none>; named arguments (3): x, y, z",
   )
@@ -115,13 +111,11 @@ local sub(x, y) = x - y;
 }
 
 #[test]
-#[should_panic]
 fn args_positional_missing() {
   JsonnetInput::eval_error(
     r"
 local sub(x, y) = x - y;
   sub(1)
-##^^^^^^ diagnostic: <eval>
 ",
     "parameter `y` was not defined at the function call site",
   )
@@ -129,13 +123,11 @@ local sub(x, y) = x - y;
 }
 
 #[test]
-#[should_panic]
 fn args_named_missing_1() {
   JsonnetInput::eval_error(
     r"
 local sub(x, y) = x - y;
   sub(x=1)
-##^^^^^^^^ diagnostic: <eval>
 ",
     "parameter `y` was not defined at the function call site",
   )
@@ -143,13 +135,11 @@ local sub(x, y) = x - y;
 }
 
 #[test]
-#[should_panic]
 fn args_named_missing_2() {
   JsonnetInput::eval_error(
     r"
 local sub(x, y) = x - y;
   sub(y=1)
-##^^^^^^^^ diagnostic: <eval>
 ",
     "parameter `x` was not defined at the function call site",
   )
@@ -169,13 +159,11 @@ local sub(x, y) = x - y;
 }
 
 #[test]
-#[should_panic]
 fn args_named_positional_duplicate() {
   JsonnetInput::eval_error(
     r"
 local sub(x, y) = x - y;
   sub(1, y=2, x=3)
-##^^^^^^^^^^^^^^^^ diagnostic: <eval>
 ",
     "too many arguments; parameters (2): x, y; positional arguments: 1; named arguments (2): y, x",
   )

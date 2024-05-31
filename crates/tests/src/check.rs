@@ -144,17 +144,7 @@ impl<'a> Input<'a> {
             };
             let got = ds.remove(&range).expect("no diagnostic at range");
             let got = make_one_line(&got);
-            let want = if ex.msg == "<eval>" {
-              assert_eq!(
-                OutcomeKind::EvalError,
-                jsonnet.kind,
-                "{path_str}: mismatched outcome kind"
-              );
-              jsonnet.outcome
-            } else {
-              ex.msg.as_str()
-            };
-            assert_eq!(want, got, "{path_str}: mismatched diagnostic");
+            assert_eq!(ex.msg.as_str(), got, "{path_str}: mismatched diagnostic");
           }
         }
       }

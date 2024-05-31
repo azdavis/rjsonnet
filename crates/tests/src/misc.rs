@@ -109,7 +109,6 @@ fn update() {
 }
 
 #[test]
-#[should_panic]
 fn self_cycle() {
   Input::default()
     .with_jsonnet(
@@ -117,7 +116,6 @@ fn self_cycle() {
       JsonnetInput::eval_error(
         r"
   import 'a.jsonnet'
-##^^^^^^^^^^^^^^^^^^ diagnostic: <eval>
 ",
         "import cycle: a.jsonnet -> a.jsonnet",
       ),
@@ -127,7 +125,6 @@ fn self_cycle() {
 }
 
 #[test]
-#[should_panic]
 fn bigger_cycle() {
   Input::default()
     .with_jsonnet(
@@ -135,7 +132,6 @@ fn bigger_cycle() {
       JsonnetInput::eval_error(
         r"
   import 'b.jsonnet'
-##^^^^^^^^^^^^^^^^^^ diagnostic: <eval>
 ",
         "import cycle: b.jsonnet -> c.jsonnet -> d.jsonnet -> a.jsonnet -> b.jsonnet",
       ),
@@ -145,7 +141,6 @@ fn bigger_cycle() {
       JsonnetInput::eval_error(
         r"
   import 'c.jsonnet'
-##^^^^^^^^^^^^^^^^^^ diagnostic: <eval>
 ",
         "import cycle: c.jsonnet -> d.jsonnet -> a.jsonnet -> b.jsonnet -> c.jsonnet",
       ),
@@ -155,7 +150,6 @@ fn bigger_cycle() {
       JsonnetInput::eval_error(
         r"
   import 'd.jsonnet'
-##^^^^^^^^^^^^^^^^^^ diagnostic: <eval>
 ",
         "import cycle: d.jsonnet -> a.jsonnet -> b.jsonnet -> c.jsonnet -> d.jsonnet",
       ),
@@ -165,7 +159,6 @@ fn bigger_cycle() {
       JsonnetInput::eval_error(
         r"
   import 'a.jsonnet'
-##^^^^^^^^^^^^^^^^^^ diagnostic: <eval>
 ",
         "import cycle: a.jsonnet -> b.jsonnet -> c.jsonnet -> d.jsonnet -> a.jsonnet",
       ),

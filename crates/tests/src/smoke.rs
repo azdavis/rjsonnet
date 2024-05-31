@@ -40,12 +40,10 @@ fn if_without_else_no() {
 }
 
 #[test]
-#[should_panic]
 fn error() {
   JsonnetInput::eval_error(
     r#"
 1 + (error "oh no!")
-##   ^^^^^^^^^^^^^^ diagnostic: <eval>
 "#,
     "explicit `error`: oh no!",
   )
