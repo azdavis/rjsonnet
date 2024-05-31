@@ -120,6 +120,7 @@ fn undefine(st: &mut St, cx: &mut Cx, id: Id) {
     // reduces the precision a bit
     Def::Expr(e, _) => e,
   };
+  // TODO turn down the severity of this diagnostic to "warning"
   st.err(expr, error::Kind::Unused(id));
 }
 
