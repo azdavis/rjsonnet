@@ -147,9 +147,9 @@ impl IsolatedFile {
       .chain(self.errors.desugar.iter().map(|err| (err.range(), err.to_string())))
       .chain(self.errors.statics.iter().map(|err| {
         let expr = err.expr();
-        let ptr = self.artifacts.pointers.get_ptr(expr);
+        let range = self.artifacts.pointers.get_ptr(expr).text_range();
         let err = err.display(strings);
-        (ptr.text_range(), err.to_string())
+        (range, err.to_string())
       }))
       .filter_map(|(range, message)| {
         let Some(range) = self.artifacts.pos_db.range_utf16(range) else {
