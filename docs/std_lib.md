@@ -899,17 +899,39 @@ _Available since version 0.10.0._
 
 `std.foldl(func, arr, init)` calls the function `func` on the result of the previous function call and each array element of `arr`, or `init` in the case of the initial element. Traverses `arr` from left to right.
 
+Example:
+
+```jsonnet
+local cmb(ac, x) = "(%s %s) % [ac, x]";
+assert std.foldl(cmb, ["a", "b", "c"], "()")
+  == "(((() a) b) c)";
+```
+
 ## `foldr`
 
 _Available since version 0.10.0._
 
 `std.foldr(func, arr, init)` calls the function `func` on the result of the previous function call and each array element of `arr`, or `init` in the case of the initial element. Traverses `arr` from right to left.
 
+Example:
+
+```jsonnet
+local cmb(ac, x) = "(%s %s) % [ac, x]";
+assert std.foldr(cmb, ["a", "b", "c"], "()")
+  == "(((() c) b) a)";
+```
+
 ## `range`
 
 _Available since version 0.10.0._
 
 `std.range(from, to)` returns an array of ascending numbers between `from` and `to`, inclusively.
+
+Example:
+
+```jsonnet
+assert std.range(2, 6) == [2, 3, 4, 5, 6];
+```
 
 ## `repeat`
 
@@ -983,6 +1005,14 @@ _Available since version 0.13.0._
 
 Returns the argument array reversed.
 
+Examples:
+
+```jsonnet
+assert std.reverse([2, 4, 6]) == [6, 4, 2];
+assert std.reverse([8]) == [8];
+assert std.reverse([]) == [];
+```
+
 ## `sort`
 
 _Available since version 0.10.0._
@@ -991,6 +1021,24 @@ _Available since version 0.10.0._
 
 The optional argument `keyF` is a single argument function used to extract comparison key from each array element.
 
+Examples:
+
+```jsonnet
+assert std.sort([5, 2, 9]) == [2, 5, 9];
+
+local fellas = [
+  { name: "fred", age: 5 },
+  { name: "george", age: 8 },
+  { name: "ringo", age: 3 },
+];
+local getAge(x) = x.age;
+assert std.sort(fellas, keyF=getAge) == [
+  { name: "ringo", age: 3 },
+  { name: "fred", age: 5 },
+  { name: "george", age: 8 },
+]
+```
+
 ## `uniq`
 
 _Available since version 0.10.0._
@@ -998,6 +1046,13 @@ _Available since version 0.10.0._
 `std.uniq(arr, keyF=id)` removes successive duplicates. When given a sorted array, removes all duplicates.
 
 The optional argument `keyF` is a single argument function used to extract comparison key from each array element.
+
+Examples:
+
+```jsonnet
+assert std.uniq([1, 1, 1]) == [1];
+assert std.uniq([1, 2, 2, 3, 2]) == [1, 2, 3, 2];
+```
 
 ## `all`
 
@@ -1234,6 +1289,11 @@ Prints:
 
 ```
 TRACE: test.jsonnet:3 c is true, returning {"bar": 1}
+```
+
+And evaluates to:
+
+```json
 {
   "foo": {
     "bar": 1
