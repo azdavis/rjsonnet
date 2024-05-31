@@ -369,8 +369,12 @@ impl lang_srv_state::State for St {
       Some(const_eval::ConstEval::Std(None)) => Some("The standard library."),
       None | Some(const_eval::ConstEval::Real(_)) => None,
     };
-    // we can't have something be both a token and a std lib function
-    from_std_field.or_else(|| tok.kind().token_doc()).map(ToOwned::to_owned)
+    let parts: Vec<_> = [tok.kind().token_doc(), from_std_field].into_iter().flatten().collect();
+    if parts.is_empty() {
+      None
+    } else {
+      Some(parts.join("\n\n---\n\n"))
+    }
   }
 
   /// Get the definition site of a part of a file.
