@@ -2,6 +2,7 @@
 
 pub mod error;
 
+use always::always;
 use jsonnet_expr::{Arenas, Expr, ExprData, ExprMust, Id, Prim, Str, Subst};
 use rustc_hash::{FxHashMap, FxHashSet};
 
@@ -60,11 +61,18 @@ impl St {
   }
 }
 
+/// A def that tracks its usage count.
+#[derive(Debug)]
+struct TrackedDef {
+  def: Def,
+  usages: usize,
+}
+
 /// The context. Stores the identifiers currently in scope.
 #[derive(Debug)]
 struct Cx {
   /// This is a vec because things go in and out of scope in stacks.
-  store: FxHashMap<Id, Vec<Def>>,
+  store: FxHashMap<Id, Vec<TrackedDef>>,
 }
 
 impl Default for Cx {
@@ -78,16 +86,33 @@ impl Default for Cx {
 
 impl Cx {
   fn define(&mut self, id: Id, def: Def) {
-    self.store.entry(id).or_default().push(def);
+    self.store.entry(id).or_default().push(TrackedDef { def, usages: 0 });
   }
 
-  fn get(&self, id: Id) -> Option<Def> {
-    self.store.get(&id)?.last().copied()
+  fn get(&mut self, id: Id) -> Option<Def> {
+    let tracked = self.store.get_mut(&id)?.last_mut()?;
+    tracked.usages += 1;
+    Some(tracked.def)
   }
 }
 
-fn undefine(cx: &mut Cx, id: Id) {
-  cx.store.entry(id).or_default().pop();
+fn undefine(st: &mut St, cx: &mut Cx, id: Id) {
+  let Some(tracked) = cx.store.entry(id).or_default().pop() else {
+    always!(false, "undefine without previous define: {id:?}");
+    return;
+  };
+  if id.is_builtin() || tracked.usages != 0 {
+    return;
+  }
+  let expr = match tracked.def {
+    Def::Std | Def::KwIdent | Def::Import(_) => {
+      always!(false, "{:?} doesn't make sense for non-builtin {:?}", tracked.def, id);
+      return;
+    }
+    // reduces the precision a bit
+    Def::ObjectCompId(e) | Def::LocalBind(e, _) | Def::FunctionParam(e, _) => e,
+  };
+  st.err(expr, error::Kind::Unused(id));
 }
 
 /// Performs the checks.
@@ -108,8 +133,8 @@ fn check(st: &mut St, cx: &mut Cx, ars: &Arenas, expr: Expr) {
         cx.define(Id::self_, Def::KwIdent);
         cx.define(Id::super_, Def::KwIdent);
         check(st, cx, ars, field.val);
-        undefine(cx, Id::self_);
-        undefine(cx, Id::super_);
+        undefine(st, cx, Id::self_);
+        undefine(st, cx, Id::super_);
         let Some(key) = field.key else { continue };
         if let ExprData::Prim(Prim::String(s)) = &ars.expr[key] {
           if !field_names.insert(s) {
@@ -130,9 +155,9 @@ fn check(st: &mut St, cx: &mut Cx, ars: &Arenas, expr: Expr) {
       cx.define(Id::self_, Def::KwIdent);
       cx.define(Id::super_, Def::KwIdent);
       check(st, cx, ars, *body);
-      undefine(cx, *id);
-      undefine(cx, Id::self_);
-      undefine(cx, Id::super_);
+      undefine(st, cx, *id);
+      undefine(st, cx, Id::self_);
+      undefine(st, cx, Id::super_);
     }
     ExprData::Array(exprs) => {
       for &arg in exprs {
@@ -175,7 +200,7 @@ fn check(st: &mut St, cx: &mut Cx, ars: &Arenas, expr: Expr) {
       }
       check(st, cx, ars, *body);
       for &(id, _) in binds {
-        undefine(cx, id);
+        undefine(st, cx, id);
       }
     }
     ExprData::Function { params, body } => {
@@ -192,7 +217,7 @@ fn check(st: &mut St, cx: &mut Cx, ars: &Arenas, expr: Expr) {
       }
       check(st, cx, ars, *body);
       for &(id, _) in params {
-        undefine(cx, id);
+        undefine(st, cx, id);
       }
     }
     ExprData::If { cond, yes, no } => {

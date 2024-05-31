@@ -16,4 +16,5 @@ doctest = false
 paths.workspace = true
 rustc-hash.workspace = true
 
+always.path = "../always"
 jsonnet-expr.path = "../jsonnet-expr"

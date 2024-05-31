@@ -301,6 +301,17 @@ fn get_object(st: &mut St, cx: Cx<'_>, inside: ast::Object, in_obj: bool) -> Exp
   }
 }
 
+/// NOTE: it appears that this is the only place we clone a bunch of binds. this means that "warn on
+/// unused vars" won't be able to work without major annoyance.
+///
+/// the reason is because we have many bindings duplicated for each field/assert, due to the
+/// desugaring strategy laid out in the spec for objects. but all those cloned bindings really
+/// correspond to only one user-written var. so that user-written var should be marked unused if and
+/// only if every copy of it was unused.
+///
+/// which means we have to do something like... track how many times the var was cloned by keeping a
+/// counter, then stick that counter somewhere so later when statics counts how many vars were
+/// unused, it knows how many copies to count as unused before marking the actual var as unused...?
 fn get_object_literal(st: &mut St, cx: Cx<'_>, inside: ast::Object, in_obj: bool) -> ExprData {
   // first get the binds
   let mut binds = Vec::<(Id, Expr)>::new();

@@ -26,7 +26,10 @@ impl Error {
   /// Apply a subst.
   pub fn apply(&mut self, subst: &Subst) {
     match &mut self.kind {
-      Kind::NotInScope(id) | Kind::DuplicateNamedArg(id) | Kind::DuplicateBinding(id) => {
+      Kind::NotInScope(id)
+      | Kind::DuplicateNamedArg(id)
+      | Kind::DuplicateBinding(id)
+      | Kind::Unused(id) => {
         id.apply(subst);
       }
       Kind::DuplicateFieldName(str) => str.apply(subst),
@@ -40,6 +43,7 @@ pub(crate) enum Kind {
   DuplicateFieldName(Str),
   DuplicateNamedArg(Id),
   DuplicateBinding(Id),
+  Unused(Id),
 }
 
 struct Display<'a> {
@@ -58,6 +62,7 @@ impl fmt::Display for Display<'_> {
       Kind::DuplicateBinding(id) => {
         write!(f, "duplicate binding: `{}`", id.display(self.ar))
       }
+      Kind::Unused(id) => write!(f, "unused: `{}`", id.display(self.ar)),
     }
   }
 }

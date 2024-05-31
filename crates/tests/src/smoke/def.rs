@@ -30,10 +30,10 @@ local uh(a) = 654 + a;
 local y = obj.foo;
 local z = y;
 
-1 + 2 + z
+1 + 2 + z + uh(hm)
 ##      ^ use: a
 ",
-    "103",
+    "1078",
   )
   .check();
 }
