@@ -3,6 +3,7 @@
 use always::always;
 use diagnostic::Diagnostic;
 use jsonnet_eval::JsonnetFile;
+use jsonnet_statics::def::ExprDefKind;
 use std::fmt;
 
 /// Options for initialization.
@@ -181,3 +182,66 @@ impl std::error::Error for PathIoError {
 
 /// A [`std::result::Result`] with the error type defaulting to [`PathIoError`].
 pub type Result<T, E = PathIoError> = std::result::Result<T, E>;
+
+pub(crate) fn expr_range(
+  pointers: &jsonnet_desugar::Pointers,
+  root: &jsonnet_syntax::kind::SyntaxNode,
+  expr: jsonnet_expr::ExprMust,
+  kind: Option<ExprDefKind>,
+) -> text_size::TextRange {
+  let maybe_more_precise = kind.and_then(|kind| expr_def_range(pointers, root, expr, kind));
+  maybe_more_precise.unwrap_or_else(|| pointers.get_ptr(expr).text_range())
+}
+
+fn expr_def_range(
+  pointers: &jsonnet_desugar::Pointers,
+  root: &jsonnet_syntax::kind::SyntaxNode,
+  expr: jsonnet_expr::ExprMust,
+  kind: ExprDefKind,
+) -> Option<text_size::TextRange> {
+  match kind {
+    ExprDefKind::ObjectCompId => {
+      let obj = pointers.get_ptr(expr);
+      let obj = obj.cast::<jsonnet_syntax::ast::Object>()?;
+      let obj = obj.try_to_node(root)?;
+      let comp_spec = obj.comp_specs().next()?;
+      match comp_spec {
+        jsonnet_syntax::ast::CompSpec::ForSpec(for_spec) => Some(for_spec.id()?.text_range()),
+        jsonnet_syntax::ast::CompSpec::IfSpec(_) => None,
+      }
+    }
+    ExprDefKind::LocalBind(idx) => {
+      let local = pointers.get_ptr(expr);
+      // NOTE because of desugaring, not all expr locals are actually from ast locals. we try to
+      // get the exact location first and then fall back.
+      local
+        .cast::<jsonnet_syntax::ast::ExprLocal>()
+        .and_then(|local| {
+          let local = local.try_to_node(root)?;
+          Some(local.bind_commas().nth(idx)?.bind()?.id()?.text_range())
+        })
+        .or_else(|| {
+          log::warn!("local fallback: {local:?}");
+          let node = local.try_to_node(root)?;
+          log::warn!("node: {node:?}");
+          Some(node.text_range())
+        })
+    }
+    ExprDefKind::FunctionParam(idx) => {
+      let func = pointers.get_ptr(expr);
+      // NOTE because of desugaring, possibly not all expr fns are actually from ast fns
+      func
+        .cast::<jsonnet_syntax::ast::ExprFunction>()
+        .and_then(|func| {
+          let func = func.try_to_node(root)?;
+          Some(func.paren_params()?.params().nth(idx)?.id()?.text_range())
+        })
+        .or_else(|| {
+          log::warn!("func fallback: {func:?}");
+          let node = func.try_to_node(root)?;
+          log::warn!("node: {node:?}");
+          Some(node.text_range())
+        })
+    }
+  }
+}
