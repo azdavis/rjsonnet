@@ -432,8 +432,8 @@ impl lang_srv_state::State for St {
     let arts = self.get_file_artifacts(fs, ce.path_id).ok()?;
     let root = arts.syntax.clone().into_ast()?;
     let tr = match ce.kind {
-      const_eval::Kind::Expr => arts.pointers.get_ptr(ce.expr).text_range(),
-      const_eval::Kind::ObjectCompId => {
+      None => arts.pointers.get_ptr(ce.expr).text_range(),
+      Some(jsonnet_statics::ExprDefKind::ObjectCompId) => {
         let obj = arts.pointers.get_ptr(ce.expr);
         let obj = obj.cast::<jsonnet_syntax::ast::Object>()?;
         let obj = obj.try_to_node(root.syntax())?;
@@ -443,7 +443,7 @@ impl lang_srv_state::State for St {
           jsonnet_syntax::ast::CompSpec::IfSpec(_) => return None,
         }
       }
-      const_eval::Kind::LocalBind(idx) => {
+      Some(jsonnet_statics::ExprDefKind::LocalBind(idx)) => {
         let local = arts.pointers.get_ptr(ce.expr);
         // NOTE because of desugaring, not all expr locals are actually from ast locals. we try to
         // get the exact location first and then fall back.
@@ -460,7 +460,7 @@ impl lang_srv_state::State for St {
             Some(node.text_range())
           })?
       }
-      const_eval::Kind::FunctionParam(idx) => {
+      Some(jsonnet_statics::ExprDefKind::FunctionParam(idx)) => {
         let func = arts.pointers.get_ptr(ce.expr);
         // NOTE because of desugaring, possibly not all expr fns are actually from ast fns
         func

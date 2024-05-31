@@ -13,25 +13,33 @@ pub enum Def {
   Std,
   /// Keyword identifiers, `self` and `super`.
   KwIdent,
-  /// An object comprehension, which are handled somewhat specially.
-  ObjectCompId(jsonnet_expr::ExprMust),
-  /// A `local` bind.
-  LocalBind(jsonnet_expr::ExprMust, usize),
-  /// A `function` parameter.
-  FunctionParam(jsonnet_expr::ExprMust, usize),
   /// An `import` (Jsonnet code only).
   Import(paths::PathId),
+  /// A part of an expression.
+  Expr(jsonnet_expr::ExprMust, ExprDefKind),
+}
+
+/// A definition site with an associated expression.
+#[derive(Debug, Clone, Copy)]
+pub enum ExprDefKind {
+  /// The identifier in an object comprehension.
+  ///
+  /// ```jsonnet
+  /// { [k]: 3 for k in ks }
+  /// //           ^ here
+  /// ```
+  ObjectCompId,
+  /// The nth binding in a `local`.
+  LocalBind(usize),
+  /// The nth function parameter.
+  FunctionParam(usize),
 }
 
 impl Def {
   /// Apply a subst.
   pub fn apply(&mut self, subst: &Subst) {
     match self {
-      Def::Std
-      | Def::KwIdent
-      | Def::ObjectCompId(_)
-      | Def::LocalBind(_, _)
-      | Def::FunctionParam(_, _) => {}
+      Def::Std | Def::KwIdent | Def::Expr(..) => {}
       Def::Import(path_id) => *path_id = subst.get_path_id(*path_id),
     }
   }
@@ -110,7 +118,7 @@ fn undefine(st: &mut St, cx: &mut Cx, id: Id) {
       return;
     }
     // reduces the precision a bit
-    Def::ObjectCompId(e) | Def::LocalBind(e, _) | Def::FunctionParam(e, _) => e,
+    Def::Expr(e, _) => e,
   };
   st.err(expr, error::Kind::Unused(id));
 }
@@ -150,7 +158,7 @@ fn check(st: &mut St, cx: &mut Cx, ars: &Arenas, expr: Expr) {
     }
     ExprData::ObjectComp { name, body, id, ary } => {
       check(st, cx, ars, *ary);
-      cx.define(*id, Def::ObjectCompId(expr));
+      cx.define(*id, Def::Expr(expr, ExprDefKind::ObjectCompId));
       check(st, cx, ars, *name);
       cx.define(Id::self_, Def::KwIdent);
       cx.define(Id::super_, Def::KwIdent);
@@ -190,7 +198,7 @@ fn check(st: &mut St, cx: &mut Cx, ars: &Arenas, expr: Expr) {
     ExprData::Local { binds, body } => {
       let mut bound_names = FxHashSet::<Id>::default();
       for (idx, &(id, rhs)) in binds.iter().enumerate() {
-        cx.define(id, Def::LocalBind(expr, idx));
+        cx.define(id, Def::Expr(expr, ExprDefKind::LocalBind(idx)));
         if !bound_names.insert(id) {
           st.err(rhs.unwrap_or(expr), error::Kind::DuplicateBinding(id));
         }
@@ -206,7 +214,7 @@ fn check(st: &mut St, cx: &mut Cx, ars: &Arenas, expr: Expr) {
     ExprData::Function { params, body } => {
       let mut bound_names = FxHashSet::<Id>::default();
       for (idx, &(id, rhs)) in params.iter().enumerate() {
-        cx.define(id, Def::FunctionParam(expr, idx));
+        cx.define(id, Def::Expr(expr, ExprDefKind::FunctionParam(idx)));
         if !bound_names.insert(id) {
           st.err(rhs.flatten().unwrap_or(expr), error::Kind::DuplicateBinding(id));
         }
