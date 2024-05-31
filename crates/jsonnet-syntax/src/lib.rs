@@ -29,7 +29,7 @@ impl Root {
   /// Turns this into a syntax node.
   #[must_use]
   pub fn syntax(self) -> kind::SyntaxNode {
-    kind::SyntaxNode::new_root(self.green.clone())
+    kind::SyntaxNode::new_root(self.green)
   }
 
   /// Turns this into an ast root.
