@@ -202,8 +202,8 @@ impl<'a> Input<'a> {
           panic!("{path_str}: no error, got json: {got:?}")
         }
         (OutcomeKind::Manifest | OutcomeKind::String, Err(err)) => {
-          let got = err.display(st.strings(), st.paths(), Some(pwd)).to_string();
-          panic!("{path_str}: error: {got:?}");
+          let got = err.display(st.strings(), st.paths(), Some(pwd));
+          panic!("{path_str}: failed to get json: {got}");
         }
       }
     }
