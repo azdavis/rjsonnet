@@ -29,6 +29,7 @@ export async function activate(cx: vscode.ExtensionContext) {
     initializationOptions: {
       root_dirs: config.get("server.importDirs.extra"),
       logger_filter: config.get("unstable.server.logFilter"),
+      manifest_hover: config.get("server.hover.manifest.enabled"),
     },
   };
   client = new LanguageClient("rjsonnet", serverOpts, clientOpts);

@@ -63,6 +63,7 @@ pub struct St {
   import_str: PathMap<String>,
   import_bin: PathMap<Vec<u8>>,
   has_errors: paths::PathSet,
+  manifest_hover: bool,
 }
 
 impl St {
@@ -82,6 +83,7 @@ impl St {
       import_str: PathMap::default(),
       import_bin: PathMap::default(),
       has_errors: paths::PathSet::default(),
+      manifest_hover: init.manifest_hover,
     }
   }
 
@@ -239,6 +241,9 @@ impl lang_srv_state::State for St {
             .collect::<Option<Vec<_>>>()
         })
         .unwrap_or_default();
+
+      init.manifest_hover =
+        obj.get("manifest_hover").and_then(serde_json::Value::as_bool).unwrap_or_default();
     }
 
     if let Err(e) = env_logger::try_init_from_env(logger_env) {
@@ -369,7 +374,21 @@ impl lang_srv_state::State for St {
       Some(const_eval::ConstEval::Std(None)) => Some("The standard library."),
       None | Some(const_eval::ConstEval::Real(_)) => None,
     };
-    let parts = [from_std_field, tok.kind().token_doc()];
+    let json = self.manifest_hover.then(|| match self.get_all_deps(fs, path_id) {
+      Ok(()) => match self.get_json(path_id) {
+        Ok(json) => {
+          let json = json.display(&self.with_fs.artifacts.strings);
+          format!("```json\n{json}\n```")
+        }
+        Err(e) => {
+          let rel_to = self.with_fs.relative_to.as_ref().map(paths::CleanPathBuf::as_clean_path);
+          let e = e.display(&self.with_fs.artifacts.strings, &self.with_fs.artifacts.paths, rel_to);
+          format!("couldn't get json: {e}")
+        }
+      },
+      Err(e) => format!("couldn't get all deps: {e}"),
+    });
+    let parts = [json.as_deref(), from_std_field, tok.kind().token_doc()];
     let parts: Vec<_> = parts.into_iter().flatten().collect();
     if parts.is_empty() {
       None

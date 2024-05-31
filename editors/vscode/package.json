@@ -52,6 +52,11 @@
           "default": true,
           "markdownDescription": "Enable the language server."
         },
+        "rjsonnet.server.hover.manifest.enabled": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Whether to manifest into JSON on hover.\n\nMight be slow when enabled."
+        },
         "rjsonnet.server.importDirs.extra": {
           "type": "array",
           "default": [],
