@@ -231,6 +231,7 @@ impl<'a> fmt::Display for DisplayExpr<'a> {
           }
           f.write_str(", ")?;
         }
+        f.write_str(")")?;
         self.with(*body).fmt(f)
       }
       ExprData::Error(e) => write!(f, "error {}", self.with(*e)),
