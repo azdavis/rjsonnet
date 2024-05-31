@@ -52,15 +52,15 @@
           "default": true,
           "markdownDescription": "Enable the language server."
         },
-        "rjsonnet.server.path": {
-          "type": "string",
-          "default": "",
-          "markdownDescription": "Path to the `jsonnet-ls` executable.\n\nWhen set to the empty string `\"\"` (the default), use the path to the one that's pre-built and bundled with the extension."
-        },
         "rjsonnet.server.importDirs.extra": {
           "type": "array",
           "default": [],
           "markdownDescription": "Extra directories in which to search for import paths."
+        },
+        "rjsonnet.server.path": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Path to the `jsonnet-ls` executable.\n\nWhen set to the empty string `\"\"` (the default), use the path to the one that's pre-built and bundled with the extension."
         },
         "rjsonnet.unstable.server.logFilter": {
           "type": "string",
