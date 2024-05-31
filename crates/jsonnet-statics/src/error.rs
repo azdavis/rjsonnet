@@ -1,5 +1,6 @@
 //! Errors.
 
+use crate::def::ExprDefKind;
 use jsonnet_expr::{ExprMust, Id, Str, Subst};
 use std::fmt;
 
@@ -19,8 +20,9 @@ impl Error {
 
   /// Returns the expr this error is for.
   #[must_use]
-  pub fn expr(&self) -> ExprMust {
-    self.expr
+  pub fn expr_and_def_kind(&self) -> (ExprMust, Option<ExprDefKind>) {
+    let kind = if let Kind::Unused(_, k) = self.kind { Some(k) } else { None };
+    (self.expr, kind)
   }
 
   /// Apply a subst.
@@ -29,7 +31,7 @@ impl Error {
       Kind::NotInScope(id)
       | Kind::DuplicateNamedArg(id)
       | Kind::DuplicateBinding(id)
-      | Kind::Unused(id) => {
+      | Kind::Unused(id, _) => {
         id.apply(subst);
       }
       Kind::DuplicateFieldName(str) => str.apply(subst),
@@ -43,7 +45,7 @@ pub(crate) enum Kind {
   DuplicateFieldName(Str),
   DuplicateNamedArg(Id),
   DuplicateBinding(Id),
-  Unused(Id),
+  Unused(Id, ExprDefKind),
 }
 
 struct Display<'a> {
@@ -62,7 +64,7 @@ impl fmt::Display for Display<'_> {
       Kind::DuplicateBinding(id) => {
         write!(f, "duplicate binding: `{}`", id.display(self.ar))
       }
-      Kind::Unused(id) => write!(f, "unused: `{}`", id.display(self.ar)),
+      Kind::Unused(id, _) => write!(f, "unused: `{}`", id.display(self.ar)),
     }
   }
 }

@@ -76,9 +76,8 @@ fn undefine(st: &mut St, cx: &mut Cx, id: Id) {
     Def::Std | Def::KwIdent | Def::Import(_) => {
       always!(false, "{:?} doesn't make sense for non-builtin {:?}", tracked.def, id);
     }
-    // ignoring the kind reduces the precision a bit. TODO turn down the severity of this diagnostic
-    // to "warning"
-    Def::Expr(expr, _) => st.err(expr, error::Kind::Unused(id)),
+    // TODO turn down the severity of this diagnostic to "warning"
+    Def::Expr(expr, kind) => st.err(expr, error::Kind::Unused(id, kind)),
   }
 }
 

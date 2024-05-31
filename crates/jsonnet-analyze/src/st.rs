@@ -306,7 +306,8 @@ impl lang_srv_state::State for St {
         return (path_id, Vec::new());
       }
     };
-    let ret: Vec<_> = file.diagnostics(&self.with_fs.artifacts.strings).collect();
+    let root = file.artifacts.syntax.clone();
+    let ret: Vec<_> = file.diagnostics(&self.with_fs.artifacts.strings, &root.syntax()).collect();
     self.file_artifacts.insert(path_id, file.artifacts);
     self.file_exprs.insert(path_id, file.eval);
     if file.errors.is_empty() {
