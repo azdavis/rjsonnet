@@ -127,7 +127,7 @@ impl St {
     let mut seen = FxHashSet::<(PathId, jsonnet_expr::ImportKind)>::default();
     while let Some((path_id, import_kind)) = work.pop() {
       // prevent infinite looping on import cycles. no need to report a cycle error here - we'll
-      // warn when evaluating.
+      // error when evaluating.
       if !seen.insert((path_id, import_kind)) {
         continue;
       }
