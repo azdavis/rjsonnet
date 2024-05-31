@@ -72,7 +72,6 @@ fn import_self() {
 }
 
 #[test]
-#[should_panic]
 fn import_str() {
   Input::default()
     .with_jsonnet(

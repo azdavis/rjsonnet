@@ -143,7 +143,7 @@ impl St {
               entry.insert(file.eval)
             }
           };
-          work.extend(file.imports().map(|import| (import.path, import_kind)));
+          work.extend(file.imports().map(|import| (import.path, import.kind)));
         }
         jsonnet_expr::ImportKind::String => match self.import_str.entry(path_id) {
           Entry::Occupied(_) => {}
