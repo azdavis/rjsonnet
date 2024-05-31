@@ -303,11 +303,11 @@ pub(crate) fn get(cx: Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
         },
         None => Err(mk_todo(expr, "no code import")),
       },
-      jsonnet_expr::ImportKind::String => match cx.importstr.get(path) {
+      jsonnet_expr::ImportKind::String => match cx.import_str.get(path) {
         Some(s) => Ok(Val::Prim(Prim::String(cx.str_ar.str_shared(s.clone().into_boxed_str())))),
         None => Err(mk_todo(expr, "no string import")),
       },
-      jsonnet_expr::ImportKind::Binary => match cx.importbin.get(path) {
+      jsonnet_expr::ImportKind::Binary => match cx.import_bin.get(path) {
         Some(_) => Err(mk_todo(expr, "yes binary import")),
         None => Err(mk_todo(expr, "no binary import")),
       },

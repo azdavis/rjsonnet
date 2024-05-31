@@ -91,10 +91,10 @@ impl St {
     // TODO more caching?
     let cx = jsonnet_eval::Cx {
       paths: &self.with_fs.artifacts.paths,
-      jsonnet_files: &self.file_exprs,
-      importstr: &self.import_str,
-      importbin: &self.import_bin,
       str_ar: &self.with_fs.artifacts.strings,
+      jsonnet_files: &self.file_exprs,
+      import_str: &self.import_str,
+      import_bin: &self.import_bin,
     };
     let val = jsonnet_eval::get_exec(cx, path_id)?;
     jsonnet_eval::get_manifest(cx, val)
