@@ -251,7 +251,6 @@ impl lang_srv_state::State for St {
   }
 
   fn mark_as_updated(&mut self, updated: Vec<paths::CleanPathBuf>) {
-    // TODO have this not take a fs and not return a PathMap?
     for x in updated {
       let path_id = self.path_id(x);
       self.file_artifacts.remove(&path_id);
@@ -339,7 +338,6 @@ impl lang_srv_state::State for St {
   where
     F: Sync + Send + paths::FileSystem,
   {
-    // TODO re-impl with more
     let path_id = self.path_id(path);
     let arts = self.get_file_artifacts(fs, path_id).ok()?;
     let tok = {
