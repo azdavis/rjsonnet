@@ -10,7 +10,7 @@ pub enum Def {
   Std,
   /// Keyword identifiers, `self` and `super`.
   KwIdent,
-  /// An `import` (Jsonnet code only).
+  /// An `import` of a Jsonnet file.
   Import(paths::PathId),
   /// A part of an expression.
   Expr(ExprMust, ExprDefKind),
@@ -22,8 +22,8 @@ pub enum ExprDefKind {
   /// The identifier in an object comprehension.
   ///
   /// ```jsonnet
-  /// { [k]: 3 for k in ks }
-  /// //           ^ here
+  /// { [f(k)]: g(k) for k in ks }
+  /// //                 ^ here
   /// ```
   ObjectCompId,
   /// The nth binding in a `local`.
