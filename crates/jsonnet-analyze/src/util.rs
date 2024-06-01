@@ -3,7 +3,7 @@
 use always::always;
 use diagnostic::Diagnostic;
 use jsonnet_eval::JsonnetFile;
-use jsonnet_statics::def::ExprDefKind;
+use jsonnet_expr::def::ExprDefKind;
 use std::fmt;
 
 /// Options for initialization.
@@ -25,7 +25,7 @@ pub(crate) struct FileArtifacts {
   pub(crate) pos_db: text_pos::PositionDb,
   pub(crate) syntax: jsonnet_syntax::Root,
   pub(crate) pointers: jsonnet_desugar::Pointers,
-  pub(crate) defs: jsonnet_statics::def::Map,
+  pub(crate) defs: jsonnet_expr::def::Map,
 }
 
 /// Errors from a file analyzed in isolation.

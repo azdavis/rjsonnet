@@ -1,6 +1,6 @@
 //! Types related to definition sites.
 
-use jsonnet_expr::Subst;
+use crate::{subst::Subst, ExprMust};
 use rustc_hash::FxHashMap;
 
 /// A definition site for an identifier.
@@ -13,7 +13,7 @@ pub enum Def {
   /// An `import` (Jsonnet code only).
   Import(paths::PathId),
   /// A part of an expression.
-  Expr(jsonnet_expr::ExprMust, ExprDefKind),
+  Expr(ExprMust, ExprDefKind),
 }
 
 /// A definition site with an associated expression.
@@ -43,4 +43,4 @@ impl Def {
 }
 
 /// A map from expressions to defs.
-pub type Map = FxHashMap<jsonnet_expr::ExprMust, Def>;
+pub type Map = FxHashMap<ExprMust, Def>;

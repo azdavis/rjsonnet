@@ -1,10 +1,9 @@
 //! Static checking for jsonnet.
 
-pub mod def;
 pub mod error;
 
 use always::always;
-use def::{Def, ExprDefKind};
+use jsonnet_expr::def::{Def, ExprDefKind};
 use jsonnet_expr::{Arenas, Expr, ExprData, ExprMust, Id, Prim, Str};
 use rustc_hash::{FxHashMap, FxHashSet};
 
@@ -14,7 +13,7 @@ pub struct St {
   /// The errors.
   pub errors: Vec<error::Error>,
   /// Any definition sites we could figure out.
-  pub defs: def::Map,
+  pub defs: jsonnet_expr::def::Map,
 }
 
 impl St {

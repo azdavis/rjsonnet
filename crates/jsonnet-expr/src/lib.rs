@@ -7,6 +7,7 @@ mod generated {
 }
 
 pub mod arg;
+pub mod def;
 mod subst;
 
 pub use generated::{std_fn, StdFn};

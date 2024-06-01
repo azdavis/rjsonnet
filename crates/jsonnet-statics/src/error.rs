@@ -1,7 +1,6 @@
 //! Errors.
 
-use crate::def::ExprDefKind;
-use jsonnet_expr::{ExprMust, Id, Str, Subst};
+use jsonnet_expr::{def::ExprDefKind, ExprMust, Id, Str, Subst};
 use std::fmt;
 
 /// An error.
