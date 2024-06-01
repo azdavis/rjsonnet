@@ -450,36 +450,32 @@ fn get_object_comp(st: &mut St, cx: Cx<'_>, inside: ast::Object, in_obj: bool) -
     ast::CompSpec::IfSpec(_) => None,
   });
   let vars: Vec<_> = vars.collect();
-  match lowered_field {
-    None => {
-      st.err(&inside, error::Kind::ObjectCompNotOne);
-      // this is a good "fake" return, since we knew this was going to be some kind of object,
-      // but now we can't figure out what fields it should have. so let's say it has no fields.
-      ExprData::Object { asserts: Vec::new(), fields: Vec::new() }
-    }
-    Some((ptr, name, body)) => {
-      let arr = st.fresh();
-      let on = Some(st.expr(ptr, ExprData::Id(arr)));
-      let name_binds = vars.iter().enumerate().map(|(idx, (ptr, id))| {
-        let idx = always::convert::usize_to_u32(idx);
-        let idx = f64::from(idx);
-        let idx = Number::always_from_f64(idx);
-        let idx = Some(st.expr(*ptr, ExprData::Prim(Prim::Number(idx))));
-        let subscript = Some(st.expr(*ptr, ExprData::Subscript { on, idx }));
-        (*id, subscript)
-      });
-      let name_binds: Vec<_> = name_binds.collect();
-      let body_binds: Vec<_> = name_binds.iter().copied().chain(binds).collect();
-      let name = Some(st.expr(ptr, ExprData::Local { binds: name_binds, body: name }));
-      let body = Some(st.expr(ptr, ExprData::Local { binds: body_binds, body }));
-      let vars = vars.into_iter().map(|(ptr, x)| Some(st.expr(ptr, ExprData::Id(x))));
-      let vars: Vec<_> = vars.collect();
-      let vars = Some(st.expr(ptr, ExprData::Array(vars)));
-      let vars = get_array_comp(st, cx, inside.comp_specs(), vars, in_obj);
-      let vars = Some(st.expr(ptr, vars));
-      ExprData::ObjectComp { name, body, id: arr, ary: vars }
-    }
-  }
+  let Some((ptr, name, body)) = lowered_field else {
+    st.err(&inside, error::Kind::ObjectCompNotOne);
+    // this is a good "fake" return, since we knew this was going to be some kind of object,
+    // but now we can't figure out what fields it should have. so let's say it has no fields.
+    return ExprData::Object { asserts: Vec::new(), fields: Vec::new() };
+  };
+  let arr = st.fresh();
+  let on = Some(st.expr(ptr, ExprData::Id(arr)));
+  let name_binds = vars.iter().enumerate().map(|(idx, (ptr, id))| {
+    let idx = always::convert::usize_to_u32(idx);
+    let idx = f64::from(idx);
+    let idx = Number::always_from_f64(idx);
+    let idx = Some(st.expr(*ptr, ExprData::Prim(Prim::Number(idx))));
+    let subscript = Some(st.expr(*ptr, ExprData::Subscript { on, idx }));
+    (*id, subscript)
+  });
+  let name_binds: Vec<_> = name_binds.collect();
+  let body_binds: Vec<_> = name_binds.iter().copied().chain(binds).collect();
+  let name = Some(st.expr(ptr, ExprData::Local { binds: name_binds, body: name }));
+  let body = Some(st.expr(ptr, ExprData::Local { binds: body_binds, body }));
+  let vars = vars.into_iter().map(|(ptr, x)| Some(st.expr(ptr, ExprData::Id(x))));
+  let vars: Vec<_> = vars.collect();
+  let vars = Some(st.expr(ptr, ExprData::Array(vars)));
+  let vars = get_array_comp(st, cx, inside.comp_specs(), vars, in_obj);
+  let vars = Some(st.expr(ptr, vars));
+  ExprData::ObjectComp { name, body, id: arr, ary: vars }
 }
 
 fn bop(op: BinaryOp, lhs: Expr, rhs: Expr) -> ExprData {
