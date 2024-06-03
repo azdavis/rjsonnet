@@ -37,8 +37,11 @@ pub(crate) fn get_expr(st: &mut St, cx: Cx<'_>, expr: Option<ast::Expr>, in_obj:
     ast::Expr::ExprId(expr) => ExprData::Id(st.id(expr.id()?)),
     ast::Expr::ExprParen(expr) => return get_expr(st, cx, expr.expr(), in_obj),
     ast::Expr::ExprObject(expr) => get_object(st, cx, expr.object()?, in_obj),
-    ast::Expr::ExprArray(expr) => {
-      if let Some(spec) = expr.comp_specs().next() {
+    ast::Expr::ExprArray(expr) => match expr.comp_specs().next() {
+      None => {
+        ExprData::Array(expr.expr_commas().map(|x| get_expr(st, cx, x.expr(), in_obj)).collect())
+      }
+      Some(spec) => {
         match spec {
           ast::CompSpec::ForSpec(_) => {}
           ast::CompSpec::IfSpec(_) => {
@@ -55,10 +58,8 @@ pub(crate) fn get_expr(st: &mut St, cx: Cx<'_>, expr: Option<ast::Expr>, in_obj:
           st.err(&elem, error::Kind::ArrayCompNotOne);
         }
         get_array_comp(st, cx, expr.comp_specs(), elem, in_obj)
-      } else {
-        ExprData::Array(expr.expr_commas().map(|x| get_expr(st, cx, x.expr(), in_obj)).collect())
       }
-    }
+    },
     ast::Expr::ExprFieldGet(expr) => {
       let on = get_expr(st, cx, expr.expr(), in_obj);
       let idx = ExprData::Prim(Prim::String(st.str(expr.id()?.text())));
