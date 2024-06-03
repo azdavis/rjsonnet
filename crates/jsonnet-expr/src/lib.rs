@@ -40,46 +40,20 @@ pub struct Field {
   pub val: Expr,
 }
 
-/// A binding, aka id in definition position, that may have some extra sugar.
-///
-/// The places in a **desugared** expr that an id may appear in definition position are described by
-/// [`crate::def::Def`]. Accordingly, [`Bind`] may be used in those positions.
-///
-/// However, an id may appear in definition position in other places in the sugary AST. This type
-/// tracks that possible extra data through the desugaring, which would have otherwise been
-/// discarded.
-///
-/// We need that extra info to correctly implement unused variable checks.
-///
-/// This is not always used for all ids in definition position - notably, object comp ids. This is
-/// because nothing is desugared **to** an object comprehension.
-#[derive(Debug, Clone, Copy)]
-pub struct Bind {
-  pub id: Id,
-  pub sugary_def: Option<def::Sugary>,
-}
-
-impl Bind {
-  /// Returns a new Bind without any sugar.
-  ///
-  /// This is used for ids whose desugared def location and AST def location are the same (like
-  /// function params).
-  ///
-  /// It is also used for ids that were conjured up during desugar, like the ones to deal with array
-  /// comprehensions.
-  #[must_use]
-  pub fn plain(id: Id) -> Self {
-    Self { id, sugary_def: None }
-  }
-}
-
 #[derive(Debug, Clone)]
 pub enum ExprData {
   Prim(Prim),
+  /// object fields ARE NOT desugared into the body itself. evaluation is thus modified to handle
+  /// this new location that ids in def position are permitted to appear.
+  ///
+  /// the spec suggests duplicating the locals across every assert and field, but that is a bit
+  /// wasteful and also makes implementing unused variables prohibitively tricky.
   Object {
+    binds: Vec<(Id, Expr)>,
     asserts: Vec<Expr>,
     fields: Vec<Field>,
   },
+  /// object comprehension fields ARE desugared into the body itself, as the spec suggests.
   ObjectComp {
     name: Expr,
     body: Expr,
@@ -98,7 +72,7 @@ pub enum ExprData {
   },
   Id(Id),
   Local {
-    binds: Vec<(Bind, Expr)>,
+    binds: Vec<(Id, Expr)>,
     body: Expr,
   },
   If {
@@ -116,7 +90,7 @@ pub enum ExprData {
     inner: Expr,
   },
   Function {
-    params: Vec<(Bind, Option<Expr>)>,
+    params: Vec<(Id, Option<Expr>)>,
     body: Expr,
   },
   Error(Expr),
@@ -132,7 +106,7 @@ pub enum ExprData {
   },
 }
 
-const _: () = assert!(std::mem::size_of::<ExprData>() == 64);
+const _: () = assert!(std::mem::size_of::<ExprData>() == 80);
 
 impl ExprData {
   pub fn apply(&mut self, subst: &Subst) {
@@ -142,19 +116,14 @@ impl ExprData {
         Prim::Null | Prim::Bool(_) | Prim::Number(_) => {}
       },
       ExprData::ObjectComp { id, .. } | ExprData::Id(id) => id.apply(subst),
-      ExprData::Local { binds, .. } => {
+      ExprData::Local { binds, .. } | ExprData::Call { named: binds, .. } => {
         for (bind, _) in binds {
-          bind.id.apply(subst);
-        }
-      }
-      ExprData::Call { named, .. } => {
-        for (id, _) in named {
-          id.apply(subst);
+          bind.apply(subst);
         }
       }
       ExprData::Function { params, .. } => {
         for (bind, _) in params {
-          bind.id.apply(subst);
+          bind.apply(subst);
         }
       }
       ExprData::Import { path, .. } => *path = subst.get_path_id(*path),
@@ -203,10 +172,13 @@ impl<'a> fmt::Display for DisplayExpr<'a> {
     let Some(e) = self.e else { return f.write_str("_") };
     match &self.expr_ar[e] {
       ExprData::Prim(prim) => prim.display(self.str_ar).fmt(f),
-      ExprData::Object { asserts, fields } => {
+      ExprData::Object { binds, asserts, fields } => {
         f.write_str("{ ")?;
+        for &(id, expr) in binds {
+          write!(f, "local {} = {}, ", id.display(self.str_ar), self.with(expr))?;
+        }
         for &a in asserts {
-          write!(f, "assert {}; ", self.with(a))?;
+          write!(f, "assert {}, ", self.with(a))?;
         }
         for field in fields {
           let key = self.with(field.key);
@@ -250,7 +222,7 @@ impl<'a> fmt::Display for DisplayExpr<'a> {
       ExprData::Local { binds, body } => {
         f.write_str("local ")?;
         for &(bind, e) in binds {
-          write!(f, "{} = {}, ", bind.id.display(self.str_ar), self.with(e))?;
+          write!(f, "{} = {}, ", bind.display(self.str_ar), self.with(e))?;
         }
         write!(f, "; {}", self.with(*body))
       }
@@ -264,7 +236,7 @@ impl<'a> fmt::Display for DisplayExpr<'a> {
       ExprData::Function { params, body } => {
         f.write_str("function(")?;
         for &(bind, default) in params {
-          bind.id.display(self.str_ar).fmt(f)?;
+          bind.display(self.str_ar).fmt(f)?;
           if let Some(default) = default {
             write!(f, " = {}", self.with(default))?;
           }

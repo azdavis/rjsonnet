@@ -13,20 +13,12 @@ pub enum Def {
   /// An `import` of a Jsonnet file.
   Import(paths::PathId),
   /// A part of an expression.
-  Expr(WithExpr),
-}
-
-/// A definition with an expr.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct WithExpr {
-  pub expr: ExprMust,
-  pub plain: Plain,
-  pub sugary: Option<Sugary>,
+  Expr(ExprMust, ExprDefKind),
 }
 
 /// A definition site with an associated expression in the plain (not sugary) language.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum Plain {
+pub enum ExprDefKind {
   /// The identifier in an object comprehension.
   ///
   /// ```jsonnet
@@ -38,6 +30,8 @@ pub enum Plain {
   LocalBind(usize),
   /// The nth function parameter.
   FnParam(usize),
+  /// An object local.
+  ObjectLocal(usize),
 }
 
 impl Def {
@@ -52,32 +46,3 @@ impl Def {
 
 /// A map from expressions to defs.
 pub type Map = FxHashMap<ExprMust, Def>;
-
-/// A place in the sugary syntax that an identifier in definition position may appear.
-///
-/// This excludes places in the desugared syntax. Those such places are covered by [`Def`].
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct Sugary {
-  pub expr: ExprMust,
-  pub kind: SugaryKind,
-}
-
-/// A kind of sugary def.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum SugaryKind {
-  /// A local from the nth field in an object.
-  ObjectLocal(usize),
-  /// The id in an array comprehension.
-  ///
-  /// ```jsonnet
-  /// [x + 1 for x in xs]
-  /// //         ^ here
-  /// ```
-  ArrayComp,
-  /// The nth binding from a function defined on a `local` with params.
-  LocalFnParam(usize),
-  /// The nth binding from a function defined on a field with params.
-  FieldFnParam(usize),
-  /// A binding from the nth `for` in an object comprehension.
-  ObjectComp(usize),
-}

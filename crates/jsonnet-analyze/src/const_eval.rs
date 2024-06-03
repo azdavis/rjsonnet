@@ -18,7 +18,7 @@ pub(crate) enum ConstEval {
 pub(crate) struct Real {
   pub(crate) path_id: PathId,
   pub(crate) expr: ExprMust,
-  pub(crate) kind: Option<def::Plain>,
+  pub(crate) kind: Option<def::ExprDefKind>,
 }
 
 impl From<Real> for ConstEval {
@@ -69,13 +69,13 @@ where
   F: paths::FileSystem,
 {
   match def {
-    Def::Expr(w) => {
-      let local = if let def::Plain::LocalBind(idx) = w.plain {
-        from_local(st, fs, path_id, Some(w.expr), idx)
+    Def::Expr(expr, kind) => {
+      let local = if let def::ExprDefKind::LocalBind(idx) = kind {
+        from_local(st, fs, path_id, Some(expr), idx)
       } else {
         None
       };
-      Some(local.unwrap_or(Real { path_id, expr: w.expr, kind: Some(w.plain) }.into()))
+      Some(local.unwrap_or(Real { path_id, expr, kind: Some(kind) }.into()))
     }
     Def::Std => Some(ConstEval::Std(None)),
     Def::KwIdent => None,

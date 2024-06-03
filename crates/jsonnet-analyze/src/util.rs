@@ -147,9 +147,8 @@ impl IsolatedFile {
       .chain(self.errors.parse.iter().map(|err| (err.range(), err.to_string())))
       .chain(self.errors.desugar.iter().map(|err| (err.range(), err.to_string())))
       .chain(self.errors.statics.iter().map(|err| {
-        let (expr, w) = err.expr_and_def();
-        // TODO use the whole thing, not just the plain?
-        let range = expr_range(&self.artifacts.pointers, root, expr, w.map(|x| x.plain));
+        let (expr, kind) = err.expr_and_def();
+        let range = expr_range(&self.artifacts.pointers, root, expr, kind);
         let err = err.display(strings);
         (range, err.to_string())
       }))
@@ -189,7 +188,7 @@ pub(crate) fn expr_range(
   pointers: &jsonnet_desugar::Pointers,
   root: &jsonnet_syntax::kind::SyntaxNode,
   expr: jsonnet_expr::ExprMust,
-  kind: Option<def::Plain>,
+  kind: Option<def::ExprDefKind>,
 ) -> text_size::TextRange {
   let maybe_more_precise = kind.and_then(|kind| expr_def_range(pointers, root, expr, kind));
   maybe_more_precise.unwrap_or_else(|| pointers.get_ptr(expr).text_range())
@@ -199,12 +198,12 @@ fn expr_def_range(
   pointers: &jsonnet_desugar::Pointers,
   root: &jsonnet_syntax::kind::SyntaxNode,
   expr: jsonnet_expr::ExprMust,
-  kind: def::Plain,
+  kind: def::ExprDefKind,
 ) -> Option<text_size::TextRange> {
+  let node_ptr = pointers.get_ptr(expr);
   match kind {
-    def::Plain::ObjectCompId => {
-      let obj = pointers.get_ptr(expr);
-      let obj = obj.cast::<jsonnet_syntax::ast::Object>()?;
+    def::ExprDefKind::ObjectCompId => {
+      let obj = node_ptr.cast::<jsonnet_syntax::ast::Object>()?;
       let obj = obj.try_to_node(root)?;
       let comp_spec = obj.comp_specs().next()?;
       match comp_spec {
@@ -212,38 +211,51 @@ fn expr_def_range(
         jsonnet_syntax::ast::CompSpec::IfSpec(_) => None,
       }
     }
-    def::Plain::LocalBind(idx) => {
-      let local = pointers.get_ptr(expr);
-      // NOTE because of desugaring, not all expr locals are actually from ast locals. we try to
-      // get the exact location first and then fall back.
-      local
-        .cast::<jsonnet_syntax::ast::ExprLocal>()
-        .and_then(|local| {
-          let local = local.try_to_node(root)?;
-          Some(local.bind_commas().nth(idx)?.bind()?.id()?.text_range())
-        })
-        .or_else(|| {
-          log::warn!("local fallback: {local:?}");
-          let node = local.try_to_node(root)?;
-          log::warn!("node: {node:?}");
-          Some(node.text_range())
-        })
-    }
-    def::Plain::FnParam(idx) => {
-      let func = pointers.get_ptr(expr);
-      // NOTE because of desugaring, possibly not all expr fns are actually from ast fns
-      func
-        .cast::<jsonnet_syntax::ast::ExprFunction>()
-        .and_then(|func| {
-          let func = func.try_to_node(root)?;
-          Some(func.paren_params()?.params().nth(idx)?.id()?.text_range())
-        })
-        .or_else(|| {
-          log::warn!("func fallback: {func:?}");
-          let node = func.try_to_node(root)?;
-          log::warn!("node: {node:?}");
-          Some(node.text_range())
-        })
-    }
+    // NOTE because of desugaring, not all expr locals are actually from ast locals. we try to
+    // get the exact location first and then fall back.
+    def::ExprDefKind::LocalBind(idx) => node_ptr
+      .cast::<jsonnet_syntax::ast::ExprLocal>()
+      .and_then(|local| {
+        let local = local.try_to_node(root)?;
+        Some(local.bind_commas().nth(idx)?.bind()?.id()?.text_range())
+      })
+      .or_else(|| {
+        log::warn!("local fallback: {node_ptr:?}");
+        let node = node_ptr.try_to_node(root)?;
+        log::warn!("node: {node:?}");
+        Some(node.text_range())
+      }),
+    // NOTE because of desugaring, possibly not all expr fns are actually from ast fns
+    def::ExprDefKind::FnParam(idx) => node_ptr
+      .cast::<jsonnet_syntax::ast::ExprFunction>()
+      .and_then(|func| {
+        let func = func.try_to_node(root)?;
+        Some(func.paren_params()?.params().nth(idx)?.id()?.text_range())
+      })
+      .or_else(|| {
+        log::warn!("func fallback: {node_ptr:?}");
+        let node = node_ptr.try_to_node(root)?;
+        log::warn!("node: {node:?}");
+        Some(node.text_range())
+      }),
+    def::ExprDefKind::ObjectLocal(idx) => node_ptr
+      .cast::<jsonnet_syntax::ast::ExprObject>()
+      .and_then(|obj| {
+        let obj = obj.try_to_node(root)?.object()?;
+        let nth_local = obj
+          .members()
+          .filter_map(|x| match x.member_kind()? {
+            jsonnet_syntax::ast::MemberKind::ObjectLocal(loc) => Some(loc),
+            _ => None,
+          })
+          .nth(idx)?;
+        Some(nth_local.bind()?.id()?.text_range())
+      })
+      .or_else(|| {
+        log::warn!("object local fallback: {node_ptr:?}");
+        let node = node_ptr.try_to_node(root)?;
+        log::warn!("node: {node:?}");
+        Some(node.text_range())
+      }),
   }
 }

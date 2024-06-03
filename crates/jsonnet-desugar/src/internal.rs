@@ -1,9 +1,9 @@
 //! The internal impl.
 
-use crate::st::{St, StartedExpr};
+use crate::st::St;
 use crate::{cx::Cx, error};
 use jsonnet_expr::{
-  def, BinaryOp, Bind, Expr, ExprData, Id, ImportKind, Number, Prim, Str, UnaryOp, Visibility,
+  BinaryOp, Expr, ExprData, Id, ImportKind, Number, Prim, Str, UnaryOp, Visibility,
 };
 use jsonnet_syntax::ast::{self, AstNode as _};
 
@@ -37,12 +37,7 @@ pub(crate) fn get_expr(st: &mut St, cx: Cx<'_>, expr: Option<ast::Expr>, in_obj:
     }
     ast::Expr::ExprId(expr) => ExprData::Id(st.id(expr.id()?)),
     ast::Expr::ExprParen(expr) => return get_expr(st, cx, expr.expr(), in_obj),
-    ast::Expr::ExprObject(expr) => {
-      let obj = expr.object()?;
-      let started = st.start_expr(ptr);
-      let ed = get_object(st, cx, obj, &started, in_obj);
-      return Some(st.finish_expr(started, ed));
-    }
+    ast::Expr::ExprObject(expr) => get_object(st, cx, expr.object()?, in_obj),
     ast::Expr::ExprArray(expr) => match expr.comp_specs().next() {
       None => {
         ExprData::Array(expr.expr_commas().map(|x| get_expr(st, cx, x.expr(), in_obj)).collect())
@@ -63,9 +58,7 @@ pub(crate) fn get_expr(st: &mut St, cx: Cx<'_>, expr: Option<ast::Expr>, in_obj:
         for elem in expr_commas {
           st.err(&elem, error::Kind::ArrayCompNotOne);
         }
-        let started = st.start_expr(ptr);
-        let ed = get_array_comp(st, cx, expr.comp_specs(), elem, &started, in_obj);
-        return Some(st.finish_expr(started, ed));
+        get_array_comp(st, cx, expr.comp_specs(), elem, in_obj)
       }
     },
     ast::Expr::ExprFieldGet(expr) => {
@@ -113,13 +106,10 @@ pub(crate) fn get_expr(st: &mut St, cx: Cx<'_>, expr: Option<ast::Expr>, in_obj:
       ExprData::Call { func, positional, named }
     }
     ast::Expr::ExprLocal(expr) => {
-      let started = st.start_expr(ptr);
-      let binds: Vec<_> = expr
-        .bind_commas()
-        .filter_map(|bind| get_bind(st, cx, bind.bind()?, &started, None, in_obj))
-        .collect();
+      let binds: Vec<_> =
+        expr.bind_commas().filter_map(|bind| get_bind(st, cx, bind.bind()?, in_obj)).collect();
       let body = get_expr(st, cx, expr.expr(), in_obj);
-      return Some(st.finish_expr(started, ExprData::Local { binds, body }));
+      ExprData::Local { binds, body }
     }
     ast::Expr::ExprIf(expr) => {
       let cond = get_expr(st, cx, expr.cond(), in_obj);
@@ -147,14 +137,11 @@ pub(crate) fn get_expr(st: &mut St, cx: Cx<'_>, expr: Option<ast::Expr>, in_obj:
       let lhs = get_expr(st, cx, expr.expr(), in_obj);
       let rhs = expr.object()?;
       let rhs_ptr = ast::SyntaxNodePtr::new(rhs.syntax());
-      let started = st.start_expr(ptr);
-      let rhs = get_object(st, cx, rhs, &started, in_obj);
+      let rhs = get_object(st, cx, rhs, in_obj);
       let rhs = Some(st.expr(rhs_ptr, rhs));
-      return Some(st.finish_expr(started, bop(BinaryOp::Add, lhs, rhs)));
+      bop(BinaryOp::Add, lhs, rhs)
     }
-    ast::Expr::ExprFunction(expr) => {
-      get_fn(st, cx, expr.paren_params(), |_| None, expr.expr(), in_obj)
-    }
+    ast::Expr::ExprFunction(expr) => get_fn(st, cx, expr.paren_params(), expr.expr(), in_obj),
     ast::Expr::ExprAssert(expr) => {
       let yes = get_expr(st, cx, expr.expr(), in_obj);
       get_assert(st, cx, yes, expr.assert()?, in_obj)
@@ -220,14 +207,7 @@ fn call_std_func_data(
   ExprData::Call { func, positional: args, named: Vec::new() }
 }
 
-fn get_array_comp<I>(
-  st: &mut St,
-  cx: Cx<'_>,
-  comp_specs: I,
-  elem: Expr,
-  started: &StartedExpr,
-  in_obj: bool,
-) -> ExprData
+fn get_array_comp<I>(st: &mut St, cx: Cx<'_>, comp_specs: I, elem: Expr, in_obj: bool) -> ExprData
 where
   I: Iterator<Item = ast::CompSpec>,
 {
@@ -240,10 +220,7 @@ where
         // skip this `for` if no var for the `for`
         let Some(for_var) = for_spec.id() else { return ac };
         let ac = Some(st.expr(ptr, ac));
-        let for_var = Bind {
-          id: st.id(for_var),
-          sugary_def: Some(started.sugary_def(def::SugaryKind::ArrayComp)),
-        };
+        let for_var = st.id(for_var);
         let in_expr = get_expr(st, cx, for_spec.expr(), in_obj);
         let arr = st.fresh();
         let idx = st.fresh();
@@ -253,13 +230,12 @@ where
         let subscript = Some(st.expr(ptr, ExprData::Subscript { on: arr_expr, idx: idx_expr }));
         let recur_with_subscript = ExprData::Local { binds: vec![(for_var, subscript)], body: ac };
         let recur_with_subscript = Some(st.expr(ptr, recur_with_subscript));
-        let lambda =
-          ExprData::Function { params: vec![(Bind::plain(idx), None)], body: recur_with_subscript };
+        let lambda = ExprData::Function { params: vec![(idx, None)], body: recur_with_subscript };
         let lambda_recur_with_subscript = Some(st.expr(ptr, lambda));
         let make_array =
           call_std_func(st, ptr, Str::makeArray, vec![length, lambda_recur_with_subscript]);
         let join = call_std_func(st, ptr, Str::join, vec![empty_array, make_array]);
-        ExprData::Local { binds: vec![(Bind::plain(arr), in_expr)], body: join }
+        ExprData::Local { binds: vec![(arr, in_expr)], body: join }
       }
       ast::CompSpec::IfSpec(if_spec) => {
         let ac = Some(st.expr(ptr, ac));
@@ -270,43 +246,31 @@ where
   })
 }
 
-fn get_bind(
-  st: &mut St,
-  cx: Cx<'_>,
-  bind: ast::Bind,
-  started: &StartedExpr,
-  sugary_def: Option<def::Sugary>,
-  in_obj: bool,
-) -> Option<(Bind, Expr)> {
-  let lhs = Bind { id: st.id(bind.id()?), sugary_def };
+fn get_bind(st: &mut St, cx: Cx<'_>, bind: ast::Bind, in_obj: bool) -> Option<(Id, Expr)> {
+  let lhs = st.id(bind.id()?);
   let rhs = bind.expr();
   let rhs = match bind.paren_params() {
     None => get_expr(st, cx, rhs, in_obj),
     Some(params) => {
       let ptr = ast::SyntaxNodePtr::new(params.syntax());
-      let mk = |idx: usize| Some(started.sugary_def(def::SugaryKind::LocalFnParam(idx)));
-      let fn_data = get_fn(st, cx, Some(params), mk, rhs, in_obj);
+      let fn_data = get_fn(st, cx, Some(params), rhs, in_obj);
       Some(st.expr(ptr, fn_data))
     }
   };
   Some((lhs, rhs))
 }
 
-fn get_fn<F>(
+fn get_fn(
   st: &mut St,
   cx: Cx<'_>,
   paren_params: Option<ast::ParenParams>,
-  mut mk_sugary_def: F,
   body: Option<ast::Expr>,
   in_obj: bool,
-) -> ExprData
-where
-  F: FnMut(usize) -> Option<def::Sugary>,
-{
-  let mut params = Vec::<(Bind, Option<Expr>)>::new();
-  for (idx, param) in paren_params.into_iter().flat_map(|x| x.params()).enumerate() {
+) -> ExprData {
+  let mut params = Vec::<(Id, Option<Expr>)>::new();
+  for param in paren_params.into_iter().flat_map(|x| x.params()) {
     let Some(lhs) = param.id() else { continue };
-    let lhs = Bind { id: st.id(lhs), sugary_def: mk_sugary_def(idx) };
+    let lhs = st.id(lhs);
     let rhs = param.eq_expr().map(|rhs| get_expr(st, cx, rhs.expr(), in_obj));
     params.push((lhs, rhs));
   }
@@ -325,13 +289,7 @@ fn get_assert(st: &mut St, cx: Cx<'_>, yes: Expr, assert: ast::Assert, in_obj: b
   ExprData::If { cond, yes, no }
 }
 
-fn get_object(
-  st: &mut St,
-  cx: Cx<'_>,
-  inside: ast::Object,
-  started: &StartedExpr,
-  in_obj: bool,
-) -> ExprData {
+fn get_object(st: &mut St, cx: Cx<'_>, inside: ast::Object, in_obj: bool) -> ExprData {
   if let Some(spec) = inside.comp_specs().next() {
     match spec {
       ast::CompSpec::ForSpec(_) => {}
@@ -339,9 +297,9 @@ fn get_object(
         st.err(&spec, error::Kind::FirstCompSpecNotFor);
       }
     }
-    get_object_comp(st, cx, inside, started, in_obj)
+    get_object_comp(st, cx, inside, in_obj)
   } else {
-    get_object_literal(st, cx, inside, started, in_obj)
+    get_object_literal(st, cx, inside, in_obj)
   }
 }
 
@@ -356,45 +314,23 @@ fn get_object(
 /// which means we have to do something like... track how many times the var was cloned by keeping a
 /// counter, then stick that counter somewhere so later when statics counts how many vars were
 /// unused, it knows how many copies to count as unused before marking the actual var as unused...?
-fn get_object_literal(
-  st: &mut St,
-  cx: Cx<'_>,
-  inside: ast::Object,
-  started: &StartedExpr,
-  in_obj: bool,
-) -> ExprData {
-  // first get the binds
-  let mut binds = Vec::<(Bind, Expr)>::new();
-  for (idx, member) in inside.members().enumerate() {
-    let Some(member_kind) = member.member_kind() else { continue };
-    let ast::MemberKind::ObjectLocal(local) = member_kind else { continue };
-    let Some(bind) = local.bind() else { continue };
-    let sugary_def = Some(started.sugary_def(def::SugaryKind::ObjectLocal(idx)));
-    let Some(bind) = get_bind(st, cx, bind, started, sugary_def, true) else { continue };
-    binds.push(bind);
-  }
-  // this is the only time we actually use the `in_obj` flag
-  if !in_obj {
-    let ptr = ast::SyntaxNodePtr::new(inside.syntax());
-    let this = Some(st.expr(ptr, ExprData::Id(Id::self_)));
-    binds.push((Bind::plain(Id::dollar), this));
-  }
-  // then get the asserts and fields
+fn get_object_literal(st: &mut St, cx: Cx<'_>, inside: ast::Object, in_obj: bool) -> ExprData {
+  let mut binds = Vec::<(Id, Expr)>::new();
   let mut asserts = Vec::<Expr>::new();
   let mut fields = Vec::<jsonnet_expr::Field>::new();
   for member in inside.members() {
     let Some(member_kind) = member.member_kind() else { continue };
     match member_kind {
-      // already did locals
-      ast::MemberKind::ObjectLocal(_) => {}
+      ast::MemberKind::ObjectLocal(local) => {
+        let Some(bind) = local.bind() else { continue };
+        let Some(bind) = get_bind(st, cx, bind, true) else { continue };
+        binds.push(bind);
+      }
       ast::MemberKind::Assert(assert) => {
         let ptr = ast::SyntaxNodePtr::new(assert.syntax());
         let yes = Some(st.expr(ptr, ExprData::Prim(Prim::Null)));
         let assert = get_assert(st, cx, yes, assert, true);
-        let mut assert = Some(st.expr(ptr, assert));
-        if !binds.is_empty() {
-          assert = Some(st.expr(ptr, ExprData::Local { binds: binds.clone(), body: assert }));
-        }
+        let assert = Some(st.expr(ptr, assert));
         asserts.push(assert);
       }
       ast::MemberKind::Field(field) => {
@@ -427,7 +363,7 @@ fn get_object_literal(
           },
           None => Visibility::Default,
         };
-        let (plus, mut val) = match field.field_extra() {
+        let (plus, val) = match field.field_extra() {
           None => (false, get_expr(st, cx, field.expr(), true)),
           Some(ast::FieldExtra::FieldPlus(_)) => {
             // TODO: the spec says do substitution with self and super and outerself and outersuper,
@@ -442,38 +378,32 @@ fn get_object_literal(
           }
           Some(ast::FieldExtra::ParenParams(paren_params)) => {
             let ptr = ast::SyntaxNodePtr::new(paren_params.syntax());
-            let mk = |idx: usize| Some(started.sugary_def(def::SugaryKind::FieldFnParam(idx)));
-            let expr = get_fn(st, cx, Some(paren_params), mk, field.expr(), true);
+            let expr = get_fn(st, cx, Some(paren_params), field.expr(), true);
             (false, Some(st.expr(ptr, expr)))
           }
         };
-        if !binds.is_empty() {
-          let ptr = ast::SyntaxNodePtr::new(field.syntax());
-          val = Some(st.expr(ptr, ExprData::Local { binds: binds.clone(), body: val }));
-        }
         fields.push(jsonnet_expr::Field { key, plus, vis, val });
       }
     }
   }
-  ExprData::Object { asserts, fields }
+  // this is the only time we actually use the `in_obj` flag
+  if !in_obj {
+    let ptr = ast::SyntaxNodePtr::new(inside.syntax());
+    let this = Some(st.expr(ptr, ExprData::Id(Id::self_)));
+    binds.push((Id::dollar, this));
+  }
+  ExprData::Object { binds, asserts, fields }
 }
 
-fn get_object_comp(
-  st: &mut St,
-  cx: Cx<'_>,
-  inside: ast::Object,
-  started: &StartedExpr,
-  in_obj: bool,
-) -> ExprData {
-  let mut binds = Vec::<(Bind, Expr)>::new();
+fn get_object_comp(st: &mut St, cx: Cx<'_>, inside: ast::Object, in_obj: bool) -> ExprData {
+  let mut binds = Vec::<(Id, Expr)>::new();
   let mut lowered_field = None::<(ast::SyntaxNodePtr, Expr, Expr)>;
-  for (idx, member) in inside.members().enumerate() {
+  for member in inside.members() {
     let Some(member_kind) = member.member_kind() else { continue };
     match member_kind {
       ast::MemberKind::ObjectLocal(local) => {
         let Some(bind) = local.bind() else { continue };
-        let sugary_def = Some(started.sugary_def(def::SugaryKind::ObjectLocal(idx)));
-        let Some(bind) = get_bind(st, cx, bind, started, sugary_def, true) else { continue };
+        let Some(bind) = get_bind(st, cx, bind, true) else { continue };
         binds.push(bind);
       }
       ast::MemberKind::Assert(assert) => {
@@ -515,18 +445,17 @@ fn get_object_comp(
     st.err(&inside, error::Kind::ObjectCompNotOne);
     // this is a good "fake" return, since we knew this was going to be some kind of object,
     // but now we can't figure out what fields it should have. so let's say it has no fields.
-    return ExprData::Object { asserts: Vec::new(), fields: Vec::new() };
+    return ExprData::Object { binds, asserts: Vec::new(), fields: Vec::new() };
   };
   let arr = st.fresh();
   let on = Some(st.expr(ptr, ExprData::Id(arr)));
   let name_binds = vars.iter().enumerate().map(|(idx, (ptr, id))| {
-    let sugary_def = Some(started.sugary_def(def::SugaryKind::ObjectComp(idx)));
     let idx = always::convert::usize_to_u32(idx);
     let idx = f64::from(idx);
     let idx = Number::always_from_f64(idx);
     let idx = Some(st.expr(*ptr, ExprData::Prim(Prim::Number(idx))));
     let subscript = Some(st.expr(*ptr, ExprData::Subscript { on, idx }));
-    (Bind { id: *id, sugary_def }, subscript)
+    (*id, subscript)
   });
   let name_binds: Vec<_> = name_binds.collect();
   let body_binds: Vec<_> = name_binds.iter().copied().chain(binds).collect();
@@ -535,7 +464,7 @@ fn get_object_comp(
   let vars = vars.into_iter().map(|(ptr, x)| Some(st.expr(ptr, ExprData::Id(x))));
   let vars: Vec<_> = vars.collect();
   let vars = Some(st.expr(ptr, ExprData::Array(vars)));
-  let vars = get_array_comp(st, cx, inside.comp_specs(), vars, started, in_obj);
+  let vars = get_array_comp(st, cx, inside.comp_specs(), vars, in_obj);
   let vars = Some(st.expr(ptr, vars));
   ExprData::ObjectComp { name, body, id: arr, ary: vars }
 }

@@ -23,14 +23,14 @@ fn for_comp_obj() {
   JsonnetInput::manifest(
     r#"
 {
-  [x]: false
-  for x in ["a", "b"]
+  [x]: std.length(x)
+  for x in ["foo", "bar quz"]
 }
 "#,
     r#"
 {
-  "a": false,
-  "b": false
+  "a": 3,
+  "b": 7
 }
 "#,
   )
@@ -191,4 +191,25 @@ fn remove() {
         .remove("b.jsonnet"),
     )
     .check();
+}
+
+#[test]
+fn fucker() {
+  JsonnetInput::manifest(
+    r#"
+{
+  foo: [
+    { kind: 'Soda', qty: 2 },
+  ],
+  quz: self.foo,
+}
+"#,
+    r#"
+{
+  "foo": [{ "kind": "Soda", "qty": 2 }],
+  "quz": [{ "kind": "Soda", "qty": 2 }]
+}
+"#,
+  )
+  .check();
 }

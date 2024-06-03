@@ -160,3 +160,22 @@ fn self_3() {
   )
   .check();
 }
+
+#[test]
+fn root() {
+  JsonnetInput::manifest(
+    r#"
+{
+  foo: 1,
+  bar: $.foo + 2
+}
+"#,
+    r#"
+{
+  "foo": 1,
+  "bar": 3
+}
+"#,
+  )
+  .check();
+}

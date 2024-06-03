@@ -19,13 +19,8 @@ impl Error {
 
   /// Returns the expr this error is for.
   #[must_use]
-  pub fn expr_and_def(&self) -> (ExprMust, Option<def::WithExpr>) {
-    let with_expr = if let Kind::Unused(_, w) = self.kind {
-      // NOTE: we don't always have self.expr == w.expr, as in the case with sugary defs.
-      Some(w)
-    } else {
-      None
-    };
+  pub fn expr_and_def(&self) -> (ExprMust, Option<def::ExprDefKind>) {
+    let with_expr = if let Kind::Unused(_, k) = self.kind { Some(k) } else { None };
     (self.expr, with_expr)
   }
 
@@ -49,7 +44,7 @@ pub(crate) enum Kind {
   DuplicateFieldName(Str),
   DuplicateNamedArg(Id),
   DuplicateBinding(Id),
-  Unused(Id, def::WithExpr),
+  Unused(Id, def::ExprDefKind),
 }
 
 struct Display<'a> {

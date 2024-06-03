@@ -13,7 +13,6 @@ test = false
 doctest = false
 
 [dependencies]
-drop_bomb.workspace = true
 paths.workspace = true
 rustc-hash.workspace = true
 str-process.workspace = true

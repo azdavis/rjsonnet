@@ -6,7 +6,6 @@ use always::always;
 use jsonnet_expr::def::{self, Def};
 use jsonnet_expr::{Arenas, Expr, ExprData, ExprMust, Id, Prim, Str};
 use rustc_hash::{FxHashMap, FxHashSet};
-use std::collections::hash_map::Entry;
 
 /// The state when checking statics.
 #[derive(Debug, Default)]
@@ -30,69 +29,40 @@ impl St {
 }
 
 #[derive(Debug)]
-struct Usage {
-  id: Id,
-  count: usize,
+struct TrackedDef {
+  def: Def,
+  usages: usize,
 }
 
 /// The context. Stores the identifiers currently in scope.
 #[derive(Debug, Default)]
 struct Cx {
   /// This is a vec because things go in and out of scope in stacks.
-  store: FxHashMap<Id, Vec<Def>>,
-  plain_usage: FxHashMap<(ExprMust, def::Plain), Usage>,
-  sugary_usage: FxHashMap<def::Sugary, (Usage, ExprMust, def::Plain)>,
+  store: FxHashMap<Id, Vec<TrackedDef>>,
 }
 
 impl Cx {
   fn define(&mut self, id: Id, def: Def) {
-    self.store.entry(id).or_default().push(def);
-    let Def::Expr(w) = def else { return };
-    always!(id != Id::std);
-    always!(id != Id::std_unutterable);
-    always!(id != Id::self_);
-    always!(id != Id::super_);
-    match w.sugary {
-      Some(sugary) => match self.sugary_usage.entry(sugary) {
-        Entry::Occupied(entry) => {
-          always!(entry.get().0.id == id);
-        }
-        Entry::Vacant(entry) => {
-          entry.insert((Usage { id, count: 0 }, w.expr, w.plain));
-        }
-      },
-      None => match self.plain_usage.entry((w.expr, w.plain)) {
-        Entry::Occupied(entry) => {
-          always!(entry.get().id == id);
-        }
-        Entry::Vacant(entry) => {
-          entry.insert(Usage { id, count: 0 });
-        }
-      },
-    }
+    self.store.entry(id).or_default().push(TrackedDef { def, usages: 0 });
   }
 
   fn get(&mut self, id: Id) -> Option<Def> {
-    let &def = self.store.get(&id)?.last()?;
-    if let Def::Expr(w) = def {
-      let usage = match w.sugary {
-        Some(sugary) => self.sugary_usage.get_mut(&sugary).map(|(u, _, _)| u),
-        None => self.plain_usage.get_mut(&(w.expr, w.plain)),
-      };
-      match usage {
-        None => {
-          always!(false, "can't find usage count for {def:?} for {id:?}");
-        }
-        Some(usage) => usage.count += 1,
-      }
-    }
-    Some(def)
+    let tracked = self.store.get_mut(&id)?.last_mut()?;
+    tracked.usages += 1;
+    Some(tracked.def)
   }
+}
 
-  fn undefine(&mut self, id: Id) {
-    let prev_def = self.store.entry(id).or_default().pop();
-    always!(prev_def.is_some(), "undefine without previous define: {id:?}");
+fn undefine(cx: &mut Cx, st: &mut St, id: Id) {
+  let Some(tracked) = cx.store.entry(id).or_default().pop() else {
+    always!(false, "undefine without previous define: {id:?}");
+    return;
+  };
+  if tracked.usages != 0 || id == Id::dollar {
+    return;
   }
+  let Def::Expr(e, k) = tracked.def else { return };
+  st.err(e, error::Kind::Unused(id, k));
 }
 
 /// Performs the checks.
@@ -101,24 +71,10 @@ pub fn get(st: &mut St, ars: &Arenas, expr: Expr) {
   cx.define(Id::std, Def::Std);
   cx.define(Id::std_unutterable, Def::Std);
   check(st, &mut cx, ars, expr);
-  cx.undefine(Id::std);
-  cx.undefine(Id::std_unutterable);
+  undefine(&mut cx, st, Id::std);
+  undefine(&mut cx, st, Id::std_unutterable);
   for (_, stack) in cx.store {
     always!(stack.is_empty());
-  }
-  for ((expr, plain), usage) in cx.plain_usage {
-    if usage.count != 0 || usage.id == Id::dollar {
-      continue;
-    }
-    let we = def::WithExpr { expr, plain, sugary: None };
-    st.err(expr, error::Kind::Unused(usage.id, we));
-  }
-  for (sugary, (usage, expr, plain)) in cx.sugary_usage {
-    if usage.count != 0 || usage.id == Id::dollar {
-      continue;
-    }
-    let we = def::WithExpr { expr, plain, sugary: Some(sugary) };
-    st.err(expr, error::Kind::Unused(usage.id, we));
   }
 }
 
@@ -127,15 +83,10 @@ fn check(st: &mut St, cx: &mut Cx, ars: &Arenas, expr: Expr) {
   let Some(expr) = expr else { return };
   match &ars.expr[expr] {
     ExprData::Prim(_) => {}
-    ExprData::Object { asserts, fields } => {
+    ExprData::Object { binds, asserts, fields } => {
       let mut field_names = FxHashSet::<&Str>::default();
       for field in fields {
         check(st, cx, ars, field.key);
-        cx.define(Id::self_, Def::KwIdent);
-        cx.define(Id::super_, Def::KwIdent);
-        check(st, cx, ars, field.val);
-        cx.undefine(Id::self_);
-        cx.undefine(Id::super_);
         let Some(key) = field.key else { continue };
         if let ExprData::Prim(Prim::String(s)) = &ars.expr[key] {
           if !field_names.insert(s) {
@@ -145,23 +96,34 @@ fn check(st: &mut St, cx: &mut Cx, ars: &Arenas, expr: Expr) {
       }
       cx.define(Id::self_, Def::KwIdent);
       cx.define(Id::super_, Def::KwIdent);
+      for (idx, &(lhs, _)) in binds.iter().enumerate() {
+        cx.define(lhs, Def::Expr(expr, def::ExprDefKind::ObjectLocal(idx)));
+      }
+      for &(_, expr) in binds {
+        check(st, cx, ars, expr);
+      }
+      for field in fields {
+        check(st, cx, ars, field.val);
+      }
       for &cond in asserts {
         check(st, cx, ars, cond);
       }
-      cx.undefine(Id::self_);
-      cx.undefine(Id::super_);
+      undefine(cx, st, Id::self_);
+      undefine(cx, st, Id::super_);
+      for &(lhs, _) in binds {
+        undefine(cx, st, lhs);
+      }
     }
     ExprData::ObjectComp { name, body, id, ary } => {
       check(st, cx, ars, *ary);
-      let def = def::WithExpr { expr, plain: def::Plain::ObjectCompId, sugary: None };
-      cx.define(*id, Def::Expr(def));
+      cx.define(*id, Def::Expr(expr, def::ExprDefKind::ObjectCompId));
       check(st, cx, ars, *name);
       cx.define(Id::self_, Def::KwIdent);
       cx.define(Id::super_, Def::KwIdent);
       check(st, cx, ars, *body);
-      cx.undefine(*id);
-      cx.undefine(Id::self_);
-      cx.undefine(Id::super_);
+      undefine(cx, st, *id);
+      undefine(cx, st, Id::self_);
+      undefine(cx, st, Id::super_);
     }
     ExprData::Array(exprs) => {
       for &arg in exprs {
@@ -194,11 +156,9 @@ fn check(st: &mut St, cx: &mut Cx, ars: &Arenas, expr: Expr) {
     ExprData::Local { binds, body } => {
       let mut bound_names = FxHashSet::<Id>::default();
       for (idx, &(bind, rhs)) in binds.iter().enumerate() {
-        let def =
-          def::WithExpr { expr, plain: def::Plain::LocalBind(idx), sugary: bind.sugary_def };
-        cx.define(bind.id, Def::Expr(def));
-        if !bound_names.insert(bind.id) {
-          st.err(rhs.unwrap_or(expr), error::Kind::DuplicateBinding(bind.id));
+        cx.define(bind, Def::Expr(expr, def::ExprDefKind::LocalBind(idx)));
+        if !bound_names.insert(bind) {
+          st.err(rhs.unwrap_or(expr), error::Kind::DuplicateBinding(bind));
         }
       }
       for &(_, rhs) in binds {
@@ -206,16 +166,15 @@ fn check(st: &mut St, cx: &mut Cx, ars: &Arenas, expr: Expr) {
       }
       check(st, cx, ars, *body);
       for &(bind, _) in binds {
-        cx.undefine(bind.id);
+        undefine(cx, st, bind);
       }
     }
     ExprData::Function { params, body } => {
       let mut bound_names = FxHashSet::<Id>::default();
       for (idx, &(bind, rhs)) in params.iter().enumerate() {
-        let def = def::WithExpr { expr, plain: def::Plain::FnParam(idx), sugary: bind.sugary_def };
-        cx.define(bind.id, Def::Expr(def));
-        if !bound_names.insert(bind.id) {
-          st.err(rhs.flatten().unwrap_or(expr), error::Kind::DuplicateBinding(bind.id));
+        cx.define(bind, Def::Expr(expr, def::ExprDefKind::FnParam(idx)));
+        if !bound_names.insert(bind) {
+          st.err(rhs.flatten().unwrap_or(expr), error::Kind::DuplicateBinding(bind));
         }
       }
       for &(_, rhs) in params {
@@ -224,7 +183,7 @@ fn check(st: &mut St, cx: &mut Cx, ars: &Arenas, expr: Expr) {
       }
       check(st, cx, ars, *body);
       for &(bind, _) in params {
-        cx.undefine(bind.id);
+        undefine(cx, st, bind);
       }
     }
     ExprData::If { cond, yes, no } => {

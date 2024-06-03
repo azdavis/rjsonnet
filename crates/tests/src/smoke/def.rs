@@ -242,7 +242,7 @@ fn obj_local() {
     r#"
 {
   local a = 1,
-##          ^ def: a
+##      ^ def: a
   b: "hi",
   c: a + 2,
 ##   ^ use: a
@@ -252,6 +252,53 @@ fn obj_local() {
 {
   "b": "hi",
   "c": 3
+}
+"#,
+  )
+  .check();
+}
+
+#[test]
+#[should_panic = "not yet implemented: std.makeArray"]
+fn obj_comp_local() {
+  JsonnetInput::manifest(
+    r#"
+{
+  local a = k + "e",
+##          ^^^^^^^ def: a
+  [k]: std.length(a),
+##                ^ use: a
+  for k in ["f", "gg"]
+}
+"#,
+    r#"
+{
+  "f": 2,
+  "gg": 3
+}
+"#,
+  )
+  .check();
+}
+
+/// TODO tighten range
+#[test]
+#[should_panic = "not yet implemented: std.makeArray"]
+fn obj_comp_key() {
+  JsonnetInput::manifest(
+    r#"
+{
+## v use: k
+  [k]: std.length(k),
+##                ^ use: k
+  for k in ["a", "bbb"]
+##^^^^^^^^^^^^^^^^^^^^^ def: k
+}
+"#,
+    r#"
+{
+  "a": 1,
+  "bbb": 3
 }
 "#,
   )

@@ -1,7 +1,7 @@
 //! The mutable state under which we desugar.
 
 use crate::error::{self, Error};
-use jsonnet_expr::{def, Arenas};
+use jsonnet_expr::Arenas;
 use jsonnet_syntax::{ast, kind::SyntaxToken};
 use rustc_hash::FxHashMap;
 use text_size::TextRange;
@@ -61,24 +61,6 @@ impl St {
     ret
   }
 
-  pub(crate) fn start_expr(&mut self, ptr: ast::SyntaxNodePtr) -> StartedExpr {
-    StartedExpr {
-      bomb: drop_bomb::DropBomb::new("must finish expr"),
-      expr: self.expr(ptr, jsonnet_expr::ExprData::Error(None)),
-    }
-  }
-
-  pub(crate) fn finish_expr(
-    &mut self,
-    mut started: StartedExpr,
-    e: jsonnet_expr::ExprData,
-  ) -> jsonnet_expr::ExprMust {
-    started.bomb.defuse();
-    assert!(matches!(self.arenas.expr[started.expr], jsonnet_expr::ExprData::Error(None)));
-    self.arenas.expr[started.expr] = e;
-    started.expr
-  }
-
   pub(crate) fn err<N>(&mut self, node: &N, kind: error::Kind)
   where
     N: ast::AstNode,
@@ -133,16 +115,5 @@ impl Desugar {
     relative_to: Option<&'a paths::CleanPath>,
   ) -> impl std::fmt::Display + 'a {
     jsonnet_expr::display_expr(self.top, &self.arenas.str, &self.arenas.expr, &self.ps, relative_to)
-  }
-}
-
-pub(crate) struct StartedExpr {
-  bomb: drop_bomb::DropBomb,
-  expr: jsonnet_expr::ExprMust,
-}
-
-impl StartedExpr {
-  pub(crate) fn sugary_def(&self, kind: def::SugaryKind) -> def::Sugary {
-    def::Sugary { expr: self.expr, kind }
   }
 }

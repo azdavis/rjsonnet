@@ -3,7 +3,7 @@
 use crate::check::JsonnetInput;
 
 #[test]
-fn function_arg() {
+fn fn_param() {
   JsonnetInput::pre_eval_error(
     r"
 local uh = function(x) 3;
@@ -26,9 +26,20 @@ local y = 3;
   .check();
 }
 
+/// TODO tighten range
 #[test]
-// TODO fix
-#[should_panic = "no diagnostic at range"]
+fn local_param() {
+  JsonnetInput::pre_eval_error(
+    r"
+local f(x) = 3;
+##     ^^^ diagnostic: unused: `x`
+f(0)
+",
+  )
+  .check();
+}
+
+#[test]
 fn in_all_fields() {
   JsonnetInput::pre_eval_error(
     r#"
@@ -43,11 +54,7 @@ fn in_all_fields() {
   .check();
 }
 
-/// sigh... this doesn't work because there are no real fields to desugar, so the locals get blown
-/// away entirely. maybe it's time to not actually desugar away object locals...
 #[test]
-// TODO fix
-#[should_panic = "no diagnostic at range"]
 fn no_field() {
   JsonnetInput::pre_eval_error(
     r#"
@@ -60,29 +67,26 @@ fn no_field() {
   .check();
 }
 
+/// TODO tighten range
 #[test]
-// TODO fix
-#[should_panic = "no diagnostic at range"]
 fn array_comp() {
   JsonnetInput::pre_eval_error(
     r#"
 [3 for x in []]
-##     ^ diagnostic: unused: `x`
+## ^^^^^^^^^^^ diagnostic: unused: `x`
 "#,
   )
   .check();
 }
 
 #[test]
-// TODO fix
-#[should_panic = "no diagnostic at range"]
 fn object_comp() {
   JsonnetInput::pre_eval_error(
     r#"
 {
   local no = k,
-##      ^^ diagnostic: unused: `no`
-  [k]: "hi"
+  [k]: false,
+##^^^^^^^^^^ diagnostic: unused: `no`
   for k in ["a", "b"]
 }
 "#,

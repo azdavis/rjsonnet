@@ -15,6 +15,14 @@ pub(crate) struct Env {
 }
 
 impl Env {
+  pub(crate) fn add_binds(&self, binds: &[(Id, Expr)]) -> Env {
+    let mut ret = self.clone();
+    for &(bind, expr) in binds {
+      ret.insert(bind, self.clone(), expr);
+    }
+    ret
+  }
+
   pub(crate) fn empty(path: paths::PathId) -> Self {
     Self { path, store: FxHashMap::default(), cur: Vec::new(), this: None }
   }
@@ -119,10 +127,11 @@ impl Object {
   #[must_use]
   pub(crate) fn new(
     env: Env,
+    binds: Vec<(Id, Expr)>,
     asserts: Vec<Expr>,
     fields: BTreeMap<Str, (Visibility, Expr)>,
   ) -> Self {
-    let kind = ObjectKind::Regular(RegularObjectKind { env, asserts, fields });
+    let kind = ObjectKind::Regular(RegularObjectKind { env, binds, asserts, fields });
     Self { parent: None, kind, is_super: false }
   }
 
@@ -137,12 +146,12 @@ impl Object {
     parent
   }
 
-  fn set_this(&self, env: &Env) -> Env {
+  fn set_this(&self, binds: &[(Id, Expr)], env: &Env) -> Env {
     let mut env = env.clone();
     let mut this = self.clone();
     this.is_super = false;
     env.this = Some(Box::new(this));
-    env
+    env.add_binds(binds)
   }
 
   pub(crate) fn asserts(&self) -> impl Iterator<Item = (Env, Expr)> + '_ {
@@ -152,8 +161,8 @@ impl Object {
         ObjectKind::Regular(this) => Some(this),
         ObjectKind::Std => None,
       })
-      .flat_map(|this| this.asserts.iter().map(move |&expr| (&this.env, expr)));
-    iter.map(|(env, expr)| (self.set_this(env), expr))
+      .flat_map(|this| this.asserts.iter().map(move |&expr| (this, expr)));
+    iter.map(|(this, expr)| (self.set_this(&this.binds, &this.env), expr))
   }
 
   /// TODO this should be a generator
@@ -167,7 +176,7 @@ impl Object {
             if !seen.insert(name.clone()) {
               continue;
             }
-            ret.push((name.clone(), vis, Field::Expr(self.set_this(&this.env), expr)));
+            ret.push((name.clone(), vis, Field::Expr(self.set_this(&this.binds, &this.env), expr)));
           }
         }
         ObjectKind::Std => {
@@ -192,7 +201,7 @@ impl Object {
       }
       ObjectKind::Regular(this) => {
         let &(vis, expr) = this.fields.get(name)?;
-        Some((vis, Field::Expr(self.set_this(&this.env), expr)))
+        Some((vis, Field::Expr(self.set_this(&this.binds, &this.env), expr)))
       }
     })
   }
@@ -215,6 +224,9 @@ enum ObjectKind {
 #[derive(Debug, Clone)]
 struct RegularObjectKind {
   env: Env,
+  /// this is annoying. but we put these here separately because we need to set the new `this` env
+  /// before evaluating these binds. probably this setup could be improved.
+  binds: Vec<(Id, Expr)>,
   asserts: Vec<Expr>,
   /// we want non-random order
   fields: BTreeMap<Str, (Visibility, Expr)>,
