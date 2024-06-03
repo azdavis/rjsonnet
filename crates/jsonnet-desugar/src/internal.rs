@@ -2,7 +2,7 @@
 
 use crate::{cx::Cx, error, st::St};
 use jsonnet_expr::{
-  BinaryOp, Expr, ExprData, Id, ImportKind, Number, Prim, Str, UnaryOp, Visibility,
+  BinaryOp, Bind, Expr, ExprData, Id, ImportKind, Number, Prim, Str, UnaryOp, Visibility,
 };
 use jsonnet_syntax::ast::{self, AstNode as _};
 
@@ -219,7 +219,7 @@ where
         // skip this `for` if no var for the `for`
         let Some(for_var) = for_spec.id() else { return ac };
         let ac = Some(st.expr(ptr, ac));
-        let for_var = st.id(for_var);
+        let for_var = Bind { id: st.id(for_var) };
         let in_expr = get_expr(st, cx, for_spec.expr(), in_obj);
         let arr = st.fresh();
         let idx = st.fresh();
@@ -229,12 +229,13 @@ where
         let subscript = Some(st.expr(ptr, ExprData::Subscript { on: arr_expr, idx: idx_expr }));
         let recur_with_subscript = ExprData::Local { binds: vec![(for_var, subscript)], body: ac };
         let recur_with_subscript = Some(st.expr(ptr, recur_with_subscript));
-        let lambda = ExprData::Function { params: vec![(idx, None)], body: recur_with_subscript };
+        let lambda =
+          ExprData::Function { params: vec![(Bind { id: idx }, None)], body: recur_with_subscript };
         let lambda_recur_with_subscript = Some(st.expr(ptr, lambda));
         let make_array =
           call_std_func(st, ptr, Str::makeArray, vec![length, lambda_recur_with_subscript]);
         let join = call_std_func(st, ptr, Str::join, vec![empty_array, make_array]);
-        ExprData::Local { binds: vec![(arr, in_expr)], body: join }
+        ExprData::Local { binds: vec![(Bind { id: arr }, in_expr)], body: join }
       }
       ast::CompSpec::IfSpec(if_spec) => {
         let ac = Some(st.expr(ptr, ac));
@@ -245,8 +246,8 @@ where
   })
 }
 
-fn get_bind(st: &mut St, cx: Cx<'_>, bind: ast::Bind, in_obj: bool) -> Option<(Id, Expr)> {
-  let lhs = st.id(bind.id()?);
+fn get_bind(st: &mut St, cx: Cx<'_>, bind: ast::Bind, in_obj: bool) -> Option<(Bind, Expr)> {
+  let lhs = Bind { id: st.id(bind.id()?) };
   let rhs = bind.expr();
   let rhs = match bind.paren_params() {
     None => get_expr(st, cx, rhs, in_obj),
@@ -266,10 +267,10 @@ fn get_fn(
   body: Option<ast::Expr>,
   in_obj: bool,
 ) -> ExprData {
-  let mut params = Vec::<(Id, Option<Expr>)>::new();
+  let mut params = Vec::<(Bind, Option<Expr>)>::new();
   for param in paren_params.into_iter().flat_map(|x| x.params()) {
     let Some(lhs) = param.id() else { continue };
-    let lhs = st.id(lhs);
+    let lhs = Bind { id: st.id(lhs) };
     let rhs = param.eq_expr().map(|rhs| get_expr(st, cx, rhs.expr(), in_obj));
     params.push((lhs, rhs));
   }
@@ -315,7 +316,7 @@ fn get_object(st: &mut St, cx: Cx<'_>, inside: ast::Object, in_obj: bool) -> Exp
 /// unused, it knows how many copies to count as unused before marking the actual var as unused...?
 fn get_object_literal(st: &mut St, cx: Cx<'_>, inside: ast::Object, in_obj: bool) -> ExprData {
   // first get the binds
-  let mut binds = Vec::<(Id, Expr)>::new();
+  let mut binds = Vec::<(Bind, Expr)>::new();
   for member in inside.members() {
     let Some(member_kind) = member.member_kind() else { continue };
     let ast::MemberKind::ObjectLocal(local) = member_kind else { continue };
@@ -325,7 +326,7 @@ fn get_object_literal(st: &mut St, cx: Cx<'_>, inside: ast::Object, in_obj: bool
   if !in_obj {
     let ptr = ast::SyntaxNodePtr::new(inside.syntax());
     let this = Some(st.expr(ptr, ExprData::Id(Id::self_)));
-    binds.push((Id::dollar, this));
+    binds.push((Bind { id: Id::dollar }, this));
   }
   // then get the asserts and fields
   let mut asserts = Vec::<Expr>::new();
@@ -406,7 +407,7 @@ fn get_object_literal(st: &mut St, cx: Cx<'_>, inside: ast::Object, in_obj: bool
 }
 
 fn get_object_comp(st: &mut St, cx: Cx<'_>, inside: ast::Object, in_obj: bool) -> ExprData {
-  let mut binds = Vec::<(Id, Expr)>::new();
+  let mut binds = Vec::<(Bind, Expr)>::new();
   let mut lowered_field = None::<(ast::SyntaxNodePtr, Expr, Expr)>;
   for member in inside.members() {
     let Some(member_kind) = member.member_kind() else { continue };
@@ -465,7 +466,7 @@ fn get_object_comp(st: &mut St, cx: Cx<'_>, inside: ast::Object, in_obj: bool) -
     let idx = Number::always_from_f64(idx);
     let idx = Some(st.expr(*ptr, ExprData::Prim(Prim::Number(idx))));
     let subscript = Some(st.expr(*ptr, ExprData::Subscript { on, idx }));
-    (*id, subscript)
+    (Bind { id: *id }, subscript)
   });
   let name_binds: Vec<_> = name_binds.collect();
   let body_binds: Vec<_> = name_binds.iter().copied().chain(binds).collect();
@@ -476,7 +477,7 @@ fn get_object_comp(st: &mut St, cx: Cx<'_>, inside: ast::Object, in_obj: bool) -
   let vars = Some(st.expr(ptr, ExprData::Array(vars)));
   let vars = get_array_comp(st, cx, inside.comp_specs(), vars, in_obj);
   let vars = Some(st.expr(ptr, vars));
-  ExprData::ObjectComp { name, body, id: arr, ary: vars }
+  ExprData::ObjectComp { name, body, bind: Bind { id: arr }, ary: vars }
 }
 
 fn bop(op: BinaryOp, lhs: Expr, rhs: Expr) -> ExprData {

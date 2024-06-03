@@ -40,6 +40,15 @@ pub struct Field {
   pub val: Expr,
 }
 
+/// An binding, aka id in definition position.
+///
+/// The places in a **desugared** expr that an id may appear in definition position are described by
+/// [`crate::def::Def`]. Accordingly, [`Bind`] is used in those positions.
+#[derive(Debug, Clone, Copy)]
+pub struct Bind {
+  pub id: Id,
+}
+
 #[derive(Debug, Clone)]
 pub enum ExprData {
   Prim(Prim),
@@ -50,7 +59,7 @@ pub enum ExprData {
   ObjectComp {
     name: Expr,
     body: Expr,
-    id: Id,
+    bind: Bind,
     ary: Expr,
   },
   Array(Vec<Expr>),
@@ -65,7 +74,7 @@ pub enum ExprData {
   },
   Id(Id),
   Local {
-    binds: Vec<(Id, Expr)>,
+    binds: Vec<(Bind, Expr)>,
     body: Expr,
   },
   If {
@@ -83,7 +92,7 @@ pub enum ExprData {
     inner: Expr,
   },
   Function {
-    params: Vec<(Id, Option<Expr>)>,
+    params: Vec<(Bind, Option<Expr>)>,
     body: Expr,
   },
   Error(Expr),
@@ -108,15 +117,21 @@ impl ExprData {
         Prim::String(s) => s.apply(subst),
         Prim::Null | Prim::Bool(_) | Prim::Number(_) => {}
       },
-      ExprData::ObjectComp { id, .. } | ExprData::Id(id) => id.apply(subst),
-      ExprData::Local { binds, .. } | ExprData::Call { named: binds, .. } => {
-        for (id, _) in binds {
+      ExprData::ObjectComp { bind, .. } => bind.id.apply(subst),
+      ExprData::Id(id) => id.apply(subst),
+      ExprData::Local { binds, .. } => {
+        for (bind, _) in binds {
+          bind.id.apply(subst);
+        }
+      }
+      ExprData::Call { named, .. } => {
+        for (id, _) in named {
           id.apply(subst);
         }
       }
       ExprData::Function { params, .. } => {
-        for (id, _) in params {
-          id.apply(subst);
+        for (bind, _) in params {
+          bind.id.apply(subst);
         }
       }
       ExprData::Import { path, .. } => *path = subst.get_path_id(*path),
@@ -179,13 +194,13 @@ impl<'a> fmt::Display for DisplayExpr<'a> {
         }
         f.write_str("}")
       }
-      ExprData::ObjectComp { name, body, id, ary } => {
+      ExprData::ObjectComp { name, body, bind, ary } => {
         write!(
           f,
           "{{ [{}]: {} for {} in {} }}",
           self.with(*name),
           self.with(*body),
-          id.display(self.str_ar),
+          bind.id.display(self.str_ar),
           self.with(*ary)
         )
       }
@@ -211,8 +226,8 @@ impl<'a> fmt::Display for DisplayExpr<'a> {
       ExprData::Id(x) => x.display(self.str_ar).fmt(f),
       ExprData::Local { binds, body } => {
         f.write_str("local ")?;
-        for &(var, e) in binds {
-          write!(f, "{} = {}, ", var.display(self.str_ar), self.with(e))?;
+        for &(bind, e) in binds {
+          write!(f, "{} = {}, ", bind.id.display(self.str_ar), self.with(e))?;
         }
         write!(f, "; {}", self.with(*body))
       }
@@ -225,8 +240,8 @@ impl<'a> fmt::Display for DisplayExpr<'a> {
       ExprData::UnaryOp { op, inner } => write!(f, "{}{}", op, self.with(*inner)),
       ExprData::Function { params, body } => {
         f.write_str("function(")?;
-        for &(name, default) in params {
-          name.display(self.str_ar).fmt(f)?;
+        for &(bind, default) in params {
+          bind.id.display(self.str_ar).fmt(f)?;
           if let Some(default) = default {
             write!(f, " = {}", self.with(default))?;
           }

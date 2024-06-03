@@ -111,14 +111,14 @@ fn check(st: &mut St, cx: &mut Cx, ars: &Arenas, expr: Expr) {
         check(st, cx, ars, cond);
       }
     }
-    ExprData::ObjectComp { name, body, id, ary } => {
+    ExprData::ObjectComp { name, body, bind, ary } => {
       check(st, cx, ars, *ary);
-      cx.define(*id, Def::Expr(expr, ExprDefKind::ObjectCompId));
+      cx.define(bind.id, Def::Expr(expr, ExprDefKind::ObjectCompId));
       check(st, cx, ars, *name);
       cx.define(Id::self_, Def::KwIdent);
       cx.define(Id::super_, Def::KwIdent);
       check(st, cx, ars, *body);
-      undefine(st, cx, *id);
+      undefine(st, cx, bind.id);
       undefine(st, cx, Id::self_);
       undefine(st, cx, Id::super_);
     }
@@ -152,26 +152,26 @@ fn check(st: &mut St, cx: &mut Cx, ars: &Arenas, expr: Expr) {
     },
     ExprData::Local { binds, body } => {
       let mut bound_names = FxHashSet::<Id>::default();
-      for (idx, &(id, rhs)) in binds.iter().enumerate() {
-        cx.define(id, Def::Expr(expr, ExprDefKind::LocalBind(idx)));
-        if !bound_names.insert(id) {
-          st.err(rhs.unwrap_or(expr), error::Kind::DuplicateBinding(id));
+      for (idx, &(bind, rhs)) in binds.iter().enumerate() {
+        cx.define(bind.id, Def::Expr(expr, ExprDefKind::LocalBind(idx)));
+        if !bound_names.insert(bind.id) {
+          st.err(rhs.unwrap_or(expr), error::Kind::DuplicateBinding(bind.id));
         }
       }
       for &(_, rhs) in binds {
         check(st, cx, ars, rhs);
       }
       check(st, cx, ars, *body);
-      for &(id, _) in binds {
-        undefine(st, cx, id);
+      for &(bind, _) in binds {
+        undefine(st, cx, bind.id);
       }
     }
     ExprData::Function { params, body } => {
       let mut bound_names = FxHashSet::<Id>::default();
-      for (idx, &(id, rhs)) in params.iter().enumerate() {
-        cx.define(id, Def::Expr(expr, ExprDefKind::FunctionParam(idx)));
-        if !bound_names.insert(id) {
-          st.err(rhs.flatten().unwrap_or(expr), error::Kind::DuplicateBinding(id));
+      for (idx, &(bind, rhs)) in params.iter().enumerate() {
+        cx.define(bind.id, Def::Expr(expr, ExprDefKind::FunctionParam(idx)));
+        if !bound_names.insert(bind.id) {
+          st.err(rhs.flatten().unwrap_or(expr), error::Kind::DuplicateBinding(bind.id));
         }
       }
       for &(_, rhs) in params {
@@ -179,8 +179,8 @@ fn check(st: &mut St, cx: &mut Cx, ars: &Arenas, expr: Expr) {
         check(st, cx, ars, rhs);
       }
       check(st, cx, ars, *body);
-      for &(id, _) in params {
-        undefine(st, cx, id);
+      for &(bind, _) in params {
+        undefine(st, cx, bind.id);
       }
     }
     ExprData::If { cond, yes, no } => {

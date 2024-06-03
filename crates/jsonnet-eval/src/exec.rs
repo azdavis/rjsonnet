@@ -5,7 +5,7 @@ use crate::val::jsonnet::{Array, Env, Field, Function, Get, Object, StdField, Va
 use crate::{manifest, mk_todo, std_lib, Cx};
 use always::always;
 use jsonnet_expr::{
-  arg, BinaryOp, Expr, ExprData, ExprMust, Id, Number, Prim, Str, StrArena, Visibility,
+  arg, BinaryOp, Bind, Expr, ExprData, ExprMust, Id, Number, Prim, Str, StrArena, Visibility,
 };
 use rustc_hash::FxHashSet;
 use std::cmp::Ordering;
@@ -34,14 +34,14 @@ pub(crate) fn get(cx: Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
       }
       Ok(Val::Object(Object::new(env.clone(), asserts.clone(), named_fields)))
     }
-    ExprData::ObjectComp { name, body, id, ary } => {
+    ExprData::ObjectComp { name, body, bind, ary } => {
       let Val::Array(array) = get(cx, env, *ary)? else {
         return Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes });
       };
       let mut fields = BTreeMap::<Str, (Visibility, Expr)>::default();
       for (part_env, elem) in array.iter() {
         let mut env = env.clone();
-        env.insert(*id, part_env.clone(), elem);
+        env.insert(bind.id, part_env.clone(), elem);
         match get(cx, &env, *name)? {
           Val::Prim(Prim::String(s)) => {
             let Some(body) = *body else { continue };
@@ -288,7 +288,8 @@ pub(crate) fn get(cx: Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
       }
     }
     ExprData::Function { params, body } => {
-      Ok(Val::Function(Function { env: env.clone(), params: params.clone(), body: *body }))
+      let params: Vec<_> = params.iter().map(|&(b, e)| (b.id, e)).collect();
+      Ok(Val::Function(Function { env: env.clone(), params, body: *body }))
     }
     ExprData::Error(inner) => {
       let val = get(cx, env, *inner)?;
@@ -434,10 +435,10 @@ pub(crate) fn eq_val(expr: ExprMust, cx: Cx<'_>, lhs: &Val, rhs: &Val) -> Result
   }
 }
 
-fn add_binds(env: &Env, binds: &[(Id, Expr)]) -> Env {
+fn add_binds(env: &Env, binds: &[(Bind, Expr)]) -> Env {
   let mut ret = env.clone();
-  for &(id, expr) in binds {
-    ret.insert(id, env.clone(), expr);
+  for &(bind, expr) in binds {
+    ret.insert(bind.id, env.clone(), expr);
   }
   ret
 }
