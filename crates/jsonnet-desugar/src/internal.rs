@@ -2,7 +2,7 @@
 
 use crate::{cx::Cx, error, st::St};
 use jsonnet_expr::{
-  BinaryOp, Bind, Expr, ExprData, Id, ImportKind, Number, Prim, Str, SugaryDef, UnaryOp, Visibility,
+  def, BinaryOp, Bind, Expr, ExprData, Id, ImportKind, Number, Prim, Str, UnaryOp, Visibility,
 };
 use jsonnet_syntax::ast::{self, AstNode as _};
 
@@ -223,7 +223,7 @@ where
         // skip this `for` if no var for the `for`
         let Some(for_var) = for_spec.id() else { return ac };
         let ac = Some(st.expr(ptr, ac));
-        let for_var = Bind { id: st.id(for_var), sugary_def: Some(SugaryDef::ArrayComp) };
+        let for_var = Bind { id: st.id(for_var), sugary_def: Some(def::Sugary::ArrayComp) };
         let in_expr = get_expr(st, cx, for_spec.expr(), in_obj);
         let arr = st.fresh();
         let idx = st.fresh();
@@ -254,7 +254,7 @@ fn get_bind(
   st: &mut St,
   cx: Cx<'_>,
   bind: ast::Bind,
-  sugary_def: Option<SugaryDef>,
+  sugary_def: Option<def::Sugary>,
   in_obj: bool,
 ) -> Option<(Bind, Expr)> {
   let lhs = Bind { id: st.id(bind.id()?), sugary_def };
@@ -263,7 +263,7 @@ fn get_bind(
     None => get_expr(st, cx, rhs, in_obj),
     Some(params) => {
       let ptr = ast::SyntaxNodePtr::new(params.syntax());
-      let fn_data = get_fn(st, cx, Some(params), SugaryDef::local_fn_param, rhs, in_obj);
+      let fn_data = get_fn(st, cx, Some(params), def::Sugary::local_fn_param, rhs, in_obj);
       Some(st.expr(ptr, fn_data))
     }
   };
@@ -274,7 +274,7 @@ fn get_fn(
   st: &mut St,
   cx: Cx<'_>,
   paren_params: Option<ast::ParenParams>,
-  mk_sugary_def: fn(usize) -> Option<SugaryDef>,
+  mk_sugary_def: fn(usize) -> Option<def::Sugary>,
   body: Option<ast::Expr>,
   in_obj: bool,
 ) -> ExprData {
@@ -332,7 +332,7 @@ fn get_object_literal(st: &mut St, cx: Cx<'_>, inside: ast::Object, in_obj: bool
     let Some(member_kind) = member.member_kind() else { continue };
     let ast::MemberKind::ObjectLocal(local) = member_kind else { continue };
     let Some(bind) = local.bind() else { continue };
-    let sugary_def = Some(SugaryDef::ObjectLocal(idx));
+    let sugary_def = Some(def::Sugary::ObjectLocal(idx));
     let Some(bind) = get_bind(st, cx, bind, sugary_def, true) else { continue };
     binds.push(bind);
   }
@@ -406,7 +406,7 @@ fn get_object_literal(st: &mut St, cx: Cx<'_>, inside: ast::Object, in_obj: bool
           Some(ast::FieldExtra::ParenParams(paren_params)) => {
             let ptr = ast::SyntaxNodePtr::new(paren_params.syntax());
             let expr =
-              get_fn(st, cx, Some(paren_params), SugaryDef::field_fn_param, field.expr(), true);
+              get_fn(st, cx, Some(paren_params), def::Sugary::field_fn_param, field.expr(), true);
             (false, Some(st.expr(ptr, expr)))
           }
         };
@@ -429,7 +429,7 @@ fn get_object_comp(st: &mut St, cx: Cx<'_>, inside: ast::Object, in_obj: bool) -
     match member_kind {
       ast::MemberKind::ObjectLocal(local) => {
         let Some(bind) = local.bind() else { continue };
-        let sugary_def = Some(SugaryDef::ObjectLocal(idx));
+        let sugary_def = Some(def::Sugary::ObjectLocal(idx));
         let Some(bind) = get_bind(st, cx, bind, sugary_def, true) else { continue };
         binds.push(bind);
       }
@@ -477,7 +477,7 @@ fn get_object_comp(st: &mut St, cx: Cx<'_>, inside: ast::Object, in_obj: bool) -
   let arr = st.fresh();
   let on = Some(st.expr(ptr, ExprData::Id(arr)));
   let name_binds = vars.iter().enumerate().map(|(idx, (ptr, id))| {
-    let sugary_def = Some(SugaryDef::ObjectComp(idx));
+    let sugary_def = Some(def::Sugary::ObjectComp(idx));
     let idx = always::convert::usize_to_u32(idx);
     let idx = f64::from(idx);
     let idx = Number::always_from_f64(idx);

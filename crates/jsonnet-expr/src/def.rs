@@ -44,3 +44,38 @@ impl Def {
 
 /// A map from expressions to defs.
 pub type Map = FxHashMap<ExprMust, Def>;
+
+/// A place in the sugary syntax that an expr may appear.
+///
+/// This excludes places in the desugared syntax. Those such places are covered by
+/// [`crate::def::Def`].
+#[derive(Debug, Clone, Copy)]
+pub enum Sugary {
+  /// A local from the nth field in an object.
+  ObjectLocal(usize),
+  /// The id in an array comprehension.
+  ///
+  /// ```jsonnet
+  /// [x + 1 for x in xs]
+  /// //         ^ here
+  /// ```
+  ArrayComp,
+  /// The nth binding from a function defined on a `local` with params,
+  LocalFnParam(usize),
+  /// The nth binding from a function defined on a field with params,
+  FieldFnParam(usize),
+  /// A binding from the nth `for` in an object comprehension.
+  ObjectComp(usize),
+}
+
+impl Sugary {
+  #[must_use]
+  pub fn local_fn_param(n: usize) -> Option<Self> {
+    Some(Self::LocalFnParam(n))
+  }
+
+  #[must_use]
+  pub fn field_fn_param(n: usize) -> Option<Self> {
+    Some(Self::FieldFnParam(n))
+  }
+}
