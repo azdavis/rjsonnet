@@ -118,7 +118,7 @@ pub fn get(st: &mut St, ars: &Arenas, expr: Expr) {
       continue;
     }
     let we = def::WithExpr { expr, plain, sugary: Some(sugary) };
-    st.err(sugary.expr, error::Kind::Unused(usage.id, we));
+    st.err(expr, error::Kind::Unused(usage.id, we));
   }
 }
 

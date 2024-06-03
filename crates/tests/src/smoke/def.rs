@@ -235,3 +235,25 @@ local three = import 'c.jsonnet';
     .add_all()
     .check();
 }
+
+#[test]
+fn obj_local() {
+  JsonnetInput::manifest(
+    r#"
+{
+  local a = 1,
+##          ^ def: a
+  b: "hi",
+  c: a + 2,
+##   ^ use: a
+}
+"#,
+    r#"
+{
+  "b": "hi",
+  "c": 3
+}
+"#,
+  )
+  .check();
+}

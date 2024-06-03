@@ -1,6 +1,5 @@
 //! Errors.
 
-use always::always;
 use jsonnet_expr::{def, ExprMust, Id, Str, Subst};
 use std::fmt;
 
@@ -21,10 +20,9 @@ impl Error {
   /// Returns the expr this error is for.
   #[must_use]
   pub fn expr_and_def(&self) -> (ExprMust, Option<def::WithExpr>) {
-    let with_expr = if let Kind::Unused(_, x) = self.kind {
-      // TODO make a new type that doesn't re-have the expr must inside the with expr?
-      always!(self.expr == x.expr);
-      Some(x)
+    let with_expr = if let Kind::Unused(_, w) = self.kind {
+      // NOTE: we don't always have self.expr == w.expr, as in the case with sugary defs.
+      Some(w)
     } else {
       None
     };
