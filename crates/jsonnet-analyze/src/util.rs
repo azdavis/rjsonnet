@@ -228,7 +228,7 @@ fn expr_def_range(
           Some(node.text_range())
         })
     }
-    ExprDefKind::FunctionParam(idx) => {
+    ExprDefKind::FnParam(idx) => {
       let func = pointers.get_ptr(expr);
       // NOTE because of desugaring, possibly not all expr fns are actually from ast fns
       func

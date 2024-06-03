@@ -29,7 +29,7 @@ pub enum ExprDefKind {
   /// The nth binding in a `local`.
   LocalBind(usize),
   /// The nth function parameter.
-  FunctionParam(usize),
+  FnParam(usize),
 }
 
 impl Def {

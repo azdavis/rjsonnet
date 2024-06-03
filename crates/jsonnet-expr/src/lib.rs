@@ -44,9 +44,65 @@ pub struct Field {
 ///
 /// The places in a **desugared** expr that an id may appear in definition position are described by
 /// [`crate::def::Def`]. Accordingly, [`Bind`] is used in those positions.
+///
+/// However, an id may appear in definition position in other places in the sugary AST. This type
+/// tracks that possible extra data through the desugaring, which would have otherwise been
+/// discarded.
+///
+/// We need that extra info to correctly implement unused variable checks.
 #[derive(Debug, Clone, Copy)]
 pub struct Bind {
   pub id: Id,
+  pub sugary_def: Option<SugaryDef>,
+}
+
+impl Bind {
+  /// Returns a new Bind without any sugar.
+  ///
+  /// This is used for ids whose desugared def location and AST def location are the same (like
+  /// function params).
+  ///
+  /// It is also used for ids that were conjured up during desugar, like the ones to deal with array
+  /// comprehensions.
+  #[must_use]
+  pub fn plain(id: Id) -> Self {
+    Self { id, sugary_def: None }
+  }
+}
+
+/// A place in the sugary syntax that an expr may appear.
+///
+/// This excludes places in the desugared syntax. Those such places are covered by
+/// [`crate::def::Def`].
+#[derive(Debug, Clone, Copy)]
+pub enum SugaryDef {
+  /// A local from the nth field in an object.
+  ObjectLocal(usize),
+  /// The id in an array comprehension.
+  ///
+  /// ```jsonnet
+  /// [x + 1 for x in xs]
+  /// //         ^ here
+  /// ```
+  ArrayComp,
+  /// The nth binding from a function defined on a `local` with params,
+  LocalFnParam(usize),
+  /// The nth binding from a function defined on a field with params,
+  FieldFnParam(usize),
+  /// A binding from the nth `for` in an object comprehension.
+  ObjectComp(usize),
+}
+
+impl SugaryDef {
+  #[must_use]
+  pub fn local_fn_param(n: usize) -> Option<Self> {
+    Some(Self::LocalFnParam(n))
+  }
+
+  #[must_use]
+  pub fn field_fn_param(n: usize) -> Option<Self> {
+    Some(Self::FieldFnParam(n))
+  }
 }
 
 #[derive(Debug, Clone)]

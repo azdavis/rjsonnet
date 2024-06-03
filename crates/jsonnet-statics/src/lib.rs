@@ -169,7 +169,7 @@ fn check(st: &mut St, cx: &mut Cx, ars: &Arenas, expr: Expr) {
     ExprData::Function { params, body } => {
       let mut bound_names = FxHashSet::<Id>::default();
       for (idx, &(bind, rhs)) in params.iter().enumerate() {
-        cx.define(bind.id, Def::Expr(expr, ExprDefKind::FunctionParam(idx)));
+        cx.define(bind.id, Def::Expr(expr, ExprDefKind::FnParam(idx)));
         if !bound_names.insert(bind.id) {
           st.err(rhs.flatten().unwrap_or(expr), error::Kind::DuplicateBinding(bind.id));
         }
