@@ -378,6 +378,7 @@ name = "jsonnet-desugar"
 version = "0.2.0"
 dependencies = [
  "always",
+ "drop_bomb",
  "jsonnet-ast-escape",
  "jsonnet-escape",
  "jsonnet-expr",

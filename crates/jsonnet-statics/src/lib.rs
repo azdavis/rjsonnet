@@ -3,9 +3,10 @@
 pub mod error;
 
 use always::always;
-use jsonnet_expr::def::{Def, ExprDefKind};
+use jsonnet_expr::def::{self, Def};
 use jsonnet_expr::{Arenas, Expr, ExprData, ExprMust, Id, Prim, Str};
 use rustc_hash::{FxHashMap, FxHashSet};
+use std::collections::hash_map::Entry;
 
 /// The state when checking statics.
 #[derive(Debug, Default)]
@@ -28,60 +29,97 @@ impl St {
   }
 }
 
-/// A def that tracks its usage count.
 #[derive(Debug)]
-struct TrackedDef {
-  def: Def,
-  usages: usize,
+struct Usage {
+  id: Id,
+  count: usize,
 }
 
 /// The context. Stores the identifiers currently in scope.
-#[derive(Debug)]
+#[derive(Debug, Default)]
 struct Cx {
   /// This is a vec because things go in and out of scope in stacks.
-  store: FxHashMap<Id, Vec<TrackedDef>>,
-}
-
-impl Default for Cx {
-  fn default() -> Self {
-    let mut ret = Self { store: FxHashMap::default() };
-    ret.define(Id::std, Def::Std);
-    ret.define(Id::std_unutterable, Def::Std);
-    ret
-  }
+  store: FxHashMap<Id, Vec<Def>>,
+  plain_usage: FxHashMap<(ExprMust, def::Plain), Usage>,
+  sugary_usage: FxHashMap<def::Sugary, (Usage, ExprMust, def::Plain)>,
 }
 
 impl Cx {
   fn define(&mut self, id: Id, def: Def) {
-    self.store.entry(id).or_default().push(TrackedDef { def, usages: 0 });
+    self.store.entry(id).or_default().push(def);
+    let Def::Expr(w) = def else { return };
+    always!(id != Id::std);
+    always!(id != Id::std_unutterable);
+    always!(id != Id::self_);
+    always!(id != Id::super_);
+    match w.sugary {
+      Some(sugary) => match self.sugary_usage.entry(sugary) {
+        Entry::Occupied(entry) => {
+          always!(entry.get().0.id == id);
+        }
+        Entry::Vacant(entry) => {
+          entry.insert((Usage { id, count: 0 }, w.expr, w.plain));
+        }
+      },
+      None => match self.plain_usage.entry((w.expr, w.plain)) {
+        Entry::Occupied(entry) => {
+          always!(entry.get().id == id);
+        }
+        Entry::Vacant(entry) => {
+          entry.insert(Usage { id, count: 0 });
+        }
+      },
+    }
   }
 
   fn get(&mut self, id: Id) -> Option<Def> {
-    let tracked = self.store.get_mut(&id)?.last_mut()?;
-    tracked.usages += 1;
-    Some(tracked.def)
+    let &def = self.store.get(&id)?.last()?;
+    if let Def::Expr(w) = def {
+      let usage = match w.sugary {
+        Some(sugary) => self.sugary_usage.get_mut(&sugary).map(|(u, _, _)| u),
+        None => self.plain_usage.get_mut(&(w.expr, w.plain)),
+      };
+      match usage {
+        None => {
+          always!(false, "can't find usage count for {def:?} for {id:?}");
+        }
+        Some(usage) => usage.count += 1,
+      }
+    }
+    Some(def)
   }
-}
 
-fn undefine(st: &mut St, cx: &mut Cx, id: Id) {
-  let Some(tracked) = cx.store.entry(id).or_default().pop() else {
-    always!(false, "undefine without previous define: {id:?}");
-    return;
-  };
-  if id == Id::dollar || tracked.usages != 0 {
-    return;
-  }
-  match tracked.def {
-    Def::Std | Def::KwIdent | Def::Import(_) => {}
-    // TODO turn down the severity of this diagnostic to "warning"
-    Def::Expr(expr, kind) => st.err(expr, error::Kind::Unused(id, kind)),
+  fn undefine(&mut self, id: Id) {
+    let prev_def = self.store.entry(id).or_default().pop();
+    always!(prev_def.is_some(), "undefine without previous define: {id:?}");
   }
 }
 
 /// Performs the checks.
 pub fn get(st: &mut St, ars: &Arenas, expr: Expr) {
   let mut cx = Cx::default();
+  cx.define(Id::std, Def::Std);
+  cx.define(Id::std_unutterable, Def::Std);
   check(st, &mut cx, ars, expr);
+  cx.undefine(Id::std);
+  cx.undefine(Id::std_unutterable);
+  for (_, stack) in cx.store {
+    always!(stack.is_empty());
+  }
+  for ((expr, plain), usage) in cx.plain_usage {
+    if usage.count != 0 || usage.id == Id::dollar {
+      continue;
+    }
+    let we = def::WithExpr { expr, plain, sugary: None };
+    st.err(expr, error::Kind::Unused(usage.id, we));
+  }
+  for (sugary, (usage, expr, plain)) in cx.sugary_usage {
+    if usage.count != 0 || usage.id == Id::dollar {
+      continue;
+    }
+    let we = def::WithExpr { expr, plain, sugary: Some(sugary) };
+    st.err(sugary.expr, error::Kind::Unused(usage.id, we));
+  }
 }
 
 #[allow(clippy::too_many_lines)]
@@ -96,8 +134,8 @@ fn check(st: &mut St, cx: &mut Cx, ars: &Arenas, expr: Expr) {
         cx.define(Id::self_, Def::KwIdent);
         cx.define(Id::super_, Def::KwIdent);
         check(st, cx, ars, field.val);
-        undefine(st, cx, Id::self_);
-        undefine(st, cx, Id::super_);
+        cx.undefine(Id::self_);
+        cx.undefine(Id::super_);
         let Some(key) = field.key else { continue };
         if let ExprData::Prim(Prim::String(s)) = &ars.expr[key] {
           if !field_names.insert(s) {
@@ -110,17 +148,20 @@ fn check(st: &mut St, cx: &mut Cx, ars: &Arenas, expr: Expr) {
       for &cond in asserts {
         check(st, cx, ars, cond);
       }
+      cx.undefine(Id::self_);
+      cx.undefine(Id::super_);
     }
-    ExprData::ObjectComp { name, body, bind, ary } => {
+    ExprData::ObjectComp { name, body, id, ary } => {
       check(st, cx, ars, *ary);
-      cx.define(bind.id, Def::Expr(expr, ExprDefKind::ObjectCompId));
+      let def = def::WithExpr { expr, plain: def::Plain::ObjectCompId, sugary: None };
+      cx.define(*id, Def::Expr(def));
       check(st, cx, ars, *name);
       cx.define(Id::self_, Def::KwIdent);
       cx.define(Id::super_, Def::KwIdent);
       check(st, cx, ars, *body);
-      undefine(st, cx, bind.id);
-      undefine(st, cx, Id::self_);
-      undefine(st, cx, Id::super_);
+      cx.undefine(*id);
+      cx.undefine(Id::self_);
+      cx.undefine(Id::super_);
     }
     ExprData::Array(exprs) => {
       for &arg in exprs {
@@ -153,7 +194,9 @@ fn check(st: &mut St, cx: &mut Cx, ars: &Arenas, expr: Expr) {
     ExprData::Local { binds, body } => {
       let mut bound_names = FxHashSet::<Id>::default();
       for (idx, &(bind, rhs)) in binds.iter().enumerate() {
-        cx.define(bind.id, Def::Expr(expr, ExprDefKind::LocalBind(idx)));
+        let def =
+          def::WithExpr { expr, plain: def::Plain::LocalBind(idx), sugary: bind.sugary_def };
+        cx.define(bind.id, Def::Expr(def));
         if !bound_names.insert(bind.id) {
           st.err(rhs.unwrap_or(expr), error::Kind::DuplicateBinding(bind.id));
         }
@@ -163,13 +206,14 @@ fn check(st: &mut St, cx: &mut Cx, ars: &Arenas, expr: Expr) {
       }
       check(st, cx, ars, *body);
       for &(bind, _) in binds {
-        undefine(st, cx, bind.id);
+        cx.undefine(bind.id);
       }
     }
     ExprData::Function { params, body } => {
       let mut bound_names = FxHashSet::<Id>::default();
       for (idx, &(bind, rhs)) in params.iter().enumerate() {
-        cx.define(bind.id, Def::Expr(expr, ExprDefKind::FnParam(idx)));
+        let def = def::WithExpr { expr, plain: def::Plain::FnParam(idx), sugary: bind.sugary_def };
+        cx.define(bind.id, Def::Expr(def));
         if !bound_names.insert(bind.id) {
           st.err(rhs.flatten().unwrap_or(expr), error::Kind::DuplicateBinding(bind.id));
         }
@@ -180,7 +224,7 @@ fn check(st: &mut St, cx: &mut Cx, ars: &Arenas, expr: Expr) {
       }
       check(st, cx, ars, *body);
       for &(bind, _) in params {
-        undefine(st, cx, bind.id);
+        cx.undefine(bind.id);
       }
     }
     ExprData::If { cond, yes, no } => {

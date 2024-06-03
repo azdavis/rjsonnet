@@ -1,7 +1,7 @@
 //! Try to "evaluate" without actually evaluating, using statically-known information.
 
 use crate::st::St;
-use jsonnet_expr::def::{Def, ExprDefKind};
+use jsonnet_expr::def::{self, Def};
 use jsonnet_expr::{Expr, ExprData, ExprMust, Prim};
 use paths::PathId;
 
@@ -18,7 +18,7 @@ pub(crate) enum ConstEval {
 pub(crate) struct Real {
   pub(crate) path_id: PathId,
   pub(crate) expr: ExprMust,
-  pub(crate) kind: Option<ExprDefKind>,
+  pub(crate) kind: Option<def::Plain>,
 }
 
 impl From<Real> for ConstEval {
@@ -69,13 +69,13 @@ where
   F: paths::FileSystem,
 {
   match def {
-    Def::Expr(expr, kind) => {
-      let local = if let ExprDefKind::LocalBind(idx) = kind {
-        from_local(st, fs, path_id, Some(expr), idx)
+    Def::Expr(w) => {
+      let local = if let def::Plain::LocalBind(idx) = w.plain {
+        from_local(st, fs, path_id, Some(w.expr), idx)
       } else {
         None
       };
-      Some(local.unwrap_or(Real { path_id, expr, kind: Some(kind) }.into()))
+      Some(local.unwrap_or(Real { path_id, expr: w.expr, kind: Some(w.plain) }.into()))
     }
     Def::Std => Some(ConstEval::Std(None)),
     Def::KwIdent => None,

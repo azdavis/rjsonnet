@@ -34,14 +34,14 @@ pub(crate) fn get(cx: Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
       }
       Ok(Val::Object(Object::new(env.clone(), asserts.clone(), named_fields)))
     }
-    ExprData::ObjectComp { name, body, bind, ary } => {
+    ExprData::ObjectComp { name, body, id, ary } => {
       let Val::Array(array) = get(cx, env, *ary)? else {
         return Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes });
       };
       let mut fields = BTreeMap::<Str, (Visibility, Expr)>::default();
       for (part_env, elem) in array.iter() {
         let mut env = env.clone();
-        env.insert(bind.id, part_env.clone(), elem);
+        env.insert(*id, part_env.clone(), elem);
         match get(cx, &env, *name)? {
           Val::Prim(Prim::String(s)) => {
             let Some(body) = *body else { continue };

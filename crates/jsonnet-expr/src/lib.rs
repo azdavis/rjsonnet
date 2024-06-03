@@ -40,16 +40,19 @@ pub struct Field {
   pub val: Expr,
 }
 
-/// An binding, aka id in definition position.
+/// A binding, aka id in definition position, that may have some extra sugar.
 ///
 /// The places in a **desugared** expr that an id may appear in definition position are described by
-/// [`crate::def::Def`]. Accordingly, [`Bind`] is used in those positions.
+/// [`crate::def::Def`]. Accordingly, [`Bind`] may be used in those positions.
 ///
 /// However, an id may appear in definition position in other places in the sugary AST. This type
 /// tracks that possible extra data through the desugaring, which would have otherwise been
 /// discarded.
 ///
 /// We need that extra info to correctly implement unused variable checks.
+///
+/// This is not always used for all ids in definition position - notably, object comp ids. This is
+/// because nothing is desugared **to** an object comprehension.
 #[derive(Debug, Clone, Copy)]
 pub struct Bind {
   pub id: Id,
@@ -80,7 +83,7 @@ pub enum ExprData {
   ObjectComp {
     name: Expr,
     body: Expr,
-    bind: Bind,
+    id: Id,
     ary: Expr,
   },
   Array(Vec<Expr>),
@@ -138,8 +141,7 @@ impl ExprData {
         Prim::String(s) => s.apply(subst),
         Prim::Null | Prim::Bool(_) | Prim::Number(_) => {}
       },
-      ExprData::ObjectComp { bind, .. } => bind.id.apply(subst),
-      ExprData::Id(id) => id.apply(subst),
+      ExprData::ObjectComp { id, .. } | ExprData::Id(id) => id.apply(subst),
       ExprData::Local { binds, .. } => {
         for (bind, _) in binds {
           bind.id.apply(subst);
@@ -215,13 +217,13 @@ impl<'a> fmt::Display for DisplayExpr<'a> {
         }
         f.write_str("}")
       }
-      ExprData::ObjectComp { name, body, bind, ary } => {
+      ExprData::ObjectComp { name, body, id, ary } => {
         write!(
           f,
           "{{ [{}]: {} for {} in {} }}",
           self.with(*name),
           self.with(*body),
-          bind.id.display(self.str_ar),
+          id.display(self.str_ar),
           self.with(*ary)
         )
       }

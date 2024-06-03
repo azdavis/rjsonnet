@@ -3,7 +3,7 @@
 use always::always;
 use diagnostic::Diagnostic;
 use jsonnet_eval::JsonnetFile;
-use jsonnet_expr::def::ExprDefKind;
+use jsonnet_expr::def;
 use std::fmt;
 
 /// Options for initialization.
@@ -147,8 +147,9 @@ impl IsolatedFile {
       .chain(self.errors.parse.iter().map(|err| (err.range(), err.to_string())))
       .chain(self.errors.desugar.iter().map(|err| (err.range(), err.to_string())))
       .chain(self.errors.statics.iter().map(|err| {
-        let (expr, kind) = err.expr_and_def_kind();
-        let range = expr_range(&self.artifacts.pointers, root, expr, kind);
+        let (expr, w) = err.expr_and_def();
+        // TODO use the whole thing, not just the plain?
+        let range = expr_range(&self.artifacts.pointers, root, expr, w.map(|x| x.plain));
         let err = err.display(strings);
         (range, err.to_string())
       }))
@@ -188,7 +189,7 @@ pub(crate) fn expr_range(
   pointers: &jsonnet_desugar::Pointers,
   root: &jsonnet_syntax::kind::SyntaxNode,
   expr: jsonnet_expr::ExprMust,
-  kind: Option<ExprDefKind>,
+  kind: Option<def::Plain>,
 ) -> text_size::TextRange {
   let maybe_more_precise = kind.and_then(|kind| expr_def_range(pointers, root, expr, kind));
   maybe_more_precise.unwrap_or_else(|| pointers.get_ptr(expr).text_range())
@@ -198,10 +199,10 @@ fn expr_def_range(
   pointers: &jsonnet_desugar::Pointers,
   root: &jsonnet_syntax::kind::SyntaxNode,
   expr: jsonnet_expr::ExprMust,
-  kind: ExprDefKind,
+  kind: def::Plain,
 ) -> Option<text_size::TextRange> {
   match kind {
-    ExprDefKind::ObjectCompId => {
+    def::Plain::ObjectCompId => {
       let obj = pointers.get_ptr(expr);
       let obj = obj.cast::<jsonnet_syntax::ast::Object>()?;
       let obj = obj.try_to_node(root)?;
@@ -211,7 +212,7 @@ fn expr_def_range(
         jsonnet_syntax::ast::CompSpec::IfSpec(_) => None,
       }
     }
-    ExprDefKind::LocalBind(idx) => {
+    def::Plain::LocalBind(idx) => {
       let local = pointers.get_ptr(expr);
       // NOTE because of desugaring, not all expr locals are actually from ast locals. we try to
       // get the exact location first and then fall back.
@@ -228,7 +229,7 @@ fn expr_def_range(
           Some(node.text_range())
         })
     }
-    ExprDefKind::FnParam(idx) => {
+    def::Plain::FnParam(idx) => {
       let func = pointers.get_ptr(expr);
       // NOTE because of desugaring, possibly not all expr fns are actually from ast fns
       func

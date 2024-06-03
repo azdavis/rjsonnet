@@ -280,7 +280,6 @@ fn t3() {
 }
 
 #[test]
-#[should_panic = "unused: `drink`"]
 fn t4() {
   JsonnetInput::manifest(
     r#"

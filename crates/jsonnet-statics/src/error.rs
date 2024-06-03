@@ -1,6 +1,7 @@
 //! Errors.
 
-use jsonnet_expr::{def::ExprDefKind, ExprMust, Id, Str, Subst};
+use always::always;
+use jsonnet_expr::{def, ExprMust, Id, Str, Subst};
 use std::fmt;
 
 /// An error.
@@ -19,9 +20,15 @@ impl Error {
 
   /// Returns the expr this error is for.
   #[must_use]
-  pub fn expr_and_def_kind(&self) -> (ExprMust, Option<ExprDefKind>) {
-    let kind = if let Kind::Unused(_, k) = self.kind { Some(k) } else { None };
-    (self.expr, kind)
+  pub fn expr_and_def(&self) -> (ExprMust, Option<def::WithExpr>) {
+    let with_expr = if let Kind::Unused(_, x) = self.kind {
+      // TODO make a new type that doesn't re-have the expr must inside the with expr?
+      always!(self.expr == x.expr);
+      Some(x)
+    } else {
+      None
+    };
+    (self.expr, with_expr)
   }
 
   /// Apply a subst.
@@ -44,7 +51,7 @@ pub(crate) enum Kind {
   DuplicateFieldName(Str),
   DuplicateNamedArg(Id),
   DuplicateBinding(Id),
-  Unused(Id, ExprDefKind),
+  Unused(Id, def::WithExpr),
 }
 
 struct Display<'a> {

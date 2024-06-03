@@ -17,9 +17,8 @@ func(obj.field, 4)
   .check();
 }
 
-// TODO fix. `x` is indeed used
 #[test]
-#[should_panic = "unused: `x`"]
+#[should_panic = "not yet implemented: std.makeArray"]
 fn for_comp_obj() {
   JsonnetInput::manifest(
     r#"

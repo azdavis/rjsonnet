@@ -3,8 +3,8 @@
 use crate::{subst::Subst, ExprMust};
 use rustc_hash::FxHashMap;
 
-/// A definition site for an identifier.
-#[derive(Debug, Clone, Copy)]
+/// A definition site for an identifier without an expr.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Def {
   /// The standard library, `std`.
   Std,
@@ -13,12 +13,20 @@ pub enum Def {
   /// An `import` of a Jsonnet file.
   Import(paths::PathId),
   /// A part of an expression.
-  Expr(ExprMust, ExprDefKind),
+  Expr(WithExpr),
 }
 
-/// A definition site with an associated expression.
-#[derive(Debug, Clone, Copy)]
-pub enum ExprDefKind {
+/// A definition with an expr.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct WithExpr {
+  pub expr: ExprMust,
+  pub plain: Plain,
+  pub sugary: Option<Sugary>,
+}
+
+/// A definition site with an associated expression in the plain (not sugary) language.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum Plain {
   /// The identifier in an object comprehension.
   ///
   /// ```jsonnet
@@ -45,12 +53,18 @@ impl Def {
 /// A map from expressions to defs.
 pub type Map = FxHashMap<ExprMust, Def>;
 
-/// A place in the sugary syntax that an expr may appear.
+/// A place in the sugary syntax that an identifier in definition position may appear.
 ///
-/// This excludes places in the desugared syntax. Those such places are covered by
-/// [`crate::def::Def`].
-#[derive(Debug, Clone, Copy)]
-pub enum Sugary {
+/// This excludes places in the desugared syntax. Those such places are covered by [`Def`].
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct Sugary {
+  pub expr: ExprMust,
+  pub kind: SugaryKind,
+}
+
+/// A kind of sugary def.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum SugaryKind {
   /// A local from the nth field in an object.
   ObjectLocal(usize),
   /// The id in an array comprehension.
@@ -60,22 +74,10 @@ pub enum Sugary {
   /// //         ^ here
   /// ```
   ArrayComp,
-  /// The nth binding from a function defined on a `local` with params,
+  /// The nth binding from a function defined on a `local` with params.
   LocalFnParam(usize),
-  /// The nth binding from a function defined on a field with params,
+  /// The nth binding from a function defined on a field with params.
   FieldFnParam(usize),
   /// A binding from the nth `for` in an object comprehension.
   ObjectComp(usize),
-}
-
-impl Sugary {
-  #[must_use]
-  pub fn local_fn_param(n: usize) -> Option<Self> {
-    Some(Self::LocalFnParam(n))
-  }
-
-  #[must_use]
-  pub fn field_fn_param(n: usize) -> Option<Self> {
-    Some(Self::FieldFnParam(n))
-  }
 }
