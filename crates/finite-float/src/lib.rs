@@ -55,6 +55,7 @@ impl PartialOrd for Float {
   }
 }
 
+/// OK because NaN is not allowed
 impl Ord for Float {
   fn cmp(&self, other: &Self) -> std::cmp::Ordering {
     if let Some(x) = self.value().partial_cmp(&other.value()) {
@@ -63,6 +64,13 @@ impl Ord for Float {
       always!(false, "should not be NaN");
       std::cmp::Ordering::Equal
     }
+  }
+}
+
+/// OK because NaN is not allowed
+impl std::hash::Hash for Float {
+  fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+    state.write_u64(self.0.to_bits());
   }
 }
 

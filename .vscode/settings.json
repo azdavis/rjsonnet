@@ -24,6 +24,7 @@
     "flate",
     "foldl",
     "foldr",
+    "Hasher",
     "hexdigit",
     "Importbin",
     "Importstr",
