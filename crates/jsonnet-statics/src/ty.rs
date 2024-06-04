@@ -6,7 +6,7 @@ mod generated {
 mod display;
 
 use always::{always, convert};
-use jsonnet_expr::{ExprMust, Prim, Str, Subst};
+use jsonnet_expr::{ExprMust, Id, Prim, Str, Subst};
 use rustc_hash::FxHashMap;
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -47,7 +47,7 @@ pub enum Data {
   /// A function type, with some arguments and a return type.
   ///
   /// TODO support default arguments, argument names
-  Fn(Vec<Ty>, Ty),
+  Fn(Vec<Param>, Ty),
   /// A union type.
   ///
   /// The empty union can never exist. This type is sometimes called "never" or "void".
@@ -68,6 +68,14 @@ impl Data {
       | Data::Or(_) => {}
     }
   }
+}
+
+/// A function parameter.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct Param {
+  pub(crate) id: Id,
+  pub(crate) ty: Ty,
+  pub(crate) required: bool,
 }
 
 /// A type.

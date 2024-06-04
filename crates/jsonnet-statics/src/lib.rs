@@ -220,8 +220,11 @@ fn check(st: &mut St, cx: &mut Cx, ars: &Arenas, expr: Expr) -> ty::Ty {
       for &(bind, _) in params {
         undefine(cx, st, bind);
       }
-      let param_tys: Vec<_> = std::iter::repeat(ty::Ty::ANY).take(params.len()).collect();
-      st.tys.get(ty::Data::Fn(param_tys, ty::Ty::ANY))
+      let params_for_ty: Vec<_> = params
+        .iter()
+        .map(|&(id, default)| ty::Param { id, ty: ty::Ty::ANY, required: default.is_none() })
+        .collect();
+      st.tys.get(ty::Data::Fn(params_for_ty, ty::Ty::ANY))
     }
     ExprData::If { cond, yes, no } => {
       check(st, cx, ars, *cond);

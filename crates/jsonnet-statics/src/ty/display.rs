@@ -1,6 +1,6 @@
 //! Display types.
 
-use super::{Data, Store, Ty};
+use super::{Data, Param, Store, Ty};
 use jsonnet_expr::StrArena;
 use std::fmt;
 
@@ -61,7 +61,7 @@ impl<'a> fmt::Display for TyDisplay<'a> {
           f.write_str("(")?;
         }
         f.write_str("(")?;
-        let mut iter = params.iter().map(|&ty| self.with(ty, Prec::Min));
+        let mut iter = params.iter().map(|&param| ParamDisplay { param, stuff: self.stuff });
         if let Some(ty) = iter.next() {
           ty.fmt(f)?;
         }
@@ -109,6 +109,23 @@ impl<'a> fmt::Display for FieldDisplay<'a> {
     self.stuff.str_ar.get(self.key).fmt(f)?;
     f.write_str(": ")?;
     TyDisplay { ty: self.ty, prec: Prec::Min, stuff: self.stuff }.fmt(f)
+  }
+}
+
+#[derive(Clone, Copy)]
+struct ParamDisplay<'a> {
+  param: Param,
+  stuff: Stuff<'a>,
+}
+
+impl<'a> fmt::Display for ParamDisplay<'a> {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    self.param.id.display(self.stuff.str_ar).fmt(f)?;
+    if !self.param.required {
+      f.write_str("?")?;
+    }
+    f.write_str(": ")?;
+    TyDisplay { ty: self.param.ty, prec: Prec::Min, stuff: self.stuff }.fmt(f)
   }
 }
 
