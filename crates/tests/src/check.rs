@@ -1,8 +1,5 @@
 //! Testing infra.
 
-// TODO remove when tests are back on
-#![allow(unused)]
-
 mod expect;
 
 use lang_srv_state::State as _;

@@ -36,10 +36,13 @@ pub enum Data {
     /// Whether there are other, unknown fields.
     other: bool,
   },
-  /// A function type, with some arguments and a return type. TODO support default arguments
+  /// A function type, with some arguments and a return type.
+  ///
+  /// TODO support default arguments, argument names
   Fn(Vec<Ty>, Ty),
-  /// A union type. TODO use
-  #[allow(dead_code)]
+  /// A union type.
+  ///
+  /// The empty union can never exist. This type is sometimes called "never" or "void".
   Or(BTreeSet<Ty>),
 }
 
@@ -62,6 +65,8 @@ pub struct Store {
 }
 
 impl Store {
+  /// TODO special logic to flatten `Or`s? and also handle single-element `Or`s by just returning
+  /// the single inner element
   pub(crate) fn get(&mut self, data: Data) -> Ty {
     if let Some(&ret) = self.data_to_idx.get(&data) {
       return ret;
@@ -72,9 +77,9 @@ impl Store {
     ret
   }
 
-  // TODO use
+  /// TODO use
   #[allow(dead_code)]
-  pub(crate) fn data(&mut self, ty: Ty) -> &Data {
+  pub(crate) fn data(&self, ty: Ty) -> &Data {
     match self.idx_to_data.get(convert::u32_to_usize(ty.0)) {
       None => {
         always!(false, "no ty data for {ty:?}");
