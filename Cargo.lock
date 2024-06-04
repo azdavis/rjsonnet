@@ -469,7 +469,10 @@ dependencies = [
  "diagnostic",
  "jsonnet-expr",
  "paths",
+ "proc-macro2",
+ "quote",
  "rustc-hash",
+ "write-rs-tokens",
 ]
 
 [[package]]

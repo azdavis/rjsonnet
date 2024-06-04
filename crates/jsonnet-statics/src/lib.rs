@@ -1,6 +1,10 @@
 //! Static checking for jsonnet.
 
+mod ty;
+
 pub mod error;
+
+use std::collections::BTreeMap;
 
 use always::always;
 use jsonnet_expr::def::{self, Def};
@@ -39,6 +43,7 @@ struct TrackedDef {
 struct Cx {
   /// This is a vec because things go in and out of scope in stacks.
   store: FxHashMap<Id, Vec<TrackedDef>>,
+  tys: ty::Store,
 }
 
 impl Cx {
@@ -78,20 +83,19 @@ pub fn get(st: &mut St, ars: &Arenas, expr: Expr) {
   }
 }
 
-#[allow(clippy::too_many_lines)]
-fn check(st: &mut St, cx: &mut Cx, ars: &Arenas, expr: Expr) {
-  let Some(expr) = expr else { return };
+#[allow(clippy::too_many_lines, clippy::single_match_else)]
+fn check(st: &mut St, cx: &mut Cx, ars: &Arenas, expr: Expr) -> ty::Ty {
+  let Some(expr) = expr else { return ty::Ty::ANY };
   match &ars.expr[expr] {
-    ExprData::Prim(_) => {}
+    ExprData::Prim(prim) => cx.tys.get(ty::Data::Prim(prim.clone())),
     ExprData::Object { binds, asserts, fields } => {
-      let mut field_names = FxHashSet::<&Str>::default();
+      let mut field_tys = BTreeMap::<Str, ty::Ty>::default();
       for field in fields {
         check(st, cx, ars, field.key);
         let Some(key) = field.key else { continue };
-        if let ExprData::Prim(Prim::String(s)) = &ars.expr[key] {
-          if !field_names.insert(s) {
-            st.err(key, error::Kind::DuplicateFieldName(s.clone()));
-          }
+        let ExprData::Prim(Prim::String(s)) = &ars.expr[key] else { continue };
+        if field_tys.insert(s.clone(), ty::Ty::ANY).is_some() {
+          st.err(key, error::Kind::DuplicateFieldName(s.clone()));
         }
       }
       cx.define(Id::self_, Def::KwIdent);
@@ -103,7 +107,10 @@ fn check(st: &mut St, cx: &mut Cx, ars: &Arenas, expr: Expr) {
         check(st, cx, ars, expr);
       }
       for field in fields {
-        check(st, cx, ars, field.val);
+        let ty = check(st, cx, ars, field.val);
+        let Some(key) = field.key else { continue };
+        let ExprData::Prim(Prim::String(s)) = &ars.expr[key] else { continue };
+        always!(field_tys.insert(s.clone(), ty).is_some());
       }
       for &cond in asserts {
         check(st, cx, ars, cond);
@@ -113,6 +120,7 @@ fn check(st: &mut St, cx: &mut Cx, ars: &Arenas, expr: Expr) {
       for &(lhs, _) in binds {
         undefine(cx, st, lhs);
       }
+      cx.tys.get(ty::Data::Object { known: field_tys, other: false })
     }
     ExprData::ObjectComp { name, body, id, ary } => {
       check(st, cx, ars, *ary);
@@ -124,15 +132,18 @@ fn check(st: &mut St, cx: &mut Cx, ars: &Arenas, expr: Expr) {
       undefine(cx, st, *id);
       undefine(cx, st, Id::self_);
       undefine(cx, st, Id::super_);
+      cx.tys.get(ty::Data::Object { known: BTreeMap::new(), other: true })
     }
     ExprData::Array(exprs) => {
       for &arg in exprs {
         check(st, cx, ars, arg);
       }
+      cx.tys.get(ty::Data::Array(ty::Ty::ANY))
     }
     ExprData::Subscript { on, idx } => {
       check(st, cx, ars, *on);
       check(st, cx, ars, *idx);
+      ty::Ty::ANY
     }
     ExprData::Call { func, positional, named } => {
       check(st, cx, ars, *func);
@@ -148,10 +159,17 @@ fn check(st: &mut St, cx: &mut Cx, ars: &Arenas, expr: Expr) {
           }
         }
       }
+      ty::Ty::ANY
     }
     ExprData::Id(id) => match cx.get(*id) {
-      Some(def) => st.note_usage(expr, def),
-      None => st.err(expr, error::Kind::NotInScope(*id)),
+      Some(def) => {
+        st.note_usage(expr, def);
+        ty::Ty::ANY
+      }
+      None => {
+        st.err(expr, error::Kind::NotInScope(*id));
+        ty::Ty::ANY
+      }
     },
     ExprData::Local { binds, body } => {
       let mut bound_names = FxHashSet::<Id>::default();
@@ -164,10 +182,11 @@ fn check(st: &mut St, cx: &mut Cx, ars: &Arenas, expr: Expr) {
       for &(_, rhs) in binds {
         check(st, cx, ars, rhs);
       }
-      check(st, cx, ars, *body);
+      let ty = check(st, cx, ars, *body);
       for &(bind, _) in binds {
         undefine(cx, st, bind);
       }
+      ty
     }
     ExprData::Function { params, body } => {
       let mut bound_names = FxHashSet::<Id>::default();
@@ -185,22 +204,31 @@ fn check(st: &mut St, cx: &mut Cx, ars: &Arenas, expr: Expr) {
       for &(bind, _) in params {
         undefine(cx, st, bind);
       }
+      let param_tys: Vec<_> = std::iter::repeat(ty::Ty::ANY).take(params.len()).collect();
+      cx.tys.get(ty::Data::Fn(param_tys, ty::Ty::ANY))
     }
     ExprData::If { cond, yes, no } => {
       check(st, cx, ars, *cond);
       check(st, cx, ars, *yes);
       check(st, cx, ars, *no);
+      ty::Ty::ANY
     }
     ExprData::BinaryOp { lhs, rhs, .. } => {
       check(st, cx, ars, *lhs);
       check(st, cx, ars, *rhs);
+      ty::Ty::ANY
     }
     ExprData::UnaryOp { inner, .. } | ExprData::Error(inner) => {
       check(st, cx, ars, *inner);
+      ty::Ty::ANY
     }
     ExprData::Import { kind, path } => match kind {
-      jsonnet_expr::ImportKind::Code => st.note_usage(expr, Def::Import(*path)),
-      jsonnet_expr::ImportKind::String | jsonnet_expr::ImportKind::Binary => {}
+      jsonnet_expr::ImportKind::Code => {
+        st.note_usage(expr, Def::Import(*path));
+        ty::Ty::ANY
+      }
+      jsonnet_expr::ImportKind::String => ty::Ty::STRING,
+      jsonnet_expr::ImportKind::Binary => ty::Ty::ARRAY_NUMBER,
     },
   }
 }

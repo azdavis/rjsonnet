@@ -19,3 +19,8 @@ rustc-hash.workspace = true
 always.path = "../always"
 diagnostic.path = "../diagnostic"
 jsonnet-expr.path = "../jsonnet-expr"
+
+[build-dependencies]
+proc-macro2.workspace = true
+quote.workspace = true
+write-rs-tokens.workspace = true

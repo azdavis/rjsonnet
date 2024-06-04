@@ -353,7 +353,7 @@ impl fmt::Display for UnaryOp {
 }
 
 /// A primitive value.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Prim {
   Null,
   Bool(bool),
