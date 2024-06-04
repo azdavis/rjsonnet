@@ -206,12 +206,26 @@ impl St {
   where
     F: paths::FileSystem,
   {
-    match self.file_artifacts.entry(path_id) {
-      Entry::Occupied(entry) => Ok(&*entry.into_mut()),
-      Entry::Vacant(entry) => {
-        let file = self.with_fs.get_one_file(fs, path_id)?;
-        Ok(&*entry.insert(file.artifacts))
-      }
+    get_artifacts(&mut self.file_artifacts, &mut self.with_fs, fs, path_id)
+  }
+}
+
+/// have to pull this out to a free fn so borrow checker can see where the borrows come from more
+/// accurately
+fn get_artifacts<'fa, F>(
+  file_artifacts: &'fa mut PathMap<FileArtifacts>,
+  with_fs: &mut WithFs,
+  fs: &F,
+  path_id: PathId,
+) -> Result<&'fa FileArtifacts>
+where
+  F: paths::FileSystem,
+{
+  match file_artifacts.entry(path_id) {
+    Entry::Occupied(entry) => Ok(&*entry.into_mut()),
+    Entry::Vacant(entry) => {
+      let file = with_fs.get_one_file(fs, path_id)?;
+      Ok(&*entry.insert(file.artifacts))
     }
   }
 }
@@ -359,7 +373,7 @@ impl lang_srv_state::State for St {
     F: Sync + Send + paths::FileSystem,
   {
     let path_id = self.path_id(path);
-    let arts = self.get_file_artifacts(fs, path_id).ok()?;
+    let arts = get_artifacts(&mut self.file_artifacts, &mut self.with_fs, fs, path_id).ok()?;
     let tok = {
       let ts = arts.pos_db.text_size_utf16(pos)?;
       let root = arts.syntax.clone().into_ast()?;
@@ -367,13 +381,19 @@ impl lang_srv_state::State for St {
     };
     // have to manually impl `and_then` because `self` is immutably borrowed up to when `arts` is
     // last used
-    let std_field = match tok.parent() {
-      None => None,
+    let (show_ty, std_field) = match tok.parent() {
+      None => (None, None),
       Some(node) => {
         let ptr = jsonnet_syntax::ast::SyntaxNodePtr::new(&node);
         let expr = arts.pointers.get_idx(ptr);
+        let a = expr.and_then(|e| {
+          let ty = arts.expr_tys.get(&e)?;
+          let ty = ty.display(&arts.tys, &self.with_fs.artifacts.strings);
+          Some(format!("```ts\n{ty}\n```"))
+        });
         // TODO expose any errors here?
-        const_eval::get(self, fs, path_id, expr)
+        let b = const_eval::get(self, fs, path_id, expr);
+        (a, b)
       }
     };
     let from_std_field = match std_field {
@@ -397,7 +417,7 @@ impl lang_srv_state::State for St {
       },
       Err(e) => format!("couldn't get all deps: {e}"),
     });
-    let parts = [json.as_deref(), from_std_field, tok.kind().token_doc()];
+    let parts = [json.as_deref(), show_ty.as_deref(), from_std_field, tok.kind().token_doc()];
     let parts: Vec<_> = parts.into_iter().flatten().collect();
     if parts.is_empty() {
       None
