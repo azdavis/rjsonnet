@@ -115,7 +115,7 @@ impl<'a> Input<'a> {
       let (path_id, ds) = st.open(fs, path.clone(), jsonnet.text.to_owned());
       let mut ds: FxHashMap<_, _> = ds.into_iter().map(|x| (x.range, x.message)).collect();
 
-      st.get_all_deps(fs, path_id);
+      st.get_all_deps(fs, path_id).expect("get all deps");
 
       let ex_file = &expects[&path_id];
       for (region, ex) in ex_file.iter() {
