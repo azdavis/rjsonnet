@@ -39,26 +39,23 @@ impl<'a> fmt::Display for TyDisplay<'a> {
         f.write_str("[]")
       }
       Data::Object { known, other } => {
-        f.write_str("{ ")?;
+        f.write_str("{")?;
         let mut iter = known.iter().map(|(key, ty)| FieldDisplay {
           key,
           ty: *ty,
           stuff: self.stuff.with_prec(Prec::Min),
         });
         if let Some(field) = iter.next() {
+          f.write_str(" ")?;
           field.fmt(f)?;
-        }
-        for field in iter {
-          f.write_str(", ")?;
-          field.fmt(f)?;
-        }
-        if *other {
-          if !known.is_empty() {
+          for field in iter {
             f.write_str(", ")?;
+            field.fmt(f)?;
           }
-          f.write_str("...")?;
+          let end = if *other { ", ... " } else { " " };
+          f.write_str(end)?;
         }
-        f.write_str(" }")
+        f.write_str("}")
       }
       Data::Fn(params, ret) => {
         let needs_paren = self.stuff.prec > Prec::Min;
