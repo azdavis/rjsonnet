@@ -17,7 +17,7 @@ type StdLibDoc = FxHashMap<&'static str, String>;
 fn std_lib_doc() -> &'static StdLibDoc {
   static LOCK: OnceLock<StdLibDoc> = OnceLock::new();
   fn init() -> StdLibDoc {
-    code_h2_md_map::get(include_str!("../../../docs/std_lib.md"), |x| format!("`std.{x}`"))
+    code_h2_md_map::get(include_str!("../../../docs/std_lib.md"), |x| format!("std item: `{x}`"))
   }
   LOCK.get_or_init(init)
 }
@@ -395,24 +395,24 @@ impl lang_srv_state::State for St {
       let ptr = jsonnet_syntax::ast::SyntaxNodePtr::new(&node);
       arts.pointers.get_idx(ptr)
     });
-    let show_ty = expr.and_then(|expr| {
+    let ty = expr.and_then(|expr| {
       let ty = arts.expr_tys.get(&expr)?;
       let ty = ty.display(&arts.tys, &self.with_fs.artifacts.strings);
-      Some(format!("```ts\n{ty}\n```"))
+      Some(format!("type:\n```ts\n{ty}\n```"))
     });
     // TODO expose any errors here?
     let from_std_field = match const_eval::get(self, fs, path_id, expr) {
       Some(const_eval::ConstEval::Std(Some(x))) => {
         std_lib_doc().get(self.with_fs.artifacts.strings.get(&x)).map(String::as_str)
       }
-      Some(const_eval::ConstEval::Std(None)) => Some("The standard library."),
+      Some(const_eval::ConstEval::Std(None)) => Some("std: The standard library."),
       None | Some(const_eval::ConstEval::Real(_)) => None,
     };
     let json = self.manifest.then(|| match self.get_all_deps(fs, path_id) {
       Ok(()) => match self.get_json(path_id) {
         Ok(json) => {
           let json = json.display(&self.with_fs.artifacts.strings);
-          format!("```json\n{json}\n```")
+          format!("json:\n```json\n{json}\n```")
         }
         Err(e) => {
           let rel_to = self.with_fs.relative_to.as_ref().map(paths::CleanPathBuf::as_clean_path);
@@ -432,13 +432,8 @@ impl lang_srv_state::State for St {
     } else {
       None
     };
-    let parts = [
-      debug.as_deref(),
-      json.as_deref(),
-      show_ty.as_deref(),
-      from_std_field,
-      tok.kind().token_doc(),
-    ];
+    let parts =
+      [debug.as_deref(), json.as_deref(), ty.as_deref(), from_std_field, tok.kind().token_doc()];
     let parts: Vec<_> = parts.into_iter().flatten().collect();
     if parts.is_empty() {
       None

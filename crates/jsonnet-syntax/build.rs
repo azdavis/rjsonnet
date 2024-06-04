@@ -4,7 +4,7 @@ use rustc_hash::FxHashMap;
 
 fn main() {
   let doc =
-    code_h2_md_map::get(include_str!("../../docs/tokens.md"), |tok| format!("Token: `{tok}`\n"));
+    code_h2_md_map::get(include_str!("../../docs/tokens.md"), |tok| format!("token: `{tok}`\n"));
   let doc: FxHashMap<_, _> = doc.iter().map(|(&k, v)| (k, v.as_str())).collect();
   let options = syntax_gen::Options {
     lang: "Jsonnet",
