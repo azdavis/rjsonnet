@@ -193,13 +193,7 @@ impl St {
   where
     F: paths::FileSystem,
   {
-    match self.file_exprs.entry(path_id) {
-      Entry::Occupied(entry) => Ok(&*entry.into_mut()),
-      Entry::Vacant(entry) => {
-        let file = self.with_fs.get_one_file(fs, path_id)?;
-        Ok(&*entry.insert(file.eval))
-      }
-    }
+    get_file_expr(&mut self.file_exprs, &mut self.with_fs, fs, path_id)
   }
 
   pub(crate) fn get_file_artifacts<F>(&mut self, fs: &F, path_id: PathId) -> Result<&FileArtifacts>
@@ -207,6 +201,24 @@ impl St {
     F: paths::FileSystem,
   {
     get_artifacts(&mut self.file_artifacts, &mut self.with_fs, fs, path_id)
+  }
+}
+
+fn get_file_expr<'fa, F>(
+  file_exprs: &'fa mut PathMap<JsonnetFile>,
+  with_fs: &mut WithFs,
+  fs: &F,
+  path_id: PathId,
+) -> Result<&'fa JsonnetFile>
+where
+  F: paths::FileSystem,
+{
+  match file_exprs.entry(path_id) {
+    Entry::Occupied(entry) => Ok(&*entry.into_mut()),
+    Entry::Vacant(entry) => {
+      let file = with_fs.get_one_file(fs, path_id)?;
+      Ok(&*entry.insert(file.eval))
+    }
   }
 }
 
