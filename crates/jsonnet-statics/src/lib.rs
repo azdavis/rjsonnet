@@ -1,8 +1,7 @@
 //! Static checking for jsonnet.
 
-mod ty;
-
 pub mod error;
+pub mod ty;
 
 use std::collections::BTreeMap;
 
@@ -18,6 +17,8 @@ pub struct St {
   pub errors: Vec<error::Error>,
   /// Any definition sites we could figure out.
   pub defs: jsonnet_expr::def::Map,
+  /// Info about all the types.
+  pub tys: ty::Store,
 }
 
 impl St {
@@ -43,7 +44,6 @@ struct TrackedDef {
 struct Cx {
   /// This is a vec because things go in and out of scope in stacks.
   store: FxHashMap<Id, Vec<TrackedDef>>,
-  tys: ty::Store,
 }
 
 impl Cx {
@@ -87,7 +87,7 @@ pub fn get(st: &mut St, ars: &Arenas, expr: Expr) {
 fn check(st: &mut St, cx: &mut Cx, ars: &Arenas, expr: Expr) -> ty::Ty {
   let Some(expr) = expr else { return ty::Ty::ANY };
   match &ars.expr[expr] {
-    ExprData::Prim(prim) => cx.tys.get(ty::Data::Prim(prim.clone())),
+    ExprData::Prim(prim) => st.tys.get(ty::Data::Prim(prim.clone())),
     ExprData::Object { binds, asserts, fields } => {
       let mut field_tys = BTreeMap::<Str, ty::Ty>::default();
       for field in fields {
@@ -120,7 +120,7 @@ fn check(st: &mut St, cx: &mut Cx, ars: &Arenas, expr: Expr) -> ty::Ty {
       for &(lhs, _) in binds {
         undefine(cx, st, lhs);
       }
-      cx.tys.get(ty::Data::Object { known: field_tys, other: false })
+      st.tys.get(ty::Data::Object { known: field_tys, other: false })
     }
     ExprData::ObjectComp { name, body, id, ary } => {
       check(st, cx, ars, *ary);
@@ -132,13 +132,13 @@ fn check(st: &mut St, cx: &mut Cx, ars: &Arenas, expr: Expr) -> ty::Ty {
       undefine(cx, st, *id);
       undefine(cx, st, Id::self_);
       undefine(cx, st, Id::super_);
-      cx.tys.get(ty::Data::Object { known: BTreeMap::new(), other: true })
+      st.tys.get(ty::Data::Object { known: BTreeMap::new(), other: true })
     }
     ExprData::Array(exprs) => {
       for &arg in exprs {
         check(st, cx, ars, arg);
       }
-      cx.tys.get(ty::Data::Array(ty::Ty::ANY))
+      st.tys.get(ty::Data::Array(ty::Ty::ANY))
     }
     ExprData::Subscript { on, idx } => {
       check(st, cx, ars, *on);
@@ -205,7 +205,7 @@ fn check(st: &mut St, cx: &mut Cx, ars: &Arenas, expr: Expr) -> ty::Ty {
         undefine(cx, st, bind);
       }
       let param_tys: Vec<_> = std::iter::repeat(ty::Ty::ANY).take(params.len()).collect();
-      cx.tys.get(ty::Data::Fn(param_tys, ty::Ty::ANY))
+      st.tys.get(ty::Data::Fn(param_tys, ty::Ty::ANY))
     }
     ExprData::If { cond, yes, no } => {
       check(st, cx, ars, *cond);

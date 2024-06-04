@@ -9,29 +9,54 @@ use jsonnet_expr::{Prim, Str};
 use rustc_hash::FxHashMap;
 use std::collections::{BTreeMap, BTreeSet};
 
+/// Data about a type.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub(crate) enum Data {
+pub enum Data {
+  /// Anything at all.
   Any,
+  /// A boolean.
   Bool,
+  /// A string.
   String,
+  /// A number.
   Number,
+  /// A specific primitive.
+  ///
+  /// We say that `1` has type `1` and `"foo"` has type `"foo"`, etc This is mildly strange - why
+  /// don't we say `1` has type `number` and `"foo"` has type `string`, etc? Well, we could **also**
+  /// say that, but this lets us be more specific when we know more.
   Prim(Prim),
+  /// An array of elements, where each element has the given type.
   Array(Ty),
+  /// An object, where we know the name and type of some fields, and may or may not acknowledge the
+  /// possibility of more, unknown fields.
   Object {
+    /// The fields we know.
     known: BTreeMap<Str, Ty>,
+    /// Whether there are other, unknown fields.
     other: bool,
   },
+  /// A function type, with some arguments and a return type. TODO support default arguments
   Fn(Vec<Ty>, Ty),
-  // TODO use
+  /// A union type. TODO use
   #[allow(dead_code)]
   Or(BTreeSet<Ty>),
 }
 
+/// A type.
+///
+/// Internally represented as an index that is cheap to copy.
+///
+/// Furthermore, types will be unique. That is, for two types a and b, if a != b, then a's data !=
+/// b's data.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub(crate) struct Ty(u32);
+pub struct Ty(u32);
 
+/// A store of types.
+///
+/// Use this to make new types from data, and get the data for a type.
 #[derive(Debug)]
-pub(crate) struct Store {
+pub struct Store {
   idx_to_data: Vec<Data>,
   data_to_idx: FxHashMap<Data, Ty>,
 }
