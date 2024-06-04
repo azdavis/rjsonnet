@@ -110,10 +110,14 @@ fn check(st: &mut St, cx: &mut Cx, ars: &Arenas, expr: Expr) -> ty::Ty {
       for &(_, expr) in binds {
         check(st, cx, ars, expr);
       }
+      let mut other = false;
       for field in fields {
         let ty = check(st, cx, ars, field.val);
         let Some(key) = field.key else { continue };
-        let ExprData::Prim(Prim::String(s)) = &ars.expr[key] else { continue };
+        let ExprData::Prim(Prim::String(s)) = &ars.expr[key] else {
+          other = true;
+          continue;
+        };
         always!(field_tys.insert(s.clone(), ty).is_some());
       }
       for &cond in asserts {
@@ -124,7 +128,7 @@ fn check(st: &mut St, cx: &mut Cx, ars: &Arenas, expr: Expr) -> ty::Ty {
       for &(lhs, _) in binds {
         undefine(cx, st, lhs);
       }
-      st.tys.get(ty::Data::Object { known: field_tys, other: false })
+      st.tys.get(ty::Data::Object { known: field_tys, other })
     }
     ExprData::ObjectComp { name, body, id, ary } => {
       check(st, cx, ars, *ary);
