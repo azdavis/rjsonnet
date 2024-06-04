@@ -7,12 +7,6 @@ use std::fmt;
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Float(f64);
 
-impl fmt::Display for Float {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    self.0.fmt(f)
-  }
-}
-
 impl Float {
   /// Returns positive zero.
   #[must_use]
@@ -99,6 +93,12 @@ impl std::ops::Neg for Float {
 
   fn neg(self) -> Self::Output {
     Self(-self.0)
+  }
+}
+
+impl fmt::Display for Float {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    self.0.fmt(f)
   }
 }
 
