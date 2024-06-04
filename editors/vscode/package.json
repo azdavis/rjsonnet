@@ -3,7 +3,7 @@
   "preview": true,
   "name": "rjsonnet",
   "displayName": "rjsonnet",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Jsonnet support implemented in Rust",
   "publisher": "azdavis",
   "author": "Ariel Davis <ariel.z.davis@icloud.com>",

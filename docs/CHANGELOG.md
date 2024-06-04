@@ -1,9 +1,11 @@
 # Changelog
 
-## main
+## v0.3.0
 
 - Greatly decrease memory usage by being more lazy.
 - Add back hover for showing std lib and keyword docs.
+- Add back manifesting on hover (but only behind a setting, and very WIP).
+- Diagnose unused vars.
 
 ## v0.2.0
 
