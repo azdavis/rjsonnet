@@ -53,7 +53,10 @@ impl<'a> fmt::Display for TyDisplay<'a> {
           field.fmt(f)?;
         }
         if *other {
-          f.write_str(", ...")?;
+          if !known.is_empty() {
+            f.write_str(", ")?;
+          }
+          f.write_str("...")?;
         }
         f.write_str(" }")
       }
