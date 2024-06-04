@@ -17,6 +17,10 @@ pub type Exprs = FxHashMap<ExprMust, Ty>;
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Data {
   /// Anything at all.
+  ///
+  /// This is like `any` in TypeScript and `T.untyped` in Sorbet (Ruby type-checker). It is BOTH a
+  /// "top type" and a "bottom type". That is, anything can be coerced to it, and it can be coerced
+  /// to anything. In that sense, it is the ultimate escape-hatch type.
   Any,
   /// A boolean.
   Bool,
