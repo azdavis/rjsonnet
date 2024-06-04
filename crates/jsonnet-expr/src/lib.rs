@@ -17,7 +17,7 @@ pub use subst::Subst;
 
 use generated::{BuiltinStr, NotBuiltinStr};
 use rustc_hash::FxHashMap;
-use std::{collections::hash_map::Entry, fmt};
+use std::collections::hash_map::Entry;
 
 pub type ExprMust = Idx<ExprData>;
 pub type Expr = Option<ExprMust>;
@@ -142,33 +142,11 @@ pub enum ImportKind {
   Binary,
 }
 
-impl fmt::Display for ImportKind {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    let s = match self {
-      ImportKind::Code => "import",
-      ImportKind::String => "importstr",
-      ImportKind::Binary => "importbin",
-    };
-    f.write_str(s)
-  }
-}
-
 #[derive(Debug, Clone, Copy)]
 pub enum Visibility {
   Default,
   Hidden,
   Visible,
-}
-
-impl fmt::Display for Visibility {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    let s = match self {
-      Visibility::Default => ":",
-      Visibility::Hidden => "::",
-      Visibility::Visible => ":::",
-    };
-    f.write_str(s)
-  }
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -188,45 +166,12 @@ pub enum BinaryOp {
   BitOr,
 }
 
-impl fmt::Display for BinaryOp {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    let s = match self {
-      BinaryOp::Mul => "*",
-      BinaryOp::Div => "/",
-      BinaryOp::Add => "+",
-      BinaryOp::Sub => "-",
-      BinaryOp::Shl => "<<",
-      BinaryOp::Shr => ">>",
-      BinaryOp::Lt => "<",
-      BinaryOp::LtEq => "<=",
-      BinaryOp::Gt => ">",
-      BinaryOp::GtEq => ">=",
-      BinaryOp::BitAnd => "&",
-      BinaryOp::BitXor => "^",
-      BinaryOp::BitOr => "|",
-    };
-    f.write_str(s)
-  }
-}
-
 #[derive(Debug, Clone, Copy)]
 pub enum UnaryOp {
   Neg,
   Pos,
   LogicalNot,
   BitNot,
-}
-
-impl fmt::Display for UnaryOp {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    let s = match self {
-      UnaryOp::Neg => "-",
-      UnaryOp::Pos => "+",
-      UnaryOp::LogicalNot => "!",
-      UnaryOp::BitNot => "~",
-    };
-    f.write_str(s)
-  }
 }
 
 /// A primitive value.
@@ -243,32 +188,6 @@ impl Prim {
     match self {
       Prim::Null | Prim::Bool(_) | Prim::Number(_) => {}
       Prim::String(s) => s.apply(subst),
-    }
-  }
-
-  #[must_use]
-  pub fn display<'a>(&'a self, ar: &'a StrArena) -> impl fmt::Display + 'a {
-    DisplayPrim { prim: self, ar }
-  }
-}
-
-struct DisplayPrim<'a> {
-  prim: &'a Prim,
-  ar: &'a StrArena,
-}
-
-impl fmt::Display for DisplayPrim<'_> {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    match self.prim {
-      Prim::Null => f.write_str("null"),
-      Prim::Bool(b) => b.fmt(f),
-      Prim::String(s) => {
-        // TODO handle escapes
-        f.write_str("\"")?;
-        self.ar.get(s).fmt(f)?;
-        f.write_str("\"")
-      }
-      Prim::Number(n) => n.fmt(f),
     }
   }
 }
@@ -307,20 +226,6 @@ impl CopyStrRepr {
     match self {
       CopyStrRepr::Builtin(_) => {}
       CopyStrRepr::Idx(idx) => *idx = subst.get_str_idx(*idx),
-    }
-  }
-}
-
-struct DisplayCopyStrRepr<'a> {
-  repr: CopyStrRepr,
-  ar: &'a StrArena,
-}
-
-impl fmt::Display for DisplayCopyStrRepr<'_> {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    match self.repr {
-      CopyStrRepr::Builtin(bs) => bs.as_static_str().fmt(f),
-      CopyStrRepr::Idx(idx) => self.ar.get_idx(idx).fmt(f),
     }
   }
 }
@@ -410,11 +315,6 @@ impl StrArena {
 pub struct Id(CopyStrRepr);
 
 impl Id {
-  #[must_use]
-  pub fn display(self, ar: &StrArena) -> impl fmt::Display + '_ {
-    DisplayCopyStrRepr { repr: self.0, ar }
-  }
-
   pub fn apply(&mut self, subst: &Subst) {
     self.0.apply(subst);
   }

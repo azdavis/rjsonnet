@@ -1,6 +1,9 @@
-//! See [`expr`].
+//! Displaying various things.
 
-use super::{Expr, ExprArena, ExprData, StrArena};
+use super::{
+  BinaryOp, CopyStrRepr, Expr, ExprArena, ExprData, Id, ImportKind, Prim, StrArena, UnaryOp,
+  Visibility,
+};
 use std::fmt;
 
 /// Displays an expression, sort of. Mostly for debugging. (We already derive Debug.)
@@ -120,6 +123,110 @@ impl<'a> fmt::Display for DisplayExpr<'a> {
         let p = p.display();
         write!(f, "{kind} \"{p}\"")
       }
+    }
+  }
+}
+
+impl fmt::Display for ImportKind {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    let s = match self {
+      ImportKind::Code => "import",
+      ImportKind::String => "importstr",
+      ImportKind::Binary => "importbin",
+    };
+    f.write_str(s)
+  }
+}
+
+impl fmt::Display for Visibility {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    let s = match self {
+      Visibility::Default => ":",
+      Visibility::Hidden => "::",
+      Visibility::Visible => ":::",
+    };
+    f.write_str(s)
+  }
+}
+
+impl fmt::Display for BinaryOp {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    let s = match self {
+      BinaryOp::Mul => "*",
+      BinaryOp::Div => "/",
+      BinaryOp::Add => "+",
+      BinaryOp::Sub => "-",
+      BinaryOp::Shl => "<<",
+      BinaryOp::Shr => ">>",
+      BinaryOp::Lt => "<",
+      BinaryOp::LtEq => "<=",
+      BinaryOp::Gt => ">",
+      BinaryOp::GtEq => ">=",
+      BinaryOp::BitAnd => "&",
+      BinaryOp::BitXor => "^",
+      BinaryOp::BitOr => "|",
+    };
+    f.write_str(s)
+  }
+}
+
+impl fmt::Display for UnaryOp {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    let s = match self {
+      UnaryOp::Neg => "-",
+      UnaryOp::Pos => "+",
+      UnaryOp::LogicalNot => "!",
+      UnaryOp::BitNot => "~",
+    };
+    f.write_str(s)
+  }
+}
+
+impl Prim {
+  #[must_use]
+  pub fn display<'a>(&'a self, ar: &'a StrArena) -> impl fmt::Display + 'a {
+    DisplayPrim { prim: self, ar }
+  }
+}
+
+struct DisplayPrim<'a> {
+  prim: &'a Prim,
+  ar: &'a StrArena,
+}
+
+impl fmt::Display for DisplayPrim<'_> {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    match self.prim {
+      Prim::Null => f.write_str("null"),
+      Prim::Bool(b) => b.fmt(f),
+      Prim::String(s) => {
+        // TODO handle escapes
+        f.write_str("\"")?;
+        self.ar.get(s).fmt(f)?;
+        f.write_str("\"")
+      }
+      Prim::Number(n) => n.fmt(f),
+    }
+  }
+}
+
+impl Id {
+  #[must_use]
+  pub fn display(self, ar: &StrArena) -> impl fmt::Display + '_ {
+    DisplayCopyStrRepr { repr: self.0, ar }
+  }
+}
+
+struct DisplayCopyStrRepr<'a> {
+  repr: CopyStrRepr,
+  ar: &'a StrArena,
+}
+
+impl fmt::Display for DisplayCopyStrRepr<'_> {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    match self.repr {
+      CopyStrRepr::Builtin(bs) => bs.as_static_str().fmt(f),
+      CopyStrRepr::Idx(idx) => self.ar.get_idx(idx).fmt(f),
     }
   }
 }
