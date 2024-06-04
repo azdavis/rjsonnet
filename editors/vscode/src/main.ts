@@ -28,7 +28,7 @@ export async function activate(cx: vscode.ExtensionContext) {
     documentSelector: [{ scheme: "file", language: "jsonnet" }],
     initializationOptions: {
       root_dirs: config.get("server.importDirs.extra"),
-      logger_filter: config.get("unstable.server.logFilter"),
+      log_filter: config.get("unstable.server.logFilter"),
       manifest: config.get("server.manifest.enabled"),
     },
   };

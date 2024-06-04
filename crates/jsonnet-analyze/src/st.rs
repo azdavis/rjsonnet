@@ -257,7 +257,7 @@ impl lang_srv_state::State for St {
     }
     // TODO report errors from bad init object
     if let Some(serde_json::Value::Object(obj)) = val {
-      if let Some(filter) = obj.get("logger_filter").and_then(serde_json::Value::as_str) {
+      if let Some(filter) = obj.get("log_filter").and_then(serde_json::Value::as_str) {
         if !filter.is_empty() {
           logger_env = logger_env.default_filter_or(filter.to_owned());
         }
