@@ -169,3 +169,17 @@ local sub(x, y) = x - y;
   )
   .check();
 }
+
+/// TODO fix. this is actually supposed to be allowed (wild)
+#[test]
+#[should_panic = "not in scope: a"]
+fn default_arg_is_other_arg() {
+  JsonnetInput::manifest(
+    r"
+local hm(a, b=a) = a + b;
+hm(5)
+",
+    "10",
+  )
+  .check();
+}
