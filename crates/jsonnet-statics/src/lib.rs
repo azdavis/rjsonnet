@@ -20,7 +20,7 @@ pub struct St {
   /// A store for the types.
   pub tys: ty::Store,
   /// Types of expressions.
-  pub expr_types: FxHashMap<ExprMust, ty::Ty>,
+  pub expr_tys: ty::Exprs,
 }
 
 impl St {
@@ -238,6 +238,6 @@ fn check(st: &mut St, cx: &mut Cx, ars: &Arenas, expr: Expr) -> ty::Ty {
   // NOTE: we CANNOT assert that this always return None. i'm pretty confident it's because of
   // duplication of expressions when lowering array/object comprehensions. i don't think that's a
   // huge problem.
-  st.expr_types.insert(expr, ret);
+  st.expr_tys.insert(expr, ret);
   ret
 }

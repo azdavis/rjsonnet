@@ -6,9 +6,12 @@ mod generated {
 mod display;
 
 use always::{always, convert};
-use jsonnet_expr::{Prim, Str};
+use jsonnet_expr::{ExprMust, Prim, Str};
 use rustc_hash::FxHashMap;
 use std::collections::{BTreeMap, BTreeSet};
+
+/// A map from expr to type.
+pub type Exprs = FxHashMap<ExprMust, Ty>;
 
 /// Data about a type.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]

@@ -26,6 +26,9 @@ pub(crate) struct FileArtifacts {
   pub(crate) syntax: jsonnet_syntax::Root,
   pub(crate) pointers: jsonnet_desugar::Pointers,
   pub(crate) defs: jsonnet_expr::def::Map,
+  /// TODO have one global ty store?
+  pub(crate) tys: jsonnet_statics::ty::Store,
+  pub(crate) expr_tys: jsonnet_statics::ty::Exprs,
 }
 
 /// Errors from a file analyzed in isolation.
@@ -86,6 +89,8 @@ impl IsolatedFile {
         syntax: parse.root,
         pointers: desugar.pointers,
         defs: st.defs,
+        tys: st.tys,
+        expr_tys: st.expr_tys,
       },
       errors: FileErrors {
         lex: lex.errors,
