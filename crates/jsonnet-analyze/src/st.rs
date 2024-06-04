@@ -389,24 +389,17 @@ impl lang_srv_state::State for St {
       let root = arts.syntax.clone().into_ast()?;
       jsonnet_syntax::node_token(root.syntax(), ts)?
     };
-    // have to manually impl `and_then` because `self` is immutably borrowed up to when `arts` is
-    // last used
-    let (show_ty, std_field) = match tok.parent() {
-      None => (None, None),
-      Some(node) => {
-        let ptr = jsonnet_syntax::ast::SyntaxNodePtr::new(&node);
-        let expr = arts.pointers.get_idx(ptr);
-        let a = expr.and_then(|e| {
-          let ty = arts.expr_tys.get(&e)?;
-          let ty = ty.display(&arts.tys, &self.with_fs.artifacts.strings);
-          Some(format!("```ts\n{ty}\n```"))
-        });
-        // TODO expose any errors here?
-        let b = const_eval::get(self, fs, path_id, expr);
-        (a, b)
-      }
-    };
-    let from_std_field = match std_field {
+    let expr = tok.parent().and_then(|node| {
+      let ptr = jsonnet_syntax::ast::SyntaxNodePtr::new(&node);
+      arts.pointers.get_idx(ptr)
+    });
+    let show_ty = expr.and_then(|expr| {
+      let ty = arts.expr_tys.get(&expr)?;
+      let ty = ty.display(&arts.tys, &self.with_fs.artifacts.strings);
+      Some(format!("```ts\n{ty}\n```"))
+    });
+    // TODO expose any errors here?
+    let from_std_field = match const_eval::get(self, fs, path_id, expr) {
       Some(const_eval::ConstEval::Std(Some(x))) => {
         std_lib_doc().get(self.with_fs.artifacts.strings.get(&x)).map(String::as_str)
       }
