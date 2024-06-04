@@ -17,8 +17,10 @@ pub struct St {
   pub errors: Vec<error::Error>,
   /// Any definition sites we could figure out.
   pub defs: jsonnet_expr::def::Map,
-  /// Info about all the types.
+  /// A store for the types.
   pub tys: ty::Store,
+  /// Types of expressions.
+  pub expr_types: FxHashMap<ExprMust, ty::Ty>,
 }
 
 impl St {
@@ -83,10 +85,12 @@ pub fn get(st: &mut St, ars: &Arenas, expr: Expr) {
   }
 }
 
+/// NOTE: don't return early from this except in the degenerate case where the `expr` was `None`.
+/// This is so we can insert the expr's type into the `St` at the end.
 #[allow(clippy::too_many_lines, clippy::single_match_else)]
 fn check(st: &mut St, cx: &mut Cx, ars: &Arenas, expr: Expr) -> ty::Ty {
   let Some(expr) = expr else { return ty::Ty::ANY };
-  match &ars.expr[expr] {
+  let ret = match &ars.expr[expr] {
     ExprData::Prim(prim) => st.tys.get(ty::Data::Prim(prim.clone())),
     ExprData::Object { binds, asserts, fields } => {
       let mut field_tys = BTreeMap::<Str, ty::Ty>::default();
@@ -230,5 +234,10 @@ fn check(st: &mut St, cx: &mut Cx, ars: &Arenas, expr: Expr) -> ty::Ty {
       jsonnet_expr::ImportKind::String => ty::Ty::STRING,
       jsonnet_expr::ImportKind::Binary => ty::Ty::ARRAY_NUMBER,
     },
-  }
+  };
+  // NOTE: we CANNOT assert that this always return None. i'm pretty confident it's because of
+  // duplication of expressions when lowering array/object comprehensions. i don't think that's a
+  // huge problem.
+  st.expr_types.insert(expr, ret);
+  ret
 }
