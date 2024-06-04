@@ -110,10 +110,7 @@ const _: () = assert!(std::mem::size_of::<ExprData>() == 80);
 impl ExprData {
   pub fn apply(&mut self, subst: &Subst) {
     match self {
-      ExprData::Prim(prim) => match prim {
-        Prim::String(s) => s.apply(subst),
-        Prim::Null | Prim::Bool(_) | Prim::Number(_) => {}
-      },
+      ExprData::Prim(prim) => prim.apply(subst),
       ExprData::ObjectComp { id, .. } | ExprData::Id(id) => id.apply(subst),
       ExprData::Local { binds, .. } | ExprData::Call { named: binds, .. } => {
         for (bind, _) in binds {
@@ -362,6 +359,13 @@ pub enum Prim {
 }
 
 impl Prim {
+  pub fn apply(&mut self, subst: &Subst) {
+    match self {
+      Prim::Null | Prim::Bool(_) | Prim::Number(_) => {}
+      Prim::String(s) => s.apply(subst),
+    }
+  }
+
   #[must_use]
   pub fn display<'a>(&'a self, ar: &'a StrArena) -> impl fmt::Display + 'a {
     DisplayPrim { prim: self, ar }
