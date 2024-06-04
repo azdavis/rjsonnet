@@ -10,6 +10,8 @@ use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::hash_map::Entry;
 use std::sync::OnceLock;
 
+const DEBUG: bool = false;
+
 // TODO replace with new std lib goodies when they're in
 type StdLibDoc = FxHashMap<&'static str, String>;
 fn std_lib_doc() -> &'static StdLibDoc {
@@ -420,7 +422,23 @@ impl lang_srv_state::State for St {
       },
       Err(e) => format!("couldn't get all deps: {e}"),
     });
-    let parts = [json.as_deref(), show_ty.as_deref(), from_std_field, tok.kind().token_doc()];
+    let debug = if DEBUG {
+      self.with_fs.get_file_expr(&mut self.file_exprs, fs, path_id).ok().map(|file| {
+        let rel = self.with_fs.relative_to.as_ref().map(paths::CleanPathBuf::as_clean_path);
+        let a = &self.with_fs.artifacts;
+        let e = jsonnet_expr::display_expr(expr, &a.strings, &file.expr_ar, &a.paths, rel);
+        format!("debug:\n```jsonnet\n{e}\n```")
+      })
+    } else {
+      None
+    };
+    let parts = [
+      debug.as_deref(),
+      json.as_deref(),
+      show_ty.as_deref(),
+      from_std_field,
+      tok.kind().token_doc(),
+    ];
     let parts: Vec<_> = parts.into_iter().flatten().collect();
     if parts.is_empty() {
       None
