@@ -55,6 +55,16 @@ pub fn node_range(node: &kind::SyntaxNode) -> rowan::TextRange {
   custom_node_range(node.clone()).unwrap_or_else(|| node.text_range())
 }
 
+/// Returns the parent of the token, with some custom adjustments.
+#[must_use]
+pub fn token_parent(tok: &kind::SyntaxToken) -> Option<kind::SyntaxNode> {
+  let regular = tok.parent()?;
+  if regular.kind() == kind::SyntaxKind::Object {
+    return regular.parent();
+  }
+  Some(regular)
+}
+
 /// Returns the best token in the node at the offset.
 #[must_use]
 pub fn node_token(syntax: &kind::SyntaxNode, offset: rowan::TextSize) -> Option<kind::SyntaxToken> {

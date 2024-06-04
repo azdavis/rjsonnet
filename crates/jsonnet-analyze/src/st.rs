@@ -391,7 +391,7 @@ impl lang_srv_state::State for St {
       let root = arts.syntax.clone().into_ast()?;
       jsonnet_syntax::node_token(root.syntax(), ts)?
     };
-    let expr = tok.parent().and_then(|node| {
+    let expr = jsonnet_syntax::token_parent(&tok).and_then(|node| {
       let ptr = jsonnet_syntax::ast::SyntaxNodePtr::new(&node);
       arts.pointers.get_idx(ptr)
     });
@@ -458,7 +458,7 @@ impl lang_srv_state::State for St {
       let ts = arts.pos_db.text_size_utf16(pos)?;
       let root = arts.syntax.clone().into_ast()?;
       let tok = jsonnet_syntax::node_token(root.syntax(), ts)?;
-      let node = tok.parent()?;
+      let node = jsonnet_syntax::token_parent(&tok)?;
       let ptr = jsonnet_syntax::ast::SyntaxNodePtr::new(&node);
       let expr = arts.pointers.get_idx(ptr);
       // TODO expose any errors here?
