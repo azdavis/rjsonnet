@@ -12,6 +12,7 @@ fn main() {
     (i!("TRUE"), q!(super::Data::Prim(Prim::Bool(true)))),
     (i!("FALSE"), q!(super::Data::Prim(Prim::Bool(false)))),
     (i!("NEVER"), q!(super::Data::Or(BTreeSet::new()))),
+    (i!("OBJECT"), q!(super::Data::Object { known: BTreeMap::new(), other: true })),
     (i!("ARRAY_NUMBER"), q!(super::Data::Array(super::Ty::NUMBER))),
   ];
   let impl_ty_const = things.iter().enumerate().map(|(idx, (name, _))| {
@@ -25,7 +26,7 @@ fn main() {
   let file = file!();
   let all = q! {
     use jsonnet_expr::Prim;
-    use std::collections::BTreeSet;
+    use std::collections::{BTreeMap, BTreeSet};
 
     pub const _GENERATED_BY: &str = #file;
 

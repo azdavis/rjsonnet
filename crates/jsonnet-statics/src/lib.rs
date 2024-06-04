@@ -168,7 +168,15 @@ fn check(st: &mut St, cx: &mut Cx, ars: &Arenas, expr: Expr) -> ty::Ty {
     ExprData::Id(id) => match cx.get(*id) {
       Some(def) => {
         st.note_usage(expr, def);
-        ty::Ty::ANY
+        let is_obj = *id == Id::self_ || *id == Id::super_ || *id == Id::dollar;
+        let is_std = *id == Id::std || *id == Id::std_unutterable;
+        if is_obj || is_std {
+          // TODO do better for std
+          ty::Ty::OBJECT
+        } else {
+          // TODO save types for general ids in cx and use here
+          ty::Ty::ANY
+        }
       }
       None => {
         st.err(expr, error::Kind::NotInScope(*id));
