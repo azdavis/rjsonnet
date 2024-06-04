@@ -17,6 +17,8 @@ pub struct Init {
   ///
   /// Might be slow when enabled.
   pub manifest: bool,
+  /// Whether to output extra debug info.
+  pub debug: bool,
 }
 
 /// Artifacts from a file whose shared artifacts have been combined into the global ones.

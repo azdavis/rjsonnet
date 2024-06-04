@@ -10,8 +10,6 @@ use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::hash_map::Entry;
 use std::sync::OnceLock;
 
-const DEBUG: bool = false;
-
 // TODO replace with new std lib goodies when they're in
 type StdLibDoc = FxHashMap<&'static str, String>;
 fn std_lib_doc() -> &'static StdLibDoc {
@@ -118,6 +116,7 @@ pub struct St {
   import_str: PathMap<String>,
   import_bin: PathMap<Vec<u8>>,
   manifest: bool,
+  debug: bool,
 }
 
 impl St {
@@ -138,6 +137,7 @@ impl St {
       import_str: PathMap::default(),
       import_bin: PathMap::default(),
       manifest: init.manifest,
+      debug: init.debug,
     }
   }
 
@@ -260,6 +260,7 @@ impl lang_srv_state::State for St {
       if let Some(filter) = obj.get("log_filter").and_then(serde_json::Value::as_str) {
         if !filter.is_empty() {
           logger_env = logger_env.default_filter_or(filter.to_owned());
+          init.debug = true;
         }
       }
 
@@ -422,7 +423,7 @@ impl lang_srv_state::State for St {
       },
       Err(e) => format!("couldn't get all deps: {e}"),
     });
-    let debug = if DEBUG {
+    let debug = if self.debug {
       self.with_fs.get_file_expr(&mut self.file_exprs, fs, path_id).ok().map(|file| {
         let rel = self.with_fs.relative_to.as_ref().map(paths::CleanPathBuf::as_clean_path);
         let a = &self.with_fs.artifacts;
