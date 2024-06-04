@@ -24,6 +24,18 @@ impl Error {
     (self.expr, with_expr)
   }
 
+  /// Returns the severity of this.
+  #[must_use]
+  pub fn severity(&self) -> diagnostic::Severity {
+    match self.kind {
+      Kind::NotInScope(_)
+      | Kind::DuplicateFieldName(_)
+      | Kind::DuplicateNamedArg(_)
+      | Kind::DuplicateBinding(_) => diagnostic::Severity::Error,
+      Kind::Unused(_, _) => diagnostic::Severity::Warning,
+    }
+  }
+
   /// Apply a subst.
   pub fn apply(&mut self, subst: &Subst) {
     match &mut self.kind {

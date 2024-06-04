@@ -46,9 +46,13 @@ where
 }
 
 pub(crate) fn diagnostic(d: diagnostic::Diagnostic) -> lsp_types::Diagnostic {
+  let severity = match d.severity {
+    diagnostic::Severity::Warning => lsp_types::DiagnosticSeverity::WARNING,
+    diagnostic::Severity::Error => lsp_types::DiagnosticSeverity::ERROR,
+  };
   lsp_types::Diagnostic {
     range: lsp_range(d.range),
-    severity: Some(lsp_types::DiagnosticSeverity::ERROR),
+    severity: Some(severity),
     code: None,
     code_description: None,
     source: Some("rjsonnet".to_owned()),

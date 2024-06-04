@@ -142,22 +142,24 @@ impl IsolatedFile {
     strings: &'a jsonnet_expr::StrArena,
     root: &'a jsonnet_syntax::kind::SyntaxNode,
   ) -> impl Iterator<Item = Diagnostic> + 'a {
-    std::iter::empty()
+    let all_errors = std::iter::empty()
       .chain(self.errors.lex.iter().map(|err| (err.range(), err.to_string())))
       .chain(self.errors.parse.iter().map(|err| (err.range(), err.to_string())))
       .chain(self.errors.desugar.iter().map(|err| (err.range(), err.to_string())))
+      .map(|(r, m)| (r, m, diagnostic::Severity::Error));
+    all_errors
       .chain(self.errors.statics.iter().map(|err| {
         let (expr, kind) = err.expr_and_def();
         let range = expr_range(&self.artifacts.pointers, root, expr, kind);
-        let err = err.display(strings);
-        (range, err.to_string())
+        let msg = err.display(strings);
+        (range, msg.to_string(), err.severity())
       }))
-      .filter_map(|(range, message)| {
+      .filter_map(|(range, message, severity)| {
         let Some(range) = self.artifacts.pos_db.range_utf16(range) else {
           always!(false, "bad range: {range:?}");
           return None;
         };
-        Some(Diagnostic { range, message })
+        Some(Diagnostic { range, message, severity })
       })
   }
 }

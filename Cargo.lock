@@ -456,6 +456,7 @@ name = "jsonnet-statics"
 version = "0.2.0"
 dependencies = [
  "always",
+ "diagnostic",
  "jsonnet-expr",
  "paths",
  "rustc-hash",

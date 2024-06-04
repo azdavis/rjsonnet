@@ -17,4 +17,5 @@ paths.workspace = true
 rustc-hash.workspace = true
 
 always.path = "../always"
+diagnostic.path = "../diagnostic"
 jsonnet-expr.path = "../jsonnet-expr"
