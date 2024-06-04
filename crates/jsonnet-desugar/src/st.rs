@@ -114,6 +114,12 @@ impl Desugar {
     &'a self,
     relative_to: Option<&'a paths::CleanPath>,
   ) -> impl std::fmt::Display + 'a {
-    jsonnet_expr::display_expr(self.top, &self.arenas.str, &self.arenas.expr, &self.ps, relative_to)
+    jsonnet_expr::display::expr(
+      self.top,
+      &self.arenas.str,
+      &self.arenas.expr,
+      &self.ps,
+      relative_to,
+    )
   }
 }

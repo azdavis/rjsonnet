@@ -427,7 +427,7 @@ impl lang_srv_state::State for St {
       self.with_fs.get_file_expr(&mut self.file_exprs, fs, path_id).ok().map(|file| {
         let rel = self.with_fs.relative_to.as_ref().map(paths::CleanPathBuf::as_clean_path);
         let a = &self.with_fs.artifacts;
-        let e = jsonnet_expr::display_expr(expr, &a.strings, &file.expr_ar, &a.paths, rel);
+        let e = jsonnet_expr::display::expr(expr, &a.strings, &file.expr_ar, &a.paths, rel);
         format!("debug:\n```jsonnet\n{e}\n```")
       })
     } else {
