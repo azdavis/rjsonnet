@@ -68,6 +68,42 @@ impl WithFs {
       Err(error) => Err(PathIoError { path: path.into_path_buf(), error }),
     }
   }
+
+  fn get_file_expr<'fe, F>(
+    &mut self,
+    file_exprs: &'fe mut PathMap<JsonnetFile>,
+    fs: &F,
+    path_id: PathId,
+  ) -> Result<&'fe JsonnetFile>
+  where
+    F: paths::FileSystem,
+  {
+    match file_exprs.entry(path_id) {
+      Entry::Occupied(entry) => Ok(&*entry.into_mut()),
+      Entry::Vacant(entry) => {
+        let file = self.get_one_file(fs, path_id)?;
+        Ok(&*entry.insert(file.eval))
+      }
+    }
+  }
+
+  fn get_file_artifacts<'fa, F>(
+    &mut self,
+    file_artifacts: &'fa mut PathMap<FileArtifacts>,
+    fs: &F,
+    path_id: PathId,
+  ) -> Result<&'fa FileArtifacts>
+  where
+    F: paths::FileSystem,
+  {
+    match file_artifacts.entry(path_id) {
+      Entry::Occupied(entry) => Ok(&*entry.into_mut()),
+      Entry::Vacant(entry) => {
+        let file = self.get_one_file(fs, path_id)?;
+        Ok(&*entry.insert(file.artifacts))
+      }
+    }
+  }
 }
 
 /// The state of analysis.
@@ -193,52 +229,14 @@ impl St {
   where
     F: paths::FileSystem,
   {
-    get_file_expr(&mut self.file_exprs, &mut self.with_fs, fs, path_id)
+    self.with_fs.get_file_expr(&mut self.file_exprs, fs, path_id)
   }
 
   pub(crate) fn get_file_artifacts<F>(&mut self, fs: &F, path_id: PathId) -> Result<&FileArtifacts>
   where
     F: paths::FileSystem,
   {
-    get_artifacts(&mut self.file_artifacts, &mut self.with_fs, fs, path_id)
-  }
-}
-
-fn get_file_expr<'fa, F>(
-  file_exprs: &'fa mut PathMap<JsonnetFile>,
-  with_fs: &mut WithFs,
-  fs: &F,
-  path_id: PathId,
-) -> Result<&'fa JsonnetFile>
-where
-  F: paths::FileSystem,
-{
-  match file_exprs.entry(path_id) {
-    Entry::Occupied(entry) => Ok(&*entry.into_mut()),
-    Entry::Vacant(entry) => {
-      let file = with_fs.get_one_file(fs, path_id)?;
-      Ok(&*entry.insert(file.eval))
-    }
-  }
-}
-
-/// have to pull this out to a free fn so borrow checker can see where the borrows come from more
-/// accurately
-fn get_artifacts<'fa, F>(
-  file_artifacts: &'fa mut PathMap<FileArtifacts>,
-  with_fs: &mut WithFs,
-  fs: &F,
-  path_id: PathId,
-) -> Result<&'fa FileArtifacts>
-where
-  F: paths::FileSystem,
-{
-  match file_artifacts.entry(path_id) {
-    Entry::Occupied(entry) => Ok(&*entry.into_mut()),
-    Entry::Vacant(entry) => {
-      let file = with_fs.get_one_file(fs, path_id)?;
-      Ok(&*entry.insert(file.artifacts))
-    }
+    self.with_fs.get_file_artifacts(&mut self.file_artifacts, fs, path_id)
   }
 }
 
@@ -385,7 +383,7 @@ impl lang_srv_state::State for St {
     F: Sync + Send + paths::FileSystem,
   {
     let path_id = self.path_id(path);
-    let arts = get_artifacts(&mut self.file_artifacts, &mut self.with_fs, fs, path_id).ok()?;
+    let arts = self.with_fs.get_file_artifacts(&mut self.file_artifacts, fs, path_id).ok()?;
     let tok = {
       let ts = arts.pos_db.text_size_utf16(pos)?;
       let root = arts.syntax.clone().into_ast()?;
