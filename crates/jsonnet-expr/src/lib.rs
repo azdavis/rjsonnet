@@ -14,7 +14,6 @@ pub use generated::{std_fn, StdFn};
 pub use la_arena::{Arena, ArenaMap, Idx};
 pub use subst::Subst;
 
-use always::always;
 use generated::{BuiltinStr, NotBuiltinStr};
 use rustc_hash::FxHashMap;
 use std::{collections::hash_map::Entry, fmt};
@@ -359,7 +358,7 @@ pub enum Prim {
   Null,
   Bool(bool),
   String(Str),
-  Number(Number),
+  Number(finite_float::Float),
 }
 
 impl Prim {
@@ -386,121 +385,6 @@ impl fmt::Display for DisplayPrim<'_> {
         f.write_str("\"")
       }
       Prim::Number(n) => n.fmt(f),
-    }
-  }
-}
-/// A finite floating-point number, that is, one that is not NaN or infinity.
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct Number(f64);
-
-impl fmt::Display for Number {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    self.0.fmt(f)
-  }
-}
-
-impl Number {
-  /// Returns positive zero.
-  #[must_use]
-  pub fn positive_zero() -> Self {
-    Self(0.0)
-  }
-
-  /// Returns positive one.
-  #[must_use]
-  pub fn positive_one() -> Self {
-    Self(1.0)
-  }
-
-  /// Returns negative one.
-  #[must_use]
-  pub fn negative_one() -> Self {
-    Self(-1.0)
-  }
-
-  /// Exposes the inner value of this number. It will be finite.
-  #[must_use]
-  pub fn value(&self) -> f64 {
-    self.0
-  }
-
-  /// Delegates to `try_from`, and uses always! to assert the Err case is not hit. But if it is, use
-  /// `0.0` instead.
-  #[must_use]
-  pub fn always_from_f64(n: f64) -> Self {
-    match Self::try_from(n) {
-      Ok(n) => n,
-      Err(e) => {
-        always!(false, "infinite: {e}");
-        Self(0.0)
-      }
-    }
-  }
-}
-
-/// OK because NaN is not allowed
-impl Eq for Number {}
-
-impl PartialOrd for Number {
-  fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-    Some(self.cmp(other))
-  }
-}
-
-impl Ord for Number {
-  fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-    if let Some(x) = self.value().partial_cmp(&other.value()) {
-      x
-    } else {
-      always!(false, "should not be NaN");
-      std::cmp::Ordering::Equal
-    }
-  }
-}
-
-impl TryFrom<f64> for Number {
-  type Error = Infinite;
-
-  fn try_from(value: f64) -> Result<Self, Self::Error> {
-    if value.is_nan() {
-      return Err(Infinite::Nan);
-    }
-    if value.is_infinite() {
-      let inf = if value.is_sign_positive() { Infinite::Pos } else { Infinite::Neg };
-      return Err(inf);
-    }
-    Ok(Self(value))
-  }
-}
-
-impl From<usize> for Number {
-  fn from(value: usize) -> Self {
-    #[allow(clippy::cast_precision_loss)]
-    Self(value as f64)
-  }
-}
-
-impl std::ops::Neg for Number {
-  type Output = Self;
-
-  fn neg(self) -> Self::Output {
-    Self(-self.0)
-  }
-}
-
-#[derive(Debug, Clone, Copy)]
-pub enum Infinite {
-  Nan,
-  Pos,
-  Neg,
-}
-
-impl fmt::Display for Infinite {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    match self {
-      Infinite::Nan => f.write_str("not a number"),
-      Infinite::Pos => f.write_str("positive infinity"),
-      Infinite::Neg => f.write_str("negative infinity"),
     }
   }
 }

@@ -46,7 +46,7 @@ pub enum Kind {
   IncompatibleTypes,
   FieldNotDefined(Str),
   Arg(arg::ErrorKind),
-  Infinite(jsonnet_expr::Infinite),
+  Infinite(finite_float::Infinite),
   User(Str),
   /// should be caught in statics
   NotInScope(Id),

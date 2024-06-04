@@ -1,7 +1,8 @@
 //! JSON values.
 
 use always::always;
-use jsonnet_expr::{Number, Prim, Str};
+use finite_float::Float;
+use jsonnet_expr::{Prim, Str};
 use std::{collections::BTreeMap, fmt};
 
 /// A JSON value.
@@ -24,7 +25,7 @@ impl Val {
           always!(false, "infinite f64");
           0.0
         };
-        let num = Number::always_from_f64(num);
+        let num = Float::always_from_f64(num);
         Self::Prim(Prim::Number(num))
       }
       serde_json::Value::String(str) => {

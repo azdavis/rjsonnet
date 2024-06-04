@@ -99,6 +99,10 @@ if always!(internal_invariant_satisfied()) {
 
 Common types for diagnostics (aka "errors") for programming language implementations.
 
+### `crates/finite-float`
+
+A finite float type (not nan or infinite).
+
 ### `crates/lang-srv`
 
 A generic language server scaffold.

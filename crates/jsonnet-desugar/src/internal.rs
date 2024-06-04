@@ -2,9 +2,8 @@
 
 use crate::st::St;
 use crate::{cx::Cx, error};
-use jsonnet_expr::{
-  BinaryOp, Expr, ExprData, Id, ImportKind, Number, Prim, Str, UnaryOp, Visibility,
-};
+use finite_float::Float;
+use jsonnet_expr::{BinaryOp, Expr, ExprData, Id, ImportKind, Prim, Str, UnaryOp, Visibility};
 use jsonnet_syntax::ast::{self, AstNode as _};
 
 /// TODO only allow super/$ sometimes?
@@ -26,11 +25,11 @@ pub(crate) fn get_expr(st: &mut St, cx: Cx<'_>, expr: Option<ast::Expr>, in_obj:
     ast::Expr::ExprNumber(expr) => {
       let tok = expr.number()?;
       let num: f64 = tok.text().parse().unwrap_or(0.0);
-      let num = match Number::try_from(num) {
+      let num = match Float::try_from(num) {
         Ok(x) => x,
         Err(_) => {
           st.err(&expr, error::Kind::CannotRepresentNumber);
-          Number::positive_zero()
+          Float::positive_zero()
         }
       };
       ExprData::Prim(Prim::Number(num))
@@ -452,7 +451,7 @@ fn get_object_comp(st: &mut St, cx: Cx<'_>, inside: ast::Object, in_obj: bool) -
   let name_binds = vars.iter().enumerate().map(|(idx, (ptr, id))| {
     let idx = always::convert::usize_to_u32(idx);
     let idx = f64::from(idx);
-    let idx = Number::always_from_f64(idx);
+    let idx = Float::always_from_f64(idx);
     let idx = Some(st.expr(*ptr, ExprData::Prim(Prim::Number(idx))));
     let subscript = Some(st.expr(*ptr, ExprData::Subscript { on, idx }));
     (*id, subscript)

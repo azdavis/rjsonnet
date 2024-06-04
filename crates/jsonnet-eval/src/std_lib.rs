@@ -3,7 +3,8 @@
 use crate::error::Result;
 use crate::val::jsonnet::{Array, Env, Val};
 use crate::{error, exec, mk_todo, Cx};
-use jsonnet_expr::{std_fn, Expr, ExprMust, Id, Number, Prim, StdFn, Str};
+use finite_float::Float;
+use jsonnet_expr::{std_fn, Expr, ExprMust, Id, Prim, StdFn, Str};
 use std::cmp::Ordering;
 
 pub(crate) fn get(
@@ -84,7 +85,7 @@ pub(crate) fn get(
         Val::Function(func) => func.params.len(),
         Val::StdFn(std_fn) => std_fn.params_len(),
       };
-      Ok(Val::Prim(Prim::Number(Number::from(ret))))
+      Ok(Val::Prim(Prim::Number(Float::from(ret))))
     }
     StdFn::get => {
       let _ = std_fn::args::get(positional, named, expr)?;
@@ -539,9 +540,9 @@ pub(crate) fn get(
       let arguments = std_fn::args::cmp(positional, named, expr)?;
       exec::cmp_op(expr, cx, env, arguments.a, arguments.b, |ord| {
         let num = match ord {
-          Ordering::Less => Number::negative_one(),
-          Ordering::Equal => Number::positive_zero(),
-          Ordering::Greater => Number::positive_one(),
+          Ordering::Less => Float::negative_one(),
+          Ordering::Equal => Float::positive_zero(),
+          Ordering::Greater => Float::positive_one(),
         };
         Prim::Number(num)
       })
@@ -575,7 +576,7 @@ fn math_op(
       kind: error::Kind::IncompatibleTypes,
     });
   };
-  match Number::try_from(f(x.value())) {
+  match Float::try_from(f(x.value())) {
     Ok(x) => Ok(Val::Prim(Prim::Number(x))),
     Err(e) => {
       Err(error::Error::Exec { expr: arguments.x.unwrap_or(expr), kind: error::Kind::Infinite(e) })

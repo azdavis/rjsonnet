@@ -19,6 +19,7 @@ str-process.workspace = true
 text-size.workspace = true
 
 always.path = "../always"
+finite-float.path = "../finite-float"
 jsonnet-ast-escape.path = "../jsonnet-ast-escape"
 jsonnet-escape.path = "../jsonnet-escape"
 jsonnet-expr.path = "../jsonnet-expr"

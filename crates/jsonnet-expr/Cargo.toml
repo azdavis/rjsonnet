@@ -18,6 +18,7 @@ paths.workspace = true
 rustc-hash.workspace = true
 
 always.path = "../always"
+finite-float.path = "../finite-float"
 
 [build-dependencies]
 proc-macro2.workspace = true

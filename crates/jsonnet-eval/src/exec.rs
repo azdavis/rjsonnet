@@ -4,9 +4,8 @@ use crate::error::{self, Result};
 use crate::val::jsonnet::{Array, Env, Field, Function, Get, Object, StdField, Val};
 use crate::{manifest, mk_todo, std_lib, Cx};
 use always::always;
-use jsonnet_expr::{
-  arg, BinaryOp, Expr, ExprData, ExprMust, Id, Number, Prim, Str, StrArena, Visibility,
-};
+use finite_float::Float;
+use jsonnet_expr::{arg, BinaryOp, Expr, ExprData, ExprMust, Id, Prim, Str, StrArena, Visibility};
 use rustc_hash::FxHashSet;
 use std::cmp::Ordering;
 use std::collections::BTreeMap;
@@ -210,7 +209,7 @@ pub(crate) fn get(cx: Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
           Ok(Val::Prim(Prim::String(str_concat(cx.str_ar, &lhs, &rhs))))
         }
         (Val::Prim(Prim::Number(lhs)), Val::Prim(Prim::Number(rhs))) => {
-          let n = match Number::try_from(lhs.value() + rhs.value()) {
+          let n = match Float::try_from(lhs.value() + rhs.value()) {
             Ok(n) => n,
             Err(inf) => return Err(error::Error::Exec { expr, kind: error::Kind::Infinite(inf) }),
           };
@@ -276,7 +275,7 @@ pub(crate) fn get(cx: Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
             let n = !n;
             #[allow(clippy::cast_precision_loss)]
             let n = n as f64;
-            let n = Number::always_from_f64(n);
+            let n = Float::always_from_f64(n);
             Ok(Val::Prim(Prim::Number(n)))
           } else {
             Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes })
@@ -312,7 +311,7 @@ pub(crate) fn get(cx: Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
   }
 }
 
-fn number_pair(expr: ExprMust, cx: Cx<'_>, env: &Env, a: Expr, b: Expr) -> Result<[Number; 2]> {
+fn number_pair(expr: ExprMust, cx: Cx<'_>, env: &Env, a: Expr, b: Expr) -> Result<[Float; 2]> {
   match (get(cx, env, a)?, get(cx, env, b)?) {
     (Val::Prim(Prim::Number(a)), Val::Prim(Prim::Number(b))) => Ok([a, b]),
     _ => Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes }),
@@ -324,7 +323,7 @@ where
   F: FnOnce(f64, f64) -> f64,
 {
   let [lhs, rhs] = number_pair(expr, cx, env, lhs, rhs)?;
-  let n = match Number::try_from(f(lhs.value(), rhs.value())) {
+  let n = match Float::try_from(f(lhs.value(), rhs.value())) {
     Ok(n) => n,
     Err(inf) => return Err(error::Error::Exec { expr, kind: error::Kind::Infinite(inf) }),
   };
@@ -340,7 +339,7 @@ where
   let [lhs, rhs] = ns.map(|x| x.value() as i64);
   #[allow(clippy::cast_precision_loss)]
   let n = f(lhs, rhs) as f64;
-  let n = match Number::try_from(n) {
+  let n = match Float::try_from(n) {
     Ok(n) => n,
     Err(inf) => return Err(error::Error::Exec { expr, kind: error::Kind::Infinite(inf) }),
   };

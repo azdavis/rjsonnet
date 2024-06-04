@@ -18,6 +18,7 @@ rustc-hash.workspace = true
 serde_json.workspace = true
 
 always.path = "../always"
+finite-float.path = "../finite-float"
 jsonnet-expr.path = "../jsonnet-expr"
 
 [features]

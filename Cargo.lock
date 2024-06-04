@@ -272,6 +272,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "finite-float"
+version = "0.3.0"
+dependencies = [
+ "always",
+]
+
+[[package]]
 name = "flate2"
 version = "1.0.29"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -378,6 +385,7 @@ name = "jsonnet-desugar"
 version = "0.3.0"
 dependencies = [
  "always",
+ "finite-float",
  "jsonnet-ast-escape",
  "jsonnet-escape",
  "jsonnet-expr",
@@ -401,6 +409,7 @@ name = "jsonnet-eval"
 version = "0.3.0"
 dependencies = [
  "always",
+ "finite-float",
  "jsonnet-expr",
  "paths",
  "rustc-hash",
@@ -412,6 +421,7 @@ name = "jsonnet-expr"
 version = "0.3.0"
 dependencies = [
  "always",
+ "finite-float",
  "la-arena",
  "paths",
  "proc-macro2",
