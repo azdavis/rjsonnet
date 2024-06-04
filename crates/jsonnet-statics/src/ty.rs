@@ -6,7 +6,7 @@ mod generated {
 mod display;
 
 use always::{always, convert};
-use jsonnet_expr::{ExprMust, Prim, Str};
+use jsonnet_expr::{ExprMust, Prim, Str, Subst};
 use rustc_hash::FxHashMap;
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -50,6 +50,22 @@ pub enum Data {
   Or(BTreeSet<Ty>),
 }
 
+impl Data {
+  fn apply(&mut self, subst: &Subst) {
+    match self {
+      Data::Prim(prim) => prim.apply(subst),
+      Data::Any
+      | Data::Bool
+      | Data::String
+      | Data::Number
+      | Data::Array(_)
+      | Data::Object { .. }
+      | Data::Fn(_, _)
+      | Data::Or(_) => {}
+    }
+  }
+}
+
 /// A type.
 ///
 /// Internally represented as an index that is cheap to copy.
@@ -58,6 +74,16 @@ pub enum Data {
 /// b's data.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Ty(u32);
+
+impl Ty {
+  fn from_usize(n: usize) -> Self {
+    Self(convert::usize_to_u32(n))
+  }
+
+  fn to_usize(self) -> usize {
+    convert::u32_to_usize(self.0)
+  }
+}
 
 /// A store of types.
 ///
@@ -75,7 +101,7 @@ impl Store {
     if let Some(&ret) = self.data_to_idx.get(&data) {
       return ret;
     }
-    let ret = Ty(convert::usize_to_u32(self.idx_to_data.len()));
+    let ret = Ty::from_usize(self.idx_to_data.len());
     self.idx_to_data.push(data.clone());
     always!(self.data_to_idx.insert(data, ret).is_none());
     ret
@@ -84,12 +110,25 @@ impl Store {
   /// TODO use
   #[allow(dead_code)]
   pub(crate) fn data(&self, ty: Ty) -> &Data {
-    match self.idx_to_data.get(convert::u32_to_usize(ty.0)) {
+    match self.idx_to_data.get(ty.to_usize()) {
       None => {
         always!(false, "no ty data for {ty:?}");
         &Data::Any
       }
       Some(x) => x,
     }
+  }
+
+  /// Applies a subst to this.
+  pub fn apply(&mut self, subst: &Subst) {
+    for data in &mut self.idx_to_data {
+      data.apply(subst);
+    }
+    self.data_to_idx = self
+      .idx_to_data
+      .iter()
+      .enumerate()
+      .map(|(idx, data)| (data.clone(), Ty::from_usize(idx)))
+      .collect();
   }
 }

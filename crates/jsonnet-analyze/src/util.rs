@@ -110,6 +110,7 @@ impl IsolatedFile {
     for def in ret.artifacts.defs.values_mut() {
       def.apply(&subst);
     }
+    ret.artifacts.tys.apply(&subst);
     ret
   }
 
