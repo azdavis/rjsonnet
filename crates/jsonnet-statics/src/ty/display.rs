@@ -10,19 +10,20 @@ impl Ty {
   /// Meant to be somewhat similar to how TypeScript does it.
   #[must_use]
   pub fn display<'a>(self, store: &'a Store, str_ar: &'a StrArena) -> impl fmt::Display + 'a {
-    TyDisplay { ty: self, stuff: Stuff { store, str_ar, prec: Prec::Min } }
+    TyDisplay { ty: self, prec: Prec::Min, stuff: Stuff { store, str_ar } }
   }
 }
 
 #[derive(Clone, Copy)]
 struct TyDisplay<'a> {
   ty: Ty,
+  prec: Prec,
   stuff: Stuff<'a>,
 }
 
 impl<'a> TyDisplay<'a> {
   fn with(self, ty: Ty, prec: Prec) -> Self {
-    Self { ty, stuff: self.stuff.with_prec(prec) }
+    Self { ty, prec, ..self }
   }
 }
 
@@ -40,11 +41,8 @@ impl<'a> fmt::Display for TyDisplay<'a> {
       }
       Data::Object { known, other } => {
         f.write_str("{")?;
-        let mut iter = known.iter().map(|(key, ty)| FieldDisplay {
-          key,
-          ty: *ty,
-          stuff: self.stuff.with_prec(Prec::Min),
-        });
+        let mut iter =
+          known.iter().map(|(key, ty)| FieldDisplay { key, ty: *ty, stuff: self.stuff });
         if let Some(field) = iter.next() {
           f.write_str(" ")?;
           field.fmt(f)?;
@@ -58,7 +56,7 @@ impl<'a> fmt::Display for TyDisplay<'a> {
         f.write_str("}")
       }
       Data::Fn(params, ret) => {
-        let needs_paren = self.stuff.prec > Prec::Min;
+        let needs_paren = self.prec > Prec::Min;
         if needs_paren {
           f.write_str("(")?;
         }
@@ -72,7 +70,7 @@ impl<'a> fmt::Display for TyDisplay<'a> {
           ty.fmt(f)?;
         }
         f.write_str(") => ")?;
-        self.with(*ret, self.stuff.prec).fmt(f)?;
+        self.with(*ret, self.prec).fmt(f)?;
         if needs_paren {
           f.write_str(")")?;
         }
@@ -81,7 +79,7 @@ impl<'a> fmt::Display for TyDisplay<'a> {
       Data::Or(tys) => {
         let mut iter = tys.iter().map(|&ty| self.with(ty, Prec::Or));
         let Some(ty) = iter.next() else { return f.write_str("never") };
-        let needs_paren = self.stuff.prec > Prec::Or;
+        let needs_paren = self.prec > Prec::Or;
         if needs_paren {
           f.write_str("(")?;
         }
@@ -110,7 +108,7 @@ impl<'a> fmt::Display for FieldDisplay<'a> {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     self.stuff.str_ar.get(self.key).fmt(f)?;
     f.write_str(": ")?;
-    TyDisplay { ty: self.ty, stuff: self.stuff }.fmt(f)
+    TyDisplay { ty: self.ty, prec: Prec::Min, stuff: self.stuff }.fmt(f)
   }
 }
 
@@ -119,13 +117,6 @@ impl<'a> fmt::Display for FieldDisplay<'a> {
 struct Stuff<'a> {
   store: &'a Store,
   str_ar: &'a StrArena,
-  prec: Prec,
-}
-
-impl<'a> Stuff<'a> {
-  fn with_prec(self, prec: Prec) -> Self {
-    Self { prec, ..self }
-  }
 }
 
 /// Precedence when printing a type.
