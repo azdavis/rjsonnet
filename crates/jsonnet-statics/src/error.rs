@@ -41,13 +41,12 @@ impl Error {
       // TODO: make some/all type-checker warnings errors? (once we have more confidence)
       Kind::Unused(_, _)
       | Kind::Incompatible(_, _)
-      | Kind::MissingField
-      | Kind::NotEnoughParams
-      | Kind::MismatchedParamNames
-      | Kind::WantOptionalParamGotRequired
-      | Kind::ExtraRequiredParam
-      | Kind::AllAlternativesIncompatible
-      | Kind::OccursCheck => diagnostic::Severity::Warning,
+      | Kind::MissingField(_)
+      | Kind::NotEnoughParams(_, _)
+      | Kind::MismatchedParamNames(_, _)
+      | Kind::WantOptionalParamGotRequired(_)
+      | Kind::ExtraRequiredParam(_)
+      | Kind::OccursCheck(_) => diagnostic::Severity::Warning,
     }
   }
 
@@ -57,18 +56,17 @@ impl Error {
       Kind::NotInScope(id)
       | Kind::DuplicateNamedArg(id)
       | Kind::DuplicateBinding(id)
-      | Kind::Unused(id, _) => {
+      | Kind::Unused(id, _)
+      | Kind::WantOptionalParamGotRequired(id)
+      | Kind::ExtraRequiredParam(id) => {
         id.apply(subst);
       }
-      Kind::DuplicateFieldName(str) => str.apply(subst),
-      Kind::Incompatible(_, _)
-      | Kind::MissingField
-      | Kind::NotEnoughParams
-      | Kind::MismatchedParamNames
-      | Kind::WantOptionalParamGotRequired
-      | Kind::ExtraRequiredParam
-      | Kind::AllAlternativesIncompatible
-      | Kind::OccursCheck => {}
+      Kind::DuplicateFieldName(str) | Kind::MissingField(str) => str.apply(subst),
+      Kind::MismatchedParamNames(a, b) => {
+        a.apply(subst);
+        b.apply(subst);
+      }
+      Kind::Incompatible(_, _) | Kind::NotEnoughParams(_, _) | Kind::OccursCheck(_) => {}
     }
   }
 }
@@ -81,13 +79,12 @@ pub(crate) enum Kind {
   DuplicateBinding(Id),
   Unused(Id, def::ExprDefKind),
   Incompatible(ty::Ty, ty::Ty),
-  MissingField,
-  NotEnoughParams,
-  MismatchedParamNames,
-  WantOptionalParamGotRequired,
-  ExtraRequiredParam,
-  AllAlternativesIncompatible,
-  OccursCheck,
+  MissingField(Str),
+  NotEnoughParams(usize, usize),
+  MismatchedParamNames(Id, Id),
+  WantOptionalParamGotRequired(Id),
+  ExtraRequiredParam(Id),
+  OccursCheck(ty::Ty),
 }
 
 struct Display<'a> {
@@ -113,19 +110,36 @@ impl fmt::Display for Display<'_> {
         let want = want.display(self.store, self.subst, self.str_ar);
         let got = got.display(self.store, self.subst, self.str_ar);
         f.write_str("incompatible types\n")?;
-        writeln!(f, "  expected {want}")?;
-        write!(f, "     found {got}")
+        writeln!(f, "  expected `{want}`")?;
+        write!(f, "     found `{got}`")
       }
-      // TODO improve these messages
-      Kind::MissingField => f.write_str("missing field"),
-      Kind::NotEnoughParams => f.write_str("not enough parameters"),
-      Kind::MismatchedParamNames => f.write_str("mismatched parameter names"),
-      Kind::WantOptionalParamGotRequired => {
-        f.write_str("wanted an optional parameter, got a required one")
+      Kind::MissingField(s) => write!(f, "missing field: `{}`", self.str_ar.get(s)),
+      Kind::NotEnoughParams(want, got) => {
+        f.write_str("not enough parameters\n")?;
+        writeln!(f, "  expected at least {want}")?;
+        write!(f, "   found only up to {got}")
       }
-      Kind::ExtraRequiredParam => f.write_str("extra required parameter"),
-      Kind::AllAlternativesIncompatible => f.write_str("all union alternatives incompatible"),
-      Kind::OccursCheck => f.write_str("occurs check: meta var occurs inside its own solution"),
+      Kind::MismatchedParamNames(want, got) => {
+        f.write_str("mismatched parameter names\n")?;
+        let want = want.display(self.str_ar);
+        let got = got.display(self.str_ar);
+        writeln!(f, "  expected `{want}`")?;
+        write!(f, "     found `{got}`")
+      }
+      Kind::WantOptionalParamGotRequired(id) => {
+        let id = id.display(self.str_ar);
+        write!(f, "wanted an optional parameter, got a required one: `{id}`")
+      }
+      Kind::ExtraRequiredParam(id) => {
+        let id = id.display(self.str_ar);
+        write!(f, "extra required parameter: `{id}`")
+      }
+      Kind::OccursCheck(ty) => {
+        // TODO improve this message
+        f.write_str("occurs check: type variable occurs inside its own solution\n")?;
+        let ty = ty.display(self.store, self.subst, self.str_ar);
+        write!(f, "  type: `{ty}`")
+      }
     }
   }
 }

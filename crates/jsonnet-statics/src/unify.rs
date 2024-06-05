@@ -51,7 +51,7 @@ pub(crate) fn get(st: &mut St<'_>, store: &ty::Store, want: ty::Ty, got: ty::Ty)
     (ty::Data::Object(want), ty::Data::Object(got)) => {
       for (name, want) in want {
         let Some(got) = got.get(name) else {
-          st.err(error::Kind::MissingField);
+          st.err(error::Kind::MissingField(name.clone()));
           continue;
         };
         get(st, store, *want, *got);
@@ -60,22 +60,22 @@ pub(crate) fn get(st: &mut St<'_>, store: &ty::Store, want: ty::Ty, got: ty::Ty)
     }
     (ty::Data::Fn(want), ty::Data::Fn(got)) => {
       if want.params.len() > got.params.len() {
-        st.err(error::Kind::NotEnoughParams);
+        st.err(error::Kind::NotEnoughParams(want.params.len(), got.params.len()));
       }
       for (want, got) in want.params.iter().zip(got.params.iter()) {
         if want.id != got.id {
-          st.err(error::Kind::MismatchedParamNames);
+          st.err(error::Kind::MismatchedParamNames(want.id, got.id));
         }
         // if we wanted a required argument, we can get either a required or optional argument.
         if !want.required && got.required {
-          st.err(error::Kind::WantOptionalParamGotRequired);
+          st.err(error::Kind::WantOptionalParamGotRequired(want.id));
         }
         // ah yes, the famous contra-variance.
         get(st, store, got.ty, want.ty);
       }
       for got in got.params.iter().skip(want.params.len()) {
         if got.required {
-          st.err(error::Kind::ExtraRequiredParam);
+          st.err(error::Kind::ExtraRequiredParam(got.id));
         }
       }
       get(st, store, want.ret, got.ret);
@@ -89,9 +89,9 @@ pub(crate) fn get(st: &mut St<'_>, store: &ty::Store, want: ty::Ty, got: ty::Ty)
         get(st, store, want, got);
       }
     }
-    (ty::Data::Union(want), _) => {
+    (ty::Data::Union(tys), _) => {
       // got may be ANY of the things want may be.
-      for &want in want {
+      for &want in tys {
         let m = st.mark();
         get(st, store, want, got);
         if !st.discard_after(m) {
@@ -99,7 +99,7 @@ pub(crate) fn get(st: &mut St<'_>, store: &ty::Store, want: ty::Ty, got: ty::Ty)
           return;
         }
       }
-      st.err(error::Kind::AllAlternativesIncompatible);
+      st.err(error::Kind::Incompatible(want, got));
     }
     _ => st.err(error::Kind::Incompatible(want, got)),
   }
@@ -112,7 +112,7 @@ fn get_meta(st: &mut St<'_>, store: &ty::Store, meta: ty::Meta, want: ty::Ty) {
     }
   }
   if occurs_check(store, st.subst, meta, want) {
-    st.err(error::Kind::OccursCheck);
+    st.err(error::Kind::OccursCheck(want));
     return;
   }
   st.subst.insert(meta, ty::MetaSubst::Ty(want));
