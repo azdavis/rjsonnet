@@ -9,6 +9,10 @@ use jsonnet_expr::Prim;
 enum Error {
   Incompatible,
   MissingField,
+  NotEnoughParams,
+  MismatchedParamNames,
+  WantOptionalParamGotRequired,
+  ExtraRequiredParam,
 }
 
 struct St {
@@ -46,7 +50,27 @@ fn get(st: &mut St, store: &ty::Store, want: ty::Ty, got: ty::Ty) {
       }
       // ignore the fields that ARE in `got` but are NOT in `want`.
     }
-    (ty::Data::Fn(_), ty::Data::Fn(_)) => todo!("function types"),
+    (ty::Data::Fn(want), ty::Data::Fn(got)) => {
+      if want.params.len() < got.params.len() {
+        st.err(Error::NotEnoughParams);
+      }
+      for (want, got) in want.params.iter().zip(got.params.iter()) {
+        if want.id != got.id {
+          st.err(Error::MismatchedParamNames);
+        }
+        if !want.required && got.required {
+          st.err(Error::WantOptionalParamGotRequired);
+        }
+        // ah yes, the famous contra-variance.
+        get(st, store, got.ty, want.ty);
+      }
+      for got in got.params.iter().skip(want.params.len()) {
+        if got.required {
+          st.err(Error::ExtraRequiredParam);
+        }
+      }
+      get(st, store, want.ret, got.ret);
+    }
     (ty::Data::Meta(m), ty) | (ty, ty::Data::Meta(m)) => {
       if let ty::Data::Meta(m2) = ty {
         if m == m2 {
