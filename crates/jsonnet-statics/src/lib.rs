@@ -37,6 +37,7 @@ impl St {
 
 #[derive(Debug)]
 struct DefinedId {
+  ty: ty::Ty,
   def: Def,
   usages: usize,
 }
@@ -49,14 +50,14 @@ struct Cx {
 }
 
 impl Cx {
-  fn define(&mut self, id: Id, def: Def) {
-    self.store.entry(id).or_default().push(DefinedId { def, usages: 0 });
+  fn define(&mut self, id: Id, ty: ty::Ty, def: Def) {
+    self.store.entry(id).or_default().push(DefinedId { ty, def, usages: 0 });
   }
 
-  fn get(&mut self, id: Id) -> Option<Def> {
+  fn get(&mut self, id: Id) -> Option<(ty::Ty, Def)> {
     let in_scope = self.store.get_mut(&id)?.last_mut()?;
     in_scope.usages += 1;
-    Some(in_scope.def)
+    Some((in_scope.ty, in_scope.def))
   }
 }
 
@@ -75,8 +76,9 @@ fn undefine(cx: &mut Cx, st: &mut St, id: Id) {
 /// Performs the checks.
 pub fn get(st: &mut St, ars: &Arenas, expr: Expr) {
   let mut cx = Cx::default();
-  cx.define(Id::std, Def::Std);
-  cx.define(Id::std_unutterable, Def::Std);
+  // TODO improve std types
+  cx.define(Id::std, ty::Ty::OBJECT, Def::Std);
+  cx.define(Id::std_unutterable, ty::Ty::OBJECT, Def::Std);
   check(st, &mut cx, ars, expr);
   undefine(&mut cx, st, Id::std);
   undefine(&mut cx, st, Id::std_unutterable);
@@ -102,10 +104,10 @@ fn check(st: &mut St, cx: &mut Cx, ars: &Arenas, expr: Expr) -> ty::Ty {
           st.err(key, error::Kind::DuplicateFieldName(s.clone()));
         }
       }
-      cx.define(Id::self_, Def::KwIdent);
-      cx.define(Id::super_, Def::KwIdent);
+      cx.define(Id::self_, ty::Ty::OBJECT, Def::KwIdent);
+      cx.define(Id::super_, ty::Ty::OBJECT, Def::KwIdent);
       for (idx, &(lhs, _)) in binds.iter().enumerate() {
-        cx.define(lhs, Def::Expr(expr, def::ExprDefKind::ObjectLocal(idx)));
+        cx.define(lhs, ty::Ty::ANY, Def::Expr(expr, def::ExprDefKind::ObjectLocal(idx)));
       }
       for &(_, expr) in binds {
         check(st, cx, ars, expr);
@@ -132,10 +134,10 @@ fn check(st: &mut St, cx: &mut Cx, ars: &Arenas, expr: Expr) -> ty::Ty {
     }
     ExprData::ObjectComp { name, body, id, ary } => {
       check(st, cx, ars, *ary);
-      cx.define(*id, Def::Expr(expr, def::ExprDefKind::ObjectCompId));
+      cx.define(*id, ty::Ty::ANY, Def::Expr(expr, def::ExprDefKind::ObjectCompId));
       check(st, cx, ars, *name);
-      cx.define(Id::self_, Def::KwIdent);
-      cx.define(Id::super_, Def::KwIdent);
+      cx.define(Id::self_, ty::Ty::OBJECT, Def::KwIdent);
+      cx.define(Id::super_, ty::Ty::OBJECT, Def::KwIdent);
       check(st, cx, ars, *body);
       undefine(cx, st, *id);
       undefine(cx, st, Id::self_);
@@ -170,17 +172,9 @@ fn check(st: &mut St, cx: &mut Cx, ars: &Arenas, expr: Expr) -> ty::Ty {
       ty::Ty::ANY
     }
     ExprData::Id(id) => match cx.get(*id) {
-      Some(def) => {
+      Some((ty, def)) => {
         st.note_usage(expr, def);
-        let is_obj = *id == Id::self_ || *id == Id::super_ || *id == Id::dollar;
-        let is_std = *id == Id::std || *id == Id::std_unutterable;
-        if is_obj || is_std {
-          // TODO do better for std
-          ty::Ty::OBJECT
-        } else {
-          // TODO save types for general ids in cx and use here
-          ty::Ty::ANY
-        }
+        ty
       }
       None => {
         st.err(expr, error::Kind::NotInScope(*id));
@@ -190,7 +184,7 @@ fn check(st: &mut St, cx: &mut Cx, ars: &Arenas, expr: Expr) -> ty::Ty {
     ExprData::Local { binds, body } => {
       let mut bound_names = FxHashSet::<Id>::default();
       for (idx, &(bind, rhs)) in binds.iter().enumerate() {
-        cx.define(bind, Def::Expr(expr, def::ExprDefKind::LocalBind(idx)));
+        cx.define(bind, ty::Ty::ANY, Def::Expr(expr, def::ExprDefKind::LocalBind(idx)));
         if !bound_names.insert(bind) {
           st.err(rhs.unwrap_or(expr), error::Kind::DuplicateBinding(bind));
         }
@@ -207,7 +201,7 @@ fn check(st: &mut St, cx: &mut Cx, ars: &Arenas, expr: Expr) -> ty::Ty {
     ExprData::Function { params, body } => {
       let mut bound_names = FxHashSet::<Id>::default();
       for (idx, &(bind, rhs)) in params.iter().enumerate() {
-        cx.define(bind, Def::Expr(expr, def::ExprDefKind::FnParam(idx)));
+        cx.define(bind, ty::Ty::ANY, Def::Expr(expr, def::ExprDefKind::FnParam(idx)));
         if !bound_names.insert(bind) {
           st.err(rhs.flatten().unwrap_or(expr), error::Kind::DuplicateBinding(bind));
         }
