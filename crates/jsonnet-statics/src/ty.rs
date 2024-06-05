@@ -15,7 +15,7 @@ pub type Exprs = FxHashMap<ExprMust, Ty>;
 
 /// Data about a type.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum Data {
+pub(crate) enum Data {
   /// Anything at all.
   ///
   /// This is like `any` in TypeScript and `T.untyped` in Sorbet (Ruby type-checker). It is BOTH a
@@ -72,7 +72,7 @@ impl Data {
 
 /// A function parameter.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct Param {
+pub(crate) struct Param {
   pub(crate) id: Id,
   pub(crate) ty: Ty,
   pub(crate) required: bool,
@@ -119,9 +119,7 @@ impl Store {
     ret
   }
 
-  /// TODO use
-  #[allow(dead_code)]
-  pub(crate) fn data(&self, ty: Ty) -> &Data {
+  fn data(&self, ty: Ty) -> &Data {
     match self.idx_to_data.get(ty.to_usize()) {
       None => {
         always!(false, "no ty data for {ty:?}");
