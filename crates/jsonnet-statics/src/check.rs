@@ -139,7 +139,8 @@ pub(crate) fn get(st: &mut st::St<'_>, ars: &Arenas, expr: Expr) -> ty::Ty {
       st.get_ty(ty::Data::Fn(fn_ty))
     }
     ExprData::If { cond, yes, no } => {
-      get(st, ars, *cond);
+      let cond_ty = get(st, ars, *cond);
+      st.unify(cond.unwrap_or(expr), ty::Ty::BOOL, cond_ty);
       get(st, ars, *yes);
       get(st, ars, *no);
       ty::Ty::ANY

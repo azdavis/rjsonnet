@@ -1,8 +1,5 @@
 //! Unification.
 
-// TODO remove
-#![allow(unused)]
-
 use crate::{error, ty};
 use drop_bomb::DebugDropBomb;
 use jsonnet_expr::Prim;
