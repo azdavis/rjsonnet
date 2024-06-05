@@ -195,6 +195,16 @@ local hm = function(a, b)
 assert hm(1, 2) == 9;
 ```
 
+You can also use syntax sugar with `local` when binding the function to a variable, instead of using the `function` keyword.
+
+```jsonnet
+local hm(a, b) =
+  local c = a + b;
+  c * c;
+
+assert hm(1, 2) == 9;
+```
+
 ## `assert`
 
 Begin an assert expression.
@@ -247,6 +257,16 @@ Create some bindings (usually just one).
 ```jsonnet
 local three = 1 + 2;
 assert three + 4 == 7;
+```
+
+You can also use syntax sugar with `local` when binding a function to a variable, instead of using the `function` keyword.
+
+```jsonnet
+local hm(a, b) =
+  local c = a + b;
+  c * c;
+
+assert hm(1, 2) == 9;
 ```
 
 The bindings, separated by `,`, may be mutually recursive.
