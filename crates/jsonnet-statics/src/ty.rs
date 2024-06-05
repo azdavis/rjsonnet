@@ -72,7 +72,7 @@ pub(crate) type Object = BTreeMap<Str, Ty>;
 pub(crate) type Union = BTreeSet<Ty>;
 
 /// A meta type variable, to be solved by type inference.
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub(crate) struct Meta(uniq::Uniq);
 
 /// A function type.

@@ -4,8 +4,10 @@
 #![allow(unused)]
 
 use crate::ty;
+use always::always;
 use drop_bomb::DebugDropBomb;
-use jsonnet_expr::Prim;
+use jsonnet_expr::{Prim, Str};
+use rustc_hash::FxHashMap;
 
 enum Error {
   Incompatible,
@@ -15,10 +17,12 @@ enum Error {
   WantOptionalParamGotRequired,
   ExtraRequiredParam,
   AllAlternativesIncompatible,
+  OccursCheck,
 }
 
 struct St {
   errors: Vec<Error>,
+  subst: FxHashMap<ty::Meta, MetaSubst>,
 }
 
 impl St {
@@ -42,6 +46,10 @@ impl St {
 struct Marker {
   bomb: DebugDropBomb,
   len: usize,
+}
+
+enum MetaSubst {
+  Ty(ty::Ty),
 }
 
 /// this checks and unifies `want` is compatible with `got`, but allows `got` to be more specific
@@ -91,14 +99,8 @@ fn get(st: &mut St, store: &ty::Store, want: ty::Ty, got: ty::Ty) {
       }
       get(st, store, want.ret, got.ret);
     }
-    (ty::Data::Meta(m), ty) | (ty, ty::Data::Meta(m)) => {
-      if let ty::Data::Meta(m2) = ty {
-        if m == m2 {
-          return;
-        }
-      }
-      todo!("unify m with ty, setting a subst somewhere")
-    }
+    (ty::Data::Meta(m), _) => get_meta(st, store, *m, got),
+    (_, ty::Data::Meta(m)) => get_meta(st, store, *m, want),
     // need to put this first
     (_, ty::Data::Union(got)) => {
       // want must be ALL of the things got may be.
@@ -119,5 +121,33 @@ fn get(st: &mut St, store: &ty::Store, want: ty::Ty, got: ty::Ty) {
       st.err(Error::AllAlternativesIncompatible);
     }
     _ => st.err(Error::Incompatible),
+  }
+}
+
+fn get_meta(st: &mut St, store: &ty::Store, meta: ty::Meta, want: ty::Ty) {
+  if let ty::Data::Meta(m) = store.data(want) {
+    if meta == *m {
+      return;
+    }
+  }
+  if occurs_check(store, meta, want) {
+    st.err(Error::OccursCheck);
+    return;
+  }
+  always!(st.subst.insert(meta, MetaSubst::Ty(want)).is_none());
+}
+
+fn occurs_check(store: &ty::Store, meta: ty::Meta, ty: ty::Ty) -> bool {
+  match store.data(ty) {
+    ty::Data::Any | ty::Data::Bool | ty::Data::String | ty::Data::Number | ty::Data::Prim(_) => {
+      false
+    }
+    ty::Data::Array(ty) => occurs_check(store, meta, *ty),
+    ty::Data::Object(fields) => fields.values().any(|&ty| occurs_check(store, meta, ty)),
+    ty::Data::Fn(func) => std::iter::once(func.ret)
+      .chain(func.params.iter().map(|param| param.ty))
+      .any(|ty| occurs_check(store, meta, ty)),
+    ty::Data::Meta(m) => meta == *m,
+    ty::Data::Union(tys) => tys.iter().any(|&ty| occurs_check(store, meta, ty)),
   }
 }
