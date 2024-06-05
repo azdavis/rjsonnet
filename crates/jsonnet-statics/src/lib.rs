@@ -2,6 +2,7 @@
 
 pub mod error;
 pub mod ty;
+mod unify;
 
 use std::collections::BTreeMap;
 

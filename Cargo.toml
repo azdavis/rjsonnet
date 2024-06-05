@@ -37,6 +37,7 @@ str-process.git = "https://github.com/azdavis/language-util.git"
 syntax-gen.git = "https://github.com/azdavis/language-util.git"
 text-pos.git = "https://github.com/azdavis/language-util.git"
 token.git = "https://github.com/azdavis/language-util.git"
+uniq.git = "https://github.com/azdavis/language-util.git"
 write-rs-tokens.git = "https://github.com/azdavis/language-util.git"
 
 [workspace.lints.rust]

@@ -75,6 +75,7 @@ impl<'a> fmt::Display for TyDisplay<'a> {
         }
         Ok(())
       }
+      Data::Meta(_) => f.write_str("_"),
       Data::Or(tys) => {
         let mut iter = tys.iter().map(|&ty| self.with(ty, Prec::Or));
         let Some(ty) = iter.next() else { return f.write_str("never") };

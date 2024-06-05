@@ -40,6 +40,11 @@ pub(crate) enum Data {
   Object(BTreeMap<Str, Ty>),
   /// A function type, with some arguments and a return type.
   Fn(Fn),
+  /// A meta type variable.
+  ///
+  /// TODO use
+  #[allow(dead_code)]
+  Meta(Meta),
   /// A union type.
   ///
   /// The empty union can never exist. This type is sometimes called "never" or "void".
@@ -57,6 +62,7 @@ impl Data {
       | Data::Array(_)
       | Data::Object(_)
       | Data::Fn(_)
+      | Data::Meta(_)
       | Data::Or(_) => {}
     }
   }
@@ -124,7 +130,7 @@ impl Store {
     ret
   }
 
-  fn data(&self, ty: Ty) -> &Data {
+  pub(crate) fn data(&self, ty: Ty) -> &Data {
     match self.idx_to_data.get(ty.to_usize()) {
       None => {
         always!(false, "no ty data for {ty:?}");

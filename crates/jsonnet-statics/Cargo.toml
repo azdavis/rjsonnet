@@ -15,6 +15,7 @@ doctest = false
 [dependencies]
 paths.workspace = true
 rustc-hash.workspace = true
+uniq.workspace = true
 
 always.path = "../always"
 diagnostic.path = "../diagnostic"
