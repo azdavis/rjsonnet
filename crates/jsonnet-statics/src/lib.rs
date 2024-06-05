@@ -36,7 +36,7 @@ impl St {
 }
 
 #[derive(Debug)]
-struct TrackedDef {
+struct DefinedId {
   def: Def,
   usages: usize,
 }
@@ -45,30 +45,30 @@ struct TrackedDef {
 #[derive(Debug, Default)]
 struct Cx {
   /// This is a vec because things go in and out of scope in stacks.
-  store: FxHashMap<Id, Vec<TrackedDef>>,
+  store: FxHashMap<Id, Vec<DefinedId>>,
 }
 
 impl Cx {
   fn define(&mut self, id: Id, def: Def) {
-    self.store.entry(id).or_default().push(TrackedDef { def, usages: 0 });
+    self.store.entry(id).or_default().push(DefinedId { def, usages: 0 });
   }
 
   fn get(&mut self, id: Id) -> Option<Def> {
-    let tracked = self.store.get_mut(&id)?.last_mut()?;
-    tracked.usages += 1;
-    Some(tracked.def)
+    let in_scope = self.store.get_mut(&id)?.last_mut()?;
+    in_scope.usages += 1;
+    Some(in_scope.def)
   }
 }
 
 fn undefine(cx: &mut Cx, st: &mut St, id: Id) {
-  let Some(tracked) = cx.store.entry(id).or_default().pop() else {
+  let Some(in_scope) = cx.store.entry(id).or_default().pop() else {
     always!(false, "undefine without previous define: {id:?}");
     return;
   };
-  if tracked.usages != 0 || id == Id::dollar {
+  if in_scope.usages != 0 || id == Id::dollar {
     return;
   }
-  let Def::Expr(e, k) = tracked.def else { return };
+  let Def::Expr(e, k) = in_scope.def else { return };
   st.err(e, error::Kind::Unused(id, k));
 }
 
