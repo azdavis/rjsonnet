@@ -75,6 +75,16 @@ pub(crate) type Union = BTreeSet<Ty>;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub(crate) struct Meta(uniq::Uniq);
 
+/// A generator for meta variables.
+#[derive(Debug, Default)]
+pub(crate) struct MetaGen(uniq::UniqGen);
+
+impl MetaGen {
+  pub(crate) fn gen(&mut self) -> Meta {
+    Meta(self.0.gen())
+  }
+}
+
 /// A function type.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub(crate) struct Fn {

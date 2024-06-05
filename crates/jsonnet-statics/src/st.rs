@@ -32,6 +32,9 @@ pub struct St<'a> {
   ///
   /// This is a vec because things go in and out of scope in stacks.
   context: FxHashMap<Id, Vec<DefinedId>>,
+  /// A generator for meta variables.
+  #[allow(dead_code)]
+  meta_gen: ty::MetaGen,
   /// A store for all the types.
   tys: &'a mut ty::Store,
   /// A subst for all the meta vars.
@@ -41,7 +44,13 @@ pub struct St<'a> {
 impl<'a> St<'a> {
   /// Make a new state.
   pub fn new(tys: &'a mut ty::Store, subst: &'a mut ty::Subst) -> Self {
-    Self { statics: Statics::default(), context: FxHashMap::default(), tys, subst }
+    Self {
+      statics: Statics::default(),
+      context: FxHashMap::default(),
+      meta_gen: ty::MetaGen::default(),
+      tys,
+      subst,
+    }
   }
 
   pub(crate) fn err(&mut self, expr: ExprMust, kind: error::Kind) {
@@ -99,6 +108,13 @@ impl<'a> St<'a> {
   pub(crate) fn unify(&mut self, expr: ExprMust, want: ty::Ty, got: ty::Ty) {
     let mut st = unify::St { expr, errors: &mut self.statics.errors, subst: self.subst };
     unify::get(&mut st, self.tys, want, got);
+  }
+
+  #[must_use]
+  #[allow(dead_code)]
+  pub(crate) fn fresh(&mut self) -> ty::Ty {
+    let data = ty::Data::Meta(self.meta_gen.gen());
+    self.get_ty(data)
   }
 
   pub(crate) fn finish(self) -> Statics {
