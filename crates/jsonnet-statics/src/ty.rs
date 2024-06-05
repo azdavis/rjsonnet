@@ -48,7 +48,7 @@ pub(crate) enum Data {
   /// A union type.
   ///
   /// The empty union can never exist. This type is sometimes called "never" or "void".
-  Or(BTreeSet<Ty>),
+  Union(BTreeSet<Ty>),
 }
 
 impl Data {
@@ -63,7 +63,7 @@ impl Data {
       | Data::Object(_)
       | Data::Fn(_)
       | Data::Meta(_)
-      | Data::Or(_) => {}
+      | Data::Union(_) => {}
     }
   }
 }

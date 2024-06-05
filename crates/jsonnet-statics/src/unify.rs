@@ -100,13 +100,13 @@ fn get(st: &mut St, store: &ty::Store, want: ty::Ty, got: ty::Ty) {
       todo!("unify m with ty, setting a subst somewhere")
     }
     // need to put this first
-    (_, ty::Data::Or(got)) => {
+    (_, ty::Data::Union(got)) => {
       // want must be ALL of the things got may be.
       for &got in got {
         get(st, store, want, got);
       }
     }
-    (ty::Data::Or(want), _) => {
+    (ty::Data::Union(want), _) => {
       // got may be ANY of the things want may be.
       for &want in want {
         let m = st.mark();

@@ -11,7 +11,7 @@ fn main() {
     (i!("NULL"), q!(super::Data::Prim(Prim::Null))),
     (i!("TRUE"), q!(super::Data::Prim(Prim::Bool(true)))),
     (i!("FALSE"), q!(super::Data::Prim(Prim::Bool(false)))),
-    (i!("NEVER"), q!(super::Data::Or(BTreeSet::new()))),
+    (i!("NEVER"), q!(super::Data::Union(BTreeSet::new()))),
     (i!("ARRAY_NUMBER"), q!(super::Data::Array(super::Ty::NUMBER))),
   ];
   let impl_ty_const = things.iter().enumerate().map(|(idx, (name, _))| {

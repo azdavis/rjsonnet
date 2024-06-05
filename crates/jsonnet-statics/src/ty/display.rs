@@ -76,10 +76,10 @@ impl<'a> fmt::Display for TyDisplay<'a> {
         Ok(())
       }
       Data::Meta(_) => f.write_str("_"),
-      Data::Or(tys) => {
-        let mut iter = tys.iter().map(|&ty| self.with(ty, Prec::Or));
+      Data::Union(tys) => {
+        let mut iter = tys.iter().map(|&ty| self.with(ty, Prec::Union));
         let Some(ty) = iter.next() else { return f.write_str("never") };
-        let needs_paren = self.prec > Prec::Or;
+        let needs_paren = self.prec > Prec::Union;
         if needs_paren {
           f.write_str("(")?;
         }
@@ -138,8 +138,8 @@ struct Stuff<'a> {
 
 /// Precedence when printing a type.
 ///
-/// One ambiguity is when mixing or types and fn types. We consider 1 and 2 identical in semantics,
-/// and distinct from 3. That is, or types "bind closer" than fn types.
+/// One ambiguity is when mixing union types and fn types. We consider 1 and 2 identical in
+/// semantics, and distinct from 3. That is, union types "bind closer" than fn types.
 ///
 /// ```text
 /// (1) (number) => string | boolean
@@ -147,8 +147,8 @@ struct Stuff<'a> {
 /// (3) ((number) => string) | boolean
 /// ```
 ///
-/// Binding closer than that are array types. We consider 1 and 2 identical in semantics,
-/// and distinct from 3.
+/// Binding closer than that are array types. We consider 1 and 2 identical in semantics, and
+/// distinct from 3.
 ///
 /// ```text
 /// (1) string | boolean[]
@@ -158,6 +158,6 @@ struct Stuff<'a> {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 enum Prec {
   Min,
-  Or,
+  Union,
   Array,
 }
