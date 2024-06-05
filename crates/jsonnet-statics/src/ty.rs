@@ -37,7 +37,7 @@ pub(crate) enum Data {
   /// An array of elements, where each element has the given type.
   Array(Ty),
   /// An object with known fields.
-  Object(BTreeMap<Str, Ty>),
+  Object(Object),
   /// A function type, with some arguments and a return type.
   Fn(Fn),
   /// A meta type variable.
@@ -48,7 +48,7 @@ pub(crate) enum Data {
   /// A union type.
   ///
   /// The empty union can never exist. This type is sometimes called "never" or "void".
-  Union(BTreeSet<Ty>),
+  Union(Union),
 }
 
 impl Data {
@@ -67,6 +67,9 @@ impl Data {
     }
   }
 }
+
+pub(crate) type Object = BTreeMap<Str, Ty>;
+pub(crate) type Union = BTreeSet<Ty>;
 
 /// A meta type variable, to be solved by type inference.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
