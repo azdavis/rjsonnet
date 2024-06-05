@@ -4,12 +4,11 @@ pub mod error;
 pub mod ty;
 mod unify;
 
-use std::collections::BTreeMap;
-
 use always::always;
 use jsonnet_expr::def::{self, Def};
 use jsonnet_expr::{Arenas, Expr, ExprData, ExprMust, Id, Prim, Str};
 use rustc_hash::{FxHashMap, FxHashSet};
+use std::collections::BTreeMap;
 
 /// The state when checking statics.
 #[derive(Debug, Default)]
