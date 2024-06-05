@@ -42,9 +42,9 @@ pub(crate) fn get(st: &mut St<'_>, store: &ty::Store, want: ty::Ty, got: ty::Ty)
     | (ty::Data::Bool, ty::Data::Bool | ty::Data::Prim(Prim::Bool(_)))
     | (ty::Data::String, ty::Data::String | ty::Data::Prim(Prim::String(_)))
     | (ty::Data::Number, ty::Data::Number | ty::Data::Prim(Prim::Number(_))) => {}
-    (ty::Data::Prim(want), ty::Data::Prim(got)) => {
-      if want != got {
-        st.err(error::Kind::Incompatible);
+    (ty::Data::Prim(w), ty::Data::Prim(g)) => {
+      if w != g {
+        st.err(error::Kind::Incompatible(want, got));
       }
     }
     (ty::Data::Array(want), ty::Data::Array(got)) => get(st, store, *want, *got),
@@ -101,7 +101,7 @@ pub(crate) fn get(st: &mut St<'_>, store: &ty::Store, want: ty::Ty, got: ty::Ty)
       }
       st.err(error::Kind::AllAlternativesIncompatible);
     }
-    _ => st.err(error::Kind::Incompatible),
+    _ => st.err(error::Kind::Incompatible(want, got)),
   }
 }
 

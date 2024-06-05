@@ -151,8 +151,10 @@ impl IsolatedFile {
 
   pub(crate) fn diagnostics<'a>(
     &'a self,
-    strings: &'a jsonnet_expr::StrArena,
     root: &'a jsonnet_syntax::kind::SyntaxNode,
+    store: &'a jsonnet_statics::ty::Store,
+    subst: &'a jsonnet_statics::ty::Subst,
+    str_ar: &'a jsonnet_expr::StrArena,
   ) -> impl Iterator<Item = Diagnostic> + 'a {
     let all_errors = std::iter::empty()
       .chain(self.errors.lex.iter().map(|err| (err.range(), err.to_string())))
@@ -163,7 +165,7 @@ impl IsolatedFile {
       .chain(self.errors.statics.iter().map(|err| {
         let (expr, kind) = err.expr_and_def();
         let range = expr_range(&self.artifacts.pointers, root, expr, kind);
-        let msg = err.display(strings);
+        let msg = err.display(store, subst, str_ar);
         (range, msg.to_string(), err.severity())
       }))
       .filter_map(|(range, message, severity)| {

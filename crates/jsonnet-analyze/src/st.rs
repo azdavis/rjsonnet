@@ -334,7 +334,14 @@ impl lang_srv_state::State for St {
       }
     };
     let root = file.artifacts.syntax.clone();
-    let ret: Vec<_> = file.diagnostics(&self.with_fs.artifacts.strings, &root.syntax()).collect();
+    let syntax = root.syntax();
+    let diagnostics = file.diagnostics(
+      &syntax,
+      &file.artifacts.tys,
+      &file.artifacts.subst,
+      &self.with_fs.artifacts.strings,
+    );
+    let ret: Vec<_> = diagnostics.collect();
     self.file_artifacts.insert(path_id, file.artifacts);
     self.file_exprs.insert(path_id, file.eval);
     if file.errors.is_empty() {

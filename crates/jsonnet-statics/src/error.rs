@@ -1,5 +1,6 @@
 //! Errors.
 
+use crate::ty;
 use jsonnet_expr::{def, ExprMust, Id, Str, Subst};
 use std::fmt;
 
@@ -13,8 +14,13 @@ pub struct Error {
 impl Error {
   /// Display the error.
   #[must_use]
-  pub fn display<'a>(&'a self, ar: &'a jsonnet_expr::StrArena) -> impl fmt::Display + 'a {
-    Display { kind: &self.kind, ar }
+  pub fn display<'a>(
+    &'a self,
+    store: &'a ty::Store,
+    subst: &'a ty::Subst,
+    str_ar: &'a jsonnet_expr::StrArena,
+  ) -> impl fmt::Display + 'a {
+    Display { kind: &self.kind, store, subst, str_ar }
   }
 
   /// Returns the expr this error is for.
@@ -34,7 +40,7 @@ impl Error {
       | Kind::DuplicateBinding(_) => diagnostic::Severity::Error,
       // TODO: make some/all type-checker warnings errors? (once we have more confidence)
       Kind::Unused(_, _)
-      | Kind::Incompatible
+      | Kind::Incompatible(_, _)
       | Kind::MissingField
       | Kind::NotEnoughParams
       | Kind::MismatchedParamNames
@@ -55,7 +61,7 @@ impl Error {
         id.apply(subst);
       }
       Kind::DuplicateFieldName(str) => str.apply(subst),
-      Kind::Incompatible
+      Kind::Incompatible(_, _)
       | Kind::MissingField
       | Kind::NotEnoughParams
       | Kind::MismatchedParamNames
@@ -74,7 +80,7 @@ pub(crate) enum Kind {
   DuplicateNamedArg(Id),
   DuplicateBinding(Id),
   Unused(Id, def::ExprDefKind),
-  Incompatible,
+  Incompatible(ty::Ty, ty::Ty),
   MissingField,
   NotEnoughParams,
   MismatchedParamNames,
@@ -86,23 +92,31 @@ pub(crate) enum Kind {
 
 struct Display<'a> {
   kind: &'a Kind,
-  ar: &'a jsonnet_expr::StrArena,
+  store: &'a ty::Store,
+  subst: &'a ty::Subst,
+  str_ar: &'a jsonnet_expr::StrArena,
 }
 
 impl fmt::Display for Display<'_> {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     match &self.kind {
-      Kind::NotInScope(id) => write!(f, "not in scope: `{}`", id.display(self.ar)),
-      Kind::DuplicateFieldName(s) => write!(f, "duplicate field name: `{}`", self.ar.get(s)),
+      Kind::NotInScope(id) => write!(f, "not in scope: `{}`", id.display(self.str_ar)),
+      Kind::DuplicateFieldName(s) => write!(f, "duplicate field name: `{}`", self.str_ar.get(s)),
       Kind::DuplicateNamedArg(id) => {
-        write!(f, "duplicate named argument: `{}`", id.display(self.ar))
+        write!(f, "duplicate named argument: `{}`", id.display(self.str_ar))
       }
       Kind::DuplicateBinding(id) => {
-        write!(f, "duplicate binding: `{}`", id.display(self.ar))
+        write!(f, "duplicate binding: `{}`", id.display(self.str_ar))
       }
-      Kind::Unused(id, _) => write!(f, "unused: `{}`", id.display(self.ar)),
+      Kind::Unused(id, _) => write!(f, "unused: `{}`", id.display(self.str_ar)),
+      Kind::Incompatible(want, got) => {
+        let want = want.display(self.store, self.subst, self.str_ar);
+        let got = got.display(self.store, self.subst, self.str_ar);
+        f.write_str("incompatible types\n")?;
+        writeln!(f, "  expected {want}")?;
+        write!(f, "     found {got}")
+      }
       // TODO improve these messages
-      Kind::Incompatible => f.write_str("incompatible types"),
       Kind::MissingField => f.write_str("missing field"),
       Kind::NotEnoughParams => f.write_str("not enough parameters"),
       Kind::MismatchedParamNames => f.write_str("mismatched parameter names"),
