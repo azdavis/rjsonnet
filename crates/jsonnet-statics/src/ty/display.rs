@@ -39,10 +39,10 @@ impl<'a> fmt::Display for TyDisplay<'a> {
         self.with(*ty, Prec::Array).fmt(f)?;
         f.write_str("[]")
       }
-      Data::Object { known, other } => {
+      Data::Object(obj) => {
         f.write_str("{")?;
         let mut iter =
-          known.iter().map(|(key, ty)| FieldDisplay { key, ty: *ty, stuff: self.stuff });
+          obj.known.iter().map(|(key, ty)| FieldDisplay { key, ty: *ty, stuff: self.stuff });
         if let Some(field) = iter.next() {
           f.write_str(" ")?;
           field.fmt(f)?;
@@ -50,18 +50,18 @@ impl<'a> fmt::Display for TyDisplay<'a> {
             f.write_str(", ")?;
             field.fmt(f)?;
           }
-          let end = if *other { ", ... " } else { " " };
+          let end = if obj.other { ", ... " } else { " " };
           f.write_str(end)?;
         }
         f.write_str("}")
       }
-      Data::Fn(params, ret) => {
+      Data::Fn(func) => {
         let needs_paren = self.prec > Prec::Min;
         if needs_paren {
           f.write_str("(")?;
         }
         f.write_str("(")?;
-        let mut iter = params.iter().map(|&param| ParamDisplay { param, stuff: self.stuff });
+        let mut iter = func.params.iter().map(|&param| ParamDisplay { param, stuff: self.stuff });
         if let Some(ty) = iter.next() {
           ty.fmt(f)?;
         }
@@ -70,7 +70,7 @@ impl<'a> fmt::Display for TyDisplay<'a> {
           ty.fmt(f)?;
         }
         f.write_str(") => ")?;
-        self.with(*ret, self.prec).fmt(f)?;
+        self.with(func.ret, self.prec).fmt(f)?;
         if needs_paren {
           f.write_str(")")?;
         }

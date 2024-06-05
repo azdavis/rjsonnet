@@ -130,7 +130,7 @@ fn check(st: &mut St, cx: &mut Cx, ars: &Arenas, expr: Expr) -> ty::Ty {
       for &(lhs, _) in binds {
         undefine(cx, st, lhs);
       }
-      st.tys.get(ty::Data::Object { known: field_tys, other })
+      st.tys.get(ty::Data::Object(ty::Object { known: field_tys, other }))
     }
     ExprData::ObjectComp { name, body, id, ary } => {
       check(st, cx, ars, *ary);
@@ -142,7 +142,7 @@ fn check(st: &mut St, cx: &mut Cx, ars: &Arenas, expr: Expr) -> ty::Ty {
       undefine(cx, st, *id);
       undefine(cx, st, Id::self_);
       undefine(cx, st, Id::super_);
-      st.tys.get(ty::Data::Object { known: BTreeMap::new(), other: true })
+      st.tys.get(ty::Data::Object(ty::Object { known: BTreeMap::new(), other: true }))
     }
     ExprData::Array(exprs) => {
       for &arg in exprs {
@@ -214,11 +214,14 @@ fn check(st: &mut St, cx: &mut Cx, ars: &Arenas, expr: Expr) -> ty::Ty {
       for &(bind, _) in params {
         undefine(cx, st, bind);
       }
-      let params_for_ty: Vec<_> = params
-        .iter()
-        .map(|&(id, default)| ty::Param { id, ty: ty::Ty::ANY, required: default.is_none() })
-        .collect();
-      st.tys.get(ty::Data::Fn(params_for_ty, ty::Ty::ANY))
+      let fn_ty = ty::Fn {
+        params: params
+          .iter()
+          .map(|&(id, default)| ty::Param { id, ty: ty::Ty::ANY, required: default.is_none() })
+          .collect(),
+        ret: ty::Ty::ANY,
+      };
+      st.tys.get(ty::Data::Fn(fn_ty))
     }
     ExprData::If { cond, yes, no } => {
       check(st, cx, ars, *cond);

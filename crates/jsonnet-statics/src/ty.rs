@@ -38,16 +38,11 @@ pub(crate) enum Data {
   Array(Ty),
   /// An object, where we know the name and type of some fields, and may or may not acknowledge the
   /// possibility of more, unknown fields.
-  Object {
-    /// The fields we know.
-    known: BTreeMap<Str, Ty>,
-    /// Whether there are other, unknown fields.
-    other: bool,
-  },
+  Object(Object),
   /// A function type, with some arguments and a return type.
   ///
   /// TODO support default arguments, argument names
-  Fn(Vec<Param>, Ty),
+  Fn(Fn),
   /// A union type.
   ///
   /// The empty union can never exist. This type is sometimes called "never" or "void".
@@ -63,11 +58,33 @@ impl Data {
       | Data::String
       | Data::Number
       | Data::Array(_)
-      | Data::Object { .. }
-      | Data::Fn(_, _)
+      | Data::Object(_)
+      | Data::Fn(_)
       | Data::Or(_) => {}
     }
   }
+}
+
+/// A meta type variable, to be solved by type inference.
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub(crate) struct Meta(uniq::Uniq);
+
+/// An object type.
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub(crate) struct Object {
+  /// The fields we know.
+  pub(crate) known: BTreeMap<Str, Ty>,
+  /// Whether there are other, unknown fields.
+  pub(crate) other: bool,
+}
+
+/// A function type.
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub(crate) struct Fn {
+  /// The parameters.
+  pub(crate) params: Vec<Param>,
+  /// The return type.
+  pub(crate) ret: Ty,
 }
 
 /// A function parameter.

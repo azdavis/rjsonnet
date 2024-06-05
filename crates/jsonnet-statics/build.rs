@@ -12,7 +12,7 @@ fn main() {
     (i!("TRUE"), q!(super::Data::Prim(Prim::Bool(true)))),
     (i!("FALSE"), q!(super::Data::Prim(Prim::Bool(false)))),
     (i!("NEVER"), q!(super::Data::Or(BTreeSet::new()))),
-    (i!("OBJECT"), q!(super::Data::Object { known: BTreeMap::new(), other: true })),
+    (i!("OBJECT"), q!(super::Data::Object(super::Object { known: BTreeMap::new(), other: true }))),
     (i!("ARRAY_NUMBER"), q!(super::Data::Array(super::Ty::NUMBER))),
   ];
   let impl_ty_const = things.iter().enumerate().map(|(idx, (name, _))| {
