@@ -20,12 +20,12 @@ enum Error {
   OccursCheck,
 }
 
-struct St {
-  errors: Vec<Error>,
-  subst: FxHashMap<ty::Meta, MetaSubst>,
+struct St<'a> {
+  errors: &'a mut Vec<Error>,
+  subst: &'a mut ty::Subst,
 }
 
-impl St {
+impl<'a> St<'a> {
   fn err(&mut self, e: Error) {
     self.errors.push(e);
   }
@@ -48,13 +48,9 @@ struct Marker {
   len: usize,
 }
 
-enum MetaSubst {
-  Ty(ty::Ty),
-}
-
 /// this checks and unifies `want` is compatible with `got`, but allows `got` to be more specific
 /// than `want`. aka, got should be a subtype of want, i suppose.
-fn get(st: &mut St, store: &ty::Store, want: ty::Ty, got: ty::Ty) {
+fn get(st: &mut St<'_>, store: &ty::Store, want: ty::Ty, got: ty::Ty) {
   match (store.data(want), store.data(got)) {
     (ty::Data::Any, _)
     | (_, ty::Data::Any)
@@ -124,7 +120,7 @@ fn get(st: &mut St, store: &ty::Store, want: ty::Ty, got: ty::Ty) {
   }
 }
 
-fn get_meta(st: &mut St, store: &ty::Store, meta: ty::Meta, want: ty::Ty) {
+fn get_meta(st: &mut St<'_>, store: &ty::Store, meta: ty::Meta, want: ty::Ty) {
   if let ty::Data::Meta(m) = store.data(want) {
     if meta == *m {
       return;
@@ -134,7 +130,7 @@ fn get_meta(st: &mut St, store: &ty::Store, meta: ty::Meta, want: ty::Ty) {
     st.err(Error::OccursCheck);
     return;
   }
-  always!(st.subst.insert(meta, MetaSubst::Ty(want)).is_none());
+  st.subst.insert(meta, ty::MetaSubst::Ty(want));
 }
 
 fn occurs_check(store: &ty::Store, meta: ty::Meta, ty: ty::Ty) -> bool {

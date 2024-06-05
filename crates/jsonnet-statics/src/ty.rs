@@ -6,7 +6,7 @@ mod generated {
 mod display;
 
 use always::{always, convert};
-use jsonnet_expr::{ExprMust, Id, Prim, Str, Subst};
+use jsonnet_expr::{ExprMust, Id, Prim, Str};
 use rustc_hash::FxHashMap;
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -52,7 +52,7 @@ pub(crate) enum Data {
 }
 
 impl Data {
-  fn apply(&mut self, subst: &Subst) {
+  fn apply(&mut self, subst: &jsonnet_expr::Subst) {
     match self {
       Data::Prim(prim) => prim.apply(subst),
       Data::Any
@@ -144,7 +144,7 @@ impl Store {
   }
 
   /// Applies a subst to this.
-  pub fn apply(&mut self, subst: &Subst) {
+  pub fn apply(&mut self, subst: &jsonnet_expr::Subst) {
     for data in &mut self.idx_to_data {
       data.apply(subst);
     }
@@ -155,4 +155,21 @@ impl Store {
       .map(|(idx, data)| (data.clone(), Ty::from_usize(idx)))
       .collect();
   }
+}
+
+/// A substitution constructed with type inference.
+#[derive(Debug, Default)]
+pub struct Subst {
+  store: FxHashMap<Meta, MetaSubst>,
+}
+
+impl Subst {
+  pub(crate) fn insert(&mut self, meta: Meta, subst: MetaSubst) {
+    always!(self.store.insert(meta, subst).is_none());
+  }
+}
+
+#[derive(Debug)]
+pub(crate) enum MetaSubst {
+  Ty(Ty),
 }
