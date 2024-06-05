@@ -101,7 +101,7 @@ fn get(st: &mut St, store: &ty::Store, want: ty::Ty, got: ty::Ty) {
     }
     (ty::Data::Meta(m), _) => get_meta(st, store, *m, got),
     (_, ty::Data::Meta(m)) => get_meta(st, store, *m, want),
-    // need to put this first
+    // need to put this (got-union) before the next (want-union)
     (_, ty::Data::Union(got)) => {
       // want must be ALL of the things got may be.
       for &got in got {
