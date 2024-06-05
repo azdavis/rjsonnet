@@ -58,6 +58,7 @@ fn get(st: &mut St, store: &ty::Store, want: ty::Ty, got: ty::Ty) {
         if want.id != got.id {
           st.err(Error::MismatchedParamNames);
         }
+        // if we wanted a required argument, we can get either a required or optional argument.
         if !want.required && got.required {
           st.err(Error::WantOptionalParamGotRequired);
         }
