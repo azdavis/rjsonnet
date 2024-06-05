@@ -32,7 +32,16 @@ impl Error {
       | Kind::DuplicateFieldName(_)
       | Kind::DuplicateNamedArg(_)
       | Kind::DuplicateBinding(_) => diagnostic::Severity::Error,
-      Kind::Unused(_, _) => diagnostic::Severity::Warning,
+      // TODO: make some/all type-checker warnings errors? (once we have more confidence)
+      Kind::Unused(_, _)
+      | Kind::Incompatible
+      | Kind::MissingField
+      | Kind::NotEnoughParams
+      | Kind::MismatchedParamNames
+      | Kind::WantOptionalParamGotRequired
+      | Kind::ExtraRequiredParam
+      | Kind::AllAlternativesIncompatible
+      | Kind::OccursCheck => diagnostic::Severity::Warning,
     }
   }
 
@@ -46,6 +55,14 @@ impl Error {
         id.apply(subst);
       }
       Kind::DuplicateFieldName(str) => str.apply(subst),
+      Kind::Incompatible
+      | Kind::MissingField
+      | Kind::NotEnoughParams
+      | Kind::MismatchedParamNames
+      | Kind::WantOptionalParamGotRequired
+      | Kind::ExtraRequiredParam
+      | Kind::AllAlternativesIncompatible
+      | Kind::OccursCheck => {}
     }
   }
 }
@@ -57,6 +74,14 @@ pub(crate) enum Kind {
   DuplicateNamedArg(Id),
   DuplicateBinding(Id),
   Unused(Id, def::ExprDefKind),
+  Incompatible,
+  MissingField,
+  NotEnoughParams,
+  MismatchedParamNames,
+  WantOptionalParamGotRequired,
+  ExtraRequiredParam,
+  AllAlternativesIncompatible,
+  OccursCheck,
 }
 
 struct Display<'a> {
@@ -76,6 +101,17 @@ impl fmt::Display for Display<'_> {
         write!(f, "duplicate binding: `{}`", id.display(self.ar))
       }
       Kind::Unused(id, _) => write!(f, "unused: `{}`", id.display(self.ar)),
+      // TODO improve these messages
+      Kind::Incompatible => f.write_str("incompatible types"),
+      Kind::MissingField => f.write_str("missing field"),
+      Kind::NotEnoughParams => f.write_str("not enough parameters"),
+      Kind::MismatchedParamNames => f.write_str("mismatched parameter names"),
+      Kind::WantOptionalParamGotRequired => {
+        f.write_str("wanted an optional parameter, got a required one")
+      }
+      Kind::ExtraRequiredParam => f.write_str("extra required parameter"),
+      Kind::AllAlternativesIncompatible => f.write_str("all union alternatives incompatible"),
+      Kind::OccursCheck => f.write_str("occurs check: meta var occurs inside its own solution"),
     }
   }
 }

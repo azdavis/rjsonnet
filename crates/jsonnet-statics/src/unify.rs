@@ -3,31 +3,19 @@
 // TODO remove
 #![allow(unused)]
 
-use crate::ty;
-use always::always;
+use crate::{error, ty};
 use drop_bomb::DebugDropBomb;
-use jsonnet_expr::{Prim, Str};
-use rustc_hash::FxHashMap;
+use jsonnet_expr::Prim;
 
-enum Error {
-  Incompatible,
-  MissingField,
-  NotEnoughParams,
-  MismatchedParamNames,
-  WantOptionalParamGotRequired,
-  ExtraRequiredParam,
-  AllAlternativesIncompatible,
-  OccursCheck,
-}
-
-struct St<'a> {
-  errors: &'a mut Vec<Error>,
-  subst: &'a mut ty::Subst,
+pub(crate) struct St<'a> {
+  pub(crate) expr: jsonnet_expr::ExprMust,
+  pub(crate) errors: &'a mut Vec<error::Error>,
+  pub(crate) subst: &'a mut ty::Subst,
 }
 
 impl<'a> St<'a> {
-  fn err(&mut self, e: Error) {
-    self.errors.push(e);
+  fn err(&mut self, kind: error::Kind) {
+    self.errors.push(error::Error { expr: self.expr, kind });
   }
 
   fn mark(&self) -> Marker {
@@ -50,7 +38,7 @@ struct Marker {
 
 /// this checks and unifies `want` is compatible with `got`, but allows `got` to be more specific
 /// than `want`. aka, got should be a subtype of want, i suppose.
-fn get(st: &mut St<'_>, store: &ty::Store, want: ty::Ty, got: ty::Ty) {
+pub(crate) fn get(st: &mut St<'_>, store: &ty::Store, want: ty::Ty, got: ty::Ty) {
   match (store.data(st.subst, want), store.data(st.subst, got)) {
     (ty::Data::Any, _)
     | (_, ty::Data::Any)
@@ -59,14 +47,14 @@ fn get(st: &mut St<'_>, store: &ty::Store, want: ty::Ty, got: ty::Ty) {
     | (ty::Data::Number, ty::Data::Number | ty::Data::Prim(Prim::Number(_))) => {}
     (ty::Data::Prim(want), ty::Data::Prim(got)) => {
       if want != got {
-        st.err(Error::Incompatible);
+        st.err(error::Kind::Incompatible);
       }
     }
     (ty::Data::Array(want), ty::Data::Array(got)) => get(st, store, *want, *got),
     (ty::Data::Object(want), ty::Data::Object(got)) => {
       for (name, want) in want {
         let Some(got) = got.get(name) else {
-          st.err(Error::MissingField);
+          st.err(error::Kind::MissingField);
           continue;
         };
         get(st, store, *want, *got);
@@ -75,22 +63,22 @@ fn get(st: &mut St<'_>, store: &ty::Store, want: ty::Ty, got: ty::Ty) {
     }
     (ty::Data::Fn(want), ty::Data::Fn(got)) => {
       if want.params.len() > got.params.len() {
-        st.err(Error::NotEnoughParams);
+        st.err(error::Kind::NotEnoughParams);
       }
       for (want, got) in want.params.iter().zip(got.params.iter()) {
         if want.id != got.id {
-          st.err(Error::MismatchedParamNames);
+          st.err(error::Kind::MismatchedParamNames);
         }
         // if we wanted a required argument, we can get either a required or optional argument.
         if !want.required && got.required {
-          st.err(Error::WantOptionalParamGotRequired);
+          st.err(error::Kind::WantOptionalParamGotRequired);
         }
         // ah yes, the famous contra-variance.
         get(st, store, got.ty, want.ty);
       }
       for got in got.params.iter().skip(want.params.len()) {
         if got.required {
-          st.err(Error::ExtraRequiredParam);
+          st.err(error::Kind::ExtraRequiredParam);
         }
       }
       get(st, store, want.ret, got.ret);
@@ -114,9 +102,9 @@ fn get(st: &mut St<'_>, store: &ty::Store, want: ty::Ty, got: ty::Ty) {
           return;
         }
       }
-      st.err(Error::AllAlternativesIncompatible);
+      st.err(error::Kind::AllAlternativesIncompatible);
     }
-    _ => st.err(Error::Incompatible),
+    _ => st.err(error::Kind::Incompatible),
   }
 }
 
@@ -127,7 +115,7 @@ fn get_meta(st: &mut St<'_>, store: &ty::Store, meta: ty::Meta, want: ty::Ty) {
     }
   }
   if occurs_check(store, st.subst, meta, want) {
-    st.err(Error::OccursCheck);
+    st.err(error::Kind::OccursCheck);
     return;
   }
   st.subst.insert(meta, ty::MetaSubst::Ty(want));

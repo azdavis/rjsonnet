@@ -1,6 +1,6 @@
 //! The state of statics.
 
-use crate::{error, ty};
+use crate::{error, ty, unify};
 use always::always;
 use jsonnet_expr::{def::Def, ExprMust, Id};
 use rustc_hash::FxHashMap;
@@ -35,9 +35,6 @@ pub struct St<'a> {
   /// A store for all the types.
   tys: &'a mut ty::Store,
   /// A subst for all the meta vars.
-  ///
-  /// TODO use
-  #[allow(dead_code)]
   subst: &'a mut ty::Subst,
 }
 
@@ -95,6 +92,13 @@ impl<'a> St<'a> {
     let in_scope = self.context.get_mut(&id)?.last_mut()?;
     in_scope.usages += 1;
     Some((in_scope.ty, in_scope.def))
+  }
+
+  /// TODO remove
+  #[allow(dead_code)]
+  pub(crate) fn unify(&mut self, expr: ExprMust, want: ty::Ty, got: ty::Ty) {
+    let mut st = unify::St { expr, errors: &mut self.statics.errors, subst: self.subst };
+    unify::get(&mut st, self.tys, want, got);
   }
 
   pub(crate) fn finish(self) -> Statics {
