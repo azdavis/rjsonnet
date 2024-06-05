@@ -21,6 +21,8 @@ impl St {
   }
 }
 
+/// this checks and unifies `want` is compatible with `got`, but allows `got` to be more specific
+/// than `want`. aka, got should be a subtype of want, i suppose.
 fn get(st: &mut St, store: &ty::Store, want: ty::Ty, got: ty::Ty) {
   match (store.data(want), store.data(got)) {
     (ty::Data::Any, _)
@@ -42,6 +44,7 @@ fn get(st: &mut St, store: &ty::Store, want: ty::Ty, got: ty::Ty) {
         };
         get(st, store, *want, *got);
       }
+      // ignore the fields that ARE in `got` but are NOT in `want`.
     }
     (ty::Data::Fn(_), ty::Data::Fn(_)) => todo!("function types"),
     (ty::Data::Meta(m), ty) | (ty, ty::Data::Meta(m)) => {
