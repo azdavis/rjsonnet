@@ -30,6 +30,7 @@ pub(crate) struct FileArtifacts {
   pub(crate) defs: jsonnet_expr::def::Map,
   /// TODO have one global ty store?
   pub(crate) tys: jsonnet_statics::ty::Store,
+  pub(crate) subst: jsonnet_statics::ty::Subst,
   pub(crate) expr_tys: jsonnet_statics::ty::Exprs,
 }
 
@@ -83,7 +84,8 @@ impl IsolatedFile {
     let root = parse.root.clone().into_ast().and_then(|x| x.expr());
     let desugar = jsonnet_desugar::get(current_dir, other_dirs, fs, root);
     let mut tys = jsonnet_statics::ty::Store::default();
-    let st = jsonnet_statics::st::St::new(&mut tys);
+    let mut subst = jsonnet_statics::ty::Subst::default();
+    let st = jsonnet_statics::st::St::new(&mut tys, &mut subst);
     let statics = jsonnet_statics::get(st, &desugar.arenas, desugar.top);
     let combine = jsonnet_expr::Artifacts { paths: desugar.ps, strings: desugar.arenas.str };
     let mut ret = Self {
@@ -93,6 +95,7 @@ impl IsolatedFile {
         pointers: desugar.pointers,
         defs: statics.defs,
         tys,
+        subst,
         expr_tys: statics.expr_tys,
       },
       errors: FileErrors {

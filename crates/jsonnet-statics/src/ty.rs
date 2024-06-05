@@ -133,13 +133,19 @@ impl Store {
     ret
   }
 
-  pub(crate) fn data(&self, ty: Ty) -> &Data {
-    match self.idx_to_data.get(ty.to_usize()) {
-      None => {
+  pub(crate) fn data(&self, subst: &Subst, mut ty: Ty) -> &Data {
+    loop {
+      let Some(data) = self.idx_to_data.get(ty.to_usize()) else {
         always!(false, "no ty data for {ty:?}");
-        &Data::Any
+        return &Data::Any;
+      };
+      if let Data::Meta(meta) = data {
+        if let Some(&MetaSubst::Ty(t)) = subst.store.get(meta) {
+          ty = t;
+          continue;
+        }
       }
-      Some(x) => x,
+      return data;
     }
   }
 

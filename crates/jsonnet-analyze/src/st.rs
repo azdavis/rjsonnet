@@ -398,7 +398,7 @@ impl lang_srv_state::State for St {
     });
     let ty = expr.and_then(|expr| {
       let ty = arts.expr_tys.get(&expr)?;
-      let ty = ty.display(&arts.tys, &self.with_fs.artifacts.strings);
+      let ty = ty.display(&arts.tys, &arts.subst, &self.with_fs.artifacts.strings);
       Some(format!("type:\n```ts\n{ty}\n```"))
     });
     // TODO expose any errors here?

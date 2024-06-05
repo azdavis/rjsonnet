@@ -1,6 +1,6 @@
 //! Display types.
 
-use super::{Data, Param, Store, Ty};
+use super::{Data, Param, Store, Subst, Ty};
 use jsonnet_expr::StrArena;
 use std::fmt;
 
@@ -9,8 +9,13 @@ impl Ty {
   ///
   /// Meant to be somewhat similar to how TypeScript does it.
   #[must_use]
-  pub fn display<'a>(self, store: &'a Store, str_ar: &'a StrArena) -> impl fmt::Display + 'a {
-    TyDisplay { ty: self, prec: Prec::Min, stuff: Stuff { store, str_ar } }
+  pub fn display<'a>(
+    self,
+    store: &'a Store,
+    subst: &'a Subst,
+    str_ar: &'a StrArena,
+  ) -> impl fmt::Display + 'a {
+    TyDisplay { ty: self, prec: Prec::Min, stuff: Stuff { store, subst, str_ar } }
   }
 }
 
@@ -29,7 +34,7 @@ impl<'a> TyDisplay<'a> {
 
 impl<'a> fmt::Display for TyDisplay<'a> {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    match self.stuff.store.data(self.ty) {
+    match self.stuff.store.data(self.stuff.subst, self.ty) {
       Data::Any => f.write_str("any"),
       Data::Bool => f.write_str("boolean"),
       Data::String => f.write_str("string"),
@@ -133,6 +138,7 @@ impl<'a> fmt::Display for ParamDisplay<'a> {
 #[derive(Clone, Copy)]
 struct Stuff<'a> {
   store: &'a Store,
+  subst: &'a Subst,
   str_ar: &'a StrArena,
 }
 

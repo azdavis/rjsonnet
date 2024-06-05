@@ -51,7 +51,7 @@ struct Marker {
 /// this checks and unifies `want` is compatible with `got`, but allows `got` to be more specific
 /// than `want`. aka, got should be a subtype of want, i suppose.
 fn get(st: &mut St<'_>, store: &ty::Store, want: ty::Ty, got: ty::Ty) {
-  match (store.data(want), store.data(got)) {
+  match (store.data(st.subst, want), store.data(st.subst, got)) {
     (ty::Data::Any, _)
     | (_, ty::Data::Any)
     | (ty::Data::Bool, ty::Data::Bool | ty::Data::Prim(Prim::Bool(_)))
@@ -121,29 +121,29 @@ fn get(st: &mut St<'_>, store: &ty::Store, want: ty::Ty, got: ty::Ty) {
 }
 
 fn get_meta(st: &mut St<'_>, store: &ty::Store, meta: ty::Meta, want: ty::Ty) {
-  if let ty::Data::Meta(m) = store.data(want) {
+  if let ty::Data::Meta(m) = store.data(st.subst, want) {
     if meta == *m {
       return;
     }
   }
-  if occurs_check(store, meta, want) {
+  if occurs_check(store, st.subst, meta, want) {
     st.err(Error::OccursCheck);
     return;
   }
   st.subst.insert(meta, ty::MetaSubst::Ty(want));
 }
 
-fn occurs_check(store: &ty::Store, meta: ty::Meta, ty: ty::Ty) -> bool {
-  match store.data(ty) {
+fn occurs_check(store: &ty::Store, subst: &ty::Subst, m: ty::Meta, ty: ty::Ty) -> bool {
+  match store.data(subst, ty) {
     ty::Data::Any | ty::Data::Bool | ty::Data::String | ty::Data::Number | ty::Data::Prim(_) => {
       false
     }
-    ty::Data::Array(ty) => occurs_check(store, meta, *ty),
-    ty::Data::Object(fields) => fields.values().any(|&ty| occurs_check(store, meta, ty)),
+    ty::Data::Array(ty) => occurs_check(store, subst, m, *ty),
+    ty::Data::Object(fields) => fields.values().any(|&ty| occurs_check(store, subst, m, ty)),
     ty::Data::Fn(func) => std::iter::once(func.ret)
       .chain(func.params.iter().map(|param| param.ty))
-      .any(|ty| occurs_check(store, meta, ty)),
-    ty::Data::Meta(m) => meta == *m,
-    ty::Data::Union(tys) => tys.iter().any(|&ty| occurs_check(store, meta, ty)),
+      .any(|ty| occurs_check(store, subst, m, ty)),
+    ty::Data::Meta(m2) => m == *m2,
+    ty::Data::Union(tys) => tys.iter().any(|&ty| occurs_check(store, subst, m, ty)),
   }
 }

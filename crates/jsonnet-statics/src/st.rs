@@ -34,12 +34,17 @@ pub struct St<'a> {
   context: FxHashMap<Id, Vec<DefinedId>>,
   /// A store for all the types.
   tys: &'a mut ty::Store,
+  /// A subst for all the meta vars.
+  ///
+  /// TODO use
+  #[allow(dead_code)]
+  subst: &'a mut ty::Subst,
 }
 
 impl<'a> St<'a> {
   /// Make a new state.
-  pub fn new(tys: &'a mut ty::Store) -> Self {
-    Self { statics: Statics::default(), context: FxHashMap::default(), tys }
+  pub fn new(tys: &'a mut ty::Store, subst: &'a mut ty::Subst) -> Self {
+    Self { statics: Statics::default(), context: FxHashMap::default(), tys, subst }
   }
 
   pub(crate) fn err(&mut self, expr: ExprMust, kind: error::Kind) {
