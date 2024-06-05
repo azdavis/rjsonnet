@@ -81,6 +81,11 @@ impl<'a> St<'a> {
     self.define(Id::super_, ty::Ty::ANY, Def::KwIdent);
   }
 
+  pub(crate) fn undefine_self_super(&mut self) {
+    self.undefine(Id::self_);
+    self.undefine(Id::super_);
+  }
+
   pub(crate) fn get(&mut self, id: Id) -> Option<(ty::Ty, Def)> {
     let in_scope = self.context.get_mut(&id)?.last_mut()?;
     in_scope.usages += 1;

@@ -59,8 +59,7 @@ fn check(st: &mut st::St<'_>, ars: &Arenas, expr: Expr) -> ty::Ty {
       for &cond in asserts {
         check(st, ars, cond);
       }
-      st.undefine(Id::self_);
-      st.undefine(Id::super_);
+      st.undefine_self_super();
       for &(lhs, _) in binds {
         st.undefine(lhs);
       }
@@ -73,8 +72,7 @@ fn check(st: &mut st::St<'_>, ars: &Arenas, expr: Expr) -> ty::Ty {
       st.define_self_super();
       check(st, ars, *body);
       st.undefine(*id);
-      st.undefine(Id::self_);
-      st.undefine(Id::super_);
+      st.undefine_self_super();
       ty::Ty::ANY
     }
     ExprData::Array(exprs) => {
