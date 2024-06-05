@@ -82,23 +82,24 @@ impl IsolatedFile {
     let parse = jsonnet_parse::get(&lex.tokens);
     let root = parse.root.clone().into_ast().and_then(|x| x.expr());
     let desugar = jsonnet_desugar::get(current_dir, other_dirs, fs, root);
-    let mut st = jsonnet_statics::St::default();
-    jsonnet_statics::get(&mut st, &desugar.arenas, desugar.top);
+    let mut tys = jsonnet_statics::ty::Store::default();
+    let st = jsonnet_statics::st::St::new(&mut tys);
+    let statics = jsonnet_statics::get(st, &desugar.arenas, desugar.top);
     let combine = jsonnet_expr::Artifacts { paths: desugar.ps, strings: desugar.arenas.str };
     let mut ret = Self {
       artifacts: FileArtifacts {
         pos_db: text_pos::PositionDb::new(contents),
         syntax: parse.root,
         pointers: desugar.pointers,
-        defs: st.defs,
-        tys: st.tys,
-        expr_tys: st.expr_tys,
+        defs: statics.defs,
+        tys,
+        expr_tys: statics.expr_tys,
       },
       errors: FileErrors {
         lex: lex.errors,
         parse: parse.errors,
         desugar: desugar.errors,
-        statics: st.errors,
+        statics: statics.errors,
       },
       eval: JsonnetFile { expr_ar: desugar.arenas.expr, top: desugar.top },
     };

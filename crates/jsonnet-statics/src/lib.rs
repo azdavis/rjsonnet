@@ -1,39 +1,16 @@
 //! Static checking for jsonnet.
 
-pub mod error;
-pub mod ty;
 mod unify;
+
+pub mod error;
+pub mod st;
+pub mod ty;
 
 use always::always;
 use jsonnet_expr::def::{self, Def};
-use jsonnet_expr::{Arenas, Expr, ExprData, ExprMust, Id, Prim, Str};
+use jsonnet_expr::{Arenas, Expr, ExprData, Id, Prim, Str};
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::BTreeMap;
-
-/// The state when checking statics.
-#[derive(Debug, Default)]
-pub struct St {
-  /// The errors.
-  pub errors: Vec<error::Error>,
-  /// Any definition sites we could figure out.
-  pub defs: jsonnet_expr::def::Map,
-  /// A store for the types.
-  pub tys: ty::Store,
-  /// Types of expressions.
-  pub expr_tys: ty::Exprs,
-}
-
-impl St {
-  fn err(&mut self, expr: ExprMust, kind: error::Kind) {
-    self.errors.push(error::Error { expr, kind });
-  }
-
-  fn note_usage(&mut self, expr: ExprMust, def: Def) {
-    // NOTE: we CANNOT assert insert returns none here, because we reuse expr indices sometimes
-    // when desugaring.
-    self.defs.insert(expr, def);
-  }
-}
 
 #[derive(Debug)]
 struct DefinedId {
@@ -66,7 +43,7 @@ impl Cx {
   }
 }
 
-fn undefine(cx: &mut Cx, st: &mut St, id: Id) {
+fn undefine(cx: &mut Cx, st: &mut st::St<'_>, id: Id) {
   let Some(in_scope) = cx.store.entry(id).or_default().pop() else {
     always!(false, "undefine without previous define: {id:?}");
     return;
@@ -79,25 +56,27 @@ fn undefine(cx: &mut Cx, st: &mut St, id: Id) {
 }
 
 /// Performs the checks.
-pub fn get(st: &mut St, ars: &Arenas, expr: Expr) {
+#[must_use]
+pub fn get(mut st: st::St<'_>, ars: &Arenas, expr: Expr) -> st::Statics {
   let mut cx = Cx::default();
   cx.define(Id::std, ty::Ty::ANY, Def::Std);
   cx.define(Id::std_unutterable, ty::Ty::ANY, Def::Std);
-  check(st, &mut cx, ars, expr);
-  undefine(&mut cx, st, Id::std);
-  undefine(&mut cx, st, Id::std_unutterable);
+  check(&mut st, &mut cx, ars, expr);
+  undefine(&mut cx, &mut st, Id::std);
+  undefine(&mut cx, &mut st, Id::std_unutterable);
   for (_, stack) in cx.store {
     always!(stack.is_empty());
   }
+  st.finish()
 }
 
 /// NOTE: don't return early from this except in the degenerate case where the `expr` was `None`.
 /// This is so we can insert the expr's type into the `St` at the end.
 #[allow(clippy::too_many_lines, clippy::single_match_else)]
-fn check(st: &mut St, cx: &mut Cx, ars: &Arenas, expr: Expr) -> ty::Ty {
+fn check(st: &mut st::St<'_>, cx: &mut Cx, ars: &Arenas, expr: Expr) -> ty::Ty {
   let Some(expr) = expr else { return ty::Ty::ANY };
   let ret = match &ars.expr[expr] {
-    ExprData::Prim(prim) => st.tys.get(ty::Data::Prim(prim.clone())),
+    ExprData::Prim(prim) => st.get_ty(ty::Data::Prim(prim.clone())),
     ExprData::Object { binds, asserts, fields } => {
       let mut field_tys = BTreeMap::<Str, ty::Ty>::default();
       for field in fields {
@@ -132,7 +111,7 @@ fn check(st: &mut St, cx: &mut Cx, ars: &Arenas, expr: Expr) -> ty::Ty {
       for &(lhs, _) in binds {
         undefine(cx, st, lhs);
       }
-      st.tys.get(ty::Data::Object(field_tys))
+      st.get_ty(ty::Data::Object(field_tys))
     }
     ExprData::ObjectComp { name, body, id, ary } => {
       check(st, cx, ars, *ary);
@@ -149,7 +128,7 @@ fn check(st: &mut St, cx: &mut Cx, ars: &Arenas, expr: Expr) -> ty::Ty {
       for &arg in exprs {
         check(st, cx, ars, arg);
       }
-      st.tys.get(ty::Data::Array(ty::Ty::ANY))
+      st.get_ty(ty::Data::Array(ty::Ty::ANY))
     }
     ExprData::Subscript { on, idx } => {
       check(st, cx, ars, *on);
@@ -222,7 +201,7 @@ fn check(st: &mut St, cx: &mut Cx, ars: &Arenas, expr: Expr) -> ty::Ty {
           .collect(),
         ret: ty::Ty::ANY,
       };
-      st.tys.get(ty::Data::Fn(fn_ty))
+      st.get_ty(ty::Data::Fn(fn_ty))
     }
     ExprData::If { cond, yes, no } => {
       check(st, cx, ars, *cond);
@@ -251,6 +230,6 @@ fn check(st: &mut St, cx: &mut Cx, ars: &Arenas, expr: Expr) -> ty::Ty {
   // NOTE: we CANNOT assert that this always return None. i'm pretty confident it's because of
   // duplication of expressions when lowering array/object comprehensions. i don't think that's a
   // huge problem.
-  st.expr_tys.insert(expr, ret);
+  st.insert_expr_ty(expr, ret);
   ret
 }
