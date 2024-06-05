@@ -4,6 +4,7 @@
 #![allow(unused)]
 
 use crate::ty;
+use drop_bomb::DebugDropBomb;
 use jsonnet_expr::Prim;
 
 enum Error {
@@ -13,6 +14,7 @@ enum Error {
   MismatchedParamNames,
   WantOptionalParamGotRequired,
   ExtraRequiredParam,
+  AllAlternativesIncompatible,
 }
 
 struct St {
@@ -23,6 +25,23 @@ impl St {
   fn err(&mut self, e: Error) {
     self.errors.push(e);
   }
+
+  fn mark(&self) -> Marker {
+    Marker { bomb: DebugDropBomb::new("must discard marker"), len: self.errors.len() }
+  }
+
+  /// returns whether errors WERE discarded, i.e. there were errors done AFTER the marker.
+  fn discard_after(&mut self, mut m: Marker) -> bool {
+    m.bomb.defuse();
+    let ret = self.errors.len() > m.len;
+    self.errors.truncate(m.len);
+    ret
+  }
+}
+
+struct Marker {
+  bomb: DebugDropBomb,
+  len: usize,
 }
 
 /// this checks and unifies `want` is compatible with `got`, but allows `got` to be more specific
@@ -80,7 +99,25 @@ fn get(st: &mut St, store: &ty::Store, want: ty::Ty, got: ty::Ty) {
       }
       todo!("unify m with ty, setting a subst somewhere")
     }
-    (ty::Data::Or(or), ty) => todo!("or types"),
+    // need to put this first
+    (_, ty::Data::Or(got)) => {
+      // want must be ALL of the things got may be.
+      for &got in got {
+        get(st, store, want, got);
+      }
+    }
+    (ty::Data::Or(want), _) => {
+      // got may be ANY of the things want may be.
+      for &want in want {
+        let m = st.mark();
+        get(st, store, want, got);
+        if !st.discard_after(m) {
+          // this unify was OK
+          return;
+        }
+      }
+      st.err(Error::AllAlternativesIncompatible);
+    }
     _ => st.err(Error::Incompatible),
   }
 }

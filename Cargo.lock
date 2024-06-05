@@ -467,6 +467,7 @@ version = "0.3.0"
 dependencies = [
  "always",
  "diagnostic",
+ "drop_bomb",
  "jsonnet-expr",
  "paths",
  "proc-macro2",

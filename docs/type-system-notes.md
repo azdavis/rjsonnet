@@ -100,6 +100,36 @@ but NOT like this: `f(3, "hi")`
 
 NOT OK
 
+## Want union
+
+- want: `number | string`
+- got: `number`
+
+OK
+
+## Got union
+
+- want: `number`
+- got: `number | string`
+
+what if it's a string?
+
+NOT OK
+
+## Want and got union
+
+- want: `number | boolean | string`
+- got: `number | string`
+
+OK
+
+## Want and got union, where one of the union elements in got is more specific
+
+- want: `number | boolean | string`
+- got: `3 | string`
+
+OK
+
 ## Takeaways
 
 - contravariant in parameter types
@@ -109,3 +139,5 @@ NOT OK
 - if want has an optional param, must be in got as optional, NOT required
 - if got have extra optional params at the end, it's ok (not shown in examples)
 - if got have extra required params anywhere, it's NOT ok (not shown in examples)
+- if want a union and got a non-union, got must unify with ANY of the parts of want
+- if got a union, split got into non-union parts and ensure ALL parts unify with want (whether want be a union or not)
