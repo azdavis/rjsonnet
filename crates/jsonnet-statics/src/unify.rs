@@ -8,6 +8,7 @@ use jsonnet_expr::Prim;
 
 enum Error {
   Incompatible,
+  MissingField,
 }
 
 struct St {
@@ -33,7 +34,15 @@ fn get(st: &mut St, store: &ty::Store, want: ty::Ty, got: ty::Ty) {
       }
     }
     (ty::Data::Array(want), ty::Data::Array(got)) => get(st, store, *want, *got),
-    (ty::Data::Object(want), ty::Data::Object(got)) => todo!("object types"),
+    (ty::Data::Object(want), ty::Data::Object(got)) => {
+      for (name, want) in want {
+        let Some(got) = got.get(name) else {
+          st.err(Error::MissingField);
+          continue;
+        };
+        get(st, store, *want, *got);
+      }
+    }
     (ty::Data::Fn(_), ty::Data::Fn(_)) => todo!("function types"),
     (ty::Data::Meta(m), ty) | (ty, ty::Data::Meta(m)) => {
       if let ty::Data::Meta(m2) = ty {
