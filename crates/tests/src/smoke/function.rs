@@ -183,3 +183,29 @@ hm(5)
   )
   .check();
 }
+
+/// no surprise here.
+#[test]
+fn optional_after_required() {
+  JsonnetInput::manifest(
+    r"
+local hm(a, b=1) = a + b;
+hm(2) + hm(3, 4)
+",
+    "10",
+  )
+  .check();
+}
+
+/// but actually, this is allowed too.
+#[test]
+fn required_after_optional() {
+  JsonnetInput::manifest(
+    r"
+local hm(a=1, b) = a + b;
+hm(b=5) + hm(3, 4)
+",
+    "13",
+  )
+  .check();
+}
