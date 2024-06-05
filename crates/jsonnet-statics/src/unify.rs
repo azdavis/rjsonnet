@@ -51,7 +51,7 @@ fn get(st: &mut St, store: &ty::Store, want: ty::Ty, got: ty::Ty) {
       // ignore the fields that ARE in `got` but are NOT in `want`.
     }
     (ty::Data::Fn(want), ty::Data::Fn(got)) => {
-      if want.params.len() < got.params.len() {
+      if want.params.len() > got.params.len() {
         st.err(Error::NotEnoughParams);
       }
       for (want, got) in want.params.iter().zip(got.params.iter()) {
