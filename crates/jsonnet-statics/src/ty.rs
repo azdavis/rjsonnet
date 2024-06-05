@@ -36,12 +36,9 @@ pub(crate) enum Data {
   Prim(Prim),
   /// An array of elements, where each element has the given type.
   Array(Ty),
-  /// An object, where we know the name and type of some fields, and may or may not acknowledge the
-  /// possibility of more, unknown fields.
-  Object(Object),
+  /// An object with known fields.
+  Object(BTreeMap<Str, Ty>),
   /// A function type, with some arguments and a return type.
-  ///
-  /// TODO support default arguments, argument names
   Fn(Fn),
   /// A union type.
   ///
@@ -68,15 +65,6 @@ impl Data {
 /// A meta type variable, to be solved by type inference.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub(crate) struct Meta(uniq::Uniq);
-
-/// An object type.
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub(crate) struct Object {
-  /// The fields we know.
-  pub(crate) known: BTreeMap<Str, Ty>,
-  /// Whether there are other, unknown fields.
-  pub(crate) other: bool,
-}
 
 /// A function type.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]

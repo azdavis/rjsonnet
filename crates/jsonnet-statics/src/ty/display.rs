@@ -39,10 +39,10 @@ impl<'a> fmt::Display for TyDisplay<'a> {
         self.with(*ty, Prec::Array).fmt(f)?;
         f.write_str("[]")
       }
-      Data::Object(obj) => {
+      Data::Object(fields) => {
         f.write_str("{")?;
         let mut iter =
-          obj.known.iter().map(|(key, ty)| FieldDisplay { key, ty: *ty, stuff: self.stuff });
+          fields.iter().map(|(key, ty)| FieldDisplay { key, ty: *ty, stuff: self.stuff });
         if let Some(field) = iter.next() {
           f.write_str(" ")?;
           field.fmt(f)?;
@@ -50,8 +50,7 @@ impl<'a> fmt::Display for TyDisplay<'a> {
             f.write_str(", ")?;
             field.fmt(f)?;
           }
-          let end = if obj.other { ", ... " } else { " " };
-          f.write_str(end)?;
+          f.write_str(" ")?;
         }
         f.write_str("}")
       }

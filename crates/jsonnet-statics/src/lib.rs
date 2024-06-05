@@ -54,6 +54,11 @@ impl Cx {
     self.store.entry(id).or_default().push(DefinedId { ty, def, usages: 0 });
   }
 
+  fn define_self_super(&mut self) {
+    self.define(Id::self_, ty::Ty::ANY, Def::KwIdent);
+    self.define(Id::super_, ty::Ty::ANY, Def::KwIdent);
+  }
+
   fn get(&mut self, id: Id) -> Option<(ty::Ty, Def)> {
     let in_scope = self.store.get_mut(&id)?.last_mut()?;
     in_scope.usages += 1;
@@ -76,9 +81,8 @@ fn undefine(cx: &mut Cx, st: &mut St, id: Id) {
 /// Performs the checks.
 pub fn get(st: &mut St, ars: &Arenas, expr: Expr) {
   let mut cx = Cx::default();
-  // TODO improve std types
-  cx.define(Id::std, ty::Ty::OBJECT, Def::Std);
-  cx.define(Id::std_unutterable, ty::Ty::OBJECT, Def::Std);
+  cx.define(Id::std, ty::Ty::ANY, Def::Std);
+  cx.define(Id::std_unutterable, ty::Ty::ANY, Def::Std);
   check(st, &mut cx, ars, expr);
   undefine(&mut cx, st, Id::std);
   undefine(&mut cx, st, Id::std_unutterable);
@@ -104,20 +108,18 @@ fn check(st: &mut St, cx: &mut Cx, ars: &Arenas, expr: Expr) -> ty::Ty {
           st.err(key, error::Kind::DuplicateFieldName(s.clone()));
         }
       }
-      cx.define(Id::self_, ty::Ty::OBJECT, Def::KwIdent);
-      cx.define(Id::super_, ty::Ty::OBJECT, Def::KwIdent);
+      cx.define_self_super();
       for (idx, &(lhs, _)) in binds.iter().enumerate() {
         cx.define(lhs, ty::Ty::ANY, Def::Expr(expr, def::ExprDefKind::ObjectLocal(idx)));
       }
       for &(_, expr) in binds {
         check(st, cx, ars, expr);
       }
-      let mut other = false;
       for field in fields {
         let ty = check(st, cx, ars, field.val);
         let Some(key) = field.key else { continue };
         let ExprData::Prim(Prim::String(s)) = &ars.expr[key] else {
-          other = true;
+          // TODO handle when this has other fields
           continue;
         };
         always!(field_tys.insert(s.clone(), ty).is_some());
@@ -130,19 +132,18 @@ fn check(st: &mut St, cx: &mut Cx, ars: &Arenas, expr: Expr) -> ty::Ty {
       for &(lhs, _) in binds {
         undefine(cx, st, lhs);
       }
-      st.tys.get(ty::Data::Object(ty::Object { known: field_tys, other }))
+      st.tys.get(ty::Data::Object(field_tys))
     }
     ExprData::ObjectComp { name, body, id, ary } => {
       check(st, cx, ars, *ary);
       cx.define(*id, ty::Ty::ANY, Def::Expr(expr, def::ExprDefKind::ObjectCompId));
       check(st, cx, ars, *name);
-      cx.define(Id::self_, ty::Ty::OBJECT, Def::KwIdent);
-      cx.define(Id::super_, ty::Ty::OBJECT, Def::KwIdent);
+      cx.define_self_super();
       check(st, cx, ars, *body);
       undefine(cx, st, *id);
       undefine(cx, st, Id::self_);
       undefine(cx, st, Id::super_);
-      st.tys.get(ty::Data::Object(ty::Object { known: BTreeMap::new(), other: true }))
+      ty::Ty::ANY
     }
     ExprData::Array(exprs) => {
       for &arg in exprs {
