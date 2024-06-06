@@ -175,7 +175,7 @@ pub enum UnaryOp {
 }
 
 /// A primitive value.
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Prim {
   Null,
   Bool(bool),
@@ -311,7 +311,7 @@ impl StrArena {
 }
 
 /// An identifier.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Id(CopyStrRepr);
 
 impl Id {

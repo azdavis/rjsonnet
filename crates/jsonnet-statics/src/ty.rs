@@ -14,7 +14,7 @@ use std::collections::{BTreeMap, BTreeSet};
 pub type Exprs = FxHashMap<ExprMust, Ty>;
 
 /// Data about a type.
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub(crate) enum Data {
   /// Anything at all.
   ///
@@ -72,11 +72,11 @@ pub(crate) type Object = BTreeMap<Str, Ty>;
 pub(crate) type Union = BTreeSet<Ty>;
 
 /// A meta type variable, to be solved by type inference.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub(crate) struct Meta(uniq::Uniq);
 
 /// A function type.
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub(crate) struct Fn {
   /// The parameters.
   pub(crate) params: Vec<Param>,
@@ -85,7 +85,7 @@ pub(crate) struct Fn {
 }
 
 /// A function parameter.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub(crate) struct Param {
   pub(crate) id: Id,
   pub(crate) ty: Ty,
@@ -104,7 +104,7 @@ pub(crate) struct Param {
 /// 1. create a fresh meta variable `m` and corresponding type `t`
 /// 2. solve `m` to [`Ty::NUMBER`]
 /// 3. observe `t` != `Ty::NUMBER`, yet `data(t) == data(Ty::NUMBER) == Data::Number`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Ty(u32);
 
 impl Ty {
