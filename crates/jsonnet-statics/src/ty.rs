@@ -1,5 +1,8 @@
 //! A rudimentary type system for Jsonnet.
 
+// TODO remove
+#![allow(dead_code)]
+
 mod generated {
   include!(concat!(env!("OUT_DIR"), "/generated.rs"));
 }
@@ -154,6 +157,49 @@ impl Store {
     ty
   }
 
+  /// TODO: we need to call this as part of `weak_head_canonical` and/or `data`. this is because
+  /// weak head canonical form MUST (but currently does NOT) flatten union types. we might want to
+  /// do that when inserting new types as well (in `get`), but we MUST do it when getting data out,
+  /// because new meta var solutions may require extra flattening.
+  fn union_parts(&mut self, subst: &Subst, mut types: Vec<Ty>) -> BTreeSet<Ty> {
+    let mut bool = BoolUnion::None;
+    let mut string = PrimUnion::Set(BTreeSet::new());
+    let mut number = PrimUnion::Set(BTreeSet::new());
+    let mut parts = BTreeSet::<Ty>::new();
+    while let Some(ty) = types.pop() {
+      let ty = self.weak_head_canonical(subst, ty);
+      match self.unchecked_data(ty) {
+        Data::Any => return BTreeSet::from_iter([Ty::ANY]),
+        Data::Bool => bool = BoolUnion::Any,
+        Data::String => string = PrimUnion::Any,
+        Data::Number => number = PrimUnion::Any,
+        Data::Prim(Prim::Bool(b)) => bool = bool.add(*b),
+        Data::Prim(Prim::String(_)) => string.add(ty),
+        Data::Prim(Prim::Number(_)) => number.add(ty),
+        Data::Prim(Prim::Null) | Data::Array(_) | Data::Object(_) | Data::Fn(_) | Data::Meta(_) => {
+          // DO NOT recur.
+          parts.insert(ty);
+        }
+        Data::Union(parts) => types.extend(parts),
+      }
+    }
+    match bool {
+      BoolUnion::None => {}
+      BoolUnion::Any => ignore(parts.insert(Ty::BOOL)),
+      BoolUnion::True => ignore(parts.insert(Ty::TRUE)),
+      BoolUnion::False => ignore(parts.insert(Ty::FALSE)),
+    }
+    match string {
+      PrimUnion::Any => ignore(parts.insert(Ty::STRING)),
+      PrimUnion::Set(strings) => parts.extend(strings),
+    }
+    match number {
+      PrimUnion::Any => ignore(parts.insert(Ty::NUMBER)),
+      PrimUnion::Set(numbers) => parts.extend(numbers),
+    }
+    parts
+  }
+
   pub(crate) fn data(&self, subst: &Subst, ty: Ty) -> &Data {
     let ty = self.weak_head_canonical(subst, ty);
     self.unchecked_data(ty)
@@ -199,3 +245,37 @@ impl Subst {
     always!(self.store.insert(meta, ty).is_none());
   }
 }
+
+enum BoolUnion {
+  None,
+  Any,
+  True,
+  False,
+}
+
+impl BoolUnion {
+  fn add(self, b: bool) -> Self {
+    match (self, b) {
+      (Self::Any, _) | (Self::False, true) | (Self::True, false) => Self::Any,
+      (Self::None | Self::True, true) => Self::True,
+      (Self::None | Self::False, false) => Self::False,
+    }
+  }
+}
+
+enum PrimUnion {
+  Any,
+  Set(BTreeSet<Ty>),
+}
+
+impl PrimUnion {
+  fn add(&mut self, ty: Ty) {
+    match self {
+      PrimUnion::Any => {}
+      PrimUnion::Set(set) => ignore(set.insert(ty)),
+    }
+  }
+}
+
+/// so we don't have to waste space with extra `{}` and newlines and `;` for a simple match arm.
+fn ignore(_: bool) {}
