@@ -115,7 +115,7 @@ fn get_meta(st: &mut St<'_>, store: &ty::Store, meta: ty::Meta, want: ty::Ty) {
     st.err(error::Kind::OccursCheck(want));
     return;
   }
-  st.subst.insert(meta, ty::MetaSubst::Ty(want));
+  st.subst.insert(meta, want);
 }
 
 fn occurs_check(store: &ty::Store, subst: &ty::Subst, m: ty::Meta, ty: ty::Ty) -> bool {

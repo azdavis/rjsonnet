@@ -150,7 +150,7 @@ impl Store {
         return &Data::Any;
       };
       if let Data::Meta(meta) = data {
-        if let Some(&MetaSubst::Ty(t)) = subst.store.get(meta) {
+        if let Some(&t) = subst.store.get(meta) {
           ty = t;
           continue;
         }
@@ -176,16 +176,11 @@ impl Store {
 /// A substitution constructed with type inference.
 #[derive(Debug, Default)]
 pub struct Subst {
-  store: FxHashMap<Meta, MetaSubst>,
+  store: FxHashMap<Meta, Ty>,
 }
 
 impl Subst {
-  pub(crate) fn insert(&mut self, meta: Meta, subst: MetaSubst) {
-    always!(self.store.insert(meta, subst).is_none());
+  pub(crate) fn insert(&mut self, meta: Meta, ty: Ty) {
+    always!(self.store.insert(meta, ty).is_none());
   }
-}
-
-#[derive(Debug)]
-pub(crate) enum MetaSubst {
-  Ty(Ty),
 }
