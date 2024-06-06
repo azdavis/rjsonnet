@@ -96,8 +96,14 @@ pub(crate) struct Param {
 ///
 /// Internally represented as an index that is cheap to copy.
 ///
-/// Furthermore, types will be unique. That is, for two types a and b, if a != b, then a's data !=
-/// b's data.
+/// We'd like for types to be unique. That is, for two types a and b, if a != b, then a's data !=
+/// b's data. But in the face of meta variables, this isn't true.
+///
+/// A simple example:
+///
+/// 1. create a fresh meta variable `m` and corresponding type `t`
+/// 2. solve `m` to [`Ty::NUMBER`]
+/// 3. observe `t` != `Ty::NUMBER`, yet `data(t) == data(Ty::NUMBER) == Data::Number`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Ty(u32);
 
@@ -133,19 +139,28 @@ impl Store {
     ret
   }
 
-  pub(crate) fn data(&self, subst: &Subst, mut ty: Ty) -> &Data {
+  /// returns the weak-head-canonical version of this type. i.e., its own data will NOT be a SOLVED
+  /// Meta. but it may contain types whose data IS Meta.
+  pub(crate) fn weak_head_canonical(&self, subst: &Subst, mut ty: Ty) -> Ty {
     loop {
       let Some(data) = self.idx_to_data.get(ty.to_usize()) else {
         always!(false, "no ty data for {ty:?}");
-        return &Data::Any;
+        break;
       };
-      if let Data::Meta(meta) = data {
-        if let Some(&t) = subst.store.get(meta) {
-          ty = t;
-          continue;
-        }
-      }
-      return data;
+      let Data::Meta(meta) = data else { break };
+      let Some(&t) = subst.store.get(meta) else { break };
+      ty = t;
+    }
+    ty
+  }
+
+  pub(crate) fn data(&self, subst: &Subst, ty: Ty) -> &Data {
+    let ty = self.weak_head_canonical(subst, ty);
+    if let Some(x) = self.idx_to_data.get(ty.to_usize()) {
+      x
+    } else {
+      always!(false, "no ty data for {ty:?}");
+      &Data::Any
     }
   }
 
@@ -175,7 +190,7 @@ impl Subst {
     Meta(self.gen.gen())
   }
 
-  pub(crate) fn insert(&mut self, meta: Meta, ty: Ty) {
+  pub(crate) fn solve(&mut self, meta: Meta, ty: Ty) {
     always!(self.store.insert(meta, ty).is_none());
   }
 }
