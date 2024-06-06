@@ -156,6 +156,11 @@ impl Store {
 
   pub(crate) fn data(&self, subst: &Subst, ty: Ty) -> &Data {
     let ty = self.weak_head_canonical(subst, ty);
+    self.unchecked_data(ty)
+  }
+
+  /// NOTE: should ONLY call this on a known weak-head-canonical ty
+  fn unchecked_data(&self, ty: Ty) -> &Data {
     if let Some(x) = self.idx_to_data.get(ty.to_usize()) {
       x
     } else {
