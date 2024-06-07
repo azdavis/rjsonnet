@@ -5,7 +5,7 @@ use always::always;
 use jsonnet_expr::def::{self, Def};
 use jsonnet_expr::{Arenas, Expr, ExprData, Id, Prim, Str};
 use rustc_hash::FxHashSet;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 /// NOTE: don't return early from this except in the degenerate case where the `expr` was `None`.
 /// This is so we can insert the expr's type into the `St` at the end.
@@ -141,9 +141,9 @@ pub(crate) fn get(st: &mut st::St<'_>, ars: &Arenas, expr: Expr) -> ty::Ty {
     ExprData::If { cond, yes, no } => {
       let cond_ty = get(st, ars, *cond);
       st.unify(cond.unwrap_or(expr), ty::Ty::BOOL, cond_ty);
-      get(st, ars, *yes);
-      get(st, ars, *no);
-      ty::Ty::ANY
+      let yes_ty = get(st, ars, *yes);
+      let no_ty = get(st, ars, *no);
+      st.get_ty(ty::Data::Union(BTreeSet::from_iter([yes_ty, no_ty])))
     }
     ExprData::BinaryOp { lhs, rhs, .. } => {
       get(st, ars, *lhs);
