@@ -8,7 +8,7 @@ fn local() {
   JsonnetInput::pre_eval_error(
     r"
 ##    v diagnostic: unused: `x`
-local x = 3, x = 4;
+local x = 3, x = 3;
 ##               ^ diagnostic: duplicate binding: `x`
 x
 ",
@@ -16,17 +16,16 @@ x
   .check();
 }
 
-// TODO fix
 #[test]
-#[should_panic = "no diagnostic matches: duplicate binding: `x`"]
 fn object_local() {
   JsonnetInput::pre_eval_error(
     r"
 {
   local x = 3,
-  local x = 4,
-##      ^ diagnostic: duplicate binding: `x`
-  a: 1,
+##      ^ diagnostic: unused: `x`
+  local x = 3,
+##          ^ diagnostic: duplicate binding: `x`
+  a: x,
 }
 ",
   )

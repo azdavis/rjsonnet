@@ -25,8 +25,12 @@ pub(crate) fn get(st: &mut st::St<'_>, ars: &Arenas, expr: Expr) -> ty::Ty {
         }
       }
       st.define_self_super();
-      for (idx, &(lhs, _)) in binds.iter().enumerate() {
+      let mut bind_names = FxHashSet::<Id>::default();
+      for (idx, &(lhs, rhs)) in binds.iter().enumerate() {
         st.define(lhs, ty::Ty::ANY, Def::Expr(expr, def::ExprDefKind::ObjectLocal(idx)));
+        if !bind_names.insert(lhs) {
+          st.err(rhs.unwrap_or(expr), error::Kind::DuplicateBinding(lhs));
+        }
       }
       for &(_, expr) in binds {
         get(st, ars, expr);
