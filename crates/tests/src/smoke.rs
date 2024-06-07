@@ -17,6 +17,7 @@ use crate::check::{Input, JsonnetInput};
 fn parse_fail() {
   JsonnetInput::pre_eval_error(
     r"
+## vvvv diagnostic: expected `then`
 if else 4
 ## ^^^^ diagnostic: expected expression
 ",

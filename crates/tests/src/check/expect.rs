@@ -1,28 +1,32 @@
 //! Expectations.
 
+use rustc_hash::FxHashSet;
 use std::{collections::BTreeMap, fmt};
 
 /// A map from regions to expectations.
 #[derive(Debug)]
 pub(crate) struct File {
   /// this is a `BTreeMap` because the iteration order matters for defs and uses.
-  inner: BTreeMap<Region, Expect>,
+  inner: BTreeMap<Region, FxHashSet<Expect>>,
 }
 
 impl File {
   #[must_use]
   pub(crate) fn new(s: &str) -> Self {
-    Self {
-      inner: s.lines().enumerate().filter_map(|(line_n, line_s)| get_one(line_n, line_s)).collect(),
+    let mut inner = BTreeMap::<Region, FxHashSet<Expect>>::default();
+    for (idx, line) in s.lines().enumerate() {
+      let Some((region, expect)) = get_one(idx, line) else { continue };
+      inner.entry(region).or_default().insert(expect);
     }
+    Self { inner }
   }
 
-  pub(crate) fn get(&self, r: Region) -> Option<&Expect> {
+  pub(crate) fn get(&self, r: Region) -> Option<&FxHashSet<Expect>> {
     self.inner.get(&r)
   }
 
   pub(crate) fn iter(&self) -> impl Iterator<Item = (&Region, &Expect)> + '_ {
-    self.inner.iter()
+    self.inner.iter().flat_map(|(r, es)| es.iter().map(move |e| (r, e)))
   }
 }
 
@@ -89,7 +93,7 @@ impl fmt::Display for Region {
 }
 
 /// Something expected in a source file.
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq, Hash)]
 pub(crate) struct Expect {
   /// The kind of expectation.
   pub(crate) kind: Kind,
@@ -119,7 +123,7 @@ impl fmt::Display for Expect {
 }
 
 /// A kind of expectation.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub(crate) enum Kind {
   /// A definition site.
   Def,

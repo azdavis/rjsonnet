@@ -113,7 +113,11 @@ impl<'a> Input<'a> {
     for (&path_str, jsonnet) in &self.jsonnet {
       let path = pwd.join(path_str);
       let (path_id, ds) = st.open(fs, path.clone(), jsonnet.text.to_owned());
-      let mut ds: FxHashMap<_, _> = ds.into_iter().map(|x| (x.range, x.message)).collect();
+      let mut ds_map = FxHashMap::<text_pos::RangeUtf16, FxHashSet<String>>::default();
+      for d in ds {
+        let message = make_one_line(&d.message);
+        ds_map.entry(d.range).or_default().insert(message);
+      }
 
       st.get_all_deps(fs, path_id).expect("get all deps");
 
@@ -130,25 +134,30 @@ impl<'a> Input<'a> {
               col_start: range.start.col,
               col_end: range.end.col,
             };
-            let def_ex = expects[&def_path].get(region).expect("nothing at def site");
-            assert_eq!(expect::Kind::Def, def_ex.kind, "{path_str}: not a def");
-            assert_eq!(def_ex.msg, ex.msg, "{path_str}: mismatched uses");
+            let def_exs = expects[&def_path].get(region).expect("nothing at def site");
+            let msg = ex.msg.clone();
+            let def_ex = expect::Expect { kind: expect::Kind::Def, msg: msg.clone() };
+            assert!(def_exs.contains(&def_ex), "{path_str}: no def found for {msg}");
           }
           expect::Kind::Diagnostic => {
             let range = text_pos::RangeUtf16 {
               start: text_pos::PositionUtf16 { line: region.line, col: region.col_start },
               end: text_pos::PositionUtf16 { line: region.line, col: region.col_end },
             };
-            let got = ds.remove(&range).expect("no diagnostic at range");
-            let got = make_one_line(&got);
-            assert_eq!(ex.msg.as_str(), got, "{path_str}: mismatched diagnostic");
+            let range_map = ds_map.get_mut(&range).expect("no diagnostics at range");
+            let want = ex.msg.as_str();
+            assert!(range_map.remove(want), "{path_str}: no diagnostic matches: {want}");
+            if range_map.is_empty() {
+              assert!(ds_map.remove(&range).expect("just got it").is_empty());
+            }
           }
         }
       }
 
-      if let Some((range, msg)) = ds.iter().next() {
+      if let Some((range, ds)) = ds_map.iter().next() {
         let n = ds.len();
-        panic!("{path_str} still has {n} diagnostics, e.g. {range}: {msg}");
+        let m = ds.iter().next().expect("didn't clear out empty sets");
+        panic!("{path_str}:{range} still has {n} diagnostics, e.g.: {m}");
       }
 
       match (jsonnet.kind, st.get_json(path_id)) {
