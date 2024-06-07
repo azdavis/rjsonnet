@@ -72,10 +72,13 @@ pub(crate) fn get(st: &mut st::St<'_>, ars: &Arenas, expr: Expr) -> ty::Ty {
       ty::Ty::ANY
     }
     ExprData::Array(exprs) => {
+      let mut tys = BTreeSet::<ty::Ty>::new();
       for &arg in exprs {
-        get(st, ars, arg);
+        let ty = get(st, ars, arg);
+        tys.insert(ty);
       }
-      st.get_ty(ty::Data::Array(ty::Ty::ANY))
+      let elem_ty = st.get_ty(ty::Data::Union(tys));
+      st.get_ty(ty::Data::Array(elem_ty))
     }
     ExprData::Subscript { on, idx } => {
       get(st, ars, *on);
@@ -133,11 +136,11 @@ pub(crate) fn get(st: &mut st::St<'_>, ars: &Arenas, expr: Expr) -> ty::Ty {
       ty
     }
     ExprData::Function { params, body } => {
-      let mut bound_names = FxHashSet::<Id>::default();
+      let mut param_tys = FxHashMap::<Id, (ty::Ty, bool)>::default();
       for (idx, &(bind, rhs)) in params.iter().enumerate() {
         let fresh = st.fresh();
         st.define(bind, fresh, Def::Expr(expr, def::ExprDefKind::FnParam(idx)));
-        if !bound_names.insert(bind) {
+        if param_tys.insert(bind, (fresh, rhs.is_none())).is_some() {
           st.err(rhs.flatten().unwrap_or(expr), error::Kind::DuplicateBinding(bind));
         }
       }
@@ -145,16 +148,16 @@ pub(crate) fn get(st: &mut st::St<'_>, ars: &Arenas, expr: Expr) -> ty::Ty {
         let Some(rhs) = rhs else { continue };
         get(st, ars, rhs);
       }
-      get(st, ars, *body);
+      let body_ty = get(st, ars, *body);
       for &(bind, _) in params {
         st.undefine(bind);
       }
       let fn_ty = ty::Fn {
-        params: params
+        params: param_tys
           .iter()
-          .map(|&(id, default)| ty::Param { id, ty: ty::Ty::ANY, required: default.is_none() })
+          .map(|(&id, &(ty, required))| ty::Param { id, ty, required })
           .collect(),
-        ret: ty::Ty::ANY,
+        ret: body_ty,
       };
       st.get_ty(ty::Data::Fn(fn_ty))
     }
