@@ -41,7 +41,7 @@ impl<'a> fmt::Display for TyDisplay<'a> {
       Data::Number => f.write_str("number"),
       Data::Prim(p) => p.display(self.stuff.str_ar).fmt(f),
       Data::Array(ty) => {
-        self.with(*ty, Prec::Array).fmt(f)?;
+        self.with(ty, Prec::Array).fmt(f)?;
         f.write_str("[]")
       }
       Data::Object(fields) => {

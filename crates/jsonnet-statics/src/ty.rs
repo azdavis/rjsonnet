@@ -130,8 +130,6 @@ pub struct Store {
 }
 
 impl Store {
-  /// TODO special logic to flatten `Or`s? and also handle single-element `Or`s by just returning
-  /// the single inner element
   pub(crate) fn get(&mut self, data: Data) -> Ty {
     if let Some(&ret) = self.data_to_idx.get(&data) {
       return ret;
@@ -142,45 +140,31 @@ impl Store {
     ret
   }
 
-  /// returns the weak-head-canonical version of this type. i.e., its own data will NOT be a SOLVED
-  /// Meta. but it may contain types whose data IS Meta.
-  pub(crate) fn weak_head_canonical(&self, subst: &Subst, mut ty: Ty) -> Ty {
-    loop {
-      let Some(data) = self.idx_to_data.get(ty.to_usize()) else {
-        always!(false, "no ty data for {ty:?}");
-        break;
-      };
-      let Data::Meta(meta) = data else { break };
-      let Some(&t) = subst.store.get(meta) else { break };
-      ty = t;
-    }
-    ty
-  }
-
-  /// TODO: we need to call this as part of `weak_head_canonical` and/or `data`. this is because
-  /// weak head canonical form MUST (but currently does NOT) flatten union types. we might want to
-  /// do that when inserting new types as well (in `get`), but we MUST do it when getting data out,
-  /// because new meta var solutions may require extra flattening.
-  fn union_parts(&mut self, subst: &Subst, mut types: Vec<Ty>) -> BTreeSet<Ty> {
+  pub(crate) fn data(&self, subst: &Subst, ty: Ty) -> Data {
     let mut bool = BoolUnion::None;
     let mut string = PrimUnion::Set(BTreeSet::new());
     let mut number = PrimUnion::Set(BTreeSet::new());
     let mut parts = BTreeSet::<Ty>::new();
-    while let Some(ty) = types.pop() {
-      let ty = self.weak_head_canonical(subst, ty);
-      match self.unchecked_data(ty) {
-        Data::Any => return BTreeSet::from_iter([Ty::ANY]),
+    let mut work = vec![ty];
+    while let Some(ty) = work.pop() {
+      match self.data_unchecked(ty) {
+        Data::Any => return Data::Any,
         Data::Bool => bool = BoolUnion::Any,
         Data::String => string = PrimUnion::Any,
         Data::Number => number = PrimUnion::Any,
-        Data::Prim(Prim::Bool(b)) => bool = bool.add(*b),
+        Data::Prim(Prim::Bool(b)) => bool = bool.add(b),
         Data::Prim(Prim::String(_)) => string.add(ty),
         Data::Prim(Prim::Number(_)) => number.add(ty),
-        Data::Prim(Prim::Null) | Data::Array(_) | Data::Object(_) | Data::Fn(_) | Data::Meta(_) => {
+        Data::Prim(Prim::Null) | Data::Array(_) | Data::Object(_) | Data::Fn(_) => {
           // DO NOT recur.
           parts.insert(ty);
         }
-        Data::Union(parts) => types.extend(parts),
+        Data::Union(parts) => work.extend(parts),
+        Data::Meta(meta) => match subst.store.get(&meta) {
+          None => ignore(parts.insert(ty)),
+          // keep dereferencing.
+          Some(t) => work.push(*t),
+        },
       }
     }
     match bool {
@@ -197,21 +181,26 @@ impl Store {
       PrimUnion::Any => ignore(parts.insert(Ty::NUMBER)),
       PrimUnion::Set(numbers) => parts.extend(numbers),
     }
-    parts
-  }
-
-  pub(crate) fn data(&self, subst: &Subst, ty: Ty) -> &Data {
-    let ty = self.weak_head_canonical(subst, ty);
-    self.unchecked_data(ty)
-  }
-
-  /// NOTE: should ONLY call this on a known weak-head-canonical ty
-  fn unchecked_data(&self, ty: Ty) -> &Data {
-    if let Some(x) = self.idx_to_data.get(ty.to_usize()) {
-      x
+    if parts.len() == 1 {
+      match parts.into_iter().next() {
+        None => {
+          always!(false, "just checked len == 1");
+          Data::Any
+        }
+        Some(ty) => self.data_unchecked(ty),
+      }
     } else {
-      always!(false, "no ty data for {ty:?}");
-      &Data::Any
+      Data::Union(parts)
+    }
+  }
+
+  fn data_unchecked(&self, ty: Ty) -> Data {
+    match self.idx_to_data.get(ty.to_usize()) {
+      None => {
+        always!(false, "no ty data for {ty:?}");
+        Data::Any
+      }
+      Some(x) => x.clone(),
     }
   }
 
