@@ -3,6 +3,7 @@
 mod array;
 mod comment;
 mod def;
+mod dupe;
 mod function;
 mod keyword_lit;
 mod number;
