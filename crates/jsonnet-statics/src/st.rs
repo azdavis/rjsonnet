@@ -100,7 +100,6 @@ impl<'a> St<'a> {
   }
 
   #[must_use]
-  #[allow(dead_code)]
   pub(crate) fn fresh(&mut self) -> ty::Ty {
     let data = ty::Data::Meta(self.subst.fresh());
     self.get_ty(data)

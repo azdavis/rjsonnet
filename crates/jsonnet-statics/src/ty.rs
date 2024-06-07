@@ -1,8 +1,5 @@
 //! A rudimentary type system for Jsonnet.
 
-// TODO remove
-#![allow(dead_code)]
-
 mod generated {
   include!(concat!(env!("OUT_DIR"), "/generated.rs"));
 }
@@ -44,9 +41,6 @@ pub(crate) enum Data {
   /// A function type, with some arguments and a return type.
   Fn(Fn),
   /// A meta type variable.
-  ///
-  /// TODO use
-  #[allow(dead_code)]
   Meta(Meta),
   /// A union type.
   ///
