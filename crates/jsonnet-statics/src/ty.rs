@@ -130,14 +130,23 @@ pub struct Store {
 }
 
 impl Store {
-  pub(crate) fn get(&mut self, data: Data) -> Ty {
-    if let Some(&ret) = self.data_to_idx.get(&data) {
-      return ret;
-    }
+  pub(crate) fn get(&mut self, subst: &Subst, data: Data) -> Ty {
     let ret = Ty::from_usize(self.idx_to_data.len());
-    self.idx_to_data.push(data.clone());
-    always!(self.data_to_idx.insert(data, ret).is_none());
-    ret
+    self.idx_to_data.push(data);
+    // see if we can simplify the data before inserting it into `data_to_idx`.
+    let data = self.data(subst, ret);
+    // now THIS is wild. after simplifying the data, we may find there's already a type for it.
+    match self.data_to_idx.get(&data) {
+      None => {
+        always!(self.data_to_idx.insert(data, ret).is_none());
+        ret
+      }
+      Some(&ty) => {
+        always!(ty != ret);
+        always!(self.idx_to_data.pop().is_some());
+        ty
+      }
+    }
   }
 
   pub(crate) fn data(&self, subst: &Subst, ty: Ty) -> Data {

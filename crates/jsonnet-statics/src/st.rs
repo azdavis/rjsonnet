@@ -55,7 +55,7 @@ impl<'a> St<'a> {
   }
 
   pub(crate) fn get_ty(&mut self, data: ty::Data) -> ty::Ty {
-    self.tys.get(data)
+    self.tys.get(self.subst, data)
   }
 
   pub(crate) fn insert_expr_ty(&mut self, expr: ExprMust, ty: ty::Ty) {
