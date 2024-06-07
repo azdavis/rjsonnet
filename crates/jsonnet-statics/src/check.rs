@@ -4,7 +4,7 @@ use crate::{error, st, ty};
 use always::always;
 use jsonnet_expr::def::{self, Def};
 use jsonnet_expr::{Arenas, Expr, ExprData, Id, Prim, Str};
-use rustc_hash::FxHashSet;
+use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::{BTreeMap, BTreeSet};
 
 /// NOTE: don't return early from this except in the degenerate case where the `expr` was `None`.
@@ -20,20 +20,28 @@ pub(crate) fn get(st: &mut st::St<'_>, ars: &Arenas, expr: Expr) -> ty::Ty {
         get(st, ars, field.key);
         let Some(key) = field.key else { continue };
         let ExprData::Prim(Prim::String(s)) = &ars.expr[key] else { continue };
-        if field_tys.insert(s.clone(), ty::Ty::ANY).is_some() {
+        let fresh = st.fresh();
+        if field_tys.insert(s.clone(), fresh).is_some() {
           st.err(key, error::Kind::DuplicateFieldName(s.clone()));
         }
       }
       st.define_self_super();
-      let mut bind_names = FxHashSet::<Id>::default();
+      let mut bind_tys = FxHashMap::<Id, ty::Ty>::default();
       for (idx, &(lhs, rhs)) in binds.iter().enumerate() {
-        st.define(lhs, ty::Ty::ANY, Def::Expr(expr, def::ExprDefKind::ObjectLocal(idx)));
-        if !bind_names.insert(lhs) {
+        let fresh = st.fresh();
+        st.define(lhs, fresh, Def::Expr(expr, def::ExprDefKind::ObjectLocal(idx)));
+        if bind_tys.insert(lhs, fresh).is_some() {
           st.err(rhs.unwrap_or(expr), error::Kind::DuplicateBinding(lhs));
         }
       }
-      for &(_, expr) in binds {
-        get(st, ars, expr);
+      for &(lhs, rhs) in binds {
+        let ty = get(st, ars, rhs);
+        match bind_tys.get(&lhs) {
+          None => {
+            always!(false, "just defined this name: {lhs:?}");
+          }
+          Some(&t) => st.unify(rhs.unwrap_or(expr), t, ty),
+        }
       }
       for field in fields {
         let ty = get(st, ars, field.val);
@@ -101,15 +109,22 @@ pub(crate) fn get(st: &mut st::St<'_>, ars: &Arenas, expr: Expr) -> ty::Ty {
       }
     },
     ExprData::Local { binds, body } => {
-      let mut bound_names = FxHashSet::<Id>::default();
+      let mut bind_tys = FxHashMap::<Id, ty::Ty>::default();
       for (idx, &(bind, rhs)) in binds.iter().enumerate() {
-        st.define(bind, ty::Ty::ANY, Def::Expr(expr, def::ExprDefKind::LocalBind(idx)));
-        if !bound_names.insert(bind) {
+        let fresh = st.fresh();
+        st.define(bind, fresh, Def::Expr(expr, def::ExprDefKind::LocalBind(idx)));
+        if bind_tys.insert(bind, fresh).is_some() {
           st.err(rhs.unwrap_or(expr), error::Kind::DuplicateBinding(bind));
         }
       }
-      for &(_, rhs) in binds {
-        get(st, ars, rhs);
+      for &(lhs, rhs) in binds {
+        let ty = get(st, ars, rhs);
+        match bind_tys.get(&lhs) {
+          None => {
+            always!(false, "just defined this name: {lhs:?}");
+          }
+          Some(&t) => st.unify(rhs.unwrap_or(expr), t, ty),
+        }
       }
       let ty = get(st, ars, *body);
       for &(bind, _) in binds {
@@ -120,7 +135,8 @@ pub(crate) fn get(st: &mut st::St<'_>, ars: &Arenas, expr: Expr) -> ty::Ty {
     ExprData::Function { params, body } => {
       let mut bound_names = FxHashSet::<Id>::default();
       for (idx, &(bind, rhs)) in params.iter().enumerate() {
-        st.define(bind, ty::Ty::ANY, Def::Expr(expr, def::ExprDefKind::FnParam(idx)));
+        let fresh = st.fresh();
+        st.define(bind, fresh, Def::Expr(expr, def::ExprDefKind::FnParam(idx)));
         if !bound_names.insert(bind) {
           st.err(rhs.flatten().unwrap_or(expr), error::Kind::DuplicateBinding(bind));
         }
