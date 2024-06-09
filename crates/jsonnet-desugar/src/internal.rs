@@ -491,9 +491,9 @@ fn get_binary_op(
     ast::BinaryOpKind::LtEq => bop(BinaryOp::LtEq, lhs, rhs),
     ast::BinaryOpKind::Gt => bop(BinaryOp::Gt, lhs, rhs),
     ast::BinaryOpKind::GtEq => bop(BinaryOp::GtEq, lhs, rhs),
-    ast::BinaryOpKind::EqEq => call_std_func_data(st, ptr, Str::equals, vec![lhs, rhs]),
+    ast::BinaryOpKind::EqEq => bop(BinaryOp::Eq, lhs, rhs),
     ast::BinaryOpKind::BangEq => {
-      let inner = call_std_func(st, ptr, Str::equals, vec![lhs, rhs]);
+      let inner = Some(st.expr(ptr, bop(BinaryOp::Eq, lhs, rhs)));
       ExprData::UnaryOp { op: UnaryOp::LogicalNot, inner }
     }
     ast::BinaryOpKind::InKw => call_std_func_data(st, ptr, Str::objectHasEx, vec![lhs, rhs]),

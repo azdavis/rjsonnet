@@ -236,6 +236,11 @@ pub(crate) fn get(cx: Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
       BinaryOp::BitXor => int_op(expr, cx, env, *lhs, *rhs, std::ops::BitXor::bitxor),
       BinaryOp::BitOr => int_op(expr, cx, env, *lhs, *rhs, std::ops::BitOr::bitor),
       // comparison
+      BinaryOp::Eq => {
+        let lhs = get(cx, env, *lhs)?;
+        let rhs = get(cx, env, *rhs)?;
+        Ok(Val::Prim(Prim::Bool(eq_val(expr, cx, &lhs, &rhs)?)))
+      }
       BinaryOp::Lt => cmp_bool_op(expr, cx, env, *lhs, *rhs, Ordering::is_lt),
       BinaryOp::LtEq => cmp_bool_op(expr, cx, env, *lhs, *rhs, Ordering::is_le),
       BinaryOp::Gt => cmp_bool_op(expr, cx, env, *lhs, *rhs, Ordering::is_gt),

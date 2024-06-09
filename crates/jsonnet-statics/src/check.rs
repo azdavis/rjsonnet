@@ -213,6 +213,7 @@ pub(crate) fn get(st: &mut st::St<'_>, ars: &Arenas, expr: Expr) -> ty::Ty {
           st.unify(rhs.unwrap_or(expr), ty::Ty::NUMBER, rhs_ty);
           ty::Ty::NUMBER
         }
+        jsonnet_expr::BinaryOp::Eq => ty::Ty::BOOL,
         jsonnet_expr::BinaryOp::Lt
         | jsonnet_expr::BinaryOp::LtEq
         | jsonnet_expr::BinaryOp::Gt

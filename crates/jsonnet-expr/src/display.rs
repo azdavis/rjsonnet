@@ -160,6 +160,7 @@ impl fmt::Display for BinaryOp {
       BinaryOp::Shr => ">>",
       BinaryOp::Lt => "<",
       BinaryOp::LtEq => "<=",
+      BinaryOp::Eq => "==",
       BinaryOp::Gt => ">",
       BinaryOp::GtEq => ">=",
       BinaryOp::BitAnd => "&",

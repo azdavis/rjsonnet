@@ -157,6 +157,8 @@ pub enum BinaryOp {
   Sub,
   Shl,
   Shr,
+  /// can desugar this to std.equals, but they will share impl anyway.
+  Eq,
   Lt,
   LtEq,
   Gt,
