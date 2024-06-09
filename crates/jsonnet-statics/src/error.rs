@@ -46,7 +46,8 @@ impl Error {
       | Kind::MismatchedParamNames(_, _)
       | Kind::WantOptionalParamGotRequired(_)
       | Kind::ExtraRequiredParam(_)
-      | Kind::OccursCheck(_) => diagnostic::Severity::Warning,
+      | Kind::OccursCheck(_)
+      | Kind::Incomparable(_) => diagnostic::Severity::Warning,
     }
   }
 
@@ -66,7 +67,10 @@ impl Error {
         a.apply(subst);
         b.apply(subst);
       }
-      Kind::Incompatible(_, _) | Kind::NotEnoughParams(_, _) | Kind::OccursCheck(_) => {}
+      Kind::Incompatible(_, _)
+      | Kind::NotEnoughParams(_, _)
+      | Kind::OccursCheck(_)
+      | Kind::Incomparable(_) => {}
     }
   }
 }
@@ -85,6 +89,7 @@ pub(crate) enum Kind {
   WantOptionalParamGotRequired(Id),
   ExtraRequiredParam(Id),
   OccursCheck(ty::Ty),
+  Incomparable(ty::Ty),
 }
 
 struct Display<'a> {
@@ -139,6 +144,10 @@ impl fmt::Display for Display<'_> {
         f.write_str("occurs check: type variable occurs inside its own solution\n")?;
         let ty = ty.display(self.store, self.subst, self.str_ar);
         write!(f, "  type: `{ty}`")
+      }
+      Kind::Incomparable(ty) => {
+        let ty = ty.display(self.store, self.subst, self.str_ar);
+        write!(f, "not a comparable type: {ty}")
       }
     }
   }

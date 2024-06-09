@@ -196,10 +196,38 @@ pub(crate) fn get(st: &mut st::St<'_>, ars: &Arenas, expr: Expr) -> ty::Ty {
       let no_ty = get(st, ars, *no);
       st.get_ty(ty::Data::Union(BTreeSet::from_iter([yes_ty, no_ty])))
     }
-    ExprData::BinaryOp { lhs, rhs, .. } => {
-      get(st, ars, *lhs);
-      get(st, ars, *rhs);
-      ty::Ty::ANY
+    ExprData::BinaryOp { lhs, op, rhs } => {
+      let lhs_ty = get(st, ars, *lhs);
+      let rhs_ty = get(st, ars, *rhs);
+      match op {
+        jsonnet_expr::BinaryOp::Add => ty::Ty::ANY,
+        jsonnet_expr::BinaryOp::Mul
+        | jsonnet_expr::BinaryOp::Div
+        | jsonnet_expr::BinaryOp::Sub
+        | jsonnet_expr::BinaryOp::Shl
+        | jsonnet_expr::BinaryOp::Shr
+        | jsonnet_expr::BinaryOp::BitXor
+        | jsonnet_expr::BinaryOp::BitOr
+        | jsonnet_expr::BinaryOp::BitAnd => {
+          st.unify(lhs.unwrap_or(expr), ty::Ty::NUMBER, lhs_ty);
+          st.unify(rhs.unwrap_or(expr), ty::Ty::NUMBER, rhs_ty);
+          ty::Ty::NUMBER
+        }
+        jsonnet_expr::BinaryOp::Lt
+        | jsonnet_expr::BinaryOp::LtEq
+        | jsonnet_expr::BinaryOp::Gt
+        | jsonnet_expr::BinaryOp::GtEq => {
+          // TODO something about how the lhs_ty and rhs_ty need to be "similar" somehow (both
+          // numbers or both strings, etc)
+          if !is_comparable(st, lhs_ty) {
+            st.err(lhs.unwrap_or(expr), error::Kind::Incomparable(lhs_ty));
+          }
+          if !is_comparable(st, rhs_ty) {
+            st.err(rhs.unwrap_or(expr), error::Kind::Incomparable(rhs_ty));
+          }
+          ty::Ty::BOOL
+        }
+      }
     }
     ExprData::UnaryOp { inner, .. } | ExprData::Error(inner) => {
       get(st, ars, *inner);
@@ -219,4 +247,22 @@ pub(crate) fn get(st: &mut st::St<'_>, ars: &Arenas, expr: Expr) -> ty::Ty {
   // huge problem.
   st.insert_expr_ty(expr, ret);
   ret
+}
+
+fn is_comparable(st: &st::St<'_>, ty: ty::Ty) -> bool {
+  match st.data(ty) {
+    // TODO for the Meta case, should note that the meta var must be comparable. failing to do so is
+    // unsound. (but we already have Any so *shrug*)
+    ty::Data::Any
+    | ty::Data::Meta(_)
+    | ty::Data::String
+    | ty::Data::Number
+    | ty::Data::Prim(Prim::String(_) | Prim::Number(_)) => true,
+    ty::Data::Array(ty) => is_comparable(st, ty),
+    ty::Data::Union(tys) => tys.iter().any(|&ty| is_comparable(st, ty)),
+    ty::Data::Bool
+    | ty::Data::Prim(Prim::Null | Prim::Bool(_))
+    | ty::Data::Object(_)
+    | ty::Data::Fn(_) => false,
+  }
 }
