@@ -82,9 +82,36 @@ pub(crate) fn get(st: &mut st::St<'_>, ars: &Arenas, expr: Expr) -> ty::Ty {
       st.get_ty(ty::Data::Array(elem_ty))
     }
     ExprData::Subscript { on, idx } => {
-      get(st, ars, *on);
-      get(st, ars, *idx);
-      ty::Ty::ANY
+      let on_ty = get(st, ars, *on);
+      let idx_ty = get(st, ars, *idx);
+      let idx_expr = idx.unwrap_or(expr);
+      match st.data(on_ty) {
+        ty::Data::Array(elem_ty) => {
+          st.unify(idx_expr, ty::Ty::NUMBER, idx_ty);
+          elem_ty
+        }
+        ty::Data::Object(fields) => {
+          st.unify(idx_expr, ty::Ty::STRING, idx_ty);
+          let idx = idx.and_then(|x| match &ars.expr[x] {
+            ExprData::Prim(Prim::String(s)) => Some(s),
+            _ => None,
+          });
+          match idx {
+            Some(s) => match fields.get(s) {
+              Some(&ty) => ty,
+              None => {
+                st.err(idx_expr, error::Kind::MissingField(s.clone()));
+                ty::Ty::ANY
+              }
+            },
+            None => st.get_ty(ty::Data::Union(fields.values().copied().collect())),
+          }
+        }
+        _ => {
+          st.unify(on.unwrap_or(expr), ty::Ty::ARRAY_OR_OBJECT, on_ty);
+          ty::Ty::ANY
+        }
+      }
     }
     ExprData::Call { func, positional, named } => {
       get(st, ars, *func);

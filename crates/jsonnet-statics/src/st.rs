@@ -94,6 +94,10 @@ impl<'a> St<'a> {
     Some((in_scope.ty, in_scope.def))
   }
 
+  pub(crate) fn data(&self, ty: ty::Ty) -> ty::Data {
+    self.tys.data(self.subst, ty)
+  }
+
   pub(crate) fn unify(&mut self, expr: ExprMust, want: ty::Ty, got: ty::Ty) {
     let mut st = unify::St { expr, errors: &mut self.statics.errors, subst: self.subst };
     unify::get(&mut st, self.tys, want, got);
