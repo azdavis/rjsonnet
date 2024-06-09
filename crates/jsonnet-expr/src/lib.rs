@@ -157,15 +157,15 @@ pub enum BinaryOp {
   Sub,
   Shl,
   Shr,
+  BitAnd,
+  BitXor,
+  BitOr,
   /// can desugar this to std.equals, but they will share impl anyway.
   Eq,
   Lt,
   LtEq,
   Gt,
   GtEq,
-  BitAnd,
-  BitXor,
-  BitOr,
 }
 
 #[derive(Debug, Clone, Copy)]
