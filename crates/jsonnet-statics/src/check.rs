@@ -69,6 +69,7 @@ pub(crate) fn get(st: &mut st::St<'_>, ars: &Arenas, expr: Expr) -> ty::Ty {
       get(st, ars, *body);
       st.undefine(*id);
       st.undefine_self_super();
+      // TODO how to model an object with all fields unknown?
       ty::Ty::ANY
     }
     ExprData::Array(exprs) => {
