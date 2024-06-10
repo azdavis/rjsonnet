@@ -64,6 +64,11 @@ pub fn token_parent(tok: &kind::SyntaxToken) -> Option<kind::SyntaxNode> {
 /// Returns the best token in the node at the offset.
 #[must_use]
 pub fn node_token(syntax: &kind::SyntaxNode, offset: rowan::TextSize) -> Option<kind::SyntaxToken> {
+  let range = syntax.text_range();
+  if range.start() > offset || offset > range.end() {
+    // ensure precondition.
+    return None;
+  }
   match syntax.token_at_offset(offset) {
     rowan::TokenAtOffset::None => None,
     rowan::TokenAtOffset::Single(t) => Some(t),
