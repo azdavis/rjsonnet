@@ -54,7 +54,8 @@ fn param() {
 ##       vvvvvv diagnostic: duplicate binding: `x`
 local bad(x, x) = x;
 ##       ^^^^^^ diagnostic: unused: `x`
-bad(1)
+  bad(1)
+##^^^ diagnostic: missing argument: `x` with type: `any`
 ",
   )
   .check();

@@ -187,11 +187,11 @@ pub(crate) fn get(st: &mut st::St<'_>, ars: &Arenas, expr: Expr) -> ty::Ty {
       ty
     }
     ExprData::Function { params, body } => {
-      let mut param_tys = FxHashMap::<Id, (ty::Ty, bool)>::default();
+      let mut param_tys = FxHashMap::<Id, ty::Ty>::default();
       for (idx, &(bind, rhs)) in params.iter().enumerate() {
         let fresh = st.fresh();
         st.define(bind, fresh, Def::Expr(expr, def::ExprDefKind::FnParam(idx)));
-        if param_tys.insert(bind, (fresh, rhs.is_none())).is_some() {
+        if param_tys.insert(bind, fresh).is_some() {
           st.err(rhs.flatten().unwrap_or(expr), error::Kind::DuplicateBinding(bind));
         }
       }
@@ -200,16 +200,16 @@ pub(crate) fn get(st: &mut st::St<'_>, ars: &Arenas, expr: Expr) -> ty::Ty {
         get(st, ars, rhs);
       }
       let body_ty = get(st, ars, *body);
-      for &(bind, _) in params {
-        st.undefine(bind);
+      let mut fn_params = Vec::<ty::Param>::with_capacity(params.len());
+      for &(id, rhs) in params {
+        st.undefine(id);
+        let Some(&ty) = param_tys.get(&id) else {
+          always!(false, "should have gotten fn param ty: {id:?}");
+          continue;
+        };
+        fn_params.push(ty::Param { id, ty, required: rhs.is_none() });
       }
-      let fn_ty = ty::Fn {
-        params: param_tys
-          .iter()
-          .map(|(&id, &(ty, required))| ty::Param { id, ty, required })
-          .collect(),
-        ret: body_ty,
-      };
+      let fn_ty = ty::Fn { params: fn_params, ret: body_ty };
       st.get_ty(ty::Data::Fn(fn_ty))
     }
     ExprData::If { cond, yes, no } => {

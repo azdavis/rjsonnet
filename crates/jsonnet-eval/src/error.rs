@@ -83,7 +83,7 @@ impl fmt::Display for DisplayError<'_> {
         Kind::Todo(s) => write!(f, "not yet implemented: {s}"),
         Kind::ArrayIdxNotInteger => f.write_str("array index not an integer"),
         Kind::ArrayIdxOutOfRange => f.write_str("array index out of range"),
-        Kind::DuplicateField(x) => write!(f, "duplicate field: {}", self.ar.get(x)),
+        Kind::DuplicateField(x) => write!(f, "duplicate field: `{}`", self.ar.get(x)),
         Kind::IncompatibleTypes => f.write_str("incompatible types"),
         Kind::FieldNotDefined(name) => {
           write!(f, "field `{}` not defined", self.ar.get(name))
@@ -91,7 +91,7 @@ impl fmt::Display for DisplayError<'_> {
         Kind::Arg(ek) => ek.display(self.ar).fmt(f),
         Kind::Infinite(inf) => write!(f, "infinite number: {inf}"),
         Kind::User(s) => write!(f, "explicit `error`: {}", self.ar.get(s)),
-        Kind::NotInScope(id) => write!(f, "not in scope: {}", id.display(self.ar)),
+        Kind::NotInScope(id) => write!(f, "not in scope: `{}`", id.display(self.ar)),
         Kind::Cycle(cycle) => {
           let first_and_last = self.display_path(cycle.first_and_last);
           write!(f, "import cycle: {first_and_last} -> ")?;

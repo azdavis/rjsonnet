@@ -187,7 +187,7 @@ local sub(x, y) = x - y;
 
 /// TODO fix. this is actually supposed to be allowed (wild)
 #[test]
-#[should_panic = "missing argument: `a`"]
+#[should_panic = "not in scope: `a`"]
 fn default_arg_is_other_arg() {
   JsonnetInput::manifest(
     r"
@@ -201,8 +201,6 @@ hm(5)
 
 /// no surprise here.
 #[test]
-// TODO fix?
-#[should_panic = "missing argument: `a`"]
 fn optional_after_required() {
   JsonnetInput::manifest(
     r"
