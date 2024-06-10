@@ -4,12 +4,12 @@ use crate::{error, st, ty};
 use always::always;
 use jsonnet_expr::def::{self, Def};
 use jsonnet_expr::{Arenas, Expr, ExprData, Id, Prim, Str};
-use rustc_hash::{FxHashMap, FxHashSet};
+use rustc_hash::FxHashMap;
 use std::collections::{BTreeMap, BTreeSet};
 
 /// NOTE: don't return early from this except in the degenerate case where the `expr` was `None`.
 /// This is so we can insert the expr's type into the `St` at the end.
-#[allow(clippy::too_many_lines, clippy::single_match_else)]
+#[allow(clippy::too_many_lines, clippy::single_match_else, clippy::similar_names)]
 pub(crate) fn get(st: &mut st::St<'_>, ars: &Arenas, expr: Expr) -> ty::Ty {
   let Some(expr) = expr else { return ty::Ty::ANY };
   let ret = match &ars.expr[expr] {
@@ -114,20 +114,43 @@ pub(crate) fn get(st: &mut st::St<'_>, ars: &Arenas, expr: Expr) -> ty::Ty {
       }
     }
     ExprData::Call { func, positional, named } => {
-      get(st, ars, *func);
-      for &arg in positional {
-        get(st, ars, arg);
-      }
-      let mut arg_names = FxHashSet::<Id>::default();
+      let func_ty = get(st, ars, *func);
+      let positional_tys: Vec<_> = positional.iter().map(|&arg| get(st, ars, arg)).collect();
+      let mut named_tys = FxHashMap::<Id, (Expr, ty::Ty)>::default();
       for &(id, arg) in named {
-        get(st, ars, arg);
-        if !arg_names.insert(id) {
+        let arg_ty = get(st, ars, arg);
+        if named_tys.insert(id, (arg, arg_ty)).is_some() {
           if let Some(arg) = arg {
             st.err(arg, error::Kind::DuplicateNamedArg(id));
           }
         }
       }
-      ty::Ty::ANY
+      if let ty::Data::Fn(fn_data) = st.data(func_ty) {
+        let positional_iter = fn_data.params.iter().zip(positional_tys).zip(positional.iter());
+        for ((param, ty), arg) in positional_iter {
+          st.unify(arg.unwrap_or(expr), param.ty, ty);
+        }
+        for param in fn_data.params.iter().skip(positional.len()) {
+          match named_tys.remove(&param.id) {
+            Some((arg, ty)) => st.unify(arg.unwrap_or(expr), param.ty, ty),
+            None => {
+              if param.required {
+                st.err(func.unwrap_or(expr), error::Kind::MissingArgument(param.id, param.ty));
+              }
+            }
+          }
+        }
+        for (idx, arg) in positional.iter().enumerate().skip(fn_data.params.len()) {
+          st.err(arg.unwrap_or(expr), error::Kind::ExtraPositionalArgument(idx));
+        }
+        for (id, (arg, _)) in named_tys {
+          st.err(arg.unwrap_or(expr), error::Kind::ExtraNamedArgument(id));
+        }
+        fn_data.ret
+      } else {
+        // TODO: construct an inferred type from the arguments and unify?
+        ty::Ty::ANY
+      }
     }
     ExprData::Id(id) => match st.get(*id) {
       Some((ty, def)) => {

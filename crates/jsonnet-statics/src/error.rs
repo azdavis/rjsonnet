@@ -47,7 +47,10 @@ impl Error {
       | Kind::WantOptionalParamGotRequired(_)
       | Kind::ExtraRequiredParam(_)
       | Kind::OccursCheck(_)
-      | Kind::Incomparable(_) => diagnostic::Severity::Warning,
+      | Kind::Incomparable(_)
+      | Kind::MissingArgument(_, _)
+      | Kind::ExtraPositionalArgument(_)
+      | Kind::ExtraNamedArgument(_) => diagnostic::Severity::Warning,
     }
   }
 
@@ -59,7 +62,9 @@ impl Error {
       | Kind::DuplicateBinding(id)
       | Kind::Unused(id, _)
       | Kind::WantOptionalParamGotRequired(id)
-      | Kind::ExtraRequiredParam(id) => {
+      | Kind::ExtraRequiredParam(id)
+      | Kind::MissingArgument(id, _)
+      | Kind::ExtraNamedArgument(id) => {
         id.apply(subst);
       }
       Kind::DuplicateFieldName(str) | Kind::MissingField(str) => str.apply(subst),
@@ -70,7 +75,8 @@ impl Error {
       Kind::Incompatible(_, _)
       | Kind::NotEnoughParams(_, _)
       | Kind::OccursCheck(_)
-      | Kind::Incomparable(_) => {}
+      | Kind::Incomparable(_)
+      | Kind::ExtraPositionalArgument(_) => {}
     }
   }
 }
@@ -90,6 +96,9 @@ pub(crate) enum Kind {
   ExtraRequiredParam(Id),
   OccursCheck(ty::Ty),
   Incomparable(ty::Ty),
+  MissingArgument(Id, ty::Ty),
+  ExtraPositionalArgument(usize),
+  ExtraNamedArgument(Id),
 }
 
 struct Display<'a> {
@@ -147,7 +156,17 @@ impl fmt::Display for Display<'_> {
       }
       Kind::Incomparable(ty) => {
         let ty = ty.display(self.store, self.subst, self.str_ar);
-        write!(f, "not a comparable type: {ty}")
+        write!(f, "not a comparable type: `{ty}`")
+      }
+      Kind::MissingArgument(id, ty) => {
+        let id = id.display(self.str_ar);
+        let ty = ty.display(self.store, self.subst, self.str_ar);
+        write!(f, "missing argument: `{id}` with type: `{ty}`")
+      }
+      Kind::ExtraPositionalArgument(n) => write!(f, "extra positional argument: {n}"),
+      Kind::ExtraNamedArgument(id) => {
+        let id = id.display(self.str_ar);
+        write!(f, "extra named argument: `{id}`")
       }
     }
   }

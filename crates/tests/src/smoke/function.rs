@@ -1,5 +1,9 @@
 //! Tests for functions.
 
+// TODO remove the should panic and also fix some of these tests. some of the should panics are
+// 'right', but these tests should be able to test BOTH pre-eval error AND eval error maybe? or one
+// at a time (turn off optional static checks)?
+
 use crate::check::JsonnetInput;
 
 #[test]
@@ -79,19 +83,25 @@ fn args_named_then_positional() {
   JsonnetInput::pre_eval_error(
     r"
 local sub(x, y) = x - y;
-  sub(x=9, 3)
-##         ^ diagnostic: positional arguments must not appear after named arguments
+  sub(
+##^^^ diagnostic: missing argument: `y` with type: `number`
+    x=9,
+##    ^ diagnostic: extra named argument: `x`
+    3,
+##  ^^ diagnostic: positional arguments must not appear after named arguments
+  )
 ",
   )
   .check();
 }
 
 #[test]
+#[should_panic = "extra positional argument: 2"]
 fn args_positional_extra() {
   JsonnetInput::eval_error(
     r"
 local sub(x, y) = x - y;
-  sub(1, 2, 3)
+  sub(3, 4, 5)
 ",
     "too many arguments; parameters (2): x, y; positional arguments: 3; named arguments: <none>",
   )
@@ -99,6 +109,7 @@ local sub(x, y) = x - y;
 }
 
 #[test]
+#[should_panic = "extra named argument: `z`"]
 fn args_named_extra() {
   JsonnetInput::eval_error(
     r"
@@ -111,6 +122,7 @@ local sub(x, y) = x - y;
 }
 
 #[test]
+#[should_panic = "missing argument: `y`"]
 fn args_positional_missing() {
   JsonnetInput::eval_error(
     r"
@@ -123,6 +135,7 @@ local sub(x, y) = x - y;
 }
 
 #[test]
+#[should_panic = "missing argument: `y`"]
 fn args_named_missing_1() {
   JsonnetInput::eval_error(
     r"
@@ -135,6 +148,7 @@ local sub(x, y) = x - y;
 }
 
 #[test]
+#[should_panic = "missing argument: `x`"]
 fn args_named_missing_2() {
   JsonnetInput::eval_error(
     r"
@@ -159,6 +173,7 @@ local sub(x, y) = x - y;
 }
 
 #[test]
+#[should_panic = "extra named argument: `x`"]
 fn args_named_positional_duplicate() {
   JsonnetInput::eval_error(
     r"
@@ -172,7 +187,7 @@ local sub(x, y) = x - y;
 
 /// TODO fix. this is actually supposed to be allowed (wild)
 #[test]
-#[should_panic = "not in scope: a"]
+#[should_panic = "missing argument: `a`"]
 fn default_arg_is_other_arg() {
   JsonnetInput::manifest(
     r"
@@ -186,6 +201,8 @@ hm(5)
 
 /// no surprise here.
 #[test]
+// TODO fix?
+#[should_panic = "missing argument: `a`"]
 fn optional_after_required() {
   JsonnetInput::manifest(
     r"

@@ -144,9 +144,11 @@ impl<'a> Input<'a> {
               start: text_pos::PositionUtf16 { line: region.line, col: region.col_start },
               end: text_pos::PositionUtf16 { line: region.line, col: region.col_end },
             };
-            let range_map = ds_map.get_mut(&range).expect("no diagnostics at range");
+            let Some(range_map) = ds_map.get_mut(&range) else {
+              panic!("{path_str}:{range}: no diagnostics at range")
+            };
             let want = ex.msg.as_str();
-            assert!(range_map.remove(want), "{path_str}: no diagnostic matches: {want}");
+            assert!(range_map.remove(want), "{path_str}:{range}: no diagnostic matches: {want}");
             if range_map.is_empty() {
               assert!(ds_map.remove(&range).expect("just got it").is_empty());
             }
