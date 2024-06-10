@@ -217,7 +217,7 @@ pub(crate) fn get(st: &mut st::St<'_>, ars: &Arenas, expr: Expr) -> ty::Ty {
       st.unify(cond.unwrap_or(expr), ty::Ty::BOOL, cond_ty);
       let yes_ty = get(st, ars, *yes);
       let no_ty = get(st, ars, *no);
-      st.get_ty(ty::Data::Union(BTreeSet::from_iter([yes_ty, no_ty])))
+      st.get_ty(ty::Data::Union(BTreeSet::from([yes_ty, no_ty])))
     }
     ExprData::BinaryOp { lhs, op, rhs } => {
       let lhs_ty = get(st, ars, *lhs);
