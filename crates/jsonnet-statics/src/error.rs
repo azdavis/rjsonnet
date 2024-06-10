@@ -50,7 +50,8 @@ impl Error {
       | Kind::Incomparable(_)
       | Kind::MissingArgument(_, _)
       | Kind::ExtraPositionalArgument(_)
-      | Kind::ExtraNamedArgument(_) => diagnostic::Severity::Warning,
+      | Kind::ExtraNamedArgument(_)
+      | Kind::InvalidPlus(_, _) => diagnostic::Severity::Warning,
     }
   }
 
@@ -76,7 +77,8 @@ impl Error {
       | Kind::NotEnoughParams(_, _)
       | Kind::OccursCheck(_)
       | Kind::Incomparable(_)
-      | Kind::ExtraPositionalArgument(_) => {}
+      | Kind::ExtraPositionalArgument(_)
+      | Kind::InvalidPlus(_, _) => {}
     }
   }
 }
@@ -99,6 +101,7 @@ pub(crate) enum Kind {
   MissingArgument(Id, ty::Ty),
   ExtraPositionalArgument(usize),
   ExtraNamedArgument(Id),
+  InvalidPlus(ty::Ty, ty::Ty),
 }
 
 struct Display<'a> {
@@ -167,6 +170,13 @@ impl fmt::Display for Display<'_> {
       Kind::ExtraNamedArgument(id) => {
         let id = id.display(self.str_ar);
         write!(f, "extra named argument: `{id}`")
+      }
+      Kind::InvalidPlus(lhs, rhs) => {
+        let lhs = lhs.display(self.store, self.subst, self.str_ar);
+        let rhs = rhs.display(self.store, self.subst, self.str_ar);
+        f.write_str("invalid `+`\n")?;
+        writeln!(f, "  left:  `{lhs}`")?;
+        write!(f, "  right: `{rhs}`")
       }
     }
   }

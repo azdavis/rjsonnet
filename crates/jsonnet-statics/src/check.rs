@@ -223,7 +223,37 @@ pub(crate) fn get(st: &mut st::St<'_>, ars: &Arenas, expr: Expr) -> ty::Ty {
       let lhs_ty = get(st, ars, *lhs);
       let rhs_ty = get(st, ars, *rhs);
       match op {
-        jsonnet_expr::BinaryOp::Add => ty::Ty::ANY,
+        jsonnet_expr::BinaryOp::Add => {
+          match (st.data(lhs_ty), st.data(rhs_ty)) {
+            // TODO: solve the meta vars to be 'plus-able'
+            // TODO: check unions better
+            (ty::Data::Any | ty::Data::Meta(_) | ty::Data::Union(_), _)
+            | (_, ty::Data::Any | ty::Data::Meta(_) | ty::Data::Union(_)) => ty::Ty::ANY,
+            // add numbers.
+            (
+              ty::Data::Number | ty::Data::Prim(Prim::Number(_)),
+              ty::Data::Number | ty::Data::Prim(Prim::Number(_)),
+            ) => ty::Ty::NUMBER,
+            // if any operand is string, coerce the other to string.
+            (ty::Data::String | ty::Data::Prim(Prim::String(_)), _)
+            | (_, ty::Data::String | ty::Data::Prim(Prim::String(_))) => ty::Ty::STRING,
+            // concat arrays.
+            (ty::Data::Array(lhs_elem), ty::Data::Array(rhs_elem)) => {
+              let elem = st.get_ty(ty::Data::Union(BTreeSet::from([lhs_elem, rhs_elem])));
+              st.get_ty(ty::Data::Array(elem))
+            }
+            // add object fields.
+            (ty::Data::Object(mut lhs_fields), ty::Data::Object(rhs_fields)) => {
+              // right overrides left.
+              lhs_fields.extend(rhs_fields);
+              st.get_ty(ty::Data::Object(lhs_fields))
+            }
+            _ => {
+              st.err(expr, error::Kind::InvalidPlus(lhs_ty, rhs_ty));
+              ty::Ty::ANY
+            }
+          }
+        }
         jsonnet_expr::BinaryOp::Mul
         | jsonnet_expr::BinaryOp::Div
         | jsonnet_expr::BinaryOp::Sub
