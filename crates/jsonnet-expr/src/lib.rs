@@ -172,8 +172,8 @@ pub enum BinaryOp {
 pub enum UnaryOp {
   Neg,
   Pos,
-  LogicalNot,
   BitNot,
+  LogicalNot,
 }
 
 /// A primitive value.
