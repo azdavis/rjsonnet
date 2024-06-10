@@ -71,6 +71,9 @@ impl<'a> St<'a> {
       always!(false, "undefine without previous define: {id:?}");
       return;
     };
+    if let ty::Data::Meta(m) = self.data(in_scope.ty) {
+      self.subst.solve(m, ty::Ty::ANY);
+    }
     if in_scope.usages != 0 || id == Id::dollar {
       return;
     }
