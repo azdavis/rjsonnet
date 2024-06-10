@@ -141,7 +141,7 @@ pub(crate) fn get(st: &mut st::St<'_>, ars: &Arenas, expr: Expr) -> ty::Ty {
           }
         }
         for (idx, arg) in positional.iter().enumerate().skip(fn_data.params.len()) {
-          st.err(arg.unwrap_or(expr), error::Kind::ExtraPositionalArgument(idx));
+          st.err(arg.unwrap_or(expr), error::Kind::ExtraPositionalArgument(idx + 1));
         }
         for (id, (arg, _)) in named_tys {
           st.err(arg.unwrap_or(expr), error::Kind::ExtraNamedArgument(id));

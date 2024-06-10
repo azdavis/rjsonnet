@@ -96,7 +96,7 @@ local sub(x, y) = x - y;
 }
 
 #[test]
-#[should_panic = "extra positional argument: 2"]
+#[should_panic = "extra positional argument: 3"]
 fn args_positional_extra() {
   JsonnetInput::eval_error(
     r"
