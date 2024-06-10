@@ -230,9 +230,13 @@ pub(crate) fn get(st: &mut st::St<'_>, ars: &Arenas, expr: Expr) -> ty::Ty {
         }
       }
     }
-    ExprData::UnaryOp { inner, .. } | ExprData::Error(inner) => {
+    ExprData::UnaryOp { inner, .. } => {
       get(st, ars, *inner);
       ty::Ty::ANY
+    }
+    ExprData::Error(inner) => {
+      get(st, ars, *inner);
+      ty::Ty::NEVER
     }
     ExprData::Import { kind, path } => match kind {
       jsonnet_expr::ImportKind::Code => {
