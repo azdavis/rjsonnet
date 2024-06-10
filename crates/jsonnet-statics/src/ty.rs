@@ -49,18 +49,26 @@ pub(crate) enum Data {
 }
 
 impl Data {
-  fn apply(&mut self, subst: &jsonnet_expr::Subst) {
+  fn apply(self, subst: &jsonnet_expr::Subst) -> Self {
     match self {
-      Data::Prim(prim) => prim.apply(subst),
-      Data::Any
-      | Data::Bool
-      | Data::String
-      | Data::Number
-      | Data::Array(_)
-      | Data::Object(_)
-      | Data::Fn(_)
-      | Data::Meta(_)
-      | Data::Union(_) => {}
+      Data::Prim(mut prim) => {
+        prim.apply(subst);
+        Data::Prim(prim)
+      }
+      Data::Object(fields) => {
+        let fields = fields.into_iter().map(|(mut a, b)| {
+          a.apply(subst);
+          (a, b)
+        });
+        Data::Object(fields.collect())
+      }
+      Data::Fn(mut func) => {
+        for param in &mut func.params {
+          param.id.apply(subst);
+        }
+        Data::Fn(func)
+      }
+      _ => self,
     }
   }
 }
@@ -209,9 +217,7 @@ impl Store {
 
   /// Applies a subst to this.
   pub fn apply(&mut self, subst: &jsonnet_expr::Subst) {
-    for data in &mut self.idx_to_data {
-      data.apply(subst);
-    }
+    self.idx_to_data = self.idx_to_data.drain(..).map(|data| data.apply(subst)).collect();
     self.data_to_idx = self
       .idx_to_data
       .iter()
