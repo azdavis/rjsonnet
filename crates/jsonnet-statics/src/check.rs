@@ -230,9 +230,17 @@ pub(crate) fn get(st: &mut st::St<'_>, ars: &Arenas, expr: Expr) -> ty::Ty {
         }
       }
     }
-    ExprData::UnaryOp { inner, .. } => {
-      get(st, ars, *inner);
-      ty::Ty::ANY
+    ExprData::UnaryOp { inner, op } => {
+      let inner_ty = get(st, ars, *inner);
+      let e = inner.unwrap_or(expr);
+      let want = match op {
+        jsonnet_expr::UnaryOp::Neg | jsonnet_expr::UnaryOp::Pos | jsonnet_expr::UnaryOp::BitNot => {
+          ty::Ty::NUMBER
+        }
+        jsonnet_expr::UnaryOp::LogicalNot => ty::Ty::BOOL,
+      };
+      st.unify(e, want, inner_ty);
+      want
     }
     ExprData::Error(inner) => {
       get(st, ars, *inner);
