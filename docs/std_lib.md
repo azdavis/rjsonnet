@@ -903,8 +903,8 @@ Example:
 
 ```jsonnet
 local cmb(ac, x) = "(%s %s)" % [ac, x];
-assert std.foldl(cmb, ["a", "b", "c"], "()")
-  == "(((() a) b) c)";
+assert std.foldl(cmb, ["a", "b", "c"], "_")
+  == "(((_ a) b) c)";
 ```
 
 ## `foldr`
@@ -917,8 +917,8 @@ Example:
 
 ```jsonnet
 local cmb(ac, x) = "(%s %s)" % [ac, x];
-assert std.foldr(cmb, ["a", "b", "c"], "()")
-  == "(((() c) b) a)";
+assert std.foldr(cmb, ["a", "b", "c"], "_")
+  == "(((_ c) b) a)";
 ```
 
 ## `range`
