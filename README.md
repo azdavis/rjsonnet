@@ -25,7 +25,7 @@ For more mature alternatives, consider:
 
 ## Demo
 
-https://github.com/azdavis/rjsonnet/assets/6496454/a57fe696-c3d1-4249-93c2-be1db0459b62
+https://github.com/azdavis/rjsonnet/assets/6496454/8e2f5e46-f0ed-48b5-8811-ab05d00d4fe8
 
 ## Ways to use
 
