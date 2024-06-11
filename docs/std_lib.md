@@ -902,7 +902,7 @@ _Available since version 0.10.0._
 Example:
 
 ```jsonnet
-local cmb(ac, x) = "(%s %s) % [ac, x]";
+local cmb(ac, x) = "(%s %s)" % [ac, x];
 assert std.foldl(cmb, ["a", "b", "c"], "()")
   == "(((() a) b) c)";
 ```
@@ -916,7 +916,7 @@ _Available since version 0.10.0._
 Example:
 
 ```jsonnet
-local cmb(ac, x) = "(%s %s) % [ac, x]";
+local cmb(ac, x) = "(%s %s)" % [ac, x];
 assert std.foldr(cmb, ["a", "b", "c"], "()")
   == "(((() c) b) a)";
 ```
