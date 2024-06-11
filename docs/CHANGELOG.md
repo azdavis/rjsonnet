@@ -1,5 +1,10 @@
 # Changelog
 
+## main
+
+- Add some local type-checking.
+- Add some hover for type information.
+
 ## v0.3.0
 
 - Greatly decrease memory usage by being more lazy.
