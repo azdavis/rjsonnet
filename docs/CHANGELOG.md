@@ -1,6 +1,6 @@
 # Changelog
 
-## main
+## v0.3.1
 
 - Add some local type-checking.
 - Add some hover for type information.
