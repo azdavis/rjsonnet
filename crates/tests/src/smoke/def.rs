@@ -304,3 +304,68 @@ fn obj_comp_key() {
   )
   .check();
 }
+
+#[test]
+fn field_import() {
+  Input::default()
+    .with_jsonnet(
+      "a.libsonnet",
+      JsonnetInput::manifest(
+        r"
+{ foo: 3 }
+##     ^ def: foo
+",
+        r#"
+{
+  "foo": 3
+}
+"#,
+      ),
+    )
+    .with_jsonnet(
+      "b.jsonnet",
+      JsonnetInput::manifest(
+        r#"
+local b = import "a.libsonnet";
+b.foo
+##^^^ use: foo
+"#,
+        "3",
+      ),
+    )
+    .add("b.jsonnet")
+    .check();
+}
+
+#[test]
+#[should_panic = "nothing at def site"]
+fn field_import_assert() {
+  Input::default()
+    .with_jsonnet(
+      "a.libsonnet",
+      JsonnetInput::manifest(
+        r"
+assert true; { foo: 3 }
+##                  ^ def: foo
+",
+        r#"
+{
+  "foo": 3
+}
+"#,
+      ),
+    )
+    .with_jsonnet(
+      "b.jsonnet",
+      JsonnetInput::manifest(
+        r#"
+local b = import "a.libsonnet";
+b.foo
+##^^^ use: foo
+"#,
+        "3",
+      ),
+    )
+    .add("b.jsonnet")
+    .check();
+}
