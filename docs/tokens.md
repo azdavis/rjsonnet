@@ -6,13 +6,32 @@ These are some tokens in Jsonnet.
 
 Another kind of field marker.
 
+```jsonnet
+{
+  regular: 4,
+  hidden:: 3,
+  somethingElse:: 7,
+}
+```
+
 ## `!=`
 
 Inequality comparator.
 
+```jsonnet
+assert 2 + 2 != 5;
+```
+
 ## `&&`
 
 Logical and. Short-circuits.
+
+This does not error:
+
+```jsonnet
+assert 1 < 2 && 4 > 3;
+assert !(1 == 2 && (error "nope"));
+```
 
 ## `::`
 
@@ -20,21 +39,46 @@ A kind of field marker.
 
 Fields with this marker will not be included in the output JSON when materialized.
 
+```jsonnet
+{
+  regular: 4,
+  hidden:: 3,
+}
+```
+
 ## `<<`
 
 Bit-shift left.
+
+```jsonnet
+assert 1 << 2 == 4;
+```
 
 ## `<=`
 
 Less than or equal to comparator.
 
+```jsonnet
+assert 1 <= 2;
+assert 2 <= 2;
+```
+
 ## `==`
 
 Equality comparator.
 
+```jsonnet
+assert 2 + 2 == 4;
+```
+
 ## `>=`
 
 Greater than or equal to comparator.
+
+```jsonnet
+assert 3 >= 2;
+assert 2 >= 2;
+```
 
 ## `>>`
 
@@ -44,9 +88,19 @@ Bit-shift right.
 
 Logical or. Short-circuits.
 
+This does not error:
+
+```jsonnet
+assert 1 == 1 || (error "not evaluated");
+```
+
 ## `!`
 
 Logical not.
+
+```jsonnet
+assert !false;
+```
 
 ## `$`
 
@@ -84,6 +138,10 @@ The companion of `(`.
 
 Multiplication.
 
+```jsonnet
+assert 3 * 5 == 15;
+```
+
 ## `+`
 
 Addition, for numbers, strings, arrays, or objects.
@@ -102,7 +160,12 @@ Separate elements in a parameter list, argument list, array, object, etc.
 
 ## `-`
 
-Numerical negation.
+Numerical negation and subtraction.
+
+```jsonnet
+local negThree = -3;
+assert negThree - 2 == -5;
+```
 
 ## `.`
 
@@ -121,9 +184,18 @@ Numerical division.
 
 The default field marker.
 
+```jsonnet
+{ foo: 3, bar: false }
+```
+
 ## `;`
 
-Separate a `local`'s bindings from the expression the whole `local` evaluates to.
+Separate a `local` or `assert` from the rest of the expression.
+
+```jsonnet
+local x = 3;
+assert x + 1 == 4;
+```
 
 ## `<`
 
@@ -281,7 +353,9 @@ local
     x == 0 || isOdd(x - 1)
 ;
 
-assert isOdd(4) == false;
+assert !isOdd(4);
+assert isOdd(3);
+assert isEven(6);
 ```
 
 ## `super`
@@ -297,6 +371,10 @@ assert { a: 3 } + { b: super.a + 1 }
 
 Denotes what an `if` expression evaluates to if the condition is `false`.
 
+```jsonnet
+assert (if 1 > 2 then 3 else 4) == 4;
+```
+
 ## `null`
 
 A value representing "nothing".
@@ -308,6 +386,10 @@ The current object.
 ## `then`
 
 Denotes what an `if` expression evaluates to if the condition is `true`.
+
+```jsonnet
+assert (if 1 < 2 then 3 else 4) == 3;
+```
 
 ## `true`
 
@@ -346,4 +428,17 @@ assert hm(false) == null;
 
 ## `in`
 
-Denotes the thing to loop over in a `for`.
+1. Denotes the thing to loop over in a `for`.
+
+   ```jsonnet
+   local xs = [1, 3];
+   assert [x + 1 for x in xs]
+     == [2, 4];
+   ```
+
+1. Tests for field membership in objects.
+
+   ```jsonnet
+   assert "foo" in { foo: 3 };
+   assert !("bar" in { foo: 3 });
+   ```
