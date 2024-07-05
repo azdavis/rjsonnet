@@ -251,7 +251,7 @@ assert std.length(f) == 123;
 Import a file as a string.
 
 ```jsonnet
-local f = importbin "hi.txt";
+local f = importstr "hi.txt";
 assert std.length(f) == 456;
 ```
 
