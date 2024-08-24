@@ -8,17 +8,11 @@ use jsonnet_syntax::ast::AstNode as _;
 use paths::{PathId, PathMap};
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::hash_map::Entry;
-use std::sync::OnceLock;
+use std::sync::LazyLock;
 
-// TODO replace with new std lib goodies when they're in
-type StdLibDoc = FxHashMap<&'static str, String>;
-fn std_lib_doc() -> &'static StdLibDoc {
-  static LOCK: OnceLock<StdLibDoc> = OnceLock::new();
-  fn init() -> StdLibDoc {
-    code_h2_md_map::get(include_str!("../../../docs/std_lib.md"), |x| format!("std item: `{x}`"))
-  }
-  LOCK.get_or_init(init)
-}
+static STD_LIB_DOC: LazyLock<FxHashMap<&str, String>> = LazyLock::new(|| {
+  code_h2_md_map::get(include_str!("../../../docs/std_lib.md"), |x| format!("std item: `{x}`"))
+});
 
 /// The part of the state that vaguely has to do with the filesystem.
 ///
@@ -411,7 +405,7 @@ impl lang_srv_state::State for St {
     // TODO expose any errors here?
     let from_std_field = match const_eval::get(self, fs, path_id, expr) {
       Some(const_eval::ConstEval::Std(Some(x))) => {
-        std_lib_doc().get(self.with_fs.artifacts.strings.get(&x)).map(String::as_str)
+        STD_LIB_DOC.get(self.with_fs.artifacts.strings.get(&x)).map(String::as_str)
       }
       Some(const_eval::ConstEval::Std(None)) => Some("std: The standard library."),
       None | Some(const_eval::ConstEval::Real(_)) => None,

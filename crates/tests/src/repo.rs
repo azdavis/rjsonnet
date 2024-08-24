@@ -4,6 +4,7 @@ use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::hash_map::Entry;
 use std::collections::BTreeSet;
 use std::fmt::{self, Write as _};
+use std::sync::LazyLock;
 use std::{env, fs, path::Path, process::Command};
 
 fn eq_sets<T>(lhs: &BTreeSet<T>, rhs: &BTreeSet<T>, only_lhs: &str, only_rhs: &str)
@@ -111,15 +112,10 @@ fn changelog() {
   eq_sets(&in_git, &in_doc, "tags that have no changelog entry", "changelog entries without a tag");
 }
 
-type Metadata = serde_json::Map<String, serde_json::Value>;
-static METADATA: std::sync::OnceLock<Metadata> = std::sync::OnceLock::new();
-fn metadata_init() -> Metadata {
+static METADATA: LazyLock<serde_json::Map<String, serde_json::Value>> = LazyLock::new(|| {
   let out = output(root_cmd("cargo").args(["metadata", "--format-version", "1"]));
   serde_json::from_str(&out).unwrap()
-}
-fn metadata() -> &'static Metadata {
-  METADATA.get_or_init(metadata_init)
-}
+});
 
 #[test]
 fn licenses() {
@@ -138,7 +134,7 @@ fn licenses() {
     "Zlib OR Apache-2.0 OR MIT",
   ];
   let mut allowed: FxHashMap<_, _> = allowed.iter().map(|&x| (x, false)).collect();
-  let packages = metadata().get("packages").unwrap().as_array().unwrap();
+  let packages = METADATA.get("packages").unwrap().as_array().unwrap();
   let mut new_licenses = FxHashMap::<&str, FxHashSet<&str>>::default();
   for package in packages {
     let package = package.as_object().unwrap();
@@ -355,7 +351,7 @@ fn version() {
   assert_eq!(pkg_json_ver, pkg_lk_json_self_ver);
   assert_eq!(pkg_json_ver, cargo_toml_ver);
 
-  for member in metadata().get("workspace_members").unwrap().as_array().unwrap() {
+  for member in METADATA.get("workspace_members").unwrap().as_array().unwrap() {
     let member = member.as_str().unwrap();
     let (_, member_version) = member.split_once('#').unwrap();
     assert_eq!(pkg_json_ver, member_version);
