@@ -41,9 +41,12 @@ uniq.git = "https://github.com/azdavis/language-util.git"
 write-rs-tokens.git = "https://github.com/azdavis/language-util.git"
 
 [workspace.lints.rust]
-missing_debug_implementations = "deny"
-missing_docs = "deny"
-rust_2018_idioms = "deny"
-unsafe_code = "deny"
+elided-lifetimes-in-paths = "deny"
+explicit-outlives-requirements = "deny"
+missing-debug-implementations = "deny"
+missing-docs = "deny"
+unsafe-code = "deny"
+unused-extern-crates = "deny"
+
 [workspace.lints.clippy]
 pedantic = "deny"
