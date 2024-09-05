@@ -194,7 +194,7 @@ fn remove() {
 }
 
 #[test]
-fn fucker() {
+fn obj_array_self() {
   JsonnetInput::manifest(
     r#"
 {
