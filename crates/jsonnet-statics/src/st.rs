@@ -34,14 +34,12 @@ pub struct St<'a> {
   context: FxHashMap<Id, Vec<DefinedId>>,
   /// A store for all the types.
   tys: &'a mut ty::Store,
-  /// A subst for all the meta vars.
-  subst: &'a mut ty::Subst,
 }
 
 impl<'a> St<'a> {
   /// Make a new state.
-  pub fn new(tys: &'a mut ty::Store, subst: &'a mut ty::Subst) -> Self {
-    Self { statics: Statics::default(), context: FxHashMap::default(), tys, subst }
+  pub fn new(tys: &'a mut ty::Store) -> Self {
+    Self { statics: Statics::default(), context: FxHashMap::default(), tys }
   }
 
   pub(crate) fn err(&mut self, expr: ExprMust, kind: error::Kind) {
@@ -55,7 +53,7 @@ impl<'a> St<'a> {
   }
 
   pub(crate) fn get_ty(&mut self, data: ty::Data) -> ty::Ty {
-    self.tys.get(self.subst, data)
+    self.tys.get(data)
   }
 
   pub(crate) fn insert_expr_ty(&mut self, expr: ExprMust, ty: ty::Ty) {
@@ -66,14 +64,22 @@ impl<'a> St<'a> {
     self.context.entry(id).or_default().push(DefinedId { ty, def, usages: 0 });
   }
 
+  /// improve the type of an already defined id
+  pub(crate) fn refine(&mut self, id: Id, ty: ty::Ty) {
+    let Some(in_scope) = self.context.entry(id).or_default().last_mut() else {
+      always!(false, "refine without previous define: {id:?}");
+      return;
+    };
+    // NOTE: we CANNOT assert in_scope.ty == ty::Ty::ANY before this, because of duplicate locals
+    // like e.g. `local x = 1, x = "hi"; null`
+    in_scope.ty = ty;
+  }
+
   pub(crate) fn undefine(&mut self, id: Id) {
     let Some(in_scope) = self.context.entry(id).or_default().pop() else {
       always!(false, "undefine without previous define: {id:?}");
       return;
     };
-    if let ty::Data::Meta(m) = self.data(in_scope.ty) {
-      self.subst.solve(m, ty::Ty::ANY);
-    }
     if in_scope.usages != 0 || id == Id::dollar {
       return;
     }
@@ -97,19 +103,13 @@ impl<'a> St<'a> {
     Some((in_scope.ty, in_scope.def))
   }
 
-  pub(crate) fn data(&self, ty: ty::Ty) -> ty::Data {
-    self.tys.data(self.subst, ty)
+  pub(crate) fn data(&self, ty: ty::Ty) -> &ty::Data {
+    self.tys.data(ty)
   }
 
   pub(crate) fn unify(&mut self, expr: ExprMust, want: ty::Ty, got: ty::Ty) {
-    let mut st = unify::St { expr, errors: &mut self.statics.errors, subst: self.subst };
+    let mut st = unify::St { expr, errors: &mut self.statics.errors };
     unify::get(&mut st, self.tys, want, got);
-  }
-
-  #[must_use]
-  pub(crate) fn fresh(&mut self) -> ty::Ty {
-    let data = ty::Data::Meta(self.subst.fresh());
-    self.get_ty(data)
   }
 
   pub(crate) fn finish(self) -> Statics {

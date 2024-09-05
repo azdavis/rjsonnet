@@ -1,6 +1,6 @@
 //! Display types.
 
-use super::{Data, Param, Store, Subst, Ty};
+use super::{Data, Param, Store, Ty};
 use jsonnet_expr::StrArena;
 use std::fmt;
 
@@ -9,13 +9,8 @@ impl Ty {
   ///
   /// Meant to be somewhat similar to how TypeScript does it.
   #[must_use]
-  pub fn display<'a>(
-    self,
-    store: &'a Store,
-    subst: &'a Subst,
-    str_ar: &'a StrArena,
-  ) -> impl fmt::Display + 'a {
-    TyDisplay { ty: self, prec: Prec::Min, stuff: Stuff { store, subst, str_ar } }
+  pub fn display<'a>(self, store: &'a Store, str_ar: &'a StrArena) -> impl fmt::Display + 'a {
+    TyDisplay { ty: self, prec: Prec::Min, stuff: Stuff { store, str_ar } }
   }
 }
 
@@ -34,20 +29,21 @@ impl<'a> TyDisplay<'a> {
 
 impl<'a> fmt::Display for TyDisplay<'a> {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    match self.stuff.store.data(self.stuff.subst, self.ty) {
+    match self.stuff.store.data(self.ty) {
       Data::Any => f.write_str("any"),
-      Data::Bool => f.write_str("boolean"),
+      Data::True => f.write_str("true"),
+      Data::False => f.write_str("false"),
+      Data::Null => f.write_str("null"),
       Data::String => f.write_str("string"),
       Data::Number => f.write_str("number"),
-      Data::Prim(p) => p.display(self.stuff.str_ar).fmt(f),
       Data::Array(ty) => {
-        self.with(ty, Prec::Array).fmt(f)?;
+        self.with(*ty, Prec::Array).fmt(f)?;
         f.write_str("[]")
       }
-      Data::Object(fields) => {
+      Data::Object(obj) => {
         f.write_str("{")?;
         let mut iter =
-          fields.iter().map(|(key, ty)| FieldDisplay { key, ty: *ty, stuff: self.stuff });
+          obj.known.iter().map(|(key, ty)| FieldDisplay { key, ty: *ty, stuff: self.stuff });
         if let Some(field) = iter.next() {
           f.write_str(" ")?;
           field.fmt(f)?;
@@ -55,7 +51,12 @@ impl<'a> fmt::Display for TyDisplay<'a> {
             f.write_str(", ")?;
             field.fmt(f)?;
           }
+          if obj.has_unknown {
+            f.write_str(", ...")?;
+          }
           f.write_str(" ")?;
+        } else if obj.has_unknown {
+          f.write_str(" ... ")?;
         }
         f.write_str("}")
       }
@@ -80,8 +81,11 @@ impl<'a> fmt::Display for TyDisplay<'a> {
         }
         Ok(())
       }
-      Data::Meta(_) => f.write_str("_"),
       Data::Union(tys) => {
+        // special case
+        if self.ty == Ty::BOOL {
+          return f.write_str("bool");
+        }
         let mut iter = tys.iter().map(|&ty| self.with(ty, Prec::Union));
         let Some(ty) = iter.next() else { return f.write_str("never") };
         let needs_paren = self.prec > Prec::Union;
@@ -138,7 +142,6 @@ impl<'a> fmt::Display for ParamDisplay<'a> {
 #[derive(Clone, Copy)]
 struct Stuff<'a> {
   store: &'a Store,
-  subst: &'a Subst,
   str_ar: &'a StrArena,
 }
 

@@ -2,12 +2,10 @@
 
 use crate::{error, ty};
 use drop_bomb::DebugDropBomb;
-use jsonnet_expr::Prim;
 
 pub(crate) struct St<'a> {
   pub(crate) expr: jsonnet_expr::ExprMust,
   pub(crate) errors: &'a mut Vec<error::Error>,
-  pub(crate) subst: &'a mut ty::Subst,
 }
 
 impl<'a> St<'a> {
@@ -36,25 +34,27 @@ struct Marker {
 /// this checks and unifies `want` is compatible with `got`, but allows `got` to be more specific
 /// than `want`. aka, got should be a subtype of want, i suppose.
 pub(crate) fn get(st: &mut St<'_>, store: &ty::Store, want: ty::Ty, got: ty::Ty) {
-  match (store.data(st.subst, want), store.data(st.subst, got)) {
+  match (store.data(want), store.data(got)) {
     (ty::Data::Any, _)
     | (_, ty::Data::Any)
-    | (ty::Data::Bool, ty::Data::Bool | ty::Data::Prim(Prim::Bool(_)))
-    | (ty::Data::String, ty::Data::String | ty::Data::Prim(Prim::String(_)))
-    | (ty::Data::Number, ty::Data::Number | ty::Data::Prim(Prim::Number(_))) => {}
-    (ty::Data::Prim(w), ty::Data::Prim(g)) => {
-      if w != g {
-        st.err(error::Kind::Incompatible(want, got));
-      }
-    }
-    (ty::Data::Array(want), ty::Data::Array(got)) => get(st, store, want, got),
+    | (ty::Data::True, ty::Data::True)
+    | (ty::Data::False, ty::Data::False)
+    | (ty::Data::Null, ty::Data::Null)
+    | (ty::Data::String, ty::Data::String)
+    | (ty::Data::Number, ty::Data::Number) => {}
+    (ty::Data::Array(want), ty::Data::Array(got)) => get(st, store, *want, *got),
     (ty::Data::Object(want), ty::Data::Object(got)) => {
-      for (name, want) in want {
-        let Some(got) = got.get(&name) else {
-          st.err(error::Kind::MissingField(name.clone()));
+      for (name, w) in &want.known {
+        let Some(g) = got.known.get(name) else {
+          if !got.has_unknown {
+            st.err(error::Kind::MissingField(name.clone()));
+          }
           continue;
         };
-        get(st, store, want, *got);
+        get(st, store, *w, *g);
+      }
+      if want.has_unknown && !got.has_unknown {
+        st.err(error::Kind::MissingUnknown);
       }
       // ignore the fields that ARE in `got` but are NOT in `want`.
     }
@@ -80,20 +80,18 @@ pub(crate) fn get(st: &mut St<'_>, store: &ty::Store, want: ty::Ty, got: ty::Ty)
       }
       get(st, store, want.ret, got.ret);
     }
-    (ty::Data::Meta(m), _) => get_meta(st, store, m, got),
-    (_, ty::Data::Meta(m)) => get_meta(st, store, m, want),
     // need to put this (got-union) before the next (want-union)
     (_, ty::Data::Union(got)) => {
       // want must be ALL of the things got may be.
-      for got in got {
-        get(st, store, want, got);
+      for &g in got {
+        get(st, store, want, g);
       }
     }
     (ty::Data::Union(tys), _) => {
       // got may be ANY of the things want may be.
-      for want in tys {
+      for &w in tys {
         let m = st.mark();
-        get(st, store, want, got);
+        get(st, store, w, got);
         if !st.discard_after(m) {
           // this unify was OK
           return;
@@ -102,33 +100,5 @@ pub(crate) fn get(st: &mut St<'_>, store: &ty::Store, want: ty::Ty, got: ty::Ty)
       st.err(error::Kind::Incompatible(want, got));
     }
     _ => st.err(error::Kind::Incompatible(want, got)),
-  }
-}
-
-fn get_meta(st: &mut St<'_>, store: &ty::Store, meta: ty::Meta, want: ty::Ty) {
-  if let ty::Data::Meta(m) = store.data(st.subst, want) {
-    if meta == m {
-      return;
-    }
-  }
-  if occurs_check(store, st.subst, meta, want) {
-    st.err(error::Kind::OccursCheck(want));
-    return;
-  }
-  st.subst.solve(meta, want);
-}
-
-fn occurs_check(store: &ty::Store, subst: &ty::Subst, m: ty::Meta, ty: ty::Ty) -> bool {
-  match store.data(subst, ty) {
-    ty::Data::Any | ty::Data::Bool | ty::Data::String | ty::Data::Number | ty::Data::Prim(_) => {
-      false
-    }
-    ty::Data::Array(ty) => occurs_check(store, subst, m, ty),
-    ty::Data::Object(fields) => fields.values().any(|&ty| occurs_check(store, subst, m, ty)),
-    ty::Data::Fn(func) => std::iter::once(func.ret)
-      .chain(func.params.iter().map(|param| param.ty))
-      .any(|ty| occurs_check(store, subst, m, ty)),
-    ty::Data::Meta(m2) => m == m2,
-    ty::Data::Union(tys) => tys.iter().any(|&ty| occurs_check(store, subst, m, ty)),
   }
 }

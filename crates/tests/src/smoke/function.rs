@@ -84,7 +84,7 @@ fn args_named_then_positional() {
     r"
 local sub(x, y) = x - y;
   sub(
-##^^^ diagnostic: missing argument: `y` with type: `number`
+##^^^ diagnostic: missing argument: `y` with type: `any`
     x=9,
 ##    ^ diagnostic: extra named argument: `x`
     3,

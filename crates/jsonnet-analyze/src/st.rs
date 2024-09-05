@@ -329,12 +329,8 @@ impl lang_srv_state::State for St {
     };
     let root = file.artifacts.syntax.clone();
     let syntax = root.syntax();
-    let diagnostics = file.diagnostics(
-      &syntax,
-      &file.artifacts.tys,
-      &file.artifacts.subst,
-      &self.with_fs.artifacts.strings,
-    );
+    let diagnostics =
+      file.diagnostics(&syntax, &file.artifacts.tys, &self.with_fs.artifacts.strings);
     let ret: Vec<_> = diagnostics.collect();
     self.file_artifacts.insert(path_id, file.artifacts);
     self.file_exprs.insert(path_id, file.eval);
@@ -399,7 +395,7 @@ impl lang_srv_state::State for St {
     });
     let ty = expr.and_then(|expr| {
       let ty = arts.expr_tys.get(&expr)?;
-      let ty = ty.display(&arts.tys, &arts.subst, &self.with_fs.artifacts.strings);
+      let ty = ty.display(&arts.tys, &self.with_fs.artifacts.strings);
       Some(format!("type:\n```ts\n{ty}\n```"))
     });
     // TODO expose any errors here?

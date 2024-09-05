@@ -5,20 +5,20 @@ use quote::{format_ident as i, quote as q};
 fn main() {
   let things = [
     (i!("ANY"), q!(super::Data::Any)),
-    (i!("BOOL"), q!(super::Data::Bool)),
+    (i!("TRUE"), q!(super::Data::True)),
+    (i!("FALSE"), q!(super::Data::False)),
+    (i!("NULL"), q!(super::Data::Null)),
     (i!("STRING"), q!(super::Data::String)),
     (i!("NUMBER"), q!(super::Data::Number)),
-    (i!("NULL"), q!(super::Data::Prim(Prim::Null))),
-    (i!("TRUE"), q!(super::Data::Prim(Prim::Bool(true)))),
-    (i!("FALSE"), q!(super::Data::Prim(Prim::Bool(false)))),
     (i!("NEVER"), q!(super::Data::Union(BTreeSet::new()))),
+    (i!("BOOL"), q!(super::Data::Union(BTreeSet::from([super::Ty::TRUE, super::Ty::FALSE])))),
     (i!("ARRAY_NUMBER"), q!(super::Data::Array(super::Ty::NUMBER))),
     (i!("ARRAY_ANY"), q!(super::Data::Array(super::Ty::ANY))),
-    (i!("OBJECT"), q!(super::Data::Object(BTreeMap::new()))),
     (
       i!("ARRAY_OR_OBJECT"),
       q!(super::Data::Union(BTreeSet::from([super::Ty::ARRAY_ANY, super::Ty::OBJECT]))),
     ),
+    (i!("OBJECT"), q!(super::Data::Object(super::Object::unknown()))),
   ];
   let impl_ty_const = things.iter().enumerate().map(|(idx, (name, _))| {
     // ok to panic in build script
@@ -30,11 +30,11 @@ fn main() {
   let map_entries = things.iter().map(|(name, td)| q! { (#td, super::Ty::#name) });
   let file = file!();
   let all = q! {
-    use jsonnet_expr::Prim;
-    use std::collections::{BTreeMap, BTreeSet};
+    use std::collections::BTreeSet;
 
     pub const _GENERATED_BY: &str = #file;
 
+    #[allow(non_upper_case_globals)]
     impl super::Ty {
       #(#impl_ty_const)*
     }

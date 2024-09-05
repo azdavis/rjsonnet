@@ -6,7 +6,7 @@ mod generated {
 mod display;
 
 use always::{always, convert};
-use jsonnet_expr::{ExprMust, Id, Prim, Str};
+use jsonnet_expr::{ExprMust, Id, Str};
 use rustc_hash::FxHashMap;
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -22,63 +22,48 @@ pub(crate) enum Data {
   /// "top type" and a "bottom type". That is, anything can be coerced to it, and it can be coerced
   /// to anything. In that sense, it is the ultimate escape-hatch type.
   Any,
-  /// A boolean.
-  Bool,
+  /// The type of `true`.
+  True,
+  /// The type of `false`.
+  False,
+  /// The type of `null`.
+  Null,
   /// A string.
   String,
   /// A number.
   Number,
-  /// A specific primitive.
-  ///
-  /// We say that `1` has type `1` and `"foo"` has type `"foo"`, etc This is mildly strange - why
-  /// don't we say `1` has type `number` and `"foo"` has type `string`, etc? Well, we could **also**
-  /// say that, but this lets us be more specific when we know more.
-  Prim(Prim),
   /// An array of elements, where each element has the given type.
   Array(Ty),
-  /// An object with known fields.
+  /// An object, possibly with known and unknown fields.
   Object(Object),
   /// A function type, with some arguments and a return type.
   Fn(Fn),
-  /// A meta type variable.
-  Meta(Meta),
   /// A union type.
   ///
-  /// The empty union can never exist. This type is sometimes called "never" or "void".
+  /// A value whose type is the empty union can never exist. This type is sometimes called "never"
+  /// or "void".
+  ///
+  /// The union of `true` and `false` is called "bool".
   Union(Union),
 }
 
-impl Data {
-  fn apply(self, subst: &jsonnet_expr::Subst) -> Self {
-    match self {
-      Data::Prim(mut prim) => {
-        prim.apply(subst);
-        Data::Prim(prim)
-      }
-      Data::Object(fields) => {
-        let fields = fields.into_iter().map(|(mut a, b)| {
-          a.apply(subst);
-          (a, b)
-        });
-        Data::Object(fields.collect())
-      }
-      Data::Fn(mut func) => {
-        for param in &mut func.params {
-          param.id.apply(subst);
-        }
-        Data::Fn(func)
-      }
-      _ => self,
-    }
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub(crate) struct Object {
+  pub(crate) known: BTreeMap<Str, Ty>,
+  pub(crate) has_unknown: bool,
+}
+
+impl Object {
+  pub(crate) fn empty() -> Self {
+    Self { known: BTreeMap::new(), has_unknown: false }
+  }
+
+  pub(crate) fn unknown() -> Self {
+    Self { known: BTreeMap::new(), has_unknown: true }
   }
 }
 
-pub(crate) type Object = BTreeMap<Str, Ty>;
 pub(crate) type Union = BTreeSet<Ty>;
-
-/// A meta type variable, to be solved by type inference.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub(crate) struct Meta(uniq::Uniq);
 
 /// A function type.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -101,14 +86,10 @@ pub(crate) struct Param {
 ///
 /// Internally represented as an index that is cheap to copy.
 ///
-/// We'd like for types to be unique. That is, for two types a and b, if a != b, then a's data !=
-/// b's data. But in the face of meta variables, this isn't true.
+/// Types are unique. That is, for two types a and b, if a != b, then a's data != b's data.
 ///
-/// A simple example:
-///
-/// 1. create a fresh meta variable `m` and corresponding type `t`
-/// 2. solve `m` to [`Ty::NUMBER`]
-/// 3. observe `t` != `Ty::NUMBER`, yet `data(t) == data(Ty::NUMBER) == Data::Number`.
+/// BUT NOTE that the SEMANTICS of a type can be the same as another type but the types are
+/// different, like `{ a: int } | { a: string }` and `{ a: int | string }`
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Ty(u32);
 
@@ -132,148 +113,61 @@ pub struct Store {
 }
 
 impl Store {
-  pub(crate) fn get(&mut self, subst: &Subst, data: Data) -> Ty {
-    let ret = Ty::from_usize(self.idx_to_data.len());
-    self.idx_to_data.push(data);
-    // see if we can simplify the data before inserting it into `data_to_idx`.
-    let data = self.data(subst, ret);
-    // now THIS is wild. after simplifying the data, we may find there's already a type for it.
+  pub(crate) fn get(&mut self, data: Data) -> Ty {
+    match data {
+      Data::Any => Ty::ANY,
+      Data::True => Ty::TRUE,
+      Data::False => Ty::FALSE,
+      Data::Null => Ty::NULL,
+      Data::String => Ty::STRING,
+      Data::Number => Ty::NUMBER,
+      Data::Array(_) | Data::Object(_) | Data::Fn(_) => self.get_inner(data),
+      Data::Union(work) => {
+        let mut work: Vec<_> = work.into_iter().collect();
+        let mut parts = BTreeSet::<Ty>::new();
+        while let Some(ty) = work.pop() {
+          match self.data(ty) {
+            Data::Any => return Ty::ANY,
+            Data::Union(parts) => work.extend(parts),
+            _ => {
+              parts.insert(ty);
+            }
+          }
+        }
+        if parts.len() == 1 {
+          match parts.pop_first() {
+            None => {
+              always!(false, "just checked len == 1");
+              Ty::ANY
+            }
+            Some(ty) => ty,
+          }
+        } else {
+          self.get_inner(Data::Union(parts))
+        }
+      }
+    }
+  }
+
+  fn get_inner(&mut self, data: Data) -> Ty {
     match self.data_to_idx.get(&data) {
       None => {
+        let ret = Ty::from_usize(self.idx_to_data.len());
+        self.idx_to_data.push(data.clone());
         always!(self.data_to_idx.insert(data, ret).is_none());
         ret
       }
-      Some(&ty) => {
-        always!(ty != ret);
-        always!(self.idx_to_data.pop().is_some());
-        ty
-      }
+      Some(&ty) => ty,
     }
   }
 
-  pub(crate) fn data(&self, subst: &Subst, ty: Ty) -> Data {
-    let mut bool = BoolUnion::None;
-    let mut string = PrimUnion::Set(BTreeSet::new());
-    let mut number = PrimUnion::Set(BTreeSet::new());
-    let mut parts = BTreeSet::<Ty>::new();
-    let mut work = vec![ty];
-    while let Some(ty) = work.pop() {
-      match self.data_unchecked(ty) {
-        Data::Any => return Data::Any,
-        Data::Bool => bool = BoolUnion::Any,
-        Data::String => string = PrimUnion::Any,
-        Data::Number => number = PrimUnion::Any,
-        Data::Prim(Prim::Bool(b)) => bool = bool.add(b),
-        Data::Prim(Prim::String(_)) => string.add(ty),
-        Data::Prim(Prim::Number(_)) => number.add(ty),
-        Data::Prim(Prim::Null) | Data::Array(_) | Data::Object(_) | Data::Fn(_) => {
-          // DO NOT recur.
-          parts.insert(ty);
-        }
-        Data::Union(parts) => work.extend(parts),
-        Data::Meta(meta) => match subst.store.get(&meta) {
-          None => ignore(parts.insert(ty)),
-          // keep dereferencing.
-          Some(t) => work.push(*t),
-        },
-      }
-    }
-    match bool {
-      BoolUnion::None => {}
-      BoolUnion::Any => ignore(parts.insert(Ty::BOOL)),
-      BoolUnion::True => ignore(parts.insert(Ty::TRUE)),
-      BoolUnion::False => ignore(parts.insert(Ty::FALSE)),
-    }
-    match string {
-      PrimUnion::Any => ignore(parts.insert(Ty::STRING)),
-      PrimUnion::Set(strings) => parts.extend(strings),
-    }
-    match number {
-      PrimUnion::Any => ignore(parts.insert(Ty::NUMBER)),
-      PrimUnion::Set(numbers) => parts.extend(numbers),
-    }
-    if parts.len() == 1 {
-      match parts.into_iter().next() {
-        None => {
-          always!(false, "just checked len == 1");
-          Data::Any
-        }
-        Some(ty) => self.data_unchecked(ty),
-      }
-    } else {
-      Data::Union(parts)
-    }
-  }
-
-  fn data_unchecked(&self, ty: Ty) -> Data {
+  pub(crate) fn data(&self, ty: Ty) -> &Data {
     match self.idx_to_data.get(ty.to_usize()) {
       None => {
         always!(false, "no ty data for {ty:?}");
-        Data::Any
+        &Data::Any
       }
-      Some(x) => x.clone(),
-    }
-  }
-
-  /// Applies a subst to this.
-  pub fn apply(&mut self, subst: &jsonnet_expr::Subst) {
-    self.idx_to_data = self.idx_to_data.drain(..).map(|data| data.apply(subst)).collect();
-    self.data_to_idx = self
-      .idx_to_data
-      .iter()
-      .enumerate()
-      .map(|(idx, data)| (data.clone(), Ty::from_usize(idx)))
-      .collect();
-  }
-}
-
-/// A substitution constructed with type inference.
-#[derive(Debug, Default)]
-pub struct Subst {
-  gen: uniq::UniqGen,
-  store: FxHashMap<Meta, Ty>,
-}
-
-impl Subst {
-  pub(crate) fn fresh(&mut self) -> Meta {
-    Meta(self.gen.gen())
-  }
-
-  pub(crate) fn solve(&mut self, meta: Meta, ty: Ty) {
-    always!(self.store.insert(meta, ty).is_none());
-  }
-}
-
-enum BoolUnion {
-  None,
-  Any,
-  True,
-  False,
-}
-
-impl BoolUnion {
-  fn add(self, b: bool) -> Self {
-    match (self, b) {
-      (Self::Any, _) | (Self::False, true) | (Self::True, false) => Self::Any,
-      (Self::None | Self::True, true) => Self::True,
-      (Self::None | Self::False, false) => Self::False,
+      Some(x) => x,
     }
   }
 }
-
-enum PrimUnion {
-  Any,
-  Set(BTreeSet<Ty>),
-}
-
-impl PrimUnion {
-  fn add(&mut self, ty: Ty) {
-    match self {
-      PrimUnion::Any => {}
-      PrimUnion::Set(set) => ignore(set.insert(ty)),
-    }
-  }
-}
-
-/// so we don't have to waste space with extra `{}` and newlines and `;` for a simple match arm.
-fn ignore(_: bool) {}

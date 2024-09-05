@@ -30,7 +30,6 @@ pub(crate) struct FileArtifacts {
   pub(crate) defs: jsonnet_expr::def::Map,
   /// TODO have one global ty store?
   pub(crate) tys: jsonnet_statics::ty::Store,
-  pub(crate) subst: jsonnet_statics::ty::Subst,
   pub(crate) expr_tys: jsonnet_statics::ty::Exprs,
 }
 
@@ -84,8 +83,7 @@ impl IsolatedFile {
     let root = parse.root.clone().into_ast().and_then(|x| x.expr());
     let desugar = jsonnet_desugar::get(current_dir, other_dirs, fs, root);
     let mut tys = jsonnet_statics::ty::Store::default();
-    let mut subst = jsonnet_statics::ty::Subst::default();
-    let st = jsonnet_statics::st::St::new(&mut tys, &mut subst);
+    let st = jsonnet_statics::st::St::new(&mut tys);
     let statics = jsonnet_statics::get(st, &desugar.arenas, desugar.top);
     let combine = jsonnet_expr::Artifacts { paths: desugar.ps, strings: desugar.arenas.str };
     let mut ret = Self {
@@ -95,7 +93,6 @@ impl IsolatedFile {
         pointers: desugar.pointers,
         defs: statics.defs,
         tys,
-        subst,
         expr_tys: statics.expr_tys,
       },
       errors: FileErrors {
@@ -116,7 +113,6 @@ impl IsolatedFile {
     for def in ret.artifacts.defs.values_mut() {
       def.apply(&subst);
     }
-    ret.artifacts.tys.apply(&subst);
     ret
   }
 
@@ -153,7 +149,6 @@ impl IsolatedFile {
     &'a self,
     root: &'a jsonnet_syntax::kind::SyntaxNode,
     store: &'a jsonnet_statics::ty::Store,
-    subst: &'a jsonnet_statics::ty::Subst,
     str_ar: &'a jsonnet_expr::StrArena,
   ) -> impl Iterator<Item = Diagnostic> + 'a {
     let all_errors = std::iter::empty()
@@ -165,7 +160,7 @@ impl IsolatedFile {
       .chain(self.errors.statics.iter().map(|err| {
         let (expr, kind) = err.expr_and_def();
         let range = expr_range(&self.artifacts.pointers, root, expr, kind);
-        let msg = err.display(store, subst, str_ar);
+        let msg = err.display(store, str_ar);
         (range, msg.to_string(), err.severity())
       }))
       .filter_map(|(range, message, severity)| {

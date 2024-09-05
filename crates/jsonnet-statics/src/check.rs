@@ -3,9 +3,9 @@
 use crate::{error, st, ty};
 use always::always;
 use jsonnet_expr::def::{self, Def};
-use jsonnet_expr::{Arenas, Expr, ExprData, Id, Prim, Str};
-use rustc_hash::FxHashMap;
-use std::collections::{BTreeMap, BTreeSet};
+use jsonnet_expr::{Arenas, Expr, ExprData, Id, Prim};
+use rustc_hash::{FxHashMap, FxHashSet};
+use std::collections::BTreeSet;
 
 /// NOTE: don't return early from this except in the degenerate case where the `expr` was `None`.
 /// This is so we can insert the expr's type into the `St` at the end.
@@ -13,44 +13,38 @@ use std::collections::{BTreeMap, BTreeSet};
 pub(crate) fn get(st: &mut st::St<'_>, ars: &Arenas, expr: Expr) -> ty::Ty {
   let Some(expr) = expr else { return ty::Ty::ANY };
   let ret = match &ars.expr[expr] {
-    ExprData::Prim(prim) => st.get_ty(ty::Data::Prim(prim.clone())),
+    ExprData::Prim(prim) => match prim {
+      Prim::Null => ty::Ty::NULL,
+      Prim::Bool(b) => {
+        if *b {
+          ty::Ty::TRUE
+        } else {
+          ty::Ty::FALSE
+        }
+      }
+      Prim::String(_) => ty::Ty::STRING,
+      Prim::Number(_) => ty::Ty::NUMBER,
+    },
     ExprData::Object { binds, asserts, fields } => {
-      let mut field_tys = BTreeMap::<Str, ty::Ty>::default();
+      let mut obj = ty::Object::empty();
       for field in fields {
         get(st, ars, field.key);
         let Some(key) = field.key else { continue };
-        let ExprData::Prim(Prim::String(s)) = &ars.expr[key] else { continue };
-        let fresh = st.fresh();
-        if field_tys.insert(s.clone(), fresh).is_some() {
+        let ExprData::Prim(Prim::String(s)) = &ars.expr[key] else {
+          obj.has_unknown = true;
+          continue;
+        };
+        if obj.known.insert(s.clone(), ty::Ty::ANY).is_some() {
           st.err(key, error::Kind::DuplicateFieldName(s.clone()));
         }
       }
       st.define_self_super();
-      let mut bind_tys = FxHashMap::<Id, ty::Ty>::default();
-      for (idx, &(lhs, rhs)) in binds.iter().enumerate() {
-        let fresh = st.fresh();
-        st.define(lhs, fresh, Def::Expr(expr, def::ExprDefKind::ObjectLocal(idx)));
-        if bind_tys.insert(lhs, fresh).is_some() {
-          st.err(rhs.unwrap_or(expr), error::Kind::DuplicateBinding(lhs));
-        }
-      }
-      for &(lhs, rhs) in binds {
-        let ty = get(st, ars, rhs);
-        match bind_tys.get(&lhs) {
-          None => {
-            always!(false, "just defined this name: {lhs:?}");
-          }
-          Some(&t) => st.unify(rhs.unwrap_or(expr), t, ty),
-        }
-      }
+      define_binds(st, ars, expr, binds, def::ExprDefKind::ObjectLocal);
       for field in fields {
         let ty = get(st, ars, field.val);
         let Some(key) = field.key else { continue };
-        let ExprData::Prim(Prim::String(s)) = &ars.expr[key] else {
-          // TODO handle when this has other fields
-          continue;
-        };
-        always!(field_tys.insert(s.clone(), ty).is_some());
+        let ExprData::Prim(Prim::String(s)) = &ars.expr[key] else { continue };
+        always!(obj.known.insert(s.clone(), ty).is_some());
       }
       for &cond in asserts {
         get(st, ars, cond);
@@ -59,7 +53,7 @@ pub(crate) fn get(st: &mut st::St<'_>, ars: &Arenas, expr: Expr) -> ty::Ty {
       for &(lhs, _) in binds {
         st.undefine(lhs);
       }
-      st.get_ty(ty::Data::Object(field_tys))
+      st.get_ty(ty::Data::Object(obj))
     }
     ExprData::ObjectComp { name, body, id, ary } => {
       get(st, ars, *ary);
@@ -69,8 +63,7 @@ pub(crate) fn get(st: &mut st::St<'_>, ars: &Arenas, expr: Expr) -> ty::Ty {
       get(st, ars, *body);
       st.undefine(*id);
       st.undefine_self_super();
-      // TODO how to model an object with all fields unknown?
-      ty::Ty::ANY
+      ty::Ty::OBJECT
     }
     ExprData::Array(exprs) => {
       let mut tys = BTreeSet::<ty::Ty>::new();
@@ -85,26 +78,36 @@ pub(crate) fn get(st: &mut st::St<'_>, ars: &Arenas, expr: Expr) -> ty::Ty {
       let on_ty = get(st, ars, *on);
       let idx_ty = get(st, ars, *idx);
       let idx_expr = idx.unwrap_or(expr);
-      match st.data(on_ty) {
+      match st.data(on_ty).clone() {
         ty::Data::Array(elem_ty) => {
           st.unify(idx_expr, ty::Ty::NUMBER, idx_ty);
           elem_ty
         }
-        ty::Data::Object(fields) => {
+        ty::Data::Object(obj) => {
           st.unify(idx_expr, ty::Ty::STRING, idx_ty);
           let idx = idx.and_then(|x| match &ars.expr[x] {
             ExprData::Prim(Prim::String(s)) => Some(s),
             _ => None,
           });
           match idx {
-            Some(s) => match fields.get(s) {
+            Some(s) => match obj.known.get(s) {
               Some(&ty) => ty,
               None => {
-                st.err(idx_expr, error::Kind::MissingField(s.clone()));
-                ty::Ty::ANY
+                if obj.has_unknown {
+                  st.err(idx_expr, error::Kind::MissingField(s.clone()));
+                  ty::Ty::ANY
+                } else {
+                  st.get_ty(ty::Data::Union(obj.known.values().copied().collect()))
+                }
               }
             },
-            None => st.get_ty(ty::Data::Union(fields.values().copied().collect())),
+            None => {
+              if obj.has_unknown {
+                ty::Ty::ANY
+              } else {
+                st.get_ty(ty::Data::Union(obj.known.values().copied().collect()))
+              }
+            }
           }
         }
         _ => {
@@ -125,7 +128,7 @@ pub(crate) fn get(st: &mut st::St<'_>, ars: &Arenas, expr: Expr) -> ty::Ty {
           }
         }
       }
-      if let ty::Data::Fn(fn_data) = st.data(func_ty) {
+      if let ty::Data::Fn(fn_data) = st.data(func_ty).clone() {
         let positional_iter = fn_data.params.iter().zip(positional_tys).zip(positional.iter());
         for ((param, ty), arg) in positional_iter {
           st.unify(arg.unwrap_or(expr), param.ty, ty);
@@ -163,23 +166,7 @@ pub(crate) fn get(st: &mut st::St<'_>, ars: &Arenas, expr: Expr) -> ty::Ty {
       }
     },
     ExprData::Local { binds, body } => {
-      let mut bind_tys = FxHashMap::<Id, ty::Ty>::default();
-      for (idx, &(bind, rhs)) in binds.iter().enumerate() {
-        let fresh = st.fresh();
-        st.define(bind, fresh, Def::Expr(expr, def::ExprDefKind::LocalBind(idx)));
-        if bind_tys.insert(bind, fresh).is_some() {
-          st.err(rhs.unwrap_or(expr), error::Kind::DuplicateBinding(bind));
-        }
-      }
-      for &(lhs, rhs) in binds {
-        let ty = get(st, ars, rhs);
-        match bind_tys.get(&lhs) {
-          None => {
-            always!(false, "just defined this name: {lhs:?}");
-          }
-          Some(&t) => st.unify(rhs.unwrap_or(expr), t, ty),
-        }
-      }
+      define_binds(st, ars, expr, binds, def::ExprDefKind::LocalBind);
       let ty = get(st, ars, *body);
       for &(bind, _) in binds {
         st.undefine(bind);
@@ -188,10 +175,10 @@ pub(crate) fn get(st: &mut st::St<'_>, ars: &Arenas, expr: Expr) -> ty::Ty {
     }
     ExprData::Function { params, body } => {
       let mut param_tys = FxHashMap::<Id, ty::Ty>::default();
+      // TODO type "annotations" via asserts
       for (idx, &(bind, rhs)) in params.iter().enumerate() {
-        let fresh = st.fresh();
-        st.define(bind, fresh, Def::Expr(expr, def::ExprDefKind::FnParam(idx)));
-        if param_tys.insert(bind, fresh).is_some() {
+        st.define(bind, ty::Ty::ANY, Def::Expr(expr, def::ExprDefKind::FnParam(idx)));
+        if param_tys.insert(bind, ty::Ty::ANY).is_some() {
           st.err(rhs.flatten().unwrap_or(expr), error::Kind::DuplicateBinding(bind));
         }
       }
@@ -225,28 +212,28 @@ pub(crate) fn get(st: &mut st::St<'_>, ars: &Arenas, expr: Expr) -> ty::Ty {
       match op {
         jsonnet_expr::BinaryOp::Add => {
           match (st.data(lhs_ty), st.data(rhs_ty)) {
-            // TODO: solve the meta vars to be 'plus-able'
             // TODO: check unions better
-            (ty::Data::Any | ty::Data::Meta(_) | ty::Data::Union(_), _)
-            | (_, ty::Data::Any | ty::Data::Meta(_) | ty::Data::Union(_)) => ty::Ty::ANY,
+            (ty::Data::Any | ty::Data::Union(_), _) | (_, ty::Data::Any | ty::Data::Union(_)) => {
+              ty::Ty::ANY
+            }
             // add numbers.
-            (
-              ty::Data::Number | ty::Data::Prim(Prim::Number(_)),
-              ty::Data::Number | ty::Data::Prim(Prim::Number(_)),
-            ) => ty::Ty::NUMBER,
+            (ty::Data::Number, ty::Data::Number) => ty::Ty::NUMBER,
             // if any operand is string, coerce the other to string.
-            (ty::Data::String | ty::Data::Prim(Prim::String(_)), _)
-            | (_, ty::Data::String | ty::Data::Prim(Prim::String(_))) => ty::Ty::STRING,
+            (ty::Data::String, _) | (_, ty::Data::String) => ty::Ty::STRING,
             // concat arrays.
             (ty::Data::Array(lhs_elem), ty::Data::Array(rhs_elem)) => {
-              let elem = st.get_ty(ty::Data::Union(BTreeSet::from([lhs_elem, rhs_elem])));
+              let elem = st.get_ty(ty::Data::Union(BTreeSet::from([*lhs_elem, *rhs_elem])));
               st.get_ty(ty::Data::Array(elem))
             }
             // add object fields.
-            (ty::Data::Object(mut lhs_fields), ty::Data::Object(rhs_fields)) => {
+            (ty::Data::Object(lhs_obj), ty::Data::Object(rhs_obj)) => {
+              let mut obj = lhs_obj.clone();
               // right overrides left.
-              lhs_fields.extend(rhs_fields);
-              st.get_ty(ty::Data::Object(lhs_fields))
+              let rhs_known = rhs_obj.known.iter().map(|(k, &v)| (k.clone(), v));
+              obj.known.extend(rhs_known);
+              // this has unknown if either has unknown.
+              obj.has_unknown = obj.has_unknown || rhs_obj.has_unknown;
+              st.get_ty(ty::Data::Object(obj))
             }
             _ => {
               st.err(expr, error::Kind::InvalidPlus(lhs_ty, rhs_ty));
@@ -315,20 +302,34 @@ pub(crate) fn get(st: &mut st::St<'_>, ars: &Arenas, expr: Expr) -> ty::Ty {
   ret
 }
 
+fn define_binds(
+  st: &mut st::St<'_>,
+  ars: &Arenas,
+  expr: jsonnet_expr::ExprMust,
+  binds: &[(Id, jsonnet_expr::Expr)],
+  f: fn(usize) -> def::ExprDefKind,
+) {
+  let mut bound_ids = FxHashSet::<Id>::default();
+  for (idx, &(bind, rhs)) in binds.iter().enumerate() {
+    st.define(bind, ty::Ty::ANY, Def::Expr(expr, f(idx)));
+    if !bound_ids.insert(bind) {
+      st.err(rhs.unwrap_or(expr), error::Kind::DuplicateBinding(bind));
+    }
+  }
+  for &(lhs, rhs) in binds {
+    let ty = get(st, ars, rhs);
+    always!(bound_ids.contains(&lhs), "should have just defined: {lhs:?}");
+    st.refine(lhs, ty);
+  }
+}
+
 fn is_comparable(st: &st::St<'_>, ty: ty::Ty) -> bool {
   match st.data(ty) {
-    // TODO for the Meta case, should note that the meta var must be comparable. failing to do so is
-    // unsound. (but we already have Any so *shrug*)
-    ty::Data::Any
-    | ty::Data::Meta(_)
-    | ty::Data::String
-    | ty::Data::Number
-    | ty::Data::Prim(Prim::String(_) | Prim::Number(_)) => true,
-    ty::Data::Array(ty) => is_comparable(st, ty),
+    ty::Data::Any | ty::Data::String | ty::Data::Number => true,
+    ty::Data::Array(ty) => is_comparable(st, *ty),
     ty::Data::Union(tys) => tys.iter().any(|&ty| is_comparable(st, ty)),
-    ty::Data::Bool
-    | ty::Data::Prim(Prim::Null | Prim::Bool(_))
-    | ty::Data::Object(_)
-    | ty::Data::Fn(_) => false,
+    ty::Data::True | ty::Data::False | ty::Data::Null | ty::Data::Object(_) | ty::Data::Fn(_) => {
+      false
+    }
   }
 }
