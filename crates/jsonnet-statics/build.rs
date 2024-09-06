@@ -34,7 +34,6 @@ fn main() {
 
     pub const _GENERATED_BY: &str = #file;
 
-    #[allow(non_upper_case_globals)]
     impl super::Ty {
       #(#impl_ty_const)*
     }
