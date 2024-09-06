@@ -1,7 +1,5 @@
 //! Generate some string/identifier names.
 
-#![allow(clippy::disallowed_methods)]
-
 use quote::{format_ident, quote};
 use std::collections::{BTreeMap, BTreeSet, HashSet};
 
@@ -23,7 +21,7 @@ impl S {
   }
 }
 
-#[allow(clippy::too_many_lines)]
+#[expect(clippy::too_many_lines)]
 fn main() {
   let std_fns = [
     (S::new("extVar"), &["x"][..]),
@@ -216,14 +214,14 @@ fn main() {
     });
 
     quote! {
-      #[allow(non_camel_case_types)]
+      #[expect(non_camel_case_types)]
       #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
       pub(crate) enum BuiltinStr {
         #(#variants)*
       }
 
       impl BuiltinStr {
-        #[allow(clippy::too_many_lines)]
+        #[expect(clippy::too_many_lines)]
         pub(crate) const fn as_static_str(self) -> &'static str {
           match self {
             #(#as_static_str_arms)*
@@ -235,7 +233,7 @@ fn main() {
       impl std::str::FromStr for BuiltinStr {
         type Err = NotBuiltinStr;
 
-        #[allow(clippy::too_many_lines)]
+        #[expect(clippy::too_many_lines)]
         fn from_str(s: &str) -> Result<Self, Self::Err> {
           let ret = match s {
             #(#from_str_arms)*
@@ -273,7 +271,7 @@ fn main() {
       });
 
     quote! {
-      #[allow(non_upper_case_globals)]
+      #[expect(non_upper_case_globals)]
       impl Id {
         #(#constants)*
       }
@@ -287,7 +285,7 @@ fn main() {
     });
 
     quote! {
-      #[allow(non_upper_case_globals)]
+      #[expect(non_upper_case_globals)]
       impl Str {
         #(#constants)*
       }
@@ -320,7 +318,7 @@ fn main() {
     let get_args = std_fns.iter().map(|&(S { name, .. }, params)| mk_get_args(name, params));
     quote! {
       #[derive(Debug, Clone, Copy)]
-      #[allow(non_camel_case_types)]
+      #[expect(non_camel_case_types)]
       pub enum StdFn {
         #(#variants,)*
       }
@@ -331,7 +329,7 @@ fn main() {
         ];
 
         #[must_use]
-        #[allow(clippy::too_many_lines)]
+        #[expect(clippy::too_many_lines)]
         pub fn params_len(&self) -> usize {
           match self {
             #(#params_len_arms)*
@@ -340,7 +338,7 @@ fn main() {
       }
 
       pub mod std_fn {
-        #[allow(non_camel_case_types, non_snake_case)]
+        #[expect(non_camel_case_types, non_snake_case)]
         pub mod params {
           use crate::arg::{Result, TooMany, Error, ErrorKind};
           use crate::{Id, Expr, ExprMust};
@@ -348,7 +346,7 @@ fn main() {
           #(#get_params)*
         }
 
-        #[allow(non_snake_case)]
+        #[expect(non_snake_case)]
         pub mod args {
           use crate::arg::{Result};
           use crate::{Id, Expr, ExprMust};
@@ -478,7 +476,7 @@ fn mk_get_params(params: &[&str]) -> proc_macro2::TokenStream {
           }
         }
         #(#require_vars_set)*
-        #[allow(unsafe_code)]
+        #[expect(unsafe_code)]
         Ok(Self { #(#unwraps_unchecked)* })
       }
     }

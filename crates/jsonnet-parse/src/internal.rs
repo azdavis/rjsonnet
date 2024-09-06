@@ -24,7 +24,7 @@ fn expr_prec_must(p: &mut Parser<'_>, min_prec: Prec) {
 
 /// handles precedence.
 #[must_use]
-#[allow(clippy::too_many_lines)]
+#[expect(clippy::too_many_lines)]
 fn expr_prec(p: &mut Parser<'_>, min_prec: Prec) -> Option<Exited> {
   let cur = p.peek()?;
   let en = p.enter();

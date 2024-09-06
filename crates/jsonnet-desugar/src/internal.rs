@@ -188,7 +188,7 @@ fn get_expr_or_null(
   }
 }
 
-#[allow(clippy::unnecessary_wraps)]
+#[expect(clippy::unnecessary_wraps)]
 fn call_std_func(st: &mut St, ptr: ast::SyntaxNodePtr, name: Str, args: Vec<Expr>) -> Expr {
   let data = call_std_func_data(st, ptr, name, args);
   Some(st.expr(ptr, data))

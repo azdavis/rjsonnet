@@ -21,8 +21,7 @@ fn main() {
     (i!("OBJECT"), q!(super::Data::Object(super::Object::unknown()))),
   ];
   let impl_ty_const = things.iter().enumerate().map(|(idx, (name, _))| {
-    // ok to panic in build script
-    #[allow(clippy::disallowed_methods)]
+    #[expect(clippy::disallowed_methods, reason = "ok to panic in build script")]
     let idx = u32::try_from(idx).expect("usize to u32");
     q! { pub(crate) const #name: Self = Self(#idx); }
   });

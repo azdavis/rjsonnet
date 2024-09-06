@@ -1,6 +1,6 @@
 //! Desugaring and lowering concrete syntax trees into abstract expressions.
 
-#![allow(clippy::needless_pass_by_value, clippy::single_match_else, clippy::too_many_lines)]
+#![expect(clippy::needless_pass_by_value, clippy::single_match_else, clippy::too_many_lines)]
 
 mod cx;
 mod error;

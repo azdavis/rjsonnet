@@ -9,7 +9,7 @@ use std::collections::BTreeSet;
 
 /// NOTE: don't return early from this except in the degenerate case where the `expr` was `None`.
 /// This is so we can insert the expr's type into the `St` at the end.
-#[allow(clippy::too_many_lines, clippy::single_match_else, clippy::similar_names)]
+#[expect(clippy::too_many_lines, clippy::similar_names)]
 pub(crate) fn get(st: &mut st::St<'_>, ars: &Arenas, expr: Expr) -> ty::Ty {
   let Some(expr) = expr else { return ty::Ty::ANY };
   let ret = match &ars.expr[expr] {
@@ -155,16 +155,15 @@ pub(crate) fn get(st: &mut st::St<'_>, ars: &Arenas, expr: Expr) -> ty::Ty {
         ty::Ty::ANY
       }
     }
-    ExprData::Id(id) => match st.get(*id) {
-      Some((ty, def)) => {
+    ExprData::Id(id) => {
+      if let Some((ty, def)) = st.get(*id) {
         st.note_usage(expr, def);
         ty
-      }
-      None => {
+      } else {
         st.err(expr, error::Kind::NotInScope(*id));
         ty::Ty::ANY
       }
-    },
+    }
     ExprData::Local { binds, body } => {
       define_binds(st, ars, expr, binds, def::ExprDefKind::LocalBind);
       let ty = get(st, ars, *body);

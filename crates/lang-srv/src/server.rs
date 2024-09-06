@@ -17,7 +17,6 @@ impl<S> Server<S> {
     Self { fs, st, queue: lsp_server::ReqQueue::default(), file_watch: false }
   }
 
-  #[allow(dead_code)]
   pub(crate) fn request<R>(&mut self, conn: &lsp_server::Connection, params: R::Params)
   where
     R: lsp_types::request::Request,

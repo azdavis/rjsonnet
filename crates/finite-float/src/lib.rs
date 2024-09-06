@@ -91,7 +91,7 @@ impl TryFrom<f64> for Float {
 
 impl From<usize> for Float {
   fn from(value: usize) -> Self {
-    #[allow(clippy::cast_precision_loss)]
+    #[expect(clippy::cast_precision_loss)]
     Self(value as f64)
   }
 }

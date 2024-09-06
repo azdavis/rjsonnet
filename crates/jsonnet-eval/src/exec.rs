@@ -106,7 +106,7 @@ pub(crate) fn get(cx: Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
         if idx_floor < 0.0 || idx_floor > f64::from(u32::MAX) {
           return Err(error::Error::Exec { expr, kind: error::Kind::ArrayIdxOutOfRange });
         }
-        #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+        #[expect(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
         let idx = idx_floor as u32;
         let Ok(idx) = usize::try_from(idx) else {
           return Err(error::Error::Exec { expr, kind: error::Kind::ArrayIdxOutOfRange });
@@ -273,12 +273,12 @@ pub(crate) fn get(cx: Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
         jsonnet_expr::UnaryOp::BitNot => {
           if let Val::Prim(Prim::Number(n)) = inner {
             let n = n.value().round();
-            #[allow(clippy::cast_precision_loss)]
+            #[expect(clippy::cast_precision_loss)]
             let n = n.clamp(i64::MIN as f64, i64::MAX as f64);
-            #[allow(clippy::cast_possible_truncation)]
+            #[expect(clippy::cast_possible_truncation)]
             let n = n as i64;
             let n = !n;
-            #[allow(clippy::cast_precision_loss)]
+            #[expect(clippy::cast_precision_loss)]
             let n = n as f64;
             let n = Float::always_from_f64(n);
             Ok(Val::Prim(Prim::Number(n)))
@@ -340,9 +340,9 @@ where
   F: FnOnce(i64, i64) -> i64,
 {
   let ns = number_pair(expr, cx, env, lhs, rhs)?;
-  #[allow(clippy::cast_possible_truncation)]
+  #[expect(clippy::cast_possible_truncation)]
   let [lhs, rhs] = ns.map(|x| x.value() as i64);
-  #[allow(clippy::cast_precision_loss)]
+  #[expect(clippy::cast_precision_loss)]
   let n = f(lhs, rhs) as f64;
   let n = match Float::try_from(n) {
     Ok(n) => n,

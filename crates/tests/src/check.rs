@@ -74,7 +74,7 @@ impl<'a> Input<'a> {
     MultiInput::default().with_input(self).check();
   }
 
-  #[allow(clippy::too_many_lines)]
+  #[expect(clippy::too_many_lines)]
   #[track_caller]
   fn check_with(
     self,

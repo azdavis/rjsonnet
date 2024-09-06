@@ -4,7 +4,7 @@ use crate::error;
 use jsonnet_syntax::kind::SyntaxKind as SK;
 use str_process::St;
 
-#[allow(clippy::too_many_lines)]
+#[expect(clippy::too_many_lines)]
 pub(crate) fn token(st: &mut St<'_>, out: &mut error::Output, b: u8) -> SK {
   if is_ws(b) {
     st.bump();

@@ -1,6 +1,6 @@
 //! A task runner for the repo based on the [xtask spec](https://github.com/matklad/cargo-xtask).
 
-#![allow(clippy::disallowed_methods)]
+#![expect(clippy::disallowed_methods)]
 
 use flate2::{write::GzEncoder, Compression};
 use pico_args::Arguments;

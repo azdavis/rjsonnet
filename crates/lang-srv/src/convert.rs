@@ -22,15 +22,13 @@ pub(crate) fn clean_path_buf(url: &Url) -> Result<paths::CleanPathBuf> {
   }
 }
 
-#[allow(clippy::single_match_else, clippy::manual_let_else)]
 pub(crate) fn url(path: &paths::CleanPath) -> Option<Url> {
   // we want a compile error if the Err type stops being ().
-  match Url::from_file_path(path.as_path()) {
-    Ok(x) => Some(x),
-    Err(()) => {
-      always!(false, "canonical path to url error");
-      None
-    }
+  if let Ok(x) = Url::from_file_path(path.as_path()) {
+    Some(x)
+  } else {
+    always!(false, "canonical path to url error");
+    None
   }
 }
 
