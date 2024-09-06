@@ -28,8 +28,6 @@ pub(crate) struct FileArtifacts {
   pub(crate) syntax: jsonnet_syntax::Root,
   pub(crate) pointers: jsonnet_desugar::Pointers,
   pub(crate) defs: jsonnet_expr::def::Map,
-  /// TODO have one global ty store?
-  pub(crate) tys: jsonnet_statics::ty::Store,
   pub(crate) expr_tys: jsonnet_statics::ty::Exprs,
 }
 
@@ -63,6 +61,13 @@ where
   }
 }
 
+/// Things shared across all files.
+#[derive(Debug, Default)]
+pub(crate) struct GlobalArtifacts {
+  pub(crate) expr: jsonnet_expr::Artifacts,
+  pub(crate) tys: jsonnet_statics::ty::Store,
+}
+
 /// A single isolated file.
 pub(crate) struct IsolatedFile {
   pub(crate) artifacts: FileArtifacts,
@@ -75,15 +80,14 @@ impl IsolatedFile {
     contents: &str,
     current_dir: &paths::CleanPath,
     other_dirs: &[paths::CleanPathBuf],
-    artifacts: &mut jsonnet_expr::Artifacts,
+    artifacts: &mut GlobalArtifacts,
     fs: &dyn jsonnet_desugar::FileSystem,
   ) -> Self {
     let lex = jsonnet_lex::get(contents);
     let parse = jsonnet_parse::get(&lex.tokens);
     let root = parse.root.clone().into_ast().and_then(|x| x.expr());
     let desugar = jsonnet_desugar::get(current_dir, other_dirs, fs, root);
-    let mut tys = jsonnet_statics::ty::Store::default();
-    let st = jsonnet_statics::st::St::new(&mut tys);
+    let st = jsonnet_statics::st::St::new(&mut artifacts.tys);
     let statics = jsonnet_statics::get(st, &desugar.arenas, desugar.top);
     let combine = jsonnet_expr::Artifacts { paths: desugar.ps, strings: desugar.arenas.str };
     let mut ret = Self {
@@ -92,7 +96,6 @@ impl IsolatedFile {
         syntax: parse.root,
         pointers: desugar.pointers,
         defs: statics.defs,
-        tys,
         expr_tys: statics.expr_tys,
       },
       errors: FileErrors {
@@ -103,7 +106,7 @@ impl IsolatedFile {
       },
       eval: JsonnetFile { expr_ar: desugar.arenas.expr, top: desugar.top },
     };
-    let subst = jsonnet_expr::Subst::get(artifacts, combine);
+    let subst = jsonnet_expr::Subst::get(&mut artifacts.expr, combine);
     for err in &mut ret.errors.statics {
       err.apply(&subst);
     }
@@ -119,7 +122,7 @@ impl IsolatedFile {
   pub(crate) fn from_fs<F>(
     path: &paths::CleanPath,
     root_dirs: &[paths::CleanPathBuf],
-    artifacts: &mut jsonnet_expr::Artifacts,
+    artifacts: &mut GlobalArtifacts,
     fs: &F,
   ) -> std::io::Result<IsolatedFile>
   where
@@ -133,7 +136,7 @@ impl IsolatedFile {
     path: &paths::CleanPath,
     contents: &str,
     root_dirs: &[paths::CleanPathBuf],
-    artifacts: &mut jsonnet_expr::Artifacts,
+    artifacts: &mut GlobalArtifacts,
     fs: &F,
   ) -> std::io::Result<IsolatedFile>
   where

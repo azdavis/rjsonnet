@@ -1,7 +1,9 @@
 //! The state of analysis.
 
 use crate::const_eval;
-use crate::util::{expr_range, FileArtifacts, Init, IsolatedFile, PathIoError, Result};
+use crate::util::{
+  expr_range, FileArtifacts, GlobalArtifacts, Init, IsolatedFile, PathIoError, Result,
+};
 use always::always;
 use jsonnet_eval::JsonnetFile;
 use jsonnet_syntax::ast::AstNode as _;
@@ -25,7 +27,7 @@ static STD_LIB_DOC: LazyLock<FxHashMap<&str, String>> = LazyLock::new(|| {
 struct WithFs {
   relative_to: Option<paths::CleanPathBuf>,
   root_dirs: Vec<paths::CleanPathBuf>,
-  artifacts: jsonnet_expr::Artifacts,
+  artifacts: GlobalArtifacts,
   /// INVARIANT: this is exactly the set of files that do have errors that have been loaded into
   /// either `file_artifacts` or `file_exprs` on the [`St`] that contains this.
   has_errors: paths::PathSet,
@@ -42,14 +44,14 @@ impl WithFs {
   /// useful for debugging, so let's keep it around.
   #[allow(dead_code)]
   fn display_path_id(&self, p: PathId) -> impl std::fmt::Display + '_ {
-    self.strip(self.artifacts.paths.get_path(p).as_path()).display()
+    self.strip(self.artifacts.expr.paths.get_path(p).as_path()).display()
   }
 
   fn get_one_file<F>(&mut self, fs: &F, path_id: PathId) -> Result<IsolatedFile>
   where
     F: paths::FileSystem,
   {
-    let path = self.artifacts.paths.get_path(path_id).to_owned();
+    let path = self.artifacts.expr.paths.get_path(path_id).to_owned();
     match IsolatedFile::from_fs(path.as_clean_path(), &self.root_dirs, &mut self.artifacts, fs) {
       Ok(file) => {
         if file.errors.is_empty() {
@@ -122,7 +124,7 @@ impl St {
       with_fs: WithFs {
         relative_to: init.relative_to,
         root_dirs: init.root_dirs,
-        artifacts: jsonnet_expr::Artifacts::default(),
+        artifacts: GlobalArtifacts::default(),
         has_errors: paths::PathSet::default(),
       },
       open_files: PathMap::default(),
@@ -146,8 +148,8 @@ impl St {
     }
     // TODO more caching?
     let cx = jsonnet_eval::Cx {
-      paths: &self.with_fs.artifacts.paths,
-      str_ar: &self.with_fs.artifacts.strings,
+      paths: &self.with_fs.artifacts.expr.paths,
+      str_ar: &self.with_fs.artifacts.expr.strings,
       jsonnet_files: &self.file_exprs,
       import_str: &self.import_str,
       import_bin: &self.import_bin,
@@ -159,7 +161,7 @@ impl St {
   /// Returns the strings for this.
   #[must_use]
   pub fn strings(&self) -> &jsonnet_expr::StrArena {
-    &self.with_fs.artifacts.strings
+    &self.with_fs.artifacts.expr.strings
   }
 
   /// Brings all the transitive deps of the Jsonnet file with path id `path_id` into memory.
@@ -195,7 +197,7 @@ impl St {
         jsonnet_expr::ImportKind::String => match self.import_str.entry(path_id) {
           Entry::Occupied(_) => {}
           Entry::Vacant(entry) => {
-            let path = self.with_fs.artifacts.paths.get_path(path_id).to_owned();
+            let path = self.with_fs.artifacts.expr.paths.get_path(path_id).to_owned();
             match fs.read_to_string(path.as_path()) {
               Ok(x) => {
                 entry.insert(x);
@@ -207,7 +209,7 @@ impl St {
         jsonnet_expr::ImportKind::Binary => match self.import_bin.entry(path_id) {
           Entry::Occupied(_) => {}
           Entry::Vacant(entry) => {
-            let path = self.with_fs.artifacts.paths.get_path(path_id).to_owned();
+            let path = self.with_fs.artifacts.expr.paths.get_path(path_id).to_owned();
             match fs.read_to_bytes(path.as_path()) {
               Ok(x) => {
                 entry.insert(x);
@@ -330,7 +332,7 @@ impl lang_srv_state::State for St {
     let root = file.artifacts.syntax.clone();
     let syntax = root.syntax();
     let diagnostics =
-      file.diagnostics(&syntax, &file.artifacts.tys, &self.with_fs.artifacts.strings);
+      file.diagnostics(&syntax, &self.with_fs.artifacts.tys, &self.with_fs.artifacts.expr.strings);
     let ret: Vec<_> = diagnostics.collect();
     self.file_artifacts.insert(path_id, file.artifacts);
     self.file_exprs.insert(path_id, file.eval);
@@ -395,13 +397,13 @@ impl lang_srv_state::State for St {
     });
     let ty = expr.and_then(|expr| {
       let ty = arts.expr_tys.get(&expr)?;
-      let ty = ty.display(&arts.tys, &self.with_fs.artifacts.strings);
+      let ty = ty.display(&self.with_fs.artifacts.tys, &self.with_fs.artifacts.expr.strings);
       Some(format!("type:\n```ts\n{ty}\n```"))
     });
     // TODO expose any errors here?
     let from_std_field = match const_eval::get(self, fs, path_id, expr) {
       Some(const_eval::ConstEval::Std(Some(x))) => {
-        STD_LIB_DOC.get(self.with_fs.artifacts.strings.get(&x)).map(String::as_str)
+        STD_LIB_DOC.get(self.with_fs.artifacts.expr.strings.get(&x)).map(String::as_str)
       }
       Some(const_eval::ConstEval::Std(None)) => Some("std: The standard library."),
       None | Some(const_eval::ConstEval::Real(_)) => None,
@@ -409,12 +411,13 @@ impl lang_srv_state::State for St {
     let json = self.manifest.then(|| match self.get_all_deps(fs, path_id) {
       Ok(()) => match self.get_json(path_id) {
         Ok(json) => {
-          let json = json.display(&self.with_fs.artifacts.strings);
+          let json = json.display(&self.with_fs.artifacts.expr.strings);
           format!("json:\n```json\n{json}\n```")
         }
         Err(e) => {
           let rel_to = self.with_fs.relative_to.as_ref().map(paths::CleanPathBuf::as_clean_path);
-          let e = e.display(&self.with_fs.artifacts.strings, &self.with_fs.artifacts.paths, rel_to);
+          let a = &self.with_fs.artifacts.expr;
+          let e = e.display(&a.strings, &a.paths, rel_to);
           format!("couldn't get json: {e}")
         }
       },
@@ -423,7 +426,7 @@ impl lang_srv_state::State for St {
     let debug = if self.debug {
       self.with_fs.get_file_expr(&mut self.file_exprs, fs, path_id).ok().map(|file| {
         let rel = self.with_fs.relative_to.as_ref().map(paths::CleanPathBuf::as_clean_path);
-        let a = &self.with_fs.artifacts;
+        let a = &self.with_fs.artifacts.expr;
         let e = jsonnet_expr::display::expr(expr, &a.strings, &file.expr_ar, &a.paths, rel);
         format!("debug:\n```jsonnet\n{e}\n```")
       })
@@ -472,10 +475,10 @@ impl lang_srv_state::State for St {
   }
 
   fn paths(&self) -> &paths::Store {
-    &self.with_fs.artifacts.paths
+    &self.with_fs.artifacts.expr.paths
   }
 
   fn path_id(&mut self, path: paths::CleanPathBuf) -> PathId {
-    self.with_fs.artifacts.paths.get_id_owned(path)
+    self.with_fs.artifacts.expr.paths.get_id_owned(path)
   }
 }
