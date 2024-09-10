@@ -114,20 +114,33 @@ pub struct Store {
 
 impl Store {
   pub(crate) fn get(&mut self, data: Data) -> Ty {
+    match self.get_shared(data) {
+      Ok(x) => x,
+      Err(data) => {
+        let ret = Ty::from_usize(self.idx_to_data.len());
+        self.idx_to_data.push(data.clone());
+        always!(self.data_to_idx.insert(data, ret).is_none());
+        ret
+      }
+    }
+  }
+
+  /// returns Err if this would require mutation to the store to return a Ty
+  fn get_shared(&self, data: Data) -> Result<Ty, Data> {
     match data {
-      Data::Any => Ty::ANY,
-      Data::True => Ty::TRUE,
-      Data::False => Ty::FALSE,
-      Data::Null => Ty::NULL,
-      Data::String => Ty::STRING,
-      Data::Number => Ty::NUMBER,
-      Data::Array(_) | Data::Object(_) | Data::Fn(_) => self.get_inner(data),
+      Data::Any => Ok(Ty::ANY),
+      Data::True => Ok(Ty::TRUE),
+      Data::False => Ok(Ty::FALSE),
+      Data::Null => Ok(Ty::NULL),
+      Data::String => Ok(Ty::STRING),
+      Data::Number => Ok(Ty::NUMBER),
+      Data::Array(_) | Data::Object(_) | Data::Fn(_) => self.get_shared_inner(data),
       Data::Union(work) => {
         let mut work: Vec<_> = work.into_iter().collect();
         let mut parts = BTreeSet::<Ty>::new();
         while let Some(ty) = work.pop() {
           match self.data(ty) {
-            Data::Any => return Ty::ANY,
+            Data::Any => return Ok(Ty::ANY),
             Data::Union(parts) => work.extend(parts),
             _ => {
               parts.insert(ty);
@@ -138,26 +151,21 @@ impl Store {
           match parts.pop_first() {
             None => {
               always!(false, "just checked len == 1");
-              Ty::ANY
+              Ok(Ty::ANY)
             }
-            Some(ty) => ty,
+            Some(ty) => Ok(ty),
           }
         } else {
-          self.get_inner(Data::Union(parts))
+          self.get_shared_inner(Data::Union(parts))
         }
       }
     }
   }
 
-  fn get_inner(&mut self, data: Data) -> Ty {
+  fn get_shared_inner(&self, data: Data) -> Result<Ty, Data> {
     match self.data_to_idx.get(&data) {
-      None => {
-        let ret = Ty::from_usize(self.idx_to_data.len());
-        self.idx_to_data.push(data.clone());
-        always!(self.data_to_idx.insert(data, ret).is_none());
-        ret
-      }
-      Some(&ty) => ty,
+      None => Err(data),
+      Some(&ty) => Ok(ty),
     }
   }
 
