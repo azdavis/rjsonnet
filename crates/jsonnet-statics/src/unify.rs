@@ -33,7 +33,7 @@ struct Marker {
 
 /// this checks and unifies `want` is compatible with `got`, but allows `got` to be more specific
 /// than `want`. aka, got should be a subtype of want, i suppose.
-pub(crate) fn get(st: &mut St<'_>, store: &ty::Store, want: ty::Ty, got: ty::Ty) {
+pub(crate) fn get(st: &mut St<'_>, store: &ty::MutStore<'_>, want: ty::Ty, got: ty::Ty) {
   match (store.data(want), store.data(got)) {
     (ty::Data::Any, _)
     | (_, ty::Data::Any)

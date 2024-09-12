@@ -23,6 +23,8 @@ fn main() {
   let impl_ty_const = things.iter().enumerate().map(|(idx, (name, _))| {
     #[expect(clippy::disallowed_methods, reason = "ok to panic in build script")]
     let idx = u32::try_from(idx).expect("usize to u32");
+    // NOTE: we depend on the layout of Ty being just a regular index with no extra bit manipulation
+    // for the shared case here.
     q! { pub(crate) const #name: Self = Self(#idx); }
   });
   let ty_data = things.iter().map(|(_, td)| td);
@@ -37,8 +39,9 @@ fn main() {
       #(#impl_ty_const)*
     }
 
-    impl Default for super::Store {
-      fn default() -> Self {
+    impl super::Store {
+      #[doc = "Returns a store with the builtin types, like `Ty::ANY`."]
+      pub(crate) fn with_builtin() -> Self {
         Self {
           idx_to_data: vec![
             #(#ty_data,)*

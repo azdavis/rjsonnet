@@ -16,7 +16,7 @@ impl Error {
   #[must_use]
   pub fn display<'a>(
     &'a self,
-    store: &'a ty::Store,
+    store: &'a ty::GlobalStore,
     str_ar: &'a jsonnet_expr::StrArena,
   ) -> impl fmt::Display + 'a {
     Display { kind: &self.kind, store, str_ar }
@@ -54,8 +54,8 @@ impl Error {
     }
   }
 
-  /// Apply a subst.
-  pub fn apply(&mut self, subst: &Subst) {
+  /// Apply some substitutions.
+  pub fn apply(&mut self, expr_subst: &Subst, ty_subst: &ty::Subst) {
     match &mut self.kind {
       Kind::NotInScope(id)
       | Kind::DuplicateNamedArg(id)
@@ -63,21 +63,26 @@ impl Error {
       | Kind::Unused(id, _)
       | Kind::WantOptionalParamGotRequired(id)
       | Kind::ExtraRequiredParam(id)
-      | Kind::MissingArgument(id, _)
       | Kind::ExtraNamedArgument(id) => {
-        id.apply(subst);
+        id.apply(expr_subst);
       }
-      Kind::DuplicateFieldName(str) | Kind::MissingField(str) => str.apply(subst),
+      Kind::DuplicateFieldName(str) | Kind::MissingField(str) => str.apply(expr_subst),
       Kind::MismatchedParamNames(a, b) => {
-        a.apply(subst);
-        b.apply(subst);
+        a.apply(expr_subst);
+        b.apply(expr_subst);
       }
-      Kind::Incompatible(_, _)
-      | Kind::NotEnoughParams(_, _)
-      | Kind::MissingUnknown
-      | Kind::Incomparable(_)
-      | Kind::ExtraPositionalArgument(_)
-      | Kind::InvalidPlus(_, _) => {}
+      Kind::MissingArgument(id, ty) => {
+        id.apply(expr_subst);
+        ty.apply(ty_subst);
+      }
+      Kind::Incompatible(a, b) | Kind::InvalidPlus(a, b) => {
+        a.apply(ty_subst);
+        b.apply(ty_subst);
+      }
+      Kind::Incomparable(ty) => {
+        ty.apply(ty_subst);
+      }
+      Kind::NotEnoughParams(_, _) | Kind::MissingUnknown | Kind::ExtraPositionalArgument(_) => {}
     }
   }
 }
@@ -106,7 +111,7 @@ pub(crate) enum Kind {
 
 struct Display<'a> {
   kind: &'a Kind,
-  store: &'a ty::Store,
+  store: &'a ty::GlobalStore,
   str_ar: &'a jsonnet_expr::StrArena,
 }
 

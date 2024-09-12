@@ -1,6 +1,7 @@
 //! Display types.
 
-use super::{Data, Param, Store, Ty};
+use super::{Data, GlobalStore, Param, Store, Ty};
+use always::always;
 use jsonnet_expr::StrArena;
 use std::fmt;
 
@@ -9,8 +10,8 @@ impl Ty {
   ///
   /// Meant to be somewhat similar to how TypeScript does it.
   #[must_use]
-  pub fn display<'a>(self, store: &'a Store, str_ar: &'a StrArena) -> impl fmt::Display + 'a {
-    TyDisplay { ty: self, prec: Prec::Min, stuff: Stuff { store, str_ar } }
+  pub fn display<'a>(self, store: &'a GlobalStore, str_ar: &'a StrArena) -> impl fmt::Display + 'a {
+    TyDisplay { ty: self, prec: Prec::Min, stuff: Stuff { store: &store.0, str_ar } }
   }
 }
 
@@ -29,7 +30,11 @@ impl<'a> TyDisplay<'a> {
 
 impl<'a> fmt::Display for TyDisplay<'a> {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    match self.stuff.store.data(self.ty) {
+    let Some(data) = self.stuff.store.data(self.ty, false) else {
+      always!(false, "should not use local store for display");
+      return f.write_str("_");
+    };
+    match data {
       Data::Any => f.write_str("any"),
       Data::True => f.write_str("true"),
       Data::False => f.write_str("false"),

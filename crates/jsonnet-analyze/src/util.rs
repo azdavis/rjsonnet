@@ -65,7 +65,7 @@ where
 #[derive(Debug, Default)]
 pub(crate) struct GlobalArtifacts {
   pub(crate) expr: jsonnet_expr::Artifacts,
-  pub(crate) tys: jsonnet_statics::ty::Store,
+  pub(crate) tys: jsonnet_statics::ty::GlobalStore,
 }
 
 /// A single isolated file.
@@ -87,8 +87,8 @@ impl IsolatedFile {
     let parse = jsonnet_parse::get(&lex.tokens);
     let root = parse.root.clone().into_ast().and_then(|x| x.expr());
     let desugar = jsonnet_desugar::get(current_dir, other_dirs, fs, root);
-    let st = jsonnet_statics::st::St::new(&mut artifacts.tys);
-    let statics = jsonnet_statics::get(st, &desugar.arenas, desugar.top);
+    let st = jsonnet_statics::st::St::new(&artifacts.tys);
+    let (statics, tys) = jsonnet_statics::get(st, &desugar.arenas, desugar.top);
     let combine = jsonnet_expr::Artifacts { paths: desugar.ps, strings: desugar.arenas.str };
     let mut ret = Self {
       artifacts: FileArtifacts {
@@ -106,15 +106,19 @@ impl IsolatedFile {
       },
       eval: JsonnetFile { expr_ar: desugar.arenas.expr, top: desugar.top },
     };
-    let subst = jsonnet_expr::Subst::get(&mut artifacts.expr, combine);
+    let expr_subst = jsonnet_expr::Subst::get(&mut artifacts.expr, combine);
+    let ty_subst = jsonnet_statics::ty::Subst::get(&mut artifacts.tys, tys);
     for err in &mut ret.errors.statics {
-      err.apply(&subst);
+      err.apply(&expr_subst, &ty_subst);
     }
     for (_, ed) in ret.eval.expr_ar.iter_mut() {
-      ed.apply(&subst);
+      ed.apply(&expr_subst);
     }
     for def in ret.artifacts.defs.values_mut() {
-      def.apply(&subst);
+      def.apply(&expr_subst);
+    }
+    for ty in ret.artifacts.expr_tys.values_mut() {
+      ty.apply(&ty_subst);
     }
     ret
   }
@@ -151,7 +155,7 @@ impl IsolatedFile {
   pub(crate) fn diagnostics<'a>(
     &'a self,
     root: &'a jsonnet_syntax::kind::SyntaxNode,
-    store: &'a jsonnet_statics::ty::Store,
+    store: &'a jsonnet_statics::ty::GlobalStore,
     str_ar: &'a jsonnet_expr::StrArena,
   ) -> impl Iterator<Item = Diagnostic> + 'a {
     let all_errors = std::iter::empty()

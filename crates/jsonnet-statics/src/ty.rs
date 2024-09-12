@@ -94,12 +94,36 @@ pub(crate) struct Param {
 pub struct Ty(u32);
 
 impl Ty {
-  fn from_usize(n: usize) -> Self {
-    Self(convert::usize_to_u32(n))
+  const LOCAL_MASK: u32 = 1u32 << 31u32;
+
+  fn from_idx(idx: usize) -> Self {
+    let ret = Self(convert::usize_to_u32(idx));
+    always!(!ret.is_local(), "types should always start as not mut");
+    ret
   }
 
-  fn to_usize(self) -> usize {
-    convert::u32_to_usize(self.0)
+  fn is_local(self) -> bool {
+    self.0 & Self::LOCAL_MASK == Self::LOCAL_MASK
+  }
+
+  fn to_data(mut self) -> (usize, bool) {
+    // NOTE: the build script depends on the non-mut case being 0
+    let is_local = self.is_local();
+    // turn off the mask if it was on
+    self.0 &= !Self::LOCAL_MASK;
+    let idx = convert::u32_to_usize(self.0);
+    (idx, is_local)
+  }
+
+  fn make_local(&mut self) {
+    self.0 |= Self::LOCAL_MASK;
+  }
+
+  /// Applies a subst to this.
+  pub fn apply(&mut self, subst: &Subst) {
+    if let Some(new) = subst.old_to_new.get(self) {
+      *self = *new;
+    }
   }
 }
 
@@ -107,42 +131,62 @@ impl Ty {
 ///
 /// Use this to make new types from data, and get the data for a type.
 #[derive(Debug)]
-pub struct Store {
+struct Store {
   idx_to_data: Vec<Data>,
   data_to_idx: FxHashMap<Data, Ty>,
 }
 
 impl Store {
-  pub(crate) fn get(&mut self, data: Data) -> Ty {
-    match self.get_shared(data) {
-      Ok(x) => x,
-      Err(data) => {
-        let ret = Ty::from_usize(self.idx_to_data.len());
-        self.idx_to_data.push(data.clone());
-        always!(self.data_to_idx.insert(data, ret).is_none());
-        ret
-      }
-    }
+  fn empty() -> Self {
+    Self { idx_to_data: Vec::new(), data_to_idx: FxHashMap::default() }
   }
 
-  /// returns Err if this would require mutation to the store to return a Ty
-  fn get_shared(&self, data: Data) -> Result<Ty, Data> {
+  fn data(&self, ty: Ty, self_local: bool) -> Option<&Data> {
+    let (idx, ty_global) = ty.to_data();
+    if self_local != ty_global {
+      return None;
+    }
+    match self.idx_to_data.get(idx) {
+      None => {
+        always!(false, "no ty data for {ty:?}");
+        Some(&Data::Any)
+      }
+      x => x,
+    }
+  }
+}
+
+/// A store that allows mutation.
+#[derive(Debug)]
+pub(crate) struct MutStore<'a> {
+  global: &'a GlobalStore,
+  local: LocalStore,
+}
+
+impl<'a> MutStore<'a> {
+  pub(crate) fn new(global: &'a GlobalStore) -> Self {
+    Self { global, local: LocalStore::default() }
+  }
+
+  pub(crate) fn get(&mut self, data: Data) -> Ty {
     match data {
-      Data::Any => Ok(Ty::ANY),
-      Data::True => Ok(Ty::TRUE),
-      Data::False => Ok(Ty::FALSE),
-      Data::Null => Ok(Ty::NULL),
-      Data::String => Ok(Ty::STRING),
-      Data::Number => Ok(Ty::NUMBER),
-      Data::Array(_) | Data::Object(_) | Data::Fn(_) => self.get_shared_inner(data),
+      Data::Any => Ty::ANY,
+      Data::True => Ty::TRUE,
+      Data::False => Ty::FALSE,
+      Data::Null => Ty::NULL,
+      Data::String => Ty::STRING,
+      Data::Number => Ty::NUMBER,
+      Data::Array(_) | Data::Object(_) | Data::Fn(_) => self.get_inner(data),
       Data::Union(work) => {
         let mut work: Vec<_> = work.into_iter().collect();
         let mut parts = BTreeSet::<Ty>::new();
         while let Some(ty) = work.pop() {
-          match self.data(ty) {
-            Data::Any => return Ok(Ty::ANY),
-            Data::Union(parts) => work.extend(parts),
-            _ => {
+          match self.global.0.data(ty, false) {
+            Some(Data::Any) => return Ty::ANY,
+            Some(Data::Union(parts)) => work.extend(parts),
+            None | Some(_) => {
+              // don't need special handling for the None case since if it's a multi union it'll go
+              // the Err case of get_inner anyway.
               parts.insert(ty);
             }
           }
@@ -151,31 +195,86 @@ impl Store {
           match parts.pop_first() {
             None => {
               always!(false, "just checked len == 1");
-              Ok(Ty::ANY)
+              Ty::ANY
             }
-            Some(ty) => Ok(ty),
+            Some(ty) => ty,
           }
         } else {
-          self.get_shared_inner(Data::Union(parts))
+          self.get_inner(Data::Union(parts))
         }
       }
     }
   }
 
-  fn get_shared_inner(&self, data: Data) -> Result<Ty, Data> {
-    match self.data_to_idx.get(&data) {
-      None => Err(data),
-      Some(&ty) => Ok(ty),
+  fn get_inner(&mut self, data: Data) -> Ty {
+    if let Some(&ty) = self.global.0.data_to_idx.get(&data) {
+      return ty;
     }
+    if let Some(&ty) = self.local.0.data_to_idx.get(&data) {
+      return ty;
+    }
+    let mut ret = Ty::from_idx(self.local.0.idx_to_data.len());
+    self.local.0.idx_to_data.push(data.clone());
+    always!(self.local.0.data_to_idx.insert(data, ret).is_none());
+    ret.make_local();
+    ret
   }
 
   pub(crate) fn data(&self, ty: Ty) -> &Data {
-    match self.idx_to_data.get(ty.to_usize()) {
+    let (idx, is_local) = ty.to_data();
+    let store = if is_local { &self.local.0 } else { &self.global.0 };
+    match store.idx_to_data.get(idx) {
       None => {
-        always!(false, "no ty data for {ty:?}");
+        always!(false, "should be able to get data");
         &Data::Any
       }
       Some(x) => x,
     }
+  }
+
+  pub(crate) fn into_local(self) -> LocalStore {
+    self.local
+  }
+}
+
+/// The global store of types.
+#[derive(Debug)]
+pub struct GlobalStore(Store);
+
+impl Default for GlobalStore {
+  fn default() -> Self {
+    Self(Store::with_builtin())
+  }
+}
+
+/// A local store of types generated in one pass.
+#[derive(Debug)]
+pub struct LocalStore(Store);
+
+impl Default for LocalStore {
+  fn default() -> Self {
+    Self(Store::empty())
+  }
+}
+
+/// A substitution between two [`Store`]s.
+#[derive(Debug)]
+pub struct Subst {
+  old_to_new: FxHashMap<Ty, Ty>,
+}
+
+impl Subst {
+  /// Combine stores and produce a substitution to apply to other things.
+  pub fn get(this: &mut GlobalStore, other: LocalStore) -> Self {
+    let mut ret = Subst { old_to_new: FxHashMap::default() };
+    for (data, mut old_ty) in other.0.data_to_idx {
+      old_ty.make_local();
+      always!(!this.0.data_to_idx.contains_key(&data));
+      let new_ty = Ty::from_idx(this.0.idx_to_data.len());
+      this.0.idx_to_data.push(data.clone());
+      always!(this.0.data_to_idx.insert(data, new_ty).is_none());
+      ret.old_to_new.insert(old_ty, new_ty);
+    }
+    ret
   }
 }

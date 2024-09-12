@@ -33,13 +33,14 @@ pub struct St<'a> {
   /// This is a vec because things go in and out of scope in stacks.
   context: FxHashMap<Id, Vec<DefinedId>>,
   /// A store for all the types.
-  tys: &'a mut ty::Store,
+  tys: ty::MutStore<'a>,
 }
 
 impl<'a> St<'a> {
   /// Make a new state.
-  pub fn new(tys: &'a mut ty::Store) -> Self {
-    Self { statics: Statics::default(), context: FxHashMap::default(), tys }
+  #[must_use]
+  pub fn new(tys: &'a ty::GlobalStore) -> Self {
+    Self { statics: Statics::default(), context: FxHashMap::default(), tys: ty::MutStore::new(tys) }
   }
 
   pub(crate) fn err(&mut self, expr: ExprMust, kind: error::Kind) {
@@ -109,13 +110,13 @@ impl<'a> St<'a> {
 
   pub(crate) fn unify(&mut self, expr: ExprMust, want: ty::Ty, got: ty::Ty) {
     let mut st = unify::St { expr, errors: &mut self.statics.errors };
-    unify::get(&mut st, self.tys, want, got);
+    unify::get(&mut st, &self.tys, want, got);
   }
 
-  pub(crate) fn finish(self) -> Statics {
+  pub(crate) fn finish(self) -> (Statics, ty::LocalStore) {
     for (_, stack) in self.context {
       always!(stack.is_empty());
     }
-    self.statics
+    (self.statics, self.tys.into_local())
   }
 }
