@@ -1,16 +1,16 @@
 //! A thin wrapper around [`jsonnet_escape`].
 
 use always::always;
-use jsonnet_syntax::{ast, kind::SyntaxToken};
+use jsonnet_syntax::ast;
 
 /// Get the escaped string from the ast string.
 #[must_use]
 pub fn get(string: &ast::String) -> String {
   match string.kind {
-    ast::StringKind::DoubleQuotedString => slash(&string.token, b'"'),
-    ast::StringKind::SingleQuotedString => slash(&string.token, b'\''),
-    ast::StringKind::DoubleQuotedVerbatimString => verbatim(&string.token, b'"'),
-    ast::StringKind::SingleQuotedVerbatimString => verbatim(&string.token, b'\''),
+    ast::StringKind::DoubleQuotedString => slash(string.token.text(), b'"'),
+    ast::StringKind::SingleQuotedString => slash(string.token.text(), b'\''),
+    ast::StringKind::DoubleQuotedVerbatimString => verbatim(string.token.text(), b'"'),
+    ast::StringKind::SingleQuotedVerbatimString => verbatim(string.token.text(), b'\''),
     ast::StringKind::TextBlock => {
       let mut sp_st = str_process::St::new(string.token.text());
       let mut out = EscapeOutput::new(string.token.text());
@@ -27,9 +27,9 @@ pub fn get(string: &ast::String) -> String {
   }
 }
 
-fn slash(token: &SyntaxToken, delim: u8) -> String {
-  let mut sp_st = str_process::St::new(token.text());
-  let mut out = EscapeOutput::new(token.text());
+fn slash(text: &str, delim: u8) -> String {
+  let mut sp_st = str_process::St::new(text);
+  let mut out = EscapeOutput::new(text);
   if sp_st.cur().is_some_and(|x| x == delim) {
     sp_st.bump();
   } else {
@@ -47,9 +47,9 @@ fn slash(token: &SyntaxToken, delim: u8) -> String {
   }
 }
 
-fn verbatim(token: &SyntaxToken, delim: u8) -> String {
-  let mut sp_st = str_process::St::new(token.text());
-  let mut out = EscapeOutput::new(token.text());
+fn verbatim(text: &str, delim: u8) -> String {
+  let mut sp_st = str_process::St::new(text);
+  let mut out = EscapeOutput::new(text);
   if sp_st.cur().is_some_and(|x| x == b'@') {
     sp_st.bump();
   } else {
