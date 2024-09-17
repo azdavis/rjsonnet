@@ -3,15 +3,15 @@
 use always::always;
 use jsonnet_syntax::ast;
 
-/// Get the escaped string from the ast string.
+/// Get the string value (translating escapes) from the ast string.
 #[must_use]
 pub fn get(string: &ast::String) -> String {
   let text = string.token.text();
   match string.kind {
-    ast::StringKind::DoubleQuotedString => slash(text, b'"'),
-    ast::StringKind::SingleQuotedString => slash(text, b'\''),
-    ast::StringKind::DoubleQuotedVerbatimString => verbatim(text, b'"'),
-    ast::StringKind::SingleQuotedVerbatimString => verbatim(text, b'\''),
+    ast::StringKind::DoubleQuotedString => double_quoted(text),
+    ast::StringKind::SingleQuotedString => single_quoted(text),
+    ast::StringKind::DoubleQuotedVerbatimString => double_quoted_verbatim(text),
+    ast::StringKind::SingleQuotedVerbatimString => single_quoted_verbatim(text),
     ast::StringKind::TextBlock => {
       let mut sp_st = str_process::St::new(text);
       let mut out = EscapeOutput::new(text);
@@ -26,6 +26,30 @@ pub fn get(string: &ast::String) -> String {
       }
     }
   }
+}
+
+/// Get the string value (translating escapes) from the double-quoted string.
+#[must_use]
+pub fn double_quoted(text: &str) -> String {
+  slash(text, b'"')
+}
+
+/// Get the string value (translating escapes) from the single-quoted string.
+#[must_use]
+pub fn single_quoted(text: &str) -> String {
+  slash(text, b'\'')
+}
+
+/// Get the string value (translating escapes) from the verbatim double-quoted string.
+#[must_use]
+pub fn double_quoted_verbatim(text: &str) -> String {
+  verbatim(text, b'"')
+}
+
+/// Get the string value (translating escapes) from the verbatim single-quoted string.
+#[must_use]
+pub fn single_quoted_verbatim(text: &str) -> String {
+  verbatim(text, b'\'')
 }
 
 fn slash(text: &str, delim: u8) -> String {
