@@ -92,8 +92,6 @@ impl Object {
   }
 }
 
-pub(crate) type Union = BTreeSet<Ty>;
-
 /// A function type.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub(crate) struct Fn {
@@ -106,7 +104,7 @@ pub(crate) struct Fn {
 impl Fn {
   fn apply(&mut self, subst: &Subst) {
     for param in &mut self.params {
-      param.ty.apply(subst);
+      param.apply(subst);
     }
     self.ret.apply(subst);
   }
@@ -119,6 +117,14 @@ pub(crate) struct Param {
   pub(crate) ty: Ty,
   pub(crate) required: bool,
 }
+
+impl Param {
+  fn apply(&mut self, subst: &Subst) {
+    self.ty.apply(subst);
+  }
+}
+
+pub(crate) type Union = BTreeSet<Ty>;
 
 /// A type.
 ///
