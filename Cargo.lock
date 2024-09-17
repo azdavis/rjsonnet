@@ -363,6 +363,7 @@ dependencies = [
  "code-h2-md-map",
  "diagnostic",
  "env_logger",
+ "jsonnet-ast-escape",
  "jsonnet-desugar",
  "jsonnet-escape",
  "jsonnet-eval",

@@ -4,6 +4,7 @@ use always::always;
 use diagnostic::Diagnostic;
 use jsonnet_eval::JsonnetFile;
 use jsonnet_expr::def;
+use jsonnet_syntax::kind::SyntaxKind as SK;
 use std::fmt;
 
 /// Options for initialization.
@@ -289,4 +290,29 @@ fn expr_def_range(
         Some(node.text_range())
       }),
   }
+}
+
+#[expect(dead_code)]
+fn approximate_code_imports(contents: &str) -> Vec<String> {
+  let mut next = false;
+  let mut ret = Vec::<String>::new();
+  for tok in jsonnet_lex::get(contents).tokens {
+    if tok.kind == SK::ImportKw {
+      next = true;
+      continue;
+    }
+    if !next {
+      continue;
+    }
+    next = false;
+    let s = match tok.kind {
+      SK::DoubleQuotedString => jsonnet_ast_escape::double_quoted(tok.text),
+      SK::DoubleQuotedVerbatimString => jsonnet_ast_escape::double_quoted_verbatim(tok.text),
+      SK::SingleQuotedString => jsonnet_ast_escape::single_quoted(tok.text),
+      SK::SingleQuotedVerbatimString => jsonnet_ast_escape::single_quoted_verbatim(tok.text),
+      _ => continue,
+    };
+    ret.push(s);
+  }
+  ret
 }

@@ -25,6 +25,7 @@ text-size.workspace = true
 
 always.path = "../always"
 diagnostic.path = "../diagnostic"
+jsonnet-ast-escape.path = "../jsonnet-ast-escape"
 jsonnet-desugar.path = "../jsonnet-desugar"
 jsonnet-escape.path = "../jsonnet-escape"
 jsonnet-eval.path = "../jsonnet-eval"
