@@ -288,7 +288,7 @@ pub(crate) fn get(st: &mut st::St<'_>, ars: &Arenas, expr: Expr) -> ty::Ty {
     ExprData::Import { kind, path } => match kind {
       jsonnet_expr::ImportKind::Code => {
         st.note_usage(expr, Def::Import(*path));
-        ty::Ty::ANY
+        st.import_ty(*path)
       }
       jsonnet_expr::ImportKind::String => ty::Ty::STRING,
       jsonnet_expr::ImportKind::Binary => ty::Ty::ARRAY_NUMBER,

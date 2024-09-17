@@ -3,6 +3,7 @@
 use crate::{error, ty, unify};
 use always::always;
 use jsonnet_expr::{def::Def, ExprMust, Id};
+use paths::PathMap;
 use rustc_hash::FxHashMap;
 
 /// Results after doing statics on one file.
@@ -28,6 +29,8 @@ struct DefinedId {
 pub struct St<'a> {
   /// The in-progress results for this file.
   statics: Statics,
+  /// The types of other files.
+  other_files: &'a PathMap<ty::Ty>,
   /// Stores the identifiers currently in scope.
   ///
   /// This is a vec because things go in and out of scope in stacks.
@@ -39,8 +42,13 @@ pub struct St<'a> {
 impl<'a> St<'a> {
   /// Make a new state.
   #[must_use]
-  pub fn new(tys: &'a ty::GlobalStore) -> Self {
-    Self { statics: Statics::default(), context: FxHashMap::default(), tys: ty::MutStore::new(tys) }
+  pub fn new(tys: &'a ty::GlobalStore, other_files: &'a PathMap<ty::Ty>) -> Self {
+    Self {
+      statics: Statics::default(),
+      other_files,
+      context: FxHashMap::default(),
+      tys: ty::MutStore::new(tys),
+    }
   }
 
   pub(crate) fn err(&mut self, expr: ExprMust, kind: error::Kind) {
@@ -118,5 +126,14 @@ impl<'a> St<'a> {
       always!(stack.is_empty());
     }
     (self.statics, self.tys.into_local())
+  }
+
+  pub(crate) fn import_ty(&self, path: paths::PathId) -> ty::Ty {
+    if let Some(&x) = self.other_files.get(&path) {
+      x
+    } else {
+      // TODO make this an always!(false) once we calculate import types
+      ty::Ty::ANY
+    }
   }
 }

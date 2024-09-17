@@ -85,17 +85,16 @@ pub(crate) struct IsolatedArtifacts {
 impl IsolatedArtifacts {
   fn new(
     contents: &str,
-    current_dir: &paths::CleanPath,
-    other_dirs: &[paths::CleanPathBuf],
+    dirs: jsonnet_resolve_import::NonEmptyDirs<'_>,
     artifacts: &GlobalArtifacts,
     fs: &dyn jsonnet_resolve_import::FileSystem,
   ) -> Self {
     let lex = jsonnet_lex::get(contents);
     let parse = jsonnet_parse::get(&lex.tokens);
     let root = parse.root.clone().into_ast().and_then(|x| x.expr());
-    let dirs = jsonnet_resolve_import::NonEmptyDirs::new(current_dir, other_dirs);
     let desugar = jsonnet_desugar::get(dirs, fs, root);
-    let st = jsonnet_statics::st::St::new(&artifacts.tys);
+    let imports = paths::PathMap::default();
+    let st = jsonnet_statics::st::St::new(&artifacts.tys, &imports);
     let (statics, tys) = jsonnet_statics::get(st, &desugar.arenas, desugar.top);
     let expr = jsonnet_expr::Artifacts { paths: desugar.ps, strings: desugar.arenas.str };
     let file = IsolatedFile {
@@ -143,7 +142,8 @@ impl IsolatedArtifacts {
     let Some(parent) = path.parent() else {
       return Err(std::io::Error::other("path has no parent"));
     };
-    Ok(Self::new(contents, parent, root_dirs, artifacts, &FsAdapter(fs)))
+    let dirs = jsonnet_resolve_import::NonEmptyDirs::new(parent, root_dirs);
+    Ok(Self::new(contents, dirs, artifacts, &FsAdapter(fs)))
   }
 
   pub(crate) fn combine(self, artifacts: &mut GlobalArtifacts) -> IsolatedFile {
