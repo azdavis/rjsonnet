@@ -47,10 +47,39 @@ pub(crate) enum Data {
   Union(Union),
 }
 
+impl Data {
+  fn apply(&mut self, subst: &Subst) {
+    match self {
+      Data::Any | Data::True | Data::False | Data::Null | Data::String | Data::Number => {}
+      Data::Array(ty) => ty.apply(subst),
+      Data::Object(object) => object.apply(subst),
+      Data::Fn(f) => f.apply(subst),
+      Data::Union(parts) => {
+        *parts = parts
+          .iter()
+          .map(|ty| {
+            let mut ret = *ty;
+            ret.apply(subst);
+            ret
+          })
+          .collect();
+      }
+    }
+  }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub(crate) struct Object {
   pub(crate) known: BTreeMap<Str, Ty>,
   pub(crate) has_unknown: bool,
+}
+
+impl Object {
+  fn apply(&mut self, subst: &Subst) {
+    for ty in self.known.values_mut() {
+      ty.apply(subst);
+    }
+  }
 }
 
 impl Object {
@@ -72,6 +101,15 @@ pub(crate) struct Fn {
   pub(crate) params: Vec<Param>,
   /// The return type.
   pub(crate) ret: Ty,
+}
+
+impl Fn {
+  fn apply(&mut self, subst: &Subst) {
+    for param in &mut self.params {
+      param.ty.apply(subst);
+    }
+    self.ret.apply(subst);
+  }
 }
 
 /// A function parameter.
@@ -142,8 +180,8 @@ impl Store {
   }
 
   fn data(&self, ty: Ty, self_local: bool) -> Option<&Data> {
-    let (idx, ty_global) = ty.to_data();
-    if self_local != ty_global {
+    let (idx, ty_local) = ty.to_data();
+    if self_local != ty_local {
       return None;
     }
     match self.idx_to_data.get(idx) {
@@ -185,8 +223,7 @@ impl<'a> MutStore<'a> {
             Some(Data::Any) => return Ty::ANY,
             Some(Data::Union(parts)) => work.extend(parts),
             None | Some(_) => {
-              // don't need special handling for the None case since if it's a multi union it'll go
-              // the Err case of get_inner anyway.
+              // don't need special handling for the None case
               parts.insert(ty);
             }
           }
@@ -267,6 +304,7 @@ impl Subst {
   /// Combine stores and produce a substitution to apply to other things.
   pub fn get(this: &mut GlobalStore, other: LocalStore) -> Self {
     let mut ret = Subst { old_to_new: FxHashMap::default() };
+    let orig_len = this.0.idx_to_data.len();
     for (data, mut old_ty) in other.0.data_to_idx {
       old_ty.make_local();
       always!(!this.0.data_to_idx.contains_key(&data));
@@ -274,6 +312,9 @@ impl Subst {
       this.0.idx_to_data.push(data.clone());
       always!(this.0.data_to_idx.insert(data, new_ty).is_none());
       ret.old_to_new.insert(old_ty, new_ty);
+    }
+    for data in &mut this.0.idx_to_data[orig_len..] {
+      data.apply(&ret);
     }
     ret
   }
