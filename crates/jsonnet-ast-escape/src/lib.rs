@@ -6,14 +6,15 @@ use jsonnet_syntax::ast;
 /// Get the escaped string from the ast string.
 #[must_use]
 pub fn get(string: &ast::String) -> String {
+  let text = string.token.text();
   match string.kind {
-    ast::StringKind::DoubleQuotedString => slash(string.token.text(), b'"'),
-    ast::StringKind::SingleQuotedString => slash(string.token.text(), b'\''),
-    ast::StringKind::DoubleQuotedVerbatimString => verbatim(string.token.text(), b'"'),
-    ast::StringKind::SingleQuotedVerbatimString => verbatim(string.token.text(), b'\''),
+    ast::StringKind::DoubleQuotedString => slash(text, b'"'),
+    ast::StringKind::SingleQuotedString => slash(text, b'\''),
+    ast::StringKind::DoubleQuotedVerbatimString => verbatim(text, b'"'),
+    ast::StringKind::SingleQuotedVerbatimString => verbatim(text, b'\''),
     ast::StringKind::TextBlock => {
-      let mut sp_st = str_process::St::new(string.token.text());
-      let mut out = EscapeOutput::new(string.token.text());
+      let mut sp_st = str_process::St::new(text);
+      let mut out = EscapeOutput::new(text);
       always!(sp_st.eat_prefix(b"|||"));
       jsonnet_escape::text_block(&mut sp_st, &mut out);
       match String::from_utf8(out.bytes) {
