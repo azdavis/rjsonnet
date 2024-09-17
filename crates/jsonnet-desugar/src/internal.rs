@@ -154,10 +154,7 @@ pub(crate) fn get_expr(st: &mut St, cx: Cx<'_>, expr: Option<ast::Expr>, in_obj:
       let import_str = expr.string()?;
       let import_str = jsonnet_ast_escape::get(&import_str);
       let import_path = std::path::Path::new(import_str.as_str());
-      let full_path = cx.dirs().find_map(|dir| {
-        let path = dir.join(import_path);
-        cx.fs.is_file(path.as_path()).then_some(path)
-      });
+      let full_path = jsonnet_resolve_import::get(import_path, cx.dirs.dirs(), cx.fs);
       match full_path {
         Some(p) => ExprData::Import { kind, path: st.path_id(p.as_clean_path()) },
         None => {

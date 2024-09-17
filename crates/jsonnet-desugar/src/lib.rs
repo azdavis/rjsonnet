@@ -7,20 +7,18 @@ mod error;
 mod internal;
 mod st;
 
-pub use cx::FileSystem;
 pub use error::Error;
 pub use st::{Desugar, Pointers};
 
 /// Transforms CST into desugared core.
 #[must_use]
 pub fn get(
-  current_dir: &paths::CleanPath,
-  other_dirs: &[paths::CleanPathBuf],
-  fs: &dyn FileSystem,
+  dirs: jsonnet_resolve_import::NonEmptyDirs<'_>,
+  fs: &dyn jsonnet_resolve_import::FileSystem,
   root: Option<jsonnet_syntax::ast::Expr>,
 ) -> Desugar {
   let mut st = st::St::default();
-  let cx = cx::Cx { current_dir, other_dirs, fs };
+  let cx = cx::Cx { dirs, fs };
   let top = internal::get_expr(&mut st, cx, root, false);
   st.finish(top)
 }

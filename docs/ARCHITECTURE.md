@@ -58,6 +58,10 @@ Handles string escape sequences, like `\n` and `\r`.
 
 A thin wrapper over jsonnet-escape, integrating it with the types from jsonnet-syntax.
 
+### `crates/jsonnet-resolve-import`
+
+A resolver for import paths.
+
 ## Overall crates
 
 These tie everything else together.

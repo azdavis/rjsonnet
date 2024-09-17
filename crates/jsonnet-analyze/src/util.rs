@@ -53,7 +53,7 @@ impl FileErrors {
 /// An adaptor between file system traits.
 struct FsAdapter<'a, F>(&'a F);
 
-impl<'a, F> jsonnet_desugar::FileSystem for FsAdapter<'a, F>
+impl<'a, F> jsonnet_resolve_import::FileSystem for FsAdapter<'a, F>
 where
   F: paths::FileSystem,
 {
@@ -88,12 +88,13 @@ impl IsolatedArtifacts {
     current_dir: &paths::CleanPath,
     other_dirs: &[paths::CleanPathBuf],
     artifacts: &GlobalArtifacts,
-    fs: &dyn jsonnet_desugar::FileSystem,
+    fs: &dyn jsonnet_resolve_import::FileSystem,
   ) -> Self {
     let lex = jsonnet_lex::get(contents);
     let parse = jsonnet_parse::get(&lex.tokens);
     let root = parse.root.clone().into_ast().and_then(|x| x.expr());
-    let desugar = jsonnet_desugar::get(current_dir, other_dirs, fs, root);
+    let dirs = jsonnet_resolve_import::NonEmptyDirs::new(current_dir, other_dirs);
+    let desugar = jsonnet_desugar::get(dirs, fs, root);
     let st = jsonnet_statics::st::St::new(&artifacts.tys);
     let (statics, tys) = jsonnet_statics::get(st, &desugar.arenas, desugar.top);
     let expr = jsonnet_expr::Artifacts { paths: desugar.ps, strings: desugar.arenas.str };

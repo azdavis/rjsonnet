@@ -370,6 +370,7 @@ dependencies = [
  "jsonnet-expr",
  "jsonnet-lex",
  "jsonnet-parse",
+ "jsonnet-resolve-import",
  "jsonnet-statics",
  "jsonnet-syntax",
  "lang-srv-state",
@@ -400,6 +401,7 @@ dependencies = [
  "jsonnet-ast-escape",
  "jsonnet-escape",
  "jsonnet-expr",
+ "jsonnet-resolve-import",
  "jsonnet-syntax",
  "paths",
  "rustc-hash",
@@ -470,6 +472,13 @@ dependencies = [
  "jsonnet-syntax",
  "text-size",
  "token",
+]
+
+[[package]]
+name = "jsonnet-resolve-import"
+version = "0.3.1"
+dependencies = [
+ "paths",
 ]
 
 [[package]]
