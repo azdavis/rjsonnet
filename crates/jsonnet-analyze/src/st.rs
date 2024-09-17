@@ -2,7 +2,8 @@
 
 use crate::const_eval;
 use crate::util::{
-  expr_range, FileArtifacts, GlobalArtifacts, Init, IsolatedFile, PathIoError, Result,
+  expr_range, FileArtifacts, GlobalArtifacts, Init, IsolatedArtifacts, IsolatedFile, PathIoError,
+  Result,
 };
 use always::always;
 use jsonnet_eval::JsonnetFile;
@@ -52,8 +53,11 @@ impl WithFs {
     F: paths::FileSystem,
   {
     let path = self.artifacts.expr.paths.get_path(path_id).to_owned();
-    match IsolatedFile::from_fs(path.as_clean_path(), &self.root_dirs, &mut self.artifacts, fs) {
-      Ok(file) => {
+    let art =
+      IsolatedArtifacts::from_fs(path.as_clean_path(), &self.root_dirs, &self.artifacts, fs);
+    match art {
+      Ok(art) => {
+        let file = art.combine(&mut self.artifacts);
         if file.errors.is_empty() {
           self.has_errors.remove(&path_id);
         } else {
@@ -314,14 +318,14 @@ impl lang_srv_state::State for St {
     let path_id = self.path_id(path.clone());
     let Some(contents) = self.open_files.get_mut(&path_id) else { return (path_id, Vec::new()) };
     apply_changes::get(contents, changes);
-    let file = IsolatedFile::from_str(
+    let art = IsolatedArtifacts::from_str(
       path.as_clean_path(),
       contents,
       &self.with_fs.root_dirs,
-      &mut self.with_fs.artifacts,
+      &self.with_fs.artifacts,
       fs,
     );
-    let file = match file {
+    let art = match art {
       Ok(x) => x,
       Err(e) => {
         // TODO expose a PathIoError?
@@ -329,6 +333,7 @@ impl lang_srv_state::State for St {
         return (path_id, Vec::new());
       }
     };
+    let file = art.combine(&mut self.with_fs.artifacts);
     let root = file.artifacts.syntax.clone();
     let syntax = root.syntax();
     let diagnostics =

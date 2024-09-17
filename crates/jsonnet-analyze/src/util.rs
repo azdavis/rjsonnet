@@ -75,12 +75,18 @@ pub(crate) struct IsolatedFile {
   pub(crate) eval: JsonnetFile,
 }
 
-impl IsolatedFile {
+pub(crate) struct IsolatedArtifacts {
+  pub(crate) file: IsolatedFile,
+  pub(crate) tys: jsonnet_statics::ty::LocalStore,
+  pub(crate) expr: jsonnet_expr::Artifacts,
+}
+
+impl IsolatedArtifacts {
   fn new(
     contents: &str,
     current_dir: &paths::CleanPath,
     other_dirs: &[paths::CleanPathBuf],
-    artifacts: &mut GlobalArtifacts,
+    artifacts: &GlobalArtifacts,
     fs: &dyn jsonnet_desugar::FileSystem,
   ) -> Self {
     let lex = jsonnet_lex::get(contents);
@@ -89,8 +95,8 @@ impl IsolatedFile {
     let desugar = jsonnet_desugar::get(current_dir, other_dirs, fs, root);
     let st = jsonnet_statics::st::St::new(&artifacts.tys);
     let (statics, tys) = jsonnet_statics::get(st, &desugar.arenas, desugar.top);
-    let combine = jsonnet_expr::Artifacts { paths: desugar.ps, strings: desugar.arenas.str };
-    let mut ret = Self {
+    let expr = jsonnet_expr::Artifacts { paths: desugar.ps, strings: desugar.arenas.str };
+    let file = IsolatedFile {
       artifacts: FileArtifacts {
         pos_db: text_pos::PositionDb::new(contents),
         syntax: parse.root,
@@ -106,8 +112,42 @@ impl IsolatedFile {
       },
       eval: JsonnetFile { expr_ar: desugar.arenas.expr, top: desugar.top },
     };
-    let expr_subst = jsonnet_expr::Subst::get(&mut artifacts.expr, combine);
-    let ty_subst = jsonnet_statics::ty::Subst::get(&mut artifacts.tys, tys);
+    Self { file, tys, expr }
+  }
+
+  pub(crate) fn from_fs<F>(
+    path: &paths::CleanPath,
+    root_dirs: &[paths::CleanPathBuf],
+    artifacts: &GlobalArtifacts,
+    fs: &F,
+  ) -> std::io::Result<Self>
+  where
+    F: paths::FileSystem,
+  {
+    let contents = fs.read_to_string(path.as_path())?;
+    Self::from_str(path, contents.as_str(), root_dirs, artifacts, fs)
+  }
+
+  pub(crate) fn from_str<F>(
+    path: &paths::CleanPath,
+    contents: &str,
+    root_dirs: &[paths::CleanPathBuf],
+    artifacts: &GlobalArtifacts,
+    fs: &F,
+  ) -> std::io::Result<Self>
+  where
+    F: paths::FileSystem,
+  {
+    let Some(parent) = path.parent() else {
+      return Err(std::io::Error::other("path has no parent"));
+    };
+    Ok(Self::new(contents, parent, root_dirs, artifacts, &FsAdapter(fs)))
+  }
+
+  pub(crate) fn combine(self, artifacts: &mut GlobalArtifacts) -> IsolatedFile {
+    let mut ret = self.file;
+    let expr_subst = jsonnet_expr::Subst::get(&mut artifacts.expr, self.expr);
+    let ty_subst = jsonnet_statics::ty::Subst::get(&mut artifacts.tys, self.tys);
     for err in &mut ret.errors.statics {
       err.apply(&expr_subst, &ty_subst);
     }
@@ -122,36 +162,9 @@ impl IsolatedFile {
     }
     ret
   }
+}
 
-  pub(crate) fn from_fs<F>(
-    path: &paths::CleanPath,
-    root_dirs: &[paths::CleanPathBuf],
-    artifacts: &mut GlobalArtifacts,
-    fs: &F,
-  ) -> std::io::Result<IsolatedFile>
-  where
-    F: paths::FileSystem,
-  {
-    let contents = fs.read_to_string(path.as_path())?;
-    Self::from_str(path, contents.as_str(), root_dirs, artifacts, fs)
-  }
-
-  pub(crate) fn from_str<F>(
-    path: &paths::CleanPath,
-    contents: &str,
-    root_dirs: &[paths::CleanPathBuf],
-    artifacts: &mut GlobalArtifacts,
-    fs: &F,
-  ) -> std::io::Result<IsolatedFile>
-  where
-    F: paths::FileSystem,
-  {
-    let Some(parent) = path.parent() else {
-      return Err(std::io::Error::other("path has no parent"));
-    };
-    Ok(Self::new(contents, parent, root_dirs, artifacts, &FsAdapter(fs)))
-  }
-
+impl IsolatedFile {
   pub(crate) fn diagnostics<'a>(
     &'a self,
     root: &'a jsonnet_syntax::kind::SyntaxNode,
