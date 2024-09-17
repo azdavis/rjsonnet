@@ -142,7 +142,7 @@ impl Ty {
 
   fn from_idx(idx: usize) -> Self {
     let ret = Self(convert::usize_to_u32(idx));
-    always!(!ret.is_local(), "types should always start as not mut");
+    always!(!ret.is_local(), "types should always start as not local (maybe overflow occurred?)");
     ret
   }
 
