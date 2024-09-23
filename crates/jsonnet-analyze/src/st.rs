@@ -29,6 +29,7 @@ struct WithFs {
   relative_to: Option<paths::CleanPathBuf>,
   root_dirs: Vec<paths::CleanPathBuf>,
   artifacts: GlobalArtifacts,
+  file_tys: paths::PathMap<jsonnet_statics::ty::Ty>,
   /// INVARIANT: this is exactly the set of files that do have errors that have been loaded into
   /// either `file_artifacts` or `file_exprs` on the [`St`] that contains this.
   has_errors: paths::PathSet,
@@ -53,8 +54,13 @@ impl WithFs {
     F: paths::FileSystem,
   {
     let path = self.artifacts.expr.paths.get_path(path_id).to_owned();
-    let art =
-      IsolatedArtifacts::from_fs(path.as_clean_path(), &self.root_dirs, &self.artifacts, fs);
+    let art = IsolatedArtifacts::from_fs(
+      path.as_clean_path(),
+      &self.root_dirs,
+      &self.artifacts,
+      &self.file_tys,
+      fs,
+    );
     match art {
       Ok(art) => {
         let file = art.combine(&mut self.artifacts);
@@ -129,6 +135,7 @@ impl St {
         relative_to: init.relative_to,
         root_dirs: init.root_dirs,
         artifacts: GlobalArtifacts::default(),
+        file_tys: paths::PathMap::default(),
         has_errors: paths::PathSet::default(),
       },
       open_files: PathMap::default(),
@@ -323,6 +330,7 @@ impl lang_srv_state::State for St {
       contents,
       &self.with_fs.root_dirs,
       &self.with_fs.artifacts,
+      &self.with_fs.file_tys,
       fs,
     );
     let art = match art {

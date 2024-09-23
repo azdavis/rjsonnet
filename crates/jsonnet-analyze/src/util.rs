@@ -87,14 +87,14 @@ impl IsolatedArtifacts {
     contents: &str,
     dirs: jsonnet_resolve_import::NonEmptyDirs<'_>,
     artifacts: &GlobalArtifacts,
+    file_tys: &paths::PathMap<jsonnet_statics::ty::Ty>,
     fs: &dyn jsonnet_resolve_import::FileSystem,
   ) -> Self {
     let lex = jsonnet_lex::get(contents);
     let parse = jsonnet_parse::get(&lex.tokens);
     let root = parse.root.clone().into_ast().and_then(|x| x.expr());
     let desugar = jsonnet_desugar::get(dirs, fs, root);
-    let imports = paths::PathMap::default();
-    let st = jsonnet_statics::st::St::new(&artifacts.tys, &imports);
+    let st = jsonnet_statics::st::St::new(&artifacts.tys, file_tys);
     let (statics, tys) = jsonnet_statics::get(st, &desugar.arenas, desugar.top);
     let expr = jsonnet_expr::Artifacts { paths: desugar.ps, strings: desugar.arenas.str };
     let file = IsolatedFile {
@@ -120,13 +120,14 @@ impl IsolatedArtifacts {
     path: &paths::CleanPath,
     root_dirs: &[paths::CleanPathBuf],
     artifacts: &GlobalArtifacts,
+    file_tys: &paths::PathMap<jsonnet_statics::ty::Ty>,
     fs: &F,
   ) -> std::io::Result<Self>
   where
     F: paths::FileSystem,
   {
     let contents = fs.read_to_string(path.as_path())?;
-    Self::from_str(path, contents.as_str(), root_dirs, artifacts, fs)
+    Self::from_str(path, contents.as_str(), root_dirs, artifacts, file_tys, fs)
   }
 
   pub(crate) fn from_str<F>(
@@ -134,6 +135,7 @@ impl IsolatedArtifacts {
     contents: &str,
     root_dirs: &[paths::CleanPathBuf],
     artifacts: &GlobalArtifacts,
+    file_tys: &paths::PathMap<jsonnet_statics::ty::Ty>,
     fs: &F,
   ) -> std::io::Result<Self>
   where
@@ -143,7 +145,7 @@ impl IsolatedArtifacts {
       return Err(std::io::Error::other("path has no parent"));
     };
     let dirs = jsonnet_resolve_import::NonEmptyDirs::new(parent, root_dirs);
-    Ok(Self::new(contents, dirs, artifacts, &FsAdapter(fs)))
+    Ok(Self::new(contents, dirs, artifacts, file_tys, &FsAdapter(fs)))
   }
 
   pub(crate) fn combine(self, artifacts: &mut GlobalArtifacts) -> IsolatedFile {
