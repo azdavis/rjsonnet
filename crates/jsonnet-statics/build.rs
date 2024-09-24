@@ -1,5 +1,6 @@
 //! Build some ty-related things.
 
+use jsonnet_std::S;
 use quote::{format_ident as i, quote as q};
 
 fn main() {
@@ -20,27 +21,51 @@ fn main() {
     ),
     (i!("OBJECT"), q!(super::Data::Object(super::Object::unknown()))),
   ];
-  let impl_ty_const = things.iter().enumerate().map(|(idx, (name, _))| {
+  let std_fn_types = jsonnet_std::FNS.iter().map(|&(S { name, .. }, _)| {
+    let name = i!("{name}");
+    (name.clone(), q!(super::Data::StdFn(StdFn::#name)), false)
+  });
+  let std_fn_match_arms = jsonnet_std::FNS.iter().map(|&(S { name, .. }, _)| {
+    let name = i!("{name}");
+    q! { StdFn::#name => super::Ty::#name, }
+  });
+  let things: Vec<_> = things.into_iter().map(|(a, b)| (a, b, true)).chain(std_fn_types).collect();
+  let impl_ty_const = things.iter().enumerate().map(|(idx, (name, _, pub_crate))| {
     #[expect(clippy::disallowed_methods, reason = "ok to panic in build script")]
     let idx = u32::try_from(idx).expect("usize to u32");
     // NOTE: we depend on the layout of Ty being just a regular index with no extra bit manipulation
     // for the shared case here.
-    q! { pub(crate) const #name: Self = Self(#idx); }
+    let vis = if *pub_crate {
+      q! { pub(crate) }
+    } else {
+      q! {}
+    };
+    q! { #vis const #name: Self = Self(#idx); }
   });
-  let ty_data = things.iter().map(|(_, td)| td);
-  let map_entries = things.iter().map(|(name, td)| q! { (#td, super::Ty::#name) });
+  let ty_data = things.iter().map(|(_, td, _)| td);
+  let map_entries = things.iter().map(|(name, td, _)| q! { (#td, super::Ty::#name) });
   let file = file!();
   let all = q! {
     use std::collections::BTreeSet;
+    use jsonnet_expr::StdFn;
 
     pub const _GENERATED_BY: &str = #file;
 
+    #[expect(non_upper_case_globals)]
     impl super::Ty {
       #(#impl_ty_const)*
+
+      #[expect(clippy::too_many_lines)]
+      pub(crate) fn std_fn(f: StdFn) -> Self {
+        match f {
+          #(#std_fn_match_arms)*
+        }
+      }
     }
 
     impl super::Store {
       #[doc = "Returns a store with the builtin types, like `Ty::ANY`."]
+      #[expect(clippy::too_many_lines)]
       pub(crate) fn with_builtin() -> Self {
         Self {
           idx_to_data: vec![

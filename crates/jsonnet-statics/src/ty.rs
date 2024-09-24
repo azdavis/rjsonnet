@@ -39,7 +39,6 @@ pub(crate) enum Data {
   /// A function type, with some arguments and a return type.
   Fn(Fn),
   /// A function from the standard library. These are treated specially.
-  #[expect(dead_code)]
   StdFn(jsonnet_expr::StdFn),
   /// A union type.
   ///
@@ -229,7 +228,7 @@ impl<'a> MutStore<'a> {
       Data::Null => Ty::NULL,
       Data::String => Ty::STRING,
       Data::Number => Ty::NUMBER,
-      Data::StdFn(f) => todo!("get std fn {f:?}"),
+      Data::StdFn(f) => Ty::std_fn(f),
       Data::Array(_) | Data::Object(_) | Data::Fn(_) => self.get_inner(data),
       Data::Union(work) => {
         let mut work: Vec<_> = work.into_iter().collect();
