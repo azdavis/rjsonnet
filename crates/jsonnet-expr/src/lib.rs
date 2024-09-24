@@ -113,7 +113,9 @@ impl ExprData {
     match self {
       ExprData::Prim(prim) => prim.apply(subst),
       ExprData::ObjectComp { id, .. } | ExprData::Id(id) => id.apply(subst),
-      ExprData::Local { binds, .. } | ExprData::Call { named: binds, .. } => {
+      ExprData::Object { binds, fields: _, asserts: _ }
+      | ExprData::Local { binds, .. }
+      | ExprData::Call { named: binds, .. } => {
         for (bind, _) in binds {
           bind.apply(subst);
         }
@@ -124,8 +126,8 @@ impl ExprData {
         }
       }
       ExprData::Import { path, .. } => *path = subst.get_path_id(*path),
-      ExprData::Object { .. }
-      | ExprData::Array(_)
+
+      ExprData::Array(_)
       | ExprData::Subscript { .. }
       | ExprData::If { .. }
       | ExprData::BinaryOp { .. }
