@@ -10,6 +10,7 @@ pub enum Error {
   Exec { expr: jsonnet_expr::ExprMust, kind: Kind },
   ManifestFn,
   NoPath(paths::PathId),
+  HasErrors(paths::PathId),
   NoExpr,
 }
 
@@ -106,6 +107,10 @@ impl fmt::Display for DisplayError<'_> {
       Error::NoPath(p) => {
         let p = self.display_path(*p);
         write!(f, "no such path: {p}")
+      }
+      Error::HasErrors(p) => {
+        let p = self.display_path(*p);
+        write!(f, "cannot manifest, has errors: {p}")
       }
       Error::NoExpr => write!(f, "no expr"),
     }

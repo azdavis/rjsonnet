@@ -189,7 +189,7 @@ impl<'a> Input<'a> {
             path_str,
             jsonnet.outcome
           );
-          let jsonnet_eval::error::Error::NoPath(p) = err else {
+          let jsonnet_eval::error::Error::HasErrors(p) = err else {
             panic!("{path_str}: unexpected error kind: {err:?}");
           };
           let p_display = st.paths().get_path(p).as_path().display();

@@ -290,7 +290,7 @@ impl St {
   /// If this path couldn't be evaluated to json.
   pub fn get_json(&self, path_id: PathId) -> jsonnet_eval::error::Result<jsonnet_eval::Json> {
     if self.with_fs.has_errors.contains(&path_id) {
-      return Err(jsonnet_eval::error::Error::NoPath(path_id));
+      return Err(jsonnet_eval::error::Error::HasErrors(path_id));
     }
     // TODO more caching?
     let cx = jsonnet_eval::Cx {
