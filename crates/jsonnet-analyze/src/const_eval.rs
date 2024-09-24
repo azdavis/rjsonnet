@@ -39,7 +39,7 @@ where
   }
   let ret = Real { path_id, expr, kind: None };
   let file = st.get_file_expr(fs, path_id).ok()?;
-  match file.expr_ar[expr].clone() {
+  match file.ar[expr].clone() {
     ExprData::Subscript { on, idx } => {
       let subscript = from_subscript(st, fs, path_id, on, idx);
       Some(subscript.unwrap_or(ret.into()))
@@ -92,7 +92,7 @@ where
 {
   let expr = expr?;
   let file = st.get_file_expr(fs, path_id).ok()?;
-  let ExprData::Local { binds, .. } = &file.expr_ar[expr] else { return None };
+  let ExprData::Local { binds, .. } = &file.ar[expr] else { return None };
   let &(_, expr) = binds.get(idx)?;
   get(st, fs, path_id, expr)
 }
@@ -107,7 +107,7 @@ where
   }
   let idx = {
     let file = st.get_file_expr(fs, idx.path_id).ok()?;
-    let ExprData::Prim(Prim::String(idx)) = &file.expr_ar[idx.expr] else { return None };
+    let ExprData::Prim(Prim::String(idx)) = &file.ar[idx.expr] else { return None };
     idx.clone()
   };
   let on = match get(st, fs, path_id, on)? {
@@ -120,7 +120,7 @@ where
   }
   let fields = {
     let file = st.get_file_expr(fs, on.path_id).ok()?;
-    let ExprData::Object { fields, .. } = &file.expr_ar[on.expr] else { return None };
+    let ExprData::Object { fields, .. } = &file.ar[on.expr] else { return None };
     fields.clone()
   };
   for field in fields {
@@ -129,7 +129,7 @@ where
       continue;
     }
     let Ok(file) = st.get_file_expr(fs, key.path_id) else { continue };
-    let ExprData::Prim(Prim::String(key)) = &file.expr_ar[key.expr] else {
+    let ExprData::Prim(Prim::String(key)) = &file.ar[key.expr] else {
       continue;
     };
     if *key == idx {

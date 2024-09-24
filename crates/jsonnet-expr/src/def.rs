@@ -1,9 +1,12 @@
 //! Types related to definition sites.
 
-use crate::{subst::Subst, ExprMust};
+use crate::ExprMust;
 use rustc_hash::FxHashMap;
 
 /// A definition site for an identifier without an expr.
+///
+/// NOTE: no need to apply an expr subst because we run statics after combining the per-file
+/// syntax artifacts.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Def {
   /// The standard library, `std`.
@@ -32,16 +35,6 @@ pub enum ExprDefKind {
   FnParam(usize),
   /// An object local.
   ObjectLocal(usize),
-}
-
-impl Def {
-  /// Apply a subst.
-  pub fn apply(&mut self, subst: &Subst) {
-    match self {
-      Def::Std | Def::KwIdent | Def::Expr(..) => {}
-      Def::Import(path_id) => *path_id = subst.get_path_id(*path_id),
-    }
-  }
 }
 
 /// A map from expressions to defs.

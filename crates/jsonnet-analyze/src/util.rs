@@ -2,7 +2,6 @@
 
 use always::always;
 use diagnostic::Diagnostic;
-use jsonnet_eval::JsonnetFile;
 use jsonnet_expr::def;
 use jsonnet_syntax::kind::SyntaxKind as SK;
 use std::fmt;
@@ -35,108 +34,79 @@ where
   }
 }
 
-/// Artifacts from a file whose shared artifacts have been combined into the global ones.
-#[derive(Debug)]
-pub(crate) struct FileArtifacts {
-  pub(crate) pos_db: text_pos::PositionDb,
-  pub(crate) syntax: jsonnet_syntax::Root,
-  pub(crate) pointers: jsonnet_desugar::Pointers,
-  pub(crate) defs: jsonnet_expr::def::Map,
-  pub(crate) expr_tys: jsonnet_statics::ty::Exprs,
-}
-
-/// Errors from a file analyzed in isolation.
-#[derive(Debug, Default)]
-pub(crate) struct FileErrors {
-  pub(crate) lex: Vec<jsonnet_lex::Error>,
-  pub(crate) parse: Vec<jsonnet_parse::Error>,
-  pub(crate) desugar: Vec<jsonnet_desugar::Error>,
-  pub(crate) statics: Vec<jsonnet_statics::error::Error>,
-}
-
-impl FileErrors {
-  pub(crate) fn is_empty(&self) -> bool {
-    self.lex.is_empty()
-      && self.parse.is_empty()
-      && self.desugar.is_empty()
-      && self.statics.is_empty()
-  }
-}
-
 /// Things shared across all files.
 #[derive(Debug, Default)]
 pub(crate) struct GlobalArtifacts {
-  pub(crate) expr: jsonnet_expr::Artifacts,
-  pub(crate) tys: jsonnet_statics::ty::GlobalStore,
+  pub(crate) syntax: jsonnet_expr::Artifacts,
+  pub(crate) statics: jsonnet_statics::ty::GlobalStore,
 }
 
-/// A single isolated file.
-pub(crate) struct IsolatedFile {
-  pub(crate) artifacts: FileArtifacts,
-  pub(crate) errors: FileErrors,
-  pub(crate) eval: JsonnetFile,
+#[derive(Debug)]
+pub(crate) struct SyntaxFileArtifacts {
+  pub(crate) pos_db: text_pos::PositionDb,
+  pub(crate) root: jsonnet_syntax::Root,
+  pub(crate) pointers: jsonnet_desugar::Pointers,
 }
 
-pub(crate) struct IsolatedArtifacts {
-  pub(crate) file: IsolatedFile,
-  pub(crate) tys: jsonnet_statics::ty::LocalStore,
-  pub(crate) expr: jsonnet_expr::Artifacts,
+#[derive(Debug, Default)]
+pub(crate) struct SyntaxFileErrors {
+  pub(crate) lex: Vec<jsonnet_lex::Error>,
+  pub(crate) parse: Vec<jsonnet_parse::Error>,
+  pub(crate) desugar: Vec<jsonnet_desugar::Error>,
 }
 
-impl IsolatedArtifacts {
+impl SyntaxFileErrors {
+  fn is_empty(&self) -> bool {
+    self.lex.is_empty() && self.parse.is_empty() && self.desugar.is_empty()
+  }
+}
+
+#[derive(Debug)]
+pub(crate) struct SyntaxFile {
+  pub(crate) artifacts: SyntaxFileArtifacts,
+  pub(crate) errors: SyntaxFileErrors,
+  pub(crate) exprs: jsonnet_eval::Exprs,
+}
+
+/// ALL fields MUST be private.
+///
+/// It used to be that we combined syntax and statics in one step, so there was no need for separate
+/// types. But that doesn't work because we need the path ids to be combined by the time we're
+/// looking at inter-file import types, as we wish to in statics.
+#[derive(Debug)]
+pub(crate) struct SyntaxFileToCombine {
+  file: SyntaxFile,
+  to_combine: jsonnet_expr::Artifacts,
+}
+
+impl SyntaxFileToCombine {
   fn new(
     contents: &str,
     dirs: jsonnet_resolve_import::NonEmptyDirs<'_>,
-    artifacts: &GlobalArtifacts,
-    file_tys: &paths::PathMap<jsonnet_statics::ty::Ty>,
     fs: &dyn jsonnet_resolve_import::FileSystem,
   ) -> Self {
     let lex = jsonnet_lex::get(contents);
     let parse = jsonnet_parse::get(&lex.tokens);
     let root = parse.root.clone().into_ast().and_then(|x| x.expr());
     let desugar = jsonnet_desugar::get(dirs, fs, root);
-    let st = jsonnet_statics::st::St::new(&artifacts.tys, file_tys);
-    let (statics, tys) = jsonnet_statics::get(st, &desugar.arenas, desugar.top);
-    let expr = jsonnet_expr::Artifacts { paths: desugar.ps, strings: desugar.arenas.str };
-    let file = IsolatedFile {
-      artifacts: FileArtifacts {
-        pos_db: text_pos::PositionDb::new(contents),
-        syntax: parse.root,
-        pointers: desugar.pointers,
-        defs: statics.defs,
-        expr_tys: statics.expr_tys,
+    Self {
+      file: SyntaxFile {
+        artifacts: SyntaxFileArtifacts {
+          pos_db: text_pos::PositionDb::new(contents),
+          root: parse.root,
+          pointers: desugar.pointers,
+        },
+        errors: SyntaxFileErrors { lex: lex.errors, parse: parse.errors, desugar: desugar.errors },
+        exprs: jsonnet_eval::Exprs { ar: desugar.arenas.expr, top: desugar.top },
       },
-      errors: FileErrors {
-        lex: lex.errors,
-        parse: parse.errors,
-        desugar: desugar.errors,
-        statics: statics.errors,
-      },
-      eval: JsonnetFile { expr_ar: desugar.arenas.expr, top: desugar.top },
-    };
-    Self { file, tys, expr }
-  }
-
-  pub(crate) fn from_fs<F>(
-    path: &paths::CleanPath,
-    root_dirs: &[paths::CleanPathBuf],
-    artifacts: &GlobalArtifacts,
-    file_tys: &paths::PathMap<jsonnet_statics::ty::Ty>,
-    fs: &F,
-  ) -> std::io::Result<Self>
-  where
-    F: paths::FileSystem,
-  {
-    let contents = fs.read_to_string(path.as_path())?;
-    Ok(Self::from_str(path, contents.as_str(), root_dirs, artifacts, file_tys, fs))
+      to_combine: jsonnet_expr::Artifacts { paths: desugar.ps, strings: desugar.arenas.str },
+    }
   }
 
   pub(crate) fn from_str<F>(
     path: &paths::CleanPath,
     contents: &str,
     root_dirs: &[paths::CleanPathBuf],
-    artifacts: &GlobalArtifacts,
-    file_tys: &paths::PathMap<jsonnet_statics::ty::Ty>,
     fs: &F,
   ) -> Self
   where
@@ -144,56 +114,116 @@ impl IsolatedArtifacts {
   {
     let parent = path_parent_must(path);
     let dirs = jsonnet_resolve_import::NonEmptyDirs::new(parent, root_dirs);
-    Self::new(contents, dirs, artifacts, file_tys, &FsAdapter(fs))
+    Self::new(contents, dirs, &FsAdapter(fs))
   }
 
-  pub(crate) fn combine(self, artifacts: &mut GlobalArtifacts) -> IsolatedFile {
+  pub(crate) fn from_fs<F>(
+    path: &paths::CleanPath,
+    root_dirs: &[paths::CleanPathBuf],
+    fs: &F,
+  ) -> std::io::Result<Self>
+  where
+    F: paths::FileSystem,
+  {
+    let contents = fs.read_to_string(path.as_path())?;
+    Ok(Self::from_str(path, contents.as_str(), root_dirs, fs))
+  }
+
+  pub(crate) fn combine(self, artifacts: &mut GlobalArtifacts) -> SyntaxFile {
     let mut ret = self.file;
-    let expr_subst = jsonnet_expr::Subst::get(&mut artifacts.expr, self.expr);
-    let ty_subst = jsonnet_statics::ty::Subst::get(&mut artifacts.tys, self.tys);
-    for (_, ed) in ret.eval.expr_ar.iter_mut() {
+    let expr_subst = jsonnet_expr::Subst::get(&mut artifacts.syntax, self.to_combine);
+    for (_, ed) in ret.exprs.ar.iter_mut() {
       ed.apply(&expr_subst);
-    }
-    for def in ret.artifacts.defs.values_mut() {
-      def.apply(&expr_subst);
-    }
-    for err in &mut ret.errors.statics {
-      err.apply(&expr_subst, &ty_subst);
-    }
-    for ty in ret.artifacts.expr_tys.values_mut() {
-      ty.apply(&ty_subst);
     }
     ret
   }
 }
 
-impl IsolatedFile {
+#[derive(Debug)]
+pub(crate) struct StaticsFile {
+  pub(crate) syntax: SyntaxFile,
+  pub(crate) statics: jsonnet_statics::st::Statics,
+}
+
+impl StaticsFile {
+  /// returns whether this has NO errors.
+  pub(crate) fn is_clean(&self) -> bool {
+    self.syntax.errors.is_empty() && self.statics.errors.is_empty()
+  }
+
   pub(crate) fn diagnostics<'a>(
     &'a self,
-    root: &'a jsonnet_syntax::kind::SyntaxNode,
     store: &'a jsonnet_statics::ty::GlobalStore,
     str_ar: &'a jsonnet_expr::StrArena,
   ) -> impl Iterator<Item = Diagnostic> + 'a {
+    let root = self.syntax.artifacts.root.clone();
+    let root = root.syntax();
     let all_errors = std::iter::empty()
-      .chain(self.errors.lex.iter().map(|err| (err.range(), err.to_string())))
-      .chain(self.errors.parse.iter().map(|err| (err.range(), err.to_string())))
-      .chain(self.errors.desugar.iter().map(|err| (err.range(), err.to_string())))
+      .chain(self.syntax.errors.lex.iter().map(|err| (err.range(), err.to_string())))
+      .chain(self.syntax.errors.parse.iter().map(|err| (err.range(), err.to_string())))
+      .chain(self.syntax.errors.desugar.iter().map(|err| (err.range(), err.to_string())))
       .map(|(r, m)| (r, m, diagnostic::Severity::Error));
     all_errors
-      .chain(self.errors.statics.iter().map(|err| {
+      .chain(self.statics.errors.iter().map(move |err| {
         let (expr, kind) = err.expr_and_def();
-        let range = expr_range(&self.artifacts.pointers, root, expr, kind);
+        let range = expr_range(&self.syntax.artifacts.pointers, &root, expr, kind);
         let msg = err.display(store, str_ar);
         (range, msg.to_string(), err.severity())
       }))
       .filter_map(|(range, message, severity)| {
-        let Some(range) = self.artifacts.pos_db.range_utf16(range) else {
+        let Some(range) = self.syntax.artifacts.pos_db.range_utf16(range) else {
           always!(false, "bad range: {range:?}");
           return None;
         };
         Some(Diagnostic { range, message, severity })
       })
   }
+
+  pub(crate) fn into_artifacts(self) -> FileArtifacts {
+    FileArtifacts {
+      syntax: self.syntax.artifacts,
+      defs: self.statics.defs,
+      expr_tys: self.statics.expr_tys,
+    }
+  }
+}
+
+/// ALL fields MUST be private.
+#[derive(Debug)]
+pub(crate) struct StaticsFileToCombine {
+  file: StaticsFile,
+  to_combine: jsonnet_statics::ty::LocalStore,
+}
+
+impl StaticsFileToCombine {
+  pub(crate) fn new(
+    syntax: SyntaxFile,
+    artifacts: &GlobalArtifacts,
+    file_tys: &paths::PathMap<jsonnet_statics::ty::Ty>,
+  ) -> Self {
+    let st = jsonnet_statics::st::St::new(&artifacts.statics, file_tys);
+    let (statics, to_combine) = jsonnet_statics::get(st, &syntax.exprs.ar, syntax.exprs.top);
+    Self { file: StaticsFile { syntax, statics }, to_combine }
+  }
+
+  pub(crate) fn combine(self, artifacts: &mut GlobalArtifacts) -> StaticsFile {
+    let mut ret = self.file;
+    let ty_subst = jsonnet_statics::ty::Subst::get(&mut artifacts.statics, self.to_combine);
+    for err in &mut ret.statics.errors {
+      err.apply(&ty_subst);
+    }
+    for ty in ret.statics.expr_tys.values_mut() {
+      ty.apply(&ty_subst);
+    }
+    ret
+  }
+}
+
+#[derive(Debug)]
+pub(crate) struct FileArtifacts {
+  pub(crate) syntax: SyntaxFileArtifacts,
+  pub(crate) defs: jsonnet_expr::def::Map,
+  pub(crate) expr_tys: jsonnet_statics::ty::Exprs,
 }
 
 /// An I/O error with an associated path.

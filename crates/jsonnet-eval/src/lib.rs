@@ -24,14 +24,14 @@ mod val;
 pub struct Cx<'a> {
   pub paths: &'a paths::Store,
   pub str_ar: &'a jsonnet_expr::StrArena,
-  pub jsonnet_files: &'a paths::PathMap<JsonnetFile>,
+  pub exprs: &'a paths::PathMap<Exprs>,
   pub import_str: &'a paths::PathMap<String>,
   pub import_bin: &'a paths::PathMap<Vec<u8>>,
 }
 
 #[derive(Debug)]
-pub struct JsonnetFile {
-  pub expr_ar: jsonnet_expr::ExprArena,
+pub struct Exprs {
+  pub ar: jsonnet_expr::ExprArena,
   pub top: jsonnet_expr::Expr,
 }
 
@@ -42,9 +42,9 @@ pub struct Import {
   pub path: paths::PathId,
 }
 
-impl JsonnetFile {
+impl Exprs {
   pub fn imports(&self) -> impl Iterator<Item = Import> + '_ {
-    self.expr_ar.iter().filter_map(|(expr, ed)| {
+    self.ar.iter().filter_map(|(expr, ed)| {
       if let jsonnet_expr::ExprData::Import { kind, path } = *ed {
         Some(Import { expr, kind, path })
       } else {
@@ -63,7 +63,7 @@ pub struct Jsonnet(val::jsonnet::Val);
 ///
 /// If execution failed.
 pub fn get_exec(cx: Cx<'_>, path: paths::PathId) -> error::Result<Jsonnet> {
-  let Some(file) = cx.jsonnet_files.get(&path) else { return Err(error::Error::NoPath(path)) };
+  let Some(file) = cx.exprs.get(&path) else { return Err(error::Error::NoPath(path)) };
   let env = val::jsonnet::Env::empty(path);
   exec::get(cx, &env, file.top).map(Jsonnet)
 }

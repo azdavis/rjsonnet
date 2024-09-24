@@ -3,16 +3,16 @@
 use crate::{error, st, ty};
 use always::always;
 use jsonnet_expr::def::{self, Def};
-use jsonnet_expr::{Arenas, Expr, ExprData, Id, Prim};
+use jsonnet_expr::{Expr, ExprArena, ExprData, Id, Prim};
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::BTreeSet;
 
 /// NOTE: don't return early from this except in the degenerate case where the `expr` was `None`.
 /// This is so we can insert the expr's type into the `St` at the end.
-#[expect(clippy::too_many_lines, clippy::similar_names)]
-pub(crate) fn get(st: &mut st::St<'_>, ars: &Arenas, expr: Expr) -> ty::Ty {
+#[expect(clippy::too_many_lines)]
+pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
   let Some(expr) = expr else { return ty::Ty::ANY };
-  let ret = match &ars.expr[expr] {
+  let ret = match &ar[expr] {
     ExprData::Prim(prim) => match prim {
       Prim::Null => ty::Ty::NULL,
       Prim::Bool(b) => {
@@ -28,9 +28,9 @@ pub(crate) fn get(st: &mut st::St<'_>, ars: &Arenas, expr: Expr) -> ty::Ty {
     ExprData::Object { binds, asserts, fields } => {
       let mut obj = ty::Object::empty();
       for field in fields {
-        get(st, ars, field.key);
+        get(st, ar, field.key);
         let Some(key) = field.key else { continue };
-        let ExprData::Prim(Prim::String(s)) = &ars.expr[key] else {
+        let ExprData::Prim(Prim::String(s)) = &ar[key] else {
           obj.has_unknown = true;
           continue;
         };
@@ -39,15 +39,15 @@ pub(crate) fn get(st: &mut st::St<'_>, ars: &Arenas, expr: Expr) -> ty::Ty {
         }
       }
       st.define_self_super();
-      define_binds(st, ars, expr, binds, def::ExprDefKind::ObjectLocal);
+      define_binds(st, ar, expr, binds, def::ExprDefKind::ObjectLocal);
       for field in fields {
-        let ty = get(st, ars, field.val);
+        let ty = get(st, ar, field.val);
         let Some(key) = field.key else { continue };
-        let ExprData::Prim(Prim::String(s)) = &ars.expr[key] else { continue };
+        let ExprData::Prim(Prim::String(s)) = &ar[key] else { continue };
         always!(obj.known.insert(s.clone(), ty).is_some());
       }
       for &cond in asserts {
-        get(st, ars, cond);
+        get(st, ar, cond);
       }
       st.undefine_self_super();
       for &(lhs, _) in binds {
@@ -56,11 +56,11 @@ pub(crate) fn get(st: &mut st::St<'_>, ars: &Arenas, expr: Expr) -> ty::Ty {
       st.get_ty(ty::Data::Object(obj))
     }
     ExprData::ObjectComp { name, body, id, ary } => {
-      get(st, ars, *ary);
+      get(st, ar, *ary);
       st.define(*id, ty::Ty::ANY, Def::Expr(expr, def::ExprDefKind::ObjectCompId));
-      get(st, ars, *name);
+      get(st, ar, *name);
       st.define_self_super();
-      get(st, ars, *body);
+      get(st, ar, *body);
       st.undefine(*id);
       st.undefine_self_super();
       ty::Ty::OBJECT
@@ -68,15 +68,15 @@ pub(crate) fn get(st: &mut st::St<'_>, ars: &Arenas, expr: Expr) -> ty::Ty {
     ExprData::Array(exprs) => {
       let mut tys = BTreeSet::<ty::Ty>::new();
       for &arg in exprs {
-        let ty = get(st, ars, arg);
+        let ty = get(st, ar, arg);
         tys.insert(ty);
       }
       let elem_ty = st.get_ty(ty::Data::Union(tys));
       st.get_ty(ty::Data::Array(elem_ty))
     }
     ExprData::Subscript { on, idx } => {
-      let on_ty = get(st, ars, *on);
-      let idx_ty = get(st, ars, *idx);
+      let on_ty = get(st, ar, *on);
+      let idx_ty = get(st, ar, *idx);
       let idx_expr = idx.unwrap_or(expr);
       match st.data(on_ty).clone() {
         ty::Data::Array(elem_ty) => {
@@ -85,7 +85,7 @@ pub(crate) fn get(st: &mut st::St<'_>, ars: &Arenas, expr: Expr) -> ty::Ty {
         }
         ty::Data::Object(obj) => {
           st.unify(idx_expr, ty::Ty::STRING, idx_ty);
-          let idx = idx.and_then(|x| match &ars.expr[x] {
+          let idx = idx.and_then(|x| match &ar[x] {
             ExprData::Prim(Prim::String(s)) => Some(s),
             _ => None,
           });
@@ -123,11 +123,11 @@ pub(crate) fn get(st: &mut st::St<'_>, ars: &Arenas, expr: Expr) -> ty::Ty {
       }
     }
     ExprData::Call { func, positional, named } => {
-      let func_ty = get(st, ars, *func);
-      let positional_tys: Vec<_> = positional.iter().map(|&arg| get(st, ars, arg)).collect();
+      let func_ty = get(st, ar, *func);
+      let positional_tys: Vec<_> = positional.iter().map(|&arg| get(st, ar, arg)).collect();
       let mut named_tys = FxHashMap::<Id, (Expr, ty::Ty)>::default();
       for &(id, arg) in named {
-        let arg_ty = get(st, ars, arg);
+        let arg_ty = get(st, ar, arg);
         if named_tys.insert(id, (arg, arg_ty)).is_some() {
           if let Some(arg) = arg {
             st.err(arg, error::Kind::DuplicateNamedArg(id));
@@ -171,8 +171,8 @@ pub(crate) fn get(st: &mut st::St<'_>, ars: &Arenas, expr: Expr) -> ty::Ty {
       }
     }
     ExprData::Local { binds, body } => {
-      define_binds(st, ars, expr, binds, def::ExprDefKind::LocalBind);
-      let ty = get(st, ars, *body);
+      define_binds(st, ar, expr, binds, def::ExprDefKind::LocalBind);
+      let ty = get(st, ar, *body);
       for &(bind, _) in binds {
         st.undefine(bind);
       }
@@ -189,9 +189,9 @@ pub(crate) fn get(st: &mut st::St<'_>, ars: &Arenas, expr: Expr) -> ty::Ty {
       }
       for &(_, rhs) in params {
         let Some(rhs) = rhs else { continue };
-        get(st, ars, rhs);
+        get(st, ar, rhs);
       }
-      let body_ty = get(st, ars, *body);
+      let body_ty = get(st, ar, *body);
       let mut fn_params = Vec::<ty::Param>::with_capacity(params.len());
       for &(id, rhs) in params {
         st.undefine(id);
@@ -205,15 +205,15 @@ pub(crate) fn get(st: &mut st::St<'_>, ars: &Arenas, expr: Expr) -> ty::Ty {
       st.get_ty(ty::Data::Fn(fn_ty))
     }
     ExprData::If { cond, yes, no } => {
-      let cond_ty = get(st, ars, *cond);
+      let cond_ty = get(st, ar, *cond);
       st.unify(cond.unwrap_or(expr), ty::Ty::BOOL, cond_ty);
-      let yes_ty = get(st, ars, *yes);
-      let no_ty = get(st, ars, *no);
+      let yes_ty = get(st, ar, *yes);
+      let no_ty = get(st, ar, *no);
       st.get_ty(ty::Data::Union(BTreeSet::from([yes_ty, no_ty])))
     }
     ExprData::BinaryOp { lhs, op, rhs } => {
-      let lhs_ty = get(st, ars, *lhs);
-      let rhs_ty = get(st, ars, *rhs);
+      let lhs_ty = get(st, ar, *lhs);
+      let rhs_ty = get(st, ar, *rhs);
       match op {
         jsonnet_expr::BinaryOp::Add => {
           match (st.data(lhs_ty), st.data(rhs_ty)) {
@@ -276,7 +276,7 @@ pub(crate) fn get(st: &mut st::St<'_>, ars: &Arenas, expr: Expr) -> ty::Ty {
       }
     }
     ExprData::UnaryOp { inner, op } => {
-      let inner_ty = get(st, ars, *inner);
+      let inner_ty = get(st, ar, *inner);
       let e = inner.unwrap_or(expr);
       let want = match op {
         jsonnet_expr::UnaryOp::Neg | jsonnet_expr::UnaryOp::Pos | jsonnet_expr::UnaryOp::BitNot => {
@@ -288,7 +288,7 @@ pub(crate) fn get(st: &mut st::St<'_>, ars: &Arenas, expr: Expr) -> ty::Ty {
       want
     }
     ExprData::Error(inner) => {
-      get(st, ars, *inner);
+      get(st, ar, *inner);
       ty::Ty::NEVER
     }
     ExprData::Import { kind, path } => match kind {
@@ -309,7 +309,7 @@ pub(crate) fn get(st: &mut st::St<'_>, ars: &Arenas, expr: Expr) -> ty::Ty {
 
 fn define_binds(
   st: &mut st::St<'_>,
-  ars: &Arenas,
+  ar: &ExprArena,
   expr: jsonnet_expr::ExprMust,
   binds: &[(Id, jsonnet_expr::Expr)],
   f: fn(usize) -> def::ExprDefKind,
@@ -322,7 +322,7 @@ fn define_binds(
     }
   }
   for &(lhs, rhs) in binds {
-    let ty = get(st, ars, rhs);
+    let ty = get(st, ar, rhs);
     always!(bound_ids.contains(&lhs), "should have just defined: {lhs:?}");
     st.refine(lhs, ty);
   }

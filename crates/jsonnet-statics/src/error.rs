@@ -1,7 +1,7 @@
 //! Errors.
 
 use crate::ty;
-use jsonnet_expr::{def, ExprMust, Id, Str, Subst};
+use jsonnet_expr::{def, ExprMust, Id, Str};
 use std::fmt;
 
 /// An error.
@@ -54,35 +54,32 @@ impl Error {
     }
   }
 
-  /// Apply some substitutions.
-  pub fn apply(&mut self, expr_subst: &Subst, ty_subst: &ty::Subst) {
+  /// Apply a substitution.
+  ///
+  /// NOTE: no need to apply an expr subst because we run statics after combining the per-file
+  /// syntax artifacts.
+  pub fn apply(&mut self, ty_subst: &ty::Subst) {
     match &mut self.kind {
-      Kind::NotInScope(id)
-      | Kind::DuplicateNamedArg(id)
-      | Kind::DuplicateBinding(id)
-      | Kind::Unused(id, _)
-      | Kind::WantOptionalParamGotRequired(id)
-      | Kind::ExtraRequiredParam(id)
-      | Kind::ExtraNamedArgument(id) => {
-        id.apply(expr_subst);
-      }
-      Kind::DuplicateFieldName(str) | Kind::MissingField(str) => str.apply(expr_subst),
-      Kind::MismatchedParamNames(a, b) => {
-        a.apply(expr_subst);
-        b.apply(expr_subst);
-      }
-      Kind::MissingArgument(id, ty) => {
-        id.apply(expr_subst);
+      Kind::MissingArgument(_, ty) | Kind::Incomparable(ty) => {
         ty.apply(ty_subst);
       }
       Kind::Incompatible(a, b) | Kind::InvalidPlus(a, b) => {
         a.apply(ty_subst);
         b.apply(ty_subst);
       }
-      Kind::Incomparable(ty) => {
-        ty.apply(ty_subst);
-      }
-      Kind::NotEnoughParams(_, _) | Kind::MissingUnknown | Kind::ExtraPositionalArgument(_) => {}
+      Kind::NotInScope(_)
+      | Kind::DuplicateNamedArg(_)
+      | Kind::DuplicateBinding(_)
+      | Kind::Unused(_, _)
+      | Kind::WantOptionalParamGotRequired(_)
+      | Kind::ExtraRequiredParam(_)
+      | Kind::ExtraNamedArgument(_)
+      | Kind::DuplicateFieldName(_)
+      | Kind::MissingField(_)
+      | Kind::MismatchedParamNames(_, _)
+      | Kind::NotEnoughParams(_, _)
+      | Kind::MissingUnknown
+      | Kind::ExtraPositionalArgument(_) => {}
     }
   }
 }

@@ -15,7 +15,7 @@ const EPSILON: f64 = 0.0001;
 pub(crate) fn get(cx: Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
   let Some(expr) = expr else { return Err(error::Error::NoExpr) };
   // TODO cache lookups across calls to this fn?
-  let expr_ar = &cx.jsonnet_files[&env.path].expr_ar;
+  let expr_ar = &cx.exprs[&env.path].ar;
   match &expr_ar[expr] {
     ExprData::Prim(p) => Ok(Val::Prim(p.clone())),
     ExprData::Object { binds, asserts, fields } => {
@@ -297,7 +297,7 @@ pub(crate) fn get(cx: Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
       Err(error::Error::Exec { expr, kind: error::Kind::User(msg) })
     }
     ExprData::Import { kind, path } => match kind {
-      jsonnet_expr::ImportKind::Code => match cx.jsonnet_files.get(path) {
+      jsonnet_expr::ImportKind::Code => match cx.exprs.get(path) {
         Some(file) => match env.empty_with_cur(*path) {
           Ok(env) => get(cx, &env, file.top),
           Err(cycle) => Err(error::Error::Exec { expr, kind: error::Kind::Cycle(cycle) }),

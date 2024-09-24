@@ -1,11 +1,8 @@
 //! The state of analysis.
 
-use crate::util::{
-  FileArtifacts, GlobalArtifacts, Init, IsolatedArtifacts, IsolatedFile, PathIoError, Result,
-};
+use crate::util::{GlobalArtifacts, PathIoError, Result};
 use crate::{const_eval, util};
 use always::always;
-use jsonnet_eval::JsonnetFile;
 use jsonnet_syntax::ast::AstNode as _;
 use paths::{PathId, PathMap};
 use rayon::iter::{IntoParallelIterator as _, ParallelIterator as _};
@@ -44,37 +41,36 @@ impl WithFs {
   }
 
   fn display_path_id(&self, p: PathId) -> impl std::fmt::Display + '_ {
-    self.strip(self.artifacts.expr.paths.get_path(p).as_path()).display()
+    self.strip(self.artifacts.syntax.paths.get_path(p).as_path()).display()
   }
 
-  fn get_one_file<F>(&mut self, fs: &F, path_id: PathId) -> Result<IsolatedFile>
+  fn get_one_file<F>(&mut self, fs: &F, path_id: PathId) -> Result<util::StaticsFile>
   where
     F: Sync + paths::FileSystem,
   {
     self.ensure_import_tys_cached(fs, path_id);
-    let path = self.artifacts.expr.paths.get_path(path_id);
-    let art =
-      IsolatedArtifacts::from_fs(path, &self.root_dirs, &self.artifacts, &self.file_tys, fs);
-    match art {
-      Ok(art) => {
-        let file = art.combine(&mut self.artifacts);
-        if file.errors.is_empty() {
-          self.has_errors.remove(&path_id);
-        } else {
-          self.has_errors.insert(path_id);
-        }
-        Ok(file)
-      }
-      Err(error) => Err(PathIoError { path: path.to_owned().into_path_buf(), error }),
+    let path = self.artifacts.syntax.paths.get_path(path_id);
+    let res = match util::SyntaxFileToCombine::from_fs(path, &self.root_dirs, fs) {
+      Ok(x) => x,
+      Err(error) => return Err(PathIoError { path: path.to_owned().into_path_buf(), error }),
+    };
+    let res = res.combine(&mut self.artifacts);
+    let res = util::StaticsFileToCombine::new(res, &self.artifacts, &self.file_tys);
+    let res = res.combine(&mut self.artifacts);
+    if res.is_clean() {
+      self.has_errors.remove(&path_id);
+    } else {
+      self.has_errors.insert(path_id);
     }
+    Ok(res)
   }
 
   fn get_file_expr<'fe, F>(
     &mut self,
-    file_exprs: &'fe mut PathMap<JsonnetFile>,
+    file_exprs: &'fe mut PathMap<jsonnet_eval::Exprs>,
     fs: &F,
     path_id: PathId,
-  ) -> Result<&'fe JsonnetFile>
+  ) -> Result<&'fe jsonnet_eval::Exprs>
   where
     F: Sync + paths::FileSystem,
   {
@@ -82,17 +78,17 @@ impl WithFs {
       Entry::Occupied(entry) => Ok(&*entry.into_mut()),
       Entry::Vacant(entry) => {
         let file = self.get_one_file(fs, path_id)?;
-        Ok(&*entry.insert(file.eval))
+        Ok(&*entry.insert(file.syntax.exprs))
       }
     }
   }
 
   fn get_file_artifacts<'fa, F>(
     &mut self,
-    file_artifacts: &'fa mut PathMap<FileArtifacts>,
+    file_artifacts: &'fa mut PathMap<util::FileArtifacts>,
     fs: &F,
     path_id: PathId,
-  ) -> Result<&'fa FileArtifacts>
+  ) -> Result<&'fa util::FileArtifacts>
   where
     F: Sync + paths::FileSystem,
   {
@@ -100,7 +96,7 @@ impl WithFs {
       Entry::Occupied(entry) => Ok(&*entry.into_mut()),
       Entry::Vacant(entry) => {
         let file = self.get_one_file(fs, path_id)?;
-        Ok(&*entry.insert(file.artifacts))
+        Ok(&*entry.insert(file.into_artifacts()))
       }
     }
   }
@@ -137,7 +133,7 @@ impl WithFs {
           }
           work.push(Action::end(path_id));
           level_idx += 1;
-          let path = self.artifacts.expr.paths.get_path(path_id);
+          let path = self.artifacts.syntax.paths.get_path(path_id);
           let parent = util::path_parent_must(path);
           let Ok(contents) = fs.read_to_string(path.as_path()) else { continue };
           // need to make this `parent` owned...
@@ -154,7 +150,7 @@ impl WithFs {
             let Some(import) = import else { continue };
             log::debug!("new import: {import:?}");
             // ...because we mutate `paths` here.
-            let import = self.artifacts.expr.paths.get_id_owned(import);
+            let import = self.artifacts.syntax.paths.get_id_owned(import);
             log::debug!("with import id: {import:?}");
             // this mutation also makes it too annoying to write this for-push as a
             // iter-filter-map-extend.
@@ -201,18 +197,30 @@ impl WithFs {
     drop(cur);
     drop(done);
     log::debug!("levels: {levels:?}");
+    // TODO ask for less analysis to just get the types
     for level in levels {
-      let arts = level.into_par_iter().filter_map(|path_id| {
-        let path = self.artifacts.expr.paths.get_path(path_id);
-        let art =
-          IsolatedArtifacts::from_fs(path, &self.root_dirs, &self.artifacts, &self.file_tys, fs);
-        Some((path_id, art.ok()?))
+      // par
+      let syntax_files = level.into_par_iter().filter_map(|path_id| {
+        let path = self.artifacts.syntax.paths.get_path(path_id);
+        let res = util::SyntaxFileToCombine::from_fs(path, &self.root_dirs, fs).ok()?;
+        Some((path_id, res))
       });
-      let arts: Vec<_> = arts.collect();
-      let new_file_tys = arts.into_iter().filter_map(|(path_id, art)| {
-        let file = art.combine(&mut self.artifacts);
-        let top_expr = file.eval.top?;
-        let &top_ty = file.artifacts.expr_tys.get(&top_expr)?;
+      // unzip so we don't have to carry around the path_id unchanged in the next few
+      // transformations. order will be preserved.
+      let (order, syntax_files): (Vec<_>, Vec<_>) = syntax_files.unzip();
+      // seq
+      let syntax_files = syntax_files.into_iter().map(|res| res.combine(&mut self.artifacts));
+      let syntax_files: Vec<_> = syntax_files.collect();
+      // par
+      let statics_files = syntax_files
+        .into_par_iter()
+        .map(|res| util::StaticsFileToCombine::new(res, &self.artifacts, &self.file_tys));
+      let statics_files: Vec<_> = statics_files.collect();
+      // seq
+      let new_file_tys = order.into_iter().zip(statics_files).filter_map(|(path_id, res)| {
+        let res = res.combine(&mut self.artifacts);
+        let top_expr = res.syntax.exprs.top?;
+        let &top_ty = res.statics.expr_tys.get(&top_expr)?;
         Some((path_id, top_ty))
       });
       self.file_tys.extend(new_file_tys);
@@ -244,8 +252,8 @@ impl Action {
 pub struct St {
   with_fs: WithFs,
   open_files: PathMap<String>,
-  file_artifacts: PathMap<FileArtifacts>,
-  file_exprs: PathMap<JsonnetFile>,
+  file_artifacts: PathMap<util::FileArtifacts>,
+  file_exprs: PathMap<jsonnet_eval::Exprs>,
   import_str: PathMap<String>,
   import_bin: PathMap<Vec<u8>>,
   manifest: bool,
@@ -255,7 +263,7 @@ pub struct St {
 impl St {
   /// Returns a new `St` with the given init options.
   #[must_use]
-  pub fn init(init: Init) -> Self {
+  pub fn init(init: util::Init) -> Self {
     log::info!("make new St with {init:?}");
     Self {
       with_fs: WithFs {
@@ -286,9 +294,9 @@ impl St {
     }
     // TODO more caching?
     let cx = jsonnet_eval::Cx {
-      paths: &self.with_fs.artifacts.expr.paths,
-      str_ar: &self.with_fs.artifacts.expr.strings,
-      jsonnet_files: &self.file_exprs,
+      paths: &self.with_fs.artifacts.syntax.paths,
+      str_ar: &self.with_fs.artifacts.syntax.strings,
+      exprs: &self.file_exprs,
       import_str: &self.import_str,
       import_bin: &self.import_bin,
     };
@@ -299,7 +307,7 @@ impl St {
   /// Returns the strings for this.
   #[must_use]
   pub fn strings(&self) -> &jsonnet_expr::StrArena {
-    &self.with_fs.artifacts.expr.strings
+    &self.with_fs.artifacts.syntax.strings
   }
 
   /// Brings all the transitive deps of the Jsonnet file with path id `path_id` into memory.
@@ -327,7 +335,7 @@ impl St {
             Entry::Occupied(entry) => &*entry.into_mut(),
             Entry::Vacant(entry) => {
               let file = self.with_fs.get_one_file(fs, path_id)?;
-              entry.insert(file.eval)
+              entry.insert(file.syntax.exprs)
             }
           };
           work.extend(file.imports().map(|import| (import.path, import.kind)));
@@ -335,7 +343,7 @@ impl St {
         jsonnet_expr::ImportKind::String => match self.import_str.entry(path_id) {
           Entry::Occupied(_) => {}
           Entry::Vacant(entry) => {
-            let path = self.with_fs.artifacts.expr.paths.get_path(path_id).to_owned();
+            let path = self.with_fs.artifacts.syntax.paths.get_path(path_id).to_owned();
             match fs.read_to_string(path.as_path()) {
               Ok(x) => {
                 entry.insert(x);
@@ -347,7 +355,7 @@ impl St {
         jsonnet_expr::ImportKind::Binary => match self.import_bin.entry(path_id) {
           Entry::Occupied(_) => {}
           Entry::Vacant(entry) => {
-            let path = self.with_fs.artifacts.expr.paths.get_path(path_id).to_owned();
+            let path = self.with_fs.artifacts.syntax.paths.get_path(path_id).to_owned();
             match fs.read_to_bytes(path.as_path()) {
               Ok(x) => {
                 entry.insert(x);
@@ -361,14 +369,18 @@ impl St {
     Ok(())
   }
 
-  pub(crate) fn get_file_expr<F>(&mut self, fs: &F, path_id: PathId) -> Result<&JsonnetFile>
+  pub(crate) fn get_file_expr<F>(&mut self, fs: &F, path_id: PathId) -> Result<&jsonnet_eval::Exprs>
   where
     F: Sync + paths::FileSystem,
   {
     self.with_fs.get_file_expr(&mut self.file_exprs, fs, path_id)
   }
 
-  pub(crate) fn get_file_artifacts<F>(&mut self, fs: &F, path_id: PathId) -> Result<&FileArtifacts>
+  pub(crate) fn get_file_artifacts<F>(
+    &mut self,
+    fs: &F,
+    path_id: PathId,
+  ) -> Result<&util::FileArtifacts>
   where
     F: Sync + paths::FileSystem,
   {
@@ -381,7 +393,7 @@ impl lang_srv_state::State for St {
   where
     F: paths::FileSystem,
   {
-    let mut init = Init::default();
+    let mut init = util::Init::default();
     let pwd = fs.current_dir();
     let mut logger_env = env_logger::Env::default();
     // TODO is it correct to use pwd here or should we be using the root dir from the language
@@ -453,28 +465,28 @@ impl lang_srv_state::State for St {
     let Some(contents) = self.open_files.get_mut(&path_id) else { return (path_id, Vec::new()) };
     apply_changes::get(contents, changes);
     self.with_fs.ensure_import_tys_cached(fs, path_id);
-    let art = IsolatedArtifacts::from_str(
-      path.as_clean_path(),
-      contents,
-      &self.with_fs.root_dirs,
-      &self.with_fs.artifacts,
-      &self.with_fs.file_tys,
-      fs,
-    );
-    let file = art.combine(&mut self.with_fs.artifacts);
-    let root = file.artifacts.syntax.clone();
-    let syntax = root.syntax();
+    let p = path.as_clean_path();
+    let res = util::SyntaxFileToCombine::from_str(p, contents, &self.with_fs.root_dirs, fs);
+    let res = res.combine(&mut self.with_fs.artifacts);
+    let res = util::StaticsFileToCombine::new(res, &self.with_fs.artifacts, &self.with_fs.file_tys);
+    let res = res.combine(&mut self.with_fs.artifacts);
     let diagnostics =
-      file.diagnostics(&syntax, &self.with_fs.artifacts.tys, &self.with_fs.artifacts.expr.strings);
-    let ret: Vec<_> = diagnostics.collect();
-    self.file_artifacts.insert(path_id, file.artifacts);
-    self.file_exprs.insert(path_id, file.eval);
-    if file.errors.is_empty() {
+      res.diagnostics(&self.with_fs.artifacts.statics, &self.with_fs.artifacts.syntax.strings);
+    let ds: Vec<_> = diagnostics.collect();
+    let clean = res.is_clean();
+    self.file_exprs.insert(path_id, res.syntax.exprs);
+    let art = util::FileArtifacts {
+      syntax: res.syntax.artifacts,
+      defs: res.statics.defs,
+      expr_tys: res.statics.expr_tys,
+    };
+    self.file_artifacts.insert(path_id, art);
+    if clean {
       self.with_fs.has_errors.remove(&path_id);
     } else {
       self.with_fs.has_errors.insert(path_id);
     }
-    (path_id, ret)
+    (path_id, ds)
   }
 
   /// Opens a path.
@@ -520,23 +532,23 @@ impl lang_srv_state::State for St {
     let path_id = self.path_id(path);
     let arts = self.with_fs.get_file_artifacts(&mut self.file_artifacts, fs, path_id).ok()?;
     let tok = {
-      let ts = arts.pos_db.text_size_utf16(pos)?;
-      let root = arts.syntax.clone().into_ast()?;
+      let ts = arts.syntax.pos_db.text_size_utf16(pos)?;
+      let root = arts.syntax.root.clone().into_ast()?;
       jsonnet_syntax::node_token(root.syntax(), ts)?
     };
     let expr = jsonnet_syntax::token_parent(&tok).and_then(|node| {
       let ptr = jsonnet_syntax::ast::SyntaxNodePtr::new(&node);
-      arts.pointers.get_idx(ptr)
+      arts.syntax.pointers.get_idx(ptr)
     });
     let ty = expr.and_then(|expr| {
       let ty = arts.expr_tys.get(&expr)?;
-      let ty = ty.display(&self.with_fs.artifacts.tys, &self.with_fs.artifacts.expr.strings);
+      let ty = ty.display(&self.with_fs.artifacts.statics, &self.with_fs.artifacts.syntax.strings);
       Some(format!("type:\n```ts\n{ty}\n```"))
     });
     // TODO expose any errors here?
     let from_std_field = match const_eval::get(self, fs, path_id, expr) {
       Some(const_eval::ConstEval::Std(Some(x))) => {
-        STD_LIB_DOC.get(self.with_fs.artifacts.expr.strings.get(&x)).map(String::as_str)
+        STD_LIB_DOC.get(self.with_fs.artifacts.syntax.strings.get(&x)).map(String::as_str)
       }
       Some(const_eval::ConstEval::Std(None)) => Some("std: The standard library."),
       None | Some(const_eval::ConstEval::Real(_)) => None,
@@ -544,12 +556,12 @@ impl lang_srv_state::State for St {
     let json = self.manifest.then(|| match self.get_all_deps(fs, path_id) {
       Ok(()) => match self.get_json(path_id) {
         Ok(json) => {
-          let json = json.display(&self.with_fs.artifacts.expr.strings);
+          let json = json.display(&self.with_fs.artifacts.syntax.strings);
           format!("json:\n```json\n{json}\n```")
         }
         Err(e) => {
           let rel_to = self.with_fs.relative_to.as_ref().map(paths::CleanPathBuf::as_clean_path);
-          let a = &self.with_fs.artifacts.expr;
+          let a = &self.with_fs.artifacts.syntax;
           let e = e.display(&a.strings, &a.paths, rel_to);
           format!("couldn't get json: {e}")
         }
@@ -559,8 +571,8 @@ impl lang_srv_state::State for St {
     let debug = if self.debug {
       self.with_fs.get_file_expr(&mut self.file_exprs, fs, path_id).ok().map(|file| {
         let rel = self.with_fs.relative_to.as_ref().map(paths::CleanPathBuf::as_clean_path);
-        let a = &self.with_fs.artifacts.expr;
-        let e = jsonnet_expr::display::expr(expr, &a.strings, &file.expr_ar, &a.paths, rel);
+        let a = &self.with_fs.artifacts.syntax;
+        let e = jsonnet_expr::display::expr(expr, &a.strings, &file.ar, &a.paths, rel);
         format!("debug:\n```jsonnet\n{e}\n```")
       })
     } else {
@@ -587,31 +599,30 @@ impl lang_srv_state::State for St {
     F: Sync + paths::FileSystem,
   {
     let path_id = self.path_id(path);
+    let arts = self.get_file_artifacts(fs, path_id).ok()?;
+    let root = arts.syntax.root.clone().into_ast()?;
     let ce = {
-      let arts = self.get_file_artifacts(fs, path_id).ok()?;
-      let ts = arts.pos_db.text_size_utf16(pos)?;
-      let root = arts.syntax.clone().into_ast()?;
+      let ts = arts.syntax.pos_db.text_size_utf16(pos)?;
       let tok = jsonnet_syntax::node_token(root.syntax(), ts)?;
       let node = jsonnet_syntax::token_parent(&tok)?;
       let ptr = jsonnet_syntax::ast::SyntaxNodePtr::new(&node);
-      let expr = arts.pointers.get_idx(ptr);
+      let expr = arts.syntax.pointers.get_idx(ptr);
       // TODO expose any errors here?
       let ce = const_eval::get(self, fs, path_id, expr);
       let Some(const_eval::ConstEval::Real(ce)) = ce else { return None };
       ce
     };
     let arts = self.get_file_artifacts(fs, ce.path_id).ok()?;
-    let root = arts.syntax.clone().into_ast()?;
-    let tr = util::expr_range(&arts.pointers, root.syntax(), ce.expr, ce.kind);
-    let range = arts.pos_db.range_utf16(tr)?;
+    let tr = util::expr_range(&arts.syntax.pointers, root.syntax(), ce.expr, ce.kind);
+    let range = arts.syntax.pos_db.range_utf16(tr)?;
     Some((ce.path_id, range))
   }
 
   fn paths(&self) -> &paths::Store {
-    &self.with_fs.artifacts.expr.paths
+    &self.with_fs.artifacts.syntax.paths
   }
 
   fn path_id(&mut self, path: paths::CleanPathBuf) -> PathId {
-    self.with_fs.artifacts.expr.paths.get_id_owned(path)
+    self.with_fs.artifacts.syntax.paths.get_id_owned(path)
   }
 }
