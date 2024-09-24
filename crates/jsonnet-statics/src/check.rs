@@ -336,7 +336,7 @@ fn is_comparable(st: &st::St<'_>, ty: ty::Ty) -> bool {
   match st.data(ty) {
     ty::Data::Any | ty::Data::String | ty::Data::Number => true,
     ty::Data::Array(ty) => is_comparable(st, *ty),
-    ty::Data::Union(tys) => tys.iter().any(|&ty| is_comparable(st, ty)),
+    ty::Data::Union(tys) => tys.iter().all(|&ty| is_comparable(st, ty)),
     ty::Data::True
     | ty::Data::False
     | ty::Data::Null
