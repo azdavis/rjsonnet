@@ -182,7 +182,6 @@ impl WithFs {
         }
       }
     }
-    log::debug!("levels: {levels:?}");
     always!(level_idx == 0);
     always!(cur.is_empty());
     if cfg!(debug_assertions) {
@@ -201,6 +200,7 @@ impl WithFs {
     drop(work);
     drop(cur);
     drop(done);
+    log::debug!("levels: {levels:?}");
     for level in levels {
       let arts = level.into_par_iter().filter_map(|path_id| {
         let path = self.artifacts.expr.paths.get_path(path_id);
