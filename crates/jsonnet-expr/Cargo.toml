@@ -24,3 +24,5 @@ finite-float.path = "../finite-float"
 proc-macro2.workspace = true
 quote.workspace = true
 write-rs-tokens.workspace = true
+
+jsonnet-std.path = "../jsonnet-std"

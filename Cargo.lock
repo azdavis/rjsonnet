@@ -462,6 +462,7 @@ version = "0.3.1"
 dependencies = [
  "always",
  "finite-float",
+ "jsonnet-std",
  "la-arena",
  "paths",
  "proc-macro2",
@@ -524,6 +525,10 @@ dependencies = [
  "uniq",
  "write-rs-tokens",
 ]
+
+[[package]]
+name = "jsonnet-std"
+version = "0.3.1"
 
 [[package]]
 name = "jsonnet-syntax"
