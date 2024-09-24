@@ -258,9 +258,13 @@ impl<'a> MutStore<'a> {
 
   fn get_inner(&mut self, data: Data) -> Ty {
     if let Some(&ty) = self.global.0.data_to_idx.get(&data) {
+      always!(!ty.is_local());
       return ty;
     }
     if let Some(&ty) = self.local.0.data_to_idx.get(&data) {
+      let mut ty = ty;
+      always!(!ty.is_local());
+      ty.make_local();
       return ty;
     }
     let mut ret = Ty::from_idx(self.local.0.idx_to_data.len());
@@ -319,6 +323,7 @@ impl Subst {
     let mut ret = Subst { old_to_new: FxHashMap::default() };
     let orig_len = this.0.idx_to_data.len();
     for (data, mut old_ty) in other.0.data_to_idx {
+      always!(!old_ty.is_local());
       old_ty.make_local();
       always!(!this.0.data_to_idx.contains_key(&data));
       let new_ty = Ty::from_idx(this.0.idx_to_data.len());
