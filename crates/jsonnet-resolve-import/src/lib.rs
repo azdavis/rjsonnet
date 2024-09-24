@@ -41,7 +41,7 @@ impl<'a> NonEmptyDirs<'a> {
   }
 
   /// Return all the dirs, first the first one, then the others in order.
-  pub fn dirs(&self) -> impl Iterator<Item = &'a CleanPath> {
+  pub fn iter(&self) -> impl Iterator<Item = &'a CleanPath> {
     std::iter::once(self.first).chain(self.other.iter().map(CleanPathBuf::as_clean_path))
   }
 }
