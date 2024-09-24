@@ -213,3 +213,19 @@ fn obj_array_self() {
   )
   .check();
 }
+
+#[test]
+fn same_fn_ty() {
+  JsonnetInput::pre_eval_error(
+    r#"
+local foo() = null;
+##    ^^^ diagnostic: unused: `foo`
+local bar() = 1;
+##    ^^^ diagnostic: unused: `bar`
+local quz() = 2;
+
+quz()
+"#,
+  )
+  .check();
+}
