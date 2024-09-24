@@ -52,14 +52,9 @@ impl WithFs {
   where
     F: paths::FileSystem,
   {
-    let path = self.artifacts.expr.paths.get_path(path_id).to_owned();
-    let art = IsolatedArtifacts::from_fs(
-      path.as_clean_path(),
-      &self.root_dirs,
-      &self.artifacts,
-      &self.file_tys,
-      fs,
-    );
+    let path = self.artifacts.expr.paths.get_path(path_id);
+    let art =
+      IsolatedArtifacts::from_fs(path, &self.root_dirs, &self.artifacts, &self.file_tys, fs);
     match art {
       Ok(art) => {
         let file = art.combine(&mut self.artifacts);
@@ -70,7 +65,7 @@ impl WithFs {
         }
         Ok(file)
       }
-      Err(error) => Err(PathIoError { path: path.into_path_buf(), error }),
+      Err(error) => Err(PathIoError { path: path.to_owned().into_path_buf(), error }),
     }
   }
 
