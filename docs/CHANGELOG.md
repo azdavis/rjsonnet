@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.4.0
+
+- Allow for type-checking across files.
+- Add some types for `std`.
+- Format large object types across many lines.
+
 ## v0.3.1
 
 - Add some local type-checking.
