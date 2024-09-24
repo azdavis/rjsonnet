@@ -21,7 +21,7 @@ For more mature alternatives, consider:
 - Inline diagnostics
 - Go-to-definition
 - Hover for info
-- Some local type-checking
+- Some type-checking
 
 ## Demo
 
