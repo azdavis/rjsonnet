@@ -88,9 +88,7 @@ impl Object {
       ty.apply(subst);
     }
   }
-}
 
-impl Object {
   pub(crate) fn empty() -> Self {
     Self { known: BTreeMap::new(), has_unknown: false }
   }
