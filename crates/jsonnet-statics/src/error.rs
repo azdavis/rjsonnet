@@ -16,10 +16,11 @@ impl Error {
   #[must_use]
   pub fn display<'a>(
     &'a self,
+    multi_line: ty::display::MultiLine,
     store: &'a ty::GlobalStore,
     str_ar: &'a jsonnet_expr::StrArena,
   ) -> impl fmt::Display + 'a {
-    Display { kind: &self.kind, store, str_ar }
+    Display { multi_line, kind: &self.kind, store, str_ar }
   }
 
   /// Returns the expr this error is for.
@@ -109,6 +110,7 @@ pub(crate) enum Kind {
 }
 
 struct Display<'a> {
+  multi_line: ty::display::MultiLine,
   kind: &'a Kind,
   store: &'a ty::GlobalStore,
   str_ar: &'a jsonnet_expr::StrArena,
@@ -127,8 +129,8 @@ impl fmt::Display for Display<'_> {
       }
       Kind::Unused(id, _) => write!(f, "unused: `{}`", id.display(self.str_ar)),
       Kind::Incompatible(want, got) => {
-        let want = want.display(self.store, self.str_ar);
-        let got = got.display(self.store, self.str_ar);
+        let want = want.display(self.multi_line, self.store, self.str_ar);
+        let got = got.display(self.multi_line, self.store, self.str_ar);
         f.write_str("incompatible types\n")?;
         writeln!(f, "  expected `{want}`")?;
         write!(f, "     found `{got}`")
@@ -156,12 +158,12 @@ impl fmt::Display for Display<'_> {
         write!(f, "extra required parameter: `{id}`")
       }
       Kind::Incomparable(ty) => {
-        let ty = ty.display(self.store, self.str_ar);
+        let ty = ty.display(self.multi_line, self.store, self.str_ar);
         write!(f, "not a comparable type: `{ty}`")
       }
       Kind::MissingArgument(id, ty) => {
         let id = id.display(self.str_ar);
-        let ty = ty.display(self.store, self.str_ar);
+        let ty = ty.display(self.multi_line, self.store, self.str_ar);
         write!(f, "missing argument: `{id}` with type: `{ty}`")
       }
       Kind::ExtraPositionalArgument(n) => write!(f, "extra positional argument: {n}"),
@@ -170,14 +172,14 @@ impl fmt::Display for Display<'_> {
         write!(f, "extra named argument: `{id}`")
       }
       Kind::InvalidPlus(lhs, rhs) => {
-        let lhs = lhs.display(self.store, self.str_ar);
-        let rhs = rhs.display(self.store, self.str_ar);
+        let lhs = lhs.display(self.multi_line, self.store, self.str_ar);
+        let rhs = rhs.display(self.multi_line, self.store, self.str_ar);
         f.write_str("invalid `+`\n")?;
         writeln!(f, "  left:  `{lhs}`")?;
         write!(f, "  right: `{rhs}`")
       }
       Kind::CallNonFn(got) => {
-        let got = got.display(self.store, self.str_ar);
+        let got = got.display(self.multi_line, self.store, self.str_ar);
         write!(f, "expected a function type, found `{got}`")
       }
     }

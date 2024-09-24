@@ -1,9 +1,10 @@
 //! A rudimentary type system for Jsonnet.
 
+pub mod display;
+
 mod generated {
   include!(concat!(env!("OUT_DIR"), "/generated.rs"));
 }
-mod display;
 
 use always::{always, convert};
 use jsonnet_expr::{ExprMust, Id, Str};

@@ -915,6 +915,7 @@ dependencies = [
  "env_logger",
  "jsonnet-analyze",
  "jsonnet-eval",
+ "jsonnet-statics",
  "lang-srv-state",
  "log",
  "paths",

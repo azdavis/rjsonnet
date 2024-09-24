@@ -25,7 +25,11 @@ impl<'a> MultiInput<'a> {
     _ = env_logger::builder().is_test(true).filter_level(log::LevelFilter::Debug).try_init();
     let mut fs = paths::MemoryFileSystem::default();
     let pwd = fs.current_dir().expect("no current dir for in-mem fs");
-    let init = jsonnet_analyze::Init { relative_to: Some(pwd.clone()), ..Default::default() };
+    let init = jsonnet_analyze::Init {
+      relative_to: Some(pwd.clone()),
+      multi_line: jsonnet_statics::ty::display::MultiLine::MustNot,
+      ..Default::default()
+    };
     let mut st = jsonnet_analyze::St::init(init);
     assert!(!self.inputs.is_empty(), "must have an Input to check");
     for input in self.inputs {

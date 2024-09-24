@@ -21,5 +21,6 @@ serde_json.workspace = true
 text-pos.workspace = true
 
 jsonnet-analyze = { path = "../jsonnet-analyze", features = ["testing"] } # @ignore
-jsonnet-eval.path = "../jsonnet-eval"
+jsonnet-eval = { path = "../jsonnet-eval", features = ["testing"] } # @ignore
+jsonnet-statics.path = "../jsonnet-statics"
 lang-srv-state.path = "../lang-srv-state"

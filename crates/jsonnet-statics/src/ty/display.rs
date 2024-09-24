@@ -10,9 +10,35 @@ impl Ty {
   ///
   /// Meant to be somewhat similar to how TypeScript does it.
   #[must_use]
-  pub fn display<'a>(self, store: &'a GlobalStore, str_ar: &'a StrArena) -> impl fmt::Display + 'a {
-    TyDisplay { ty: self, prec: Prec::Min, stuff: Stuff { store: &store.0, str_ar } }
+  pub fn display<'a>(
+    self,
+    multi_line: MultiLine,
+    store: &'a GlobalStore,
+    str_ar: &'a StrArena,
+  ) -> impl fmt::Display + 'a {
+    TyDisplay {
+      ty: self,
+      prec: Prec::Min,
+      stuff: Stuff {
+        store: &store.0,
+        str_ar,
+        level: match multi_line {
+          MultiLine::MustNot => None,
+          MultiLine::May => Some(0),
+        },
+      },
+    }
   }
+}
+
+/// Whether the type can be displayed multi-line.
+#[derive(Debug, Clone, Copy, Default)]
+pub enum MultiLine {
+  /// It may never be.
+  MustNot,
+  /// It may sometimes be.
+  #[default]
+  May,
 }
 
 #[derive(Clone, Copy)]
@@ -47,19 +73,28 @@ impl<'a> fmt::Display for TyDisplay<'a> {
       }
       Data::Object(obj) => {
         f.write_str("{")?;
-        let mut iter =
-          obj.known.iter().map(|(key, ty)| FieldDisplay { key, ty: *ty, stuff: self.stuff });
+        let new_level = self.stuff.level.map(|x| x + 1);
+        let mut iter = obj.known.iter().map(|(key, ty)| FieldDisplay {
+          key,
+          ty: *ty,
+          stuff: Stuff { level: new_level, ..self.stuff },
+        });
         if let Some(field) = iter.next() {
-          f.write_str(" ")?;
+          let (level, new_level) =
+            if obj.known.len() < 4 { (None, None) } else { (self.stuff.level, new_level) };
+          field_sep(f, new_level)?;
           field.fmt(f)?;
           for field in iter {
-            f.write_str(", ")?;
+            f.write_str(",")?;
+            field_sep(f, new_level)?;
             field.fmt(f)?;
           }
           if obj.has_unknown {
-            f.write_str(", ...")?;
+            f.write_str(",")?;
+            field_sep(f, new_level)?;
+            f.write_str("...")?;
           }
-          f.write_str(" ")?;
+          field_sep(f, level)?;
         } else if obj.has_unknown {
           f.write_str(" ... ")?;
         }
@@ -150,6 +185,20 @@ impl<'a> fmt::Display for ParamDisplay<'a> {
 struct Stuff<'a> {
   store: &'a Store,
   str_ar: &'a StrArena,
+  level: Option<usize>,
+}
+
+fn field_sep(f: &mut fmt::Formatter<'_>, level: Option<usize>) -> fmt::Result {
+  match level {
+    None => f.write_str(" "),
+    Some(level) => {
+      f.write_str("\n")?;
+      for _ in 0..level {
+        f.write_str("  ")?;
+      }
+      Ok(())
+    }
+  }
 }
 
 /// Precedence when printing a type.

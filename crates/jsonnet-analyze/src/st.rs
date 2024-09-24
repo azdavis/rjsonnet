@@ -258,6 +258,7 @@ pub struct St {
   import_bin: PathMap<Vec<u8>>,
   manifest: bool,
   debug: bool,
+  multi_line: jsonnet_statics::ty::display::MultiLine,
 }
 
 impl St {
@@ -280,6 +281,7 @@ impl St {
       import_bin: PathMap::default(),
       manifest: init.manifest,
       debug: init.debug,
+      multi_line: init.multi_line,
     }
   }
 
@@ -470,8 +472,8 @@ impl lang_srv_state::State for St {
     let res = res.combine(&mut self.with_fs.artifacts);
     let res = util::StaticsFileToCombine::new(res, &self.with_fs.artifacts, &self.with_fs.file_tys);
     let res = res.combine(&mut self.with_fs.artifacts);
-    let diagnostics =
-      res.diagnostics(&self.with_fs.artifacts.statics, &self.with_fs.artifacts.syntax.strings);
+    let wa = &self.with_fs.artifacts;
+    let diagnostics = res.diagnostics(self.multi_line, &wa.statics, &wa.syntax.strings);
     let ds: Vec<_> = diagnostics.collect();
     let clean = res.is_clean();
     self.file_exprs.insert(path_id, res.syntax.exprs);
@@ -541,8 +543,9 @@ impl lang_srv_state::State for St {
       arts.syntax.pointers.get_idx(ptr)
     });
     let ty = expr.and_then(|expr| {
+      let wa = &self.with_fs.artifacts;
       let ty = arts.expr_tys.get(&expr)?;
-      let ty = ty.display(&self.with_fs.artifacts.statics, &self.with_fs.artifacts.syntax.strings);
+      let ty = ty.display(self.multi_line, &wa.statics, &wa.syntax.strings);
       Some(format!("type:\n```ts\n{ty}\n```"))
     });
     // TODO expose any errors here?
