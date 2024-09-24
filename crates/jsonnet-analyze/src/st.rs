@@ -313,7 +313,7 @@ impl lang_srv_state::State for St {
     changes: Vec<apply_changes::Change>,
   ) -> (paths::PathId, Vec<diagnostic::Diagnostic>)
   where
-    F: Sync + Send + paths::FileSystem,
+    F: Sync + paths::FileSystem,
   {
     log::info!("update one file: {}", self.with_fs.strip(path.as_path()).display());
     let path_id = self.path_id(path.clone());
@@ -352,7 +352,7 @@ impl lang_srv_state::State for St {
     contents: String,
   ) -> (paths::PathId, Vec<diagnostic::Diagnostic>)
   where
-    F: Sync + Send + paths::FileSystem,
+    F: Sync + paths::FileSystem,
   {
     let path_id = self.path_id(path.clone());
     self.open_files.insert(path_id, contents);
@@ -381,7 +381,7 @@ impl lang_srv_state::State for St {
     pos: text_pos::PositionUtf16,
   ) -> Option<String>
   where
-    F: Sync + Send + paths::FileSystem,
+    F: Sync + paths::FileSystem,
   {
     let path_id = self.path_id(path);
     let arts = self.with_fs.get_file_artifacts(&mut self.file_artifacts, fs, path_id).ok()?;
@@ -450,7 +450,7 @@ impl lang_srv_state::State for St {
     pos: text_pos::PositionUtf16,
   ) -> Option<(PathId, text_pos::RangeUtf16)>
   where
-    F: Sync + Send + paths::FileSystem,
+    F: Sync + paths::FileSystem,
   {
     let path_id = self.path_id(path);
     let ce = {

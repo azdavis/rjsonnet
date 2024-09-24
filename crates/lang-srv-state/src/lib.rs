@@ -30,7 +30,7 @@ pub trait State {
     changes: Vec<apply_changes::Change>,
   ) -> (paths::PathId, Vec<diagnostic::Diagnostic>)
   where
-    F: Sync + Send + paths::FileSystem;
+    F: Sync + paths::FileSystem;
 
   /// Opens a path.
   #[must_use]
@@ -41,7 +41,7 @@ pub trait State {
     contents: String,
   ) -> (paths::PathId, Vec<diagnostic::Diagnostic>)
   where
-    F: Sync + Send + paths::FileSystem;
+    F: Sync + paths::FileSystem;
 
   /// Closes a path.
   #[must_use]
@@ -59,7 +59,7 @@ pub trait State {
     pos: text_pos::PositionUtf16,
   ) -> Option<String>
   where
-    F: Sync + Send + paths::FileSystem;
+    F: Sync + paths::FileSystem;
 
   /// Get the definition site of a part of a file.
   fn get_def<F>(
@@ -69,7 +69,7 @@ pub trait State {
     pos: text_pos::PositionUtf16,
   ) -> Option<(paths::PathId, text_pos::RangeUtf16)>
   where
-    F: Sync + Send + paths::FileSystem;
+    F: Sync + paths::FileSystem;
 
   /// Returns the paths store for this.
   fn paths(&self) -> &paths::Store;
