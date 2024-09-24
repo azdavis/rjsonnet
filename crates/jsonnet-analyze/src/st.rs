@@ -1,10 +1,9 @@
 //! The state of analysis.
 
-use crate::const_eval;
 use crate::util::{
-  expr_range, FileArtifacts, GlobalArtifacts, Init, IsolatedArtifacts, IsolatedFile, PathIoError,
-  Result,
+  FileArtifacts, GlobalArtifacts, Init, IsolatedArtifacts, IsolatedFile, PathIoError, Result,
 };
+use crate::{const_eval, util};
 use always::always;
 use jsonnet_eval::JsonnetFile;
 use jsonnet_syntax::ast::AstNode as _;
@@ -482,7 +481,7 @@ impl lang_srv_state::State for St {
     };
     let arts = self.get_file_artifacts(fs, ce.path_id).ok()?;
     let root = arts.syntax.clone().into_ast()?;
-    let tr = expr_range(&arts.pointers, root.syntax(), ce.expr, ce.kind);
+    let tr = util::expr_range(&arts.pointers, root.syntax(), ce.expr, ce.kind);
     let range = arts.pos_db.range_utf16(tr)?;
     Some((ce.path_id, range))
   }
