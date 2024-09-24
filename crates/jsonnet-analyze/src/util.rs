@@ -23,6 +23,18 @@ pub struct Init {
   pub debug: bool,
 }
 
+/// An adaptor between file system traits.
+pub(crate) struct FsAdapter<'a, F>(pub(crate) &'a F);
+
+impl<'a, F> jsonnet_resolve_import::FileSystem for FsAdapter<'a, F>
+where
+  F: paths::FileSystem,
+{
+  fn is_file(&self, p: &std::path::Path) -> bool {
+    paths::FileSystem::is_file(self.0, p)
+  }
+}
+
 /// Artifacts from a file whose shared artifacts have been combined into the global ones.
 #[derive(Debug)]
 pub(crate) struct FileArtifacts {
@@ -48,18 +60,6 @@ impl FileErrors {
       && self.parse.is_empty()
       && self.desugar.is_empty()
       && self.statics.is_empty()
-  }
-}
-
-/// An adaptor between file system traits.
-pub(crate) struct FsAdapter<'a, F>(pub(crate) &'a F);
-
-impl<'a, F> jsonnet_resolve_import::FileSystem for FsAdapter<'a, F>
-where
-  F: paths::FileSystem,
-{
-  fn is_file(&self, p: &std::path::Path) -> bool {
-    paths::FileSystem::is_file(self.0, p)
   }
 }
 
