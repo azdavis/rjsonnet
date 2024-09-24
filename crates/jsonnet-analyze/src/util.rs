@@ -6,6 +6,7 @@ use jsonnet_eval::JsonnetFile;
 use jsonnet_expr::def;
 use jsonnet_syntax::kind::SyntaxKind as SK;
 use std::fmt;
+use token::Triviable as _;
 
 /// Options for initialization.
 #[derive(Debug, Default)]
@@ -298,6 +299,9 @@ fn approximate_code_imports(contents: &str) -> Vec<String> {
   let mut next = false;
   let mut ret = Vec::<String>::new();
   for tok in jsonnet_lex::get(contents).tokens {
+    if tok.kind.is_trivia() {
+      continue;
+    }
     if tok.kind == SK::ImportKw {
       next = true;
       continue;

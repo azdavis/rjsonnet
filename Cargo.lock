@@ -380,6 +380,7 @@ dependencies = [
  "serde_json",
  "text-pos",
  "text-size",
+ "token",
 ]
 
 [[package]]
