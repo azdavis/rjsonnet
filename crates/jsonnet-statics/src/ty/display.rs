@@ -86,6 +86,7 @@ impl<'a> fmt::Display for TyDisplay<'a> {
         }
         Ok(())
       }
+      Data::StdFn(func) => write!(f, "<std.{func}>"),
       Data::Union(tys) => {
         // special case
         // TODO: make this better: e.g. `true | false | number` should show as `boolean | number`

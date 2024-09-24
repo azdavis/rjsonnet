@@ -38,6 +38,9 @@ pub(crate) enum Data {
   Object(Object),
   /// A function type, with some arguments and a return type.
   Fn(Fn),
+  /// A function from the standard library. These are treated specially.
+  #[expect(dead_code)]
+  StdFn(jsonnet_expr::StdFn),
   /// A union type.
   ///
   /// A value whose type is the empty union can never exist. This type is sometimes called "never"
@@ -50,7 +53,6 @@ pub(crate) enum Data {
 impl Data {
   fn apply(&mut self, subst: &Subst) {
     match self {
-      Data::Any | Data::True | Data::False | Data::Null | Data::String | Data::Number => {}
       Data::Array(ty) => ty.apply(subst),
       Data::Object(object) => object.apply(subst),
       Data::Fn(f) => f.apply(subst),
@@ -64,6 +66,13 @@ impl Data {
           })
           .collect();
       }
+      Data::Any
+      | Data::True
+      | Data::False
+      | Data::Null
+      | Data::String
+      | Data::Number
+      | Data::StdFn(_) => {}
     }
   }
 }
@@ -220,6 +229,7 @@ impl<'a> MutStore<'a> {
       Data::Null => Ty::NULL,
       Data::String => Ty::STRING,
       Data::Number => Ty::NUMBER,
+      Data::StdFn(f) => todo!("get std fn {f:?}"),
       Data::Array(_) | Data::Object(_) | Data::Fn(_) => self.get_inner(data),
       Data::Union(work) => {
         let mut work: Vec<_> = work.into_iter().collect();

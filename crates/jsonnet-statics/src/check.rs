@@ -333,8 +333,11 @@ fn is_comparable(st: &st::St<'_>, ty: ty::Ty) -> bool {
     ty::Data::Any | ty::Data::String | ty::Data::Number => true,
     ty::Data::Array(ty) => is_comparable(st, *ty),
     ty::Data::Union(tys) => tys.iter().any(|&ty| is_comparable(st, ty)),
-    ty::Data::True | ty::Data::False | ty::Data::Null | ty::Data::Object(_) | ty::Data::Fn(_) => {
-      false
-    }
+    ty::Data::True
+    | ty::Data::False
+    | ty::Data::Null
+    | ty::Data::Object(_)
+    | ty::Data::Fn(_)
+    | ty::Data::StdFn(_) => false,
   }
 }
