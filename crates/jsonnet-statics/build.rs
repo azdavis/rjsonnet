@@ -5,29 +5,26 @@ use quote::{format_ident as i, quote as q};
 
 fn main() {
   let things = [
-    (i!("ANY"), q!(super::Data::Any)),
-    (i!("TRUE"), q!(super::Data::True)),
-    (i!("FALSE"), q!(super::Data::False)),
-    (i!("NULL"), q!(super::Data::Null)),
-    (i!("STRING"), q!(super::Data::String)),
-    (i!("NUMBER"), q!(super::Data::Number)),
-    (i!("NEVER"), q!(super::Data::Union(BTreeSet::new()))),
-    (i!("BOOL"), q!(super::Data::Union(BTreeSet::from([super::Ty::TRUE, super::Ty::FALSE])))),
-    (i!("ARRAY_NUMBER"), q!(super::Data::Array(super::Ty::NUMBER))),
-    (i!("ARRAY_ANY"), q!(super::Data::Array(super::Ty::ANY))),
-    (
-      i!("ARRAY_OR_OBJECT"),
-      q!(super::Data::Union(BTreeSet::from([super::Ty::ARRAY_ANY, super::Ty::OBJECT]))),
-    ),
-    (i!("OBJECT"), q!(super::Data::Object(super::Object::unknown()))),
+    (i!("ANY"), q!(Data::Any)),
+    (i!("TRUE"), q!(Data::True)),
+    (i!("FALSE"), q!(Data::False)),
+    (i!("NULL"), q!(Data::Null)),
+    (i!("STRING"), q!(Data::String)),
+    (i!("NUMBER"), q!(Data::Number)),
+    (i!("NEVER"), q!(Data::Union(BTreeSet::new()))),
+    (i!("BOOL"), q!(Data::Union(BTreeSet::from([Ty::TRUE, Ty::FALSE])))),
+    (i!("ARRAY_NUMBER"), q!(Data::Array(Ty::NUMBER))),
+    (i!("ARRAY_ANY"), q!(Data::Array(Ty::ANY))),
+    (i!("ARRAY_OR_OBJECT"), q!(Data::Union(BTreeSet::from([Ty::ARRAY_ANY, Ty::OBJECT])))),
+    (i!("OBJECT"), q!(Data::Object(super::Object::unknown()))),
   ];
   let std_fn_types = jsonnet_std::FNS.iter().map(|&(S { name, .. }, _)| {
     let name = i!("{name}");
-    (name.clone(), q!(super::Data::StdFn(StdFn::#name)), false)
+    (name.clone(), q!(Data::StdFn(StdFn::#name)), false)
   });
   let std_fn_match_arms = jsonnet_std::FNS.iter().map(|&(S { name, .. }, _)| {
     let name = i!("{name}");
-    q! { StdFn::#name => super::Ty::#name, }
+    q! { StdFn::#name => Ty::#name, }
   });
   let things: Vec<_> = things.into_iter().map(|(a, b)| (a, b, true)).chain(std_fn_types).collect();
   let impl_ty_const = things.iter().enumerate().map(|(idx, (name, _, pub_crate))| {
@@ -43,16 +40,17 @@ fn main() {
     q! { #vis const #name: Self = Self(#idx); }
   });
   let ty_data = things.iter().map(|(_, td, _)| td);
-  let map_entries = things.iter().map(|(name, td, _)| q! { (#td, super::Ty::#name) });
+  let map_entries = things.iter().map(|(name, td, _)| q! { (#td, Ty::#name) });
   let file = file!();
   let all = q! {
     use std::collections::BTreeSet;
     use jsonnet_expr::StdFn;
+    use super::{Ty, Data};
 
     pub const _GENERATED_BY: &str = #file;
 
     #[expect(non_upper_case_globals)]
-    impl super::Ty {
+    impl Ty {
       #(#impl_ty_const)*
 
       #[expect(clippy::too_many_lines)]
