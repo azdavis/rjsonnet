@@ -8,6 +8,7 @@ use always::always;
 use jsonnet_eval::JsonnetFile;
 use jsonnet_syntax::ast::AstNode as _;
 use paths::{PathId, PathMap};
+use rayon::iter::{IntoParallelIterator as _, ParallelIterator as _};
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::hash_map::Entry;
 use std::sync::LazyLock;
@@ -42,16 +43,15 @@ impl WithFs {
     }
   }
 
-  /// useful for debugging, so let's keep it around.
-  #[allow(dead_code)]
   fn display_path_id(&self, p: PathId) -> impl std::fmt::Display + '_ {
     self.strip(self.artifacts.expr.paths.get_path(p).as_path()).display()
   }
 
   fn get_one_file<F>(&mut self, fs: &F, path_id: PathId) -> Result<IsolatedFile>
   where
-    F: paths::FileSystem,
+    F: Sync + paths::FileSystem,
   {
+    self.ensure_import_tys_cached(fs, path_id);
     let path = self.artifacts.expr.paths.get_path(path_id);
     let art =
       IsolatedArtifacts::from_fs(path, &self.root_dirs, &self.artifacts, &self.file_tys, fs);
@@ -76,7 +76,7 @@ impl WithFs {
     path_id: PathId,
   ) -> Result<&'fe JsonnetFile>
   where
-    F: paths::FileSystem,
+    F: Sync + paths::FileSystem,
   {
     match file_exprs.entry(path_id) {
       Entry::Occupied(entry) => Ok(&*entry.into_mut()),
@@ -94,7 +94,7 @@ impl WithFs {
     path_id: PathId,
   ) -> Result<&'fa FileArtifacts>
   where
-    F: paths::FileSystem,
+    F: Sync + paths::FileSystem,
   {
     match file_artifacts.entry(path_id) {
       Entry::Occupied(entry) => Ok(&*entry.into_mut()),
@@ -103,6 +103,139 @@ impl WithFs {
         Ok(&*entry.insert(file.artifacts))
       }
     }
+  }
+
+  #[allow(clippy::too_many_lines)]
+  fn ensure_import_tys_cached<F>(&mut self, fs: &F, path_id: PathId)
+  where
+    F: Sync + paths::FileSystem,
+  {
+    log::debug!("ensure_import_tys_cached {:?} {}", path_id, self.display_path_id(path_id));
+    self.file_tys.remove(&path_id);
+    let mut work = vec![Action::start(path_id)];
+    let mut cur = paths::PathSet::default();
+    let mut done = paths::PathSet::default();
+    // INVARIANT: level_idx = how many Ends are in work.
+    let mut level_idx = 0usize;
+    let mut levels = Vec::<paths::PathSet>::new();
+    while let Some(Action(path_id, kind)) = work.pop() {
+      log::debug!("{kind:?} {}", self.display_path_id(path_id));
+      match kind {
+        ActionKind::Start => {
+          if done.contains(&path_id) {
+            log::info!("already processed this run");
+            continue;
+          }
+          if self.file_tys.contains_key(&path_id) {
+            log::info!("already have the result cached");
+            // TODO: invalidate cache when files change on disk.
+            continue;
+          }
+          if !cur.insert(path_id) {
+            log::info!("cycle error");
+            continue;
+          }
+          work.push(Action::end(path_id));
+          level_idx += 1;
+          let path = self.artifacts.expr.paths.get_path(path_id);
+          let parent = util::path_parent_must(path);
+          let Ok(contents) = fs.read_to_string(path.as_path()) else { continue };
+          // need to make this `parent` owned...
+          let parent = parent.to_owned();
+          // ...and then shadow it with the borrowed form...
+          let parent = parent.as_clean_path();
+          let imports = util::approximate_code_imports(contents.as_str());
+          log::debug!("imports: {imports:?}");
+          for import in imports {
+            let import = std::path::Path::new(import.as_str());
+            // ...and re-make this `dirs` every time...
+            let dirs = jsonnet_resolve_import::NonEmptyDirs::new(parent, &self.root_dirs);
+            let import = jsonnet_resolve_import::get(import, dirs.iter(), &util::FsAdapter(fs));
+            let Some(import) = import else { continue };
+            log::debug!("new import: {import:?}");
+            // ...because we mutate `paths` here.
+            let import = self.artifacts.expr.paths.get_id_owned(import);
+            log::debug!("with import id: {import:?}");
+            // this mutation also makes it too annoying to write this for-push as a
+            // iter-filter-map-extend.
+            work.push(Action::start(import));
+          }
+        }
+        ActionKind::End => {
+          level_idx = match level_idx.checked_sub(1) {
+            None => {
+              always!(false, "End should have a matching Start");
+              continue;
+            }
+            Some(x) => x,
+          };
+          if level_idx >= levels.len() {
+            levels.resize_with(level_idx + 1, paths::PathSet::default);
+          }
+          let Some(level) = levels.get_mut(level_idx) else {
+            always!(false, "levels should have been resized to len at least level + 1");
+            continue;
+          };
+          level.insert(path_id);
+          always!(cur.remove(&path_id), "should only End when in cur");
+          always!(done.insert(path_id), "should not End if already done");
+        }
+      }
+    }
+    log::debug!("levels: {levels:?}");
+    always!(level_idx == 0);
+    always!(cur.is_empty());
+    if cfg!(debug_assertions) {
+      let all_levels: paths::PathSet = levels.iter().flatten().copied().collect();
+      assert_eq!(all_levels, done);
+      let all_levels_count: usize = levels.iter().map(paths::PathSet::len).sum();
+      assert_eq!(all_levels_count, done.len());
+    }
+    if let Some(fst) = levels.first_mut() {
+      // remove the original path id since we handle that specially, outside of this fn. e.g. we
+      // want ALL of its artifacts. this fn is just for caching the types.
+      always!(fst.remove(&path_id));
+    } else {
+      always!(false, "should have a first level");
+    }
+    drop(work);
+    drop(cur);
+    drop(done);
+    for level in levels {
+      let arts = level.into_par_iter().filter_map(|path_id| {
+        let path = self.artifacts.expr.paths.get_path(path_id);
+        let art =
+          IsolatedArtifacts::from_fs(path, &self.root_dirs, &self.artifacts, &self.file_tys, fs);
+        Some((path_id, art.ok()?))
+      });
+      let arts: Vec<_> = arts.collect();
+      let new_file_tys = arts.into_iter().filter_map(|(path_id, art)| {
+        let file = art.combine(&mut self.artifacts);
+        let top_expr = file.eval.top?;
+        let &top_ty = file.artifacts.expr_tys.get(&top_expr)?;
+        Some((path_id, top_ty))
+      });
+      self.file_tys.extend(new_file_tys);
+    }
+  }
+}
+
+#[derive(Debug)]
+enum ActionKind {
+  Start,
+  End,
+}
+
+#[derive(Debug)]
+struct Action(PathId, ActionKind);
+
+impl Action {
+  const fn start(p: PathId) -> Self {
+    Self(p, ActionKind::Start)
+  }
+
+  const fn end(p: PathId) -> Self {
+    Self(p, ActionKind::End)
   }
 }
 
@@ -178,7 +311,7 @@ impl St {
   /// When a path had an I/O error.
   pub fn get_all_deps<F>(&mut self, fs: &F, path_id: PathId) -> Result<()>
   where
-    F: paths::FileSystem,
+    F: Sync + paths::FileSystem,
   {
     let mut work = vec![(path_id, jsonnet_expr::ImportKind::Code)];
     let mut seen = FxHashSet::<(PathId, jsonnet_expr::ImportKind)>::default();
@@ -230,14 +363,14 @@ impl St {
 
   pub(crate) fn get_file_expr<F>(&mut self, fs: &F, path_id: PathId) -> Result<&JsonnetFile>
   where
-    F: paths::FileSystem,
+    F: Sync + paths::FileSystem,
   {
     self.with_fs.get_file_expr(&mut self.file_exprs, fs, path_id)
   }
 
   pub(crate) fn get_file_artifacts<F>(&mut self, fs: &F, path_id: PathId) -> Result<&FileArtifacts>
   where
-    F: paths::FileSystem,
+    F: Sync + paths::FileSystem,
   {
     self.with_fs.get_file_artifacts(&mut self.file_artifacts, fs, path_id)
   }
@@ -319,6 +452,7 @@ impl lang_srv_state::State for St {
     let path_id = self.path_id(path.clone());
     let Some(contents) = self.open_files.get_mut(&path_id) else { return (path_id, Vec::new()) };
     apply_changes::get(contents, changes);
+    self.with_fs.ensure_import_tys_cached(fs, path_id);
     let art = IsolatedArtifacts::from_str(
       path.as_clean_path(),
       contents,

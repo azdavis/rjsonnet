@@ -52,7 +52,7 @@ impl FileErrors {
 }
 
 /// An adaptor between file system traits.
-struct FsAdapter<'a, F>(&'a F);
+pub(crate) struct FsAdapter<'a, F>(pub(crate) &'a F);
 
 impl<'a, F> jsonnet_resolve_import::FileSystem for FsAdapter<'a, F>
 where
@@ -294,8 +294,7 @@ fn expr_def_range(
   }
 }
 
-#[expect(dead_code)]
-fn approximate_code_imports(contents: &str) -> Vec<String> {
+pub(crate) fn approximate_code_imports(contents: &str) -> Vec<String> {
   let mut next = false;
   let mut ret = Vec::<String>::new();
   for tok in jsonnet_lex::get(contents).tokens {

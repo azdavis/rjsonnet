@@ -30,7 +30,7 @@ impl From<Real> for ConstEval {
 /// Get some approximate info about this expr, notably, where it approximately was defined.
 pub(crate) fn get<F>(st: &mut St, fs: &F, path_id: PathId, expr: Expr) -> Option<ConstEval>
 where
-  F: paths::FileSystem,
+  F: Sync + paths::FileSystem,
 {
   let expr = expr?;
   let arts = st.get_file_artifacts(fs, path_id).ok()?;
@@ -66,7 +66,7 @@ where
 
 fn from_def<F>(st: &mut St, fs: &F, path_id: PathId, def: Def) -> Option<ConstEval>
 where
-  F: paths::FileSystem,
+  F: Sync + paths::FileSystem,
 {
   match def {
     Def::Expr(expr, kind) => {
@@ -88,7 +88,7 @@ where
 
 fn from_local<F>(st: &mut St, fs: &F, path_id: PathId, expr: Expr, idx: usize) -> Option<ConstEval>
 where
-  F: paths::FileSystem,
+  F: Sync + paths::FileSystem,
 {
   let expr = expr?;
   let file = st.get_file_expr(fs, path_id).ok()?;
@@ -99,7 +99,7 @@ where
 
 fn from_subscript<F>(st: &mut St, fs: &F, path_id: PathId, on: Expr, idx: Expr) -> Option<ConstEval>
 where
-  F: paths::FileSystem,
+  F: Sync + paths::FileSystem,
 {
   let ConstEval::Real(idx) = get(st, fs, path_id, idx)? else { return None };
   if idx.kind.is_some() {
