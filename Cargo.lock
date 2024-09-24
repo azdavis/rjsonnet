@@ -516,6 +516,7 @@ dependencies = [
  "diagnostic",
  "drop_bomb",
  "jsonnet-expr",
+ "log",
  "paths",
  "proc-macro2",
  "quote",
