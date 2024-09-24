@@ -78,6 +78,7 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
       let on_ty = get(st, ar, *on);
       let idx_ty = get(st, ar, *idx);
       let idx_expr = idx.unwrap_or(expr);
+      // TODO handle unions
       match st.data(on_ty).clone() {
         ty::Data::Array(elem_ty) => {
           st.unify(idx_expr, ty::Ty::NUMBER, idx_ty);
@@ -134,6 +135,7 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
           }
         }
       }
+      // TODO handle unions
       match st.data(func_ty).clone() {
         ty::Data::Fn(fn_data) => {
           let positional_iter = fn_data.params.iter().zip(positional_tys).zip(positional.iter());
