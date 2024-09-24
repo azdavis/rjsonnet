@@ -17,6 +17,7 @@ fn main() {
     (i!("ARRAY_ANY"), q!(Data::Array(Ty::ANY))),
     (i!("ARRAY_OR_OBJECT"), q!(Data::Union(BTreeSet::from([Ty::ARRAY_ANY, Ty::OBJECT])))),
     (i!("OBJECT"), q!(Data::Object(super::Object::unknown()))),
+    (i!("STD"), q!(Data::Object(super::Object::std()))),
   ];
   let std_fn_types = jsonnet_std::FNS.iter().map(|&(S { name, .. }, _)| {
     let name = i!("{name}");
@@ -25,6 +26,10 @@ fn main() {
   let std_fn_match_arms = jsonnet_std::FNS.iter().map(|&(S { name, .. }, _)| {
     let name = i!("{name}");
     q! { StdFn::#name => Ty::#name, }
+  });
+  let std_map_entries = jsonnet_std::FNS.iter().map(|&(S { name, .. }, _)| {
+    let name = i!("{name}");
+    q! { (Str::#name, Ty::#name) }
   });
   let things: Vec<_> = things.into_iter().map(|(a, b)| (a, b, true)).chain(std_fn_types).collect();
   let impl_ty_const = things.iter().enumerate().map(|(idx, (name, _, pub_crate))| {
@@ -43,8 +48,8 @@ fn main() {
   let map_entries = things.iter().map(|(name, td, _)| q! { (#td, Ty::#name) });
   let file = file!();
   let all = q! {
-    use std::collections::BTreeSet;
-    use jsonnet_expr::StdFn;
+    use std::collections::{BTreeMap, BTreeSet};
+    use jsonnet_expr::{StdFn, Str};
     use super::{Ty, Data};
 
     pub const _GENERATED_BY: &str = #file;
@@ -57,6 +62,16 @@ fn main() {
       pub(crate) fn std_fn(f: StdFn) -> Self {
         match f {
           #(#std_fn_match_arms)*
+        }
+      }
+    }
+
+    impl super::Object {
+      #[expect(clippy::too_many_lines)]
+      fn std() -> Self {
+        Self {
+          known: BTreeMap::from([(Str::thisFile, Ty::STRING), #(#std_map_entries,)*]),
+          has_unknown: false,
         }
       }
     }
