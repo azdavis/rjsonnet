@@ -134,31 +134,35 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
           }
         }
       }
-      if let ty::Data::Fn(fn_data) = st.data(func_ty).clone() {
-        let positional_iter = fn_data.params.iter().zip(positional_tys).zip(positional.iter());
-        for ((param, ty), arg) in positional_iter {
-          st.unify(arg.unwrap_or(expr), param.ty, ty);
-        }
-        for param in fn_data.params.iter().skip(positional.len()) {
-          match named_tys.remove(&param.id) {
-            Some((arg, ty)) => st.unify(arg.unwrap_or(expr), param.ty, ty),
-            None => {
-              if param.required {
-                st.err(func.unwrap_or(expr), error::Kind::MissingArgument(param.id, param.ty));
+      match st.data(func_ty).clone() {
+        ty::Data::Fn(fn_data) => {
+          let positional_iter = fn_data.params.iter().zip(positional_tys).zip(positional.iter());
+          for ((param, ty), arg) in positional_iter {
+            st.unify(arg.unwrap_or(expr), param.ty, ty);
+          }
+          for param in fn_data.params.iter().skip(positional.len()) {
+            match named_tys.remove(&param.id) {
+              Some((arg, ty)) => st.unify(arg.unwrap_or(expr), param.ty, ty),
+              None => {
+                if param.required {
+                  st.err(func.unwrap_or(expr), error::Kind::MissingArgument(param.id, param.ty));
+                }
               }
             }
           }
+          for (idx, arg) in positional.iter().enumerate().skip(fn_data.params.len()) {
+            st.err(arg.unwrap_or(expr), error::Kind::ExtraPositionalArgument(idx + 1));
+          }
+          for (id, (arg, _)) in named_tys {
+            st.err(arg.unwrap_or(expr), error::Kind::ExtraNamedArgument(id));
+          }
+          fn_data.ret
         }
-        for (idx, arg) in positional.iter().enumerate().skip(fn_data.params.len()) {
-          st.err(arg.unwrap_or(expr), error::Kind::ExtraPositionalArgument(idx + 1));
+        ty::Data::StdFn(_) | ty::Data::Any => ty::Ty::ANY,
+        _ => {
+          st.err(expr, error::Kind::CallNonFn(func_ty));
+          ty::Ty::ANY
         }
-        for (id, (arg, _)) in named_tys {
-          st.err(arg.unwrap_or(expr), error::Kind::ExtraNamedArgument(id));
-        }
-        fn_data.ret
-      } else {
-        // TODO: construct an inferred type from the arguments and unify?
-        ty::Ty::ANY
       }
     }
     ExprData::Id(id) => {

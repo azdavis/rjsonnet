@@ -50,7 +50,8 @@ impl Error {
       | Kind::MissingArgument(_, _)
       | Kind::ExtraPositionalArgument(_)
       | Kind::ExtraNamedArgument(_)
-      | Kind::InvalidPlus(_, _) => diagnostic::Severity::Warning,
+      | Kind::InvalidPlus(_, _)
+      | Kind::CallNonFn(_) => diagnostic::Severity::Warning,
     }
   }
 
@@ -60,7 +61,7 @@ impl Error {
   /// syntax artifacts.
   pub fn apply(&mut self, ty_subst: &ty::Subst) {
     match &mut self.kind {
-      Kind::MissingArgument(_, ty) | Kind::Incomparable(ty) => {
+      Kind::MissingArgument(_, ty) | Kind::Incomparable(ty) | Kind::CallNonFn(ty) => {
         ty.apply(ty_subst);
       }
       Kind::Incompatible(a, b) | Kind::InvalidPlus(a, b) => {
@@ -104,6 +105,7 @@ pub(crate) enum Kind {
   ExtraPositionalArgument(usize),
   ExtraNamedArgument(Id),
   InvalidPlus(ty::Ty, ty::Ty),
+  CallNonFn(ty::Ty),
 }
 
 struct Display<'a> {
@@ -173,6 +175,10 @@ impl fmt::Display for Display<'_> {
         f.write_str("invalid `+`\n")?;
         writeln!(f, "  left:  `{lhs}`")?;
         write!(f, "  right: `{rhs}`")
+      }
+      Kind::CallNonFn(got) => {
+        let got = got.display(self.store, self.str_ar);
+        write!(f, "expected a function type, found `{got}`")
       }
     }
   }
