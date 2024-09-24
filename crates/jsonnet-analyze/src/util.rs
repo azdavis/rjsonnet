@@ -152,14 +152,14 @@ impl IsolatedArtifacts {
     let mut ret = self.file;
     let expr_subst = jsonnet_expr::Subst::get(&mut artifacts.expr, self.expr);
     let ty_subst = jsonnet_statics::ty::Subst::get(&mut artifacts.tys, self.tys);
-    for err in &mut ret.errors.statics {
-      err.apply(&expr_subst, &ty_subst);
-    }
     for (_, ed) in ret.eval.expr_ar.iter_mut() {
       ed.apply(&expr_subst);
     }
     for def in ret.artifacts.defs.values_mut() {
       def.apply(&expr_subst);
+    }
+    for err in &mut ret.errors.statics {
+      err.apply(&expr_subst, &ty_subst);
     }
     for ty in ret.artifacts.expr_tys.values_mut() {
       ty.apply(&ty_subst);
