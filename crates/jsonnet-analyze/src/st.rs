@@ -327,14 +327,6 @@ impl lang_srv_state::State for St {
       &self.with_fs.file_tys,
       fs,
     );
-    let art = match art {
-      Ok(x) => x,
-      Err(e) => {
-        // TODO expose a PathIoError?
-        always!(false, "{}: i/o error: {}", self.with_fs.strip(path.as_path()).display(), e);
-        return (path_id, Vec::new());
-      }
-    };
     let file = art.combine(&mut self.with_fs.artifacts);
     let root = file.artifacts.syntax.clone();
     let syntax = root.syntax();

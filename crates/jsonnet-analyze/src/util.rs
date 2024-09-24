@@ -127,7 +127,7 @@ impl IsolatedArtifacts {
     F: paths::FileSystem,
   {
     let contents = fs.read_to_string(path.as_path())?;
-    Self::from_str(path, contents.as_str(), root_dirs, artifacts, file_tys, fs)
+    Ok(Self::from_str(path, contents.as_str(), root_dirs, artifacts, file_tys, fs))
   }
 
   pub(crate) fn from_str<F>(
@@ -137,15 +137,13 @@ impl IsolatedArtifacts {
     artifacts: &GlobalArtifacts,
     file_tys: &paths::PathMap<jsonnet_statics::ty::Ty>,
     fs: &F,
-  ) -> std::io::Result<Self>
+  ) -> Self
   where
     F: paths::FileSystem,
   {
-    let Some(parent) = path.parent() else {
-      return Err(std::io::Error::other("path has no parent"));
-    };
+    let parent = path_parent_must(path);
     let dirs = jsonnet_resolve_import::NonEmptyDirs::new(parent, root_dirs);
-    Ok(Self::new(contents, dirs, artifacts, file_tys, &FsAdapter(fs)))
+    Self::new(contents, dirs, artifacts, file_tys, &FsAdapter(fs))
   }
 
   pub(crate) fn combine(self, artifacts: &mut GlobalArtifacts) -> IsolatedFile {
@@ -318,4 +316,14 @@ fn approximate_code_imports(contents: &str) -> Vec<String> {
     ret.push(s);
   }
   ret
+}
+
+pub(crate) fn path_parent_must(path: &paths::CleanPath) -> &paths::CleanPath {
+  if let Some(x) = path.parent() {
+    x
+  } else {
+    let p = path.as_path().display();
+    always!(false, "no parent for {p}");
+    path
+  }
 }
