@@ -158,6 +158,10 @@ fn main() {
       let name = format_ident!("{name}");
       quote! { (Str::#name, Self::#name) }
     });
+    let as_static_str_arms = jsonnet_std::FNS.iter().map(|&(S { name, content }, _)| {
+      let name = format_ident!("{name}");
+      quote! { Self::#name => #content, }
+    });
     let unique_params_lens = {
       let mut tmp = BTreeMap::<usize, BTreeSet<&str>>::new();
       for &(S { name, .. }, params) in &jsonnet_std::FNS {
@@ -178,7 +182,7 @@ fn main() {
     let get_args =
       jsonnet_std::FNS.iter().map(|&(S { name, .. }, params)| mk_get_args(name, params));
     quote! {
-      #[derive(Debug, Clone, Copy)]
+      #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
       #[expect(non_camel_case_types)]
       pub enum StdFn {
         #(#variants,)*
@@ -194,6 +198,15 @@ fn main() {
         pub fn params_len(&self) -> usize {
           match self {
             #(#params_len_arms)*
+          }
+        }
+
+        #[doc = "Returns a static str for this."]
+        #[expect(clippy::too_many_lines)]
+        #[must_use]
+        pub const fn as_static_str(self) -> &'static str {
+          match self {
+            #(#as_static_str_arms)*
           }
         }
       }

@@ -231,3 +231,9 @@ impl fmt::Display for DisplayCopyStrRepr<'_> {
     }
   }
 }
+
+impl fmt::Display for crate::StdFn {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    f.write_str(self.as_static_str())
+  }
+}
