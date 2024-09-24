@@ -90,21 +90,27 @@ pub(crate) fn get(st: &mut st::St<'_>, ars: &Arenas, expr: Expr) -> ty::Ty {
             _ => None,
           });
           match idx {
-            Some(s) => match obj.known.get(s) {
-              Some(&ty) => ty,
-              None => {
-                if obj.has_unknown {
+            // we do know what field we're asking for.
+            Some(s) => {
+              if let Some(&ty) = obj.known.get(s) {
+                // we know the type of that field.
+                ty
+              } else {
+                // we don't know the type.
+                if !obj.has_unknown {
+                  // this would result in a eval-time error if evaluated. warn statically.
                   st.err(idx_expr, error::Kind::MissingField(s.clone()));
-                  ty::Ty::ANY
-                } else {
-                  st.get_ty(ty::Data::Union(obj.known.values().copied().collect()))
                 }
+                ty::Ty::ANY
               }
-            },
+            }
+            // we don't know what field we're asking for.
             None => {
               if obj.has_unknown {
+                // all bets are off.
                 ty::Ty::ANY
               } else {
+                // we know it has to be one of the known fields, but we don't know which one.
                 st.get_ty(ty::Data::Union(obj.known.values().copied().collect()))
               }
             }
