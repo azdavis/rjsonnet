@@ -88,8 +88,9 @@ impl<'a> fmt::Display for TyDisplay<'a> {
       }
       Data::Union(tys) => {
         // special case
+        // TODO: make this better: e.g. `true | false | number` should show as `boolean | number`
         if self.ty == Ty::BOOL {
-          return f.write_str("bool");
+          return f.write_str("boolean");
         }
         let mut iter = tys.iter().map(|&ty| self.with(ty, Prec::Union));
         let Some(ty) = iter.next() else { return f.write_str("never") };
