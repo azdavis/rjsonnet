@@ -3,7 +3,7 @@
 use crate::{error, st, ty};
 use always::always;
 use jsonnet_expr::def::{self, Def};
-use jsonnet_expr::{Expr, ExprArena, ExprData, ExprMust, Id, Prim};
+use jsonnet_expr::{BinaryOp, Expr, ExprArena, ExprData, ExprMust, Id, Prim, UnaryOp};
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::BTreeSet;
 
@@ -191,7 +191,7 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
       let lhs_ty = get(st, ar, *lhs);
       let rhs_ty = get(st, ar, *rhs);
       match op {
-        jsonnet_expr::BinaryOp::Add => {
+        BinaryOp::Add => {
           match (st.data(lhs_ty), st.data(rhs_ty)) {
             (ty::Data::Prim(ty::Prim::Any), _) | (_, ty::Data::Prim(ty::Prim::Any)) => ty::Ty::ANY,
             // add numbers.
@@ -225,23 +225,20 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
             }
           }
         }
-        jsonnet_expr::BinaryOp::Mul
-        | jsonnet_expr::BinaryOp::Div
-        | jsonnet_expr::BinaryOp::Sub
-        | jsonnet_expr::BinaryOp::Shl
-        | jsonnet_expr::BinaryOp::Shr
-        | jsonnet_expr::BinaryOp::BitXor
-        | jsonnet_expr::BinaryOp::BitOr
-        | jsonnet_expr::BinaryOp::BitAnd => {
+        BinaryOp::Mul
+        | BinaryOp::Div
+        | BinaryOp::Sub
+        | BinaryOp::Shl
+        | BinaryOp::Shr
+        | BinaryOp::BitXor
+        | BinaryOp::BitOr
+        | BinaryOp::BitAnd => {
           st.unify(lhs.unwrap_or(expr), ty::Ty::NUMBER, lhs_ty);
           st.unify(rhs.unwrap_or(expr), ty::Ty::NUMBER, rhs_ty);
           ty::Ty::NUMBER
         }
-        jsonnet_expr::BinaryOp::Eq => ty::Ty::BOOL,
-        jsonnet_expr::BinaryOp::Lt
-        | jsonnet_expr::BinaryOp::LtEq
-        | jsonnet_expr::BinaryOp::Gt
-        | jsonnet_expr::BinaryOp::GtEq => {
+        BinaryOp::Eq => ty::Ty::BOOL,
+        BinaryOp::Lt | BinaryOp::LtEq | BinaryOp::Gt | BinaryOp::GtEq => {
           // TODO something about how the lhs_ty and rhs_ty need to be "similar" somehow (both
           // numbers or both strings, etc)
           if !is_orderable(st, lhs_ty) {
@@ -258,10 +255,8 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
       let inner_ty = get(st, ar, *inner);
       let e = inner.unwrap_or(expr);
       let want = match op {
-        jsonnet_expr::UnaryOp::Neg | jsonnet_expr::UnaryOp::Pos | jsonnet_expr::UnaryOp::BitNot => {
-          ty::Ty::NUMBER
-        }
-        jsonnet_expr::UnaryOp::LogicalNot => ty::Ty::BOOL,
+        UnaryOp::Neg | UnaryOp::Pos | UnaryOp::BitNot => ty::Ty::NUMBER,
+        UnaryOp::LogicalNot => ty::Ty::BOOL,
       };
       st.unify(e, want, inner_ty);
       want
