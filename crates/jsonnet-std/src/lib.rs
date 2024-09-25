@@ -1,7 +1,7 @@
 //! The names and parameter names of the std lib fns.
 
 /// A name-content string pair.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct S {
   /// The name. If None, the content is the name.
   name: Option<&'static str>,
@@ -13,6 +13,8 @@ impl S {
   /// Make a new k-v pair (actually the param order is v first then k).
   #[must_use]
   pub const fn named(content: &'static str, name: &'static str) -> S {
+    // NOTE: would like to check content != name, but not available in const context at time of
+    // writing.
     S { name: Some(name), content }
   }
 
@@ -39,7 +41,7 @@ impl S {
 }
 
 /// A standard library function.
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Fn {
   /// The name.
   pub name: S,
@@ -62,7 +64,7 @@ impl Fn {
 }
 
 /// A signature for a std fn.
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Sig {
   /// A regular signature, expressible in a simple type system. It has parameters and a return type.
   Regular(&'static [Param], Ty),
@@ -71,7 +73,7 @@ pub enum Sig {
 }
 
 /// A function parameter.
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Param {
   /// Its name.
   pub name: &'static str,
@@ -88,7 +90,7 @@ impl Param {
 }
 
 /// A simple type.
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Ty {
   /// Anything at all.
   Any,
