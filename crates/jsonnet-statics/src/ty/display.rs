@@ -1,6 +1,6 @@
 //! Display types.
 
-use super::{Data, Fn, GlobalStore, Param, Store, Ty};
+use super::{Data, Fn, GlobalStore, Param, Prim, Store, Ty};
 use always::always;
 use jsonnet_expr::StrArena;
 use std::fmt;
@@ -61,12 +61,14 @@ impl<'a> fmt::Display for TyDisplay<'a> {
       return f.write_str("_");
     };
     match data {
-      Data::Any => f.write_str("any"),
-      Data::True => f.write_str("true"),
-      Data::False => f.write_str("false"),
-      Data::Null => f.write_str("null"),
-      Data::String => f.write_str("string"),
-      Data::Number => f.write_str("number"),
+      Data::Prim(prim) => match prim {
+        Prim::Any => f.write_str("any"),
+        Prim::True => f.write_str("true"),
+        Prim::False => f.write_str("false"),
+        Prim::Null => f.write_str("null"),
+        Prim::String => f.write_str("string"),
+        Prim::Number => f.write_str("number"),
+      },
       Data::Array(ty) => {
         self.with(*ty, Prec::Array).fmt(f)?;
         f.write_str("[]")

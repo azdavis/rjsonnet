@@ -193,14 +193,13 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
       match op {
         jsonnet_expr::BinaryOp::Add => {
           match (st.data(lhs_ty), st.data(rhs_ty)) {
-            // TODO: check unions better
-            (ty::Data::Any | ty::Data::Union(_), _) | (_, ty::Data::Any | ty::Data::Union(_)) => {
-              ty::Ty::ANY
-            }
+            (ty::Data::Prim(ty::Prim::Any), _) | (_, ty::Data::Prim(ty::Prim::Any)) => ty::Ty::ANY,
             // add numbers.
-            (ty::Data::Number, ty::Data::Number) => ty::Ty::NUMBER,
+            (ty::Data::Prim(ty::Prim::Number), ty::Data::Prim(ty::Prim::Number)) => ty::Ty::NUMBER,
             // if any operand is string, coerce the other to string.
-            (ty::Data::String, _) | (_, ty::Data::String) => ty::Ty::STRING,
+            (ty::Data::Prim(ty::Prim::String), _) | (_, ty::Data::Prim(ty::Prim::String)) => {
+              ty::Ty::STRING
+            }
             // concat arrays.
             (ty::Data::Array(lhs_elem), ty::Data::Array(rhs_elem)) => {
               let elem = st.get_ty(ty::Data::Union(BTreeSet::from([*lhs_elem, *rhs_elem])));
@@ -215,6 +214,10 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
               // this has unknown if either has unknown.
               obj.has_unknown = obj.has_unknown || rhs_obj.has_unknown;
               st.get_ty(ty::Data::Object(obj))
+            }
+            (ty::Data::Union(_), _) | (_, ty::Data::Union(_)) => {
+              log::warn!("TODO: check unions for +");
+              ty::Ty::ANY
             }
             _ => {
               st.err(expr, error::Kind::InvalidPlus(lhs_ty, rhs_ty));
@@ -317,7 +320,7 @@ fn get_call(
       }
       fn_data.ret
     }
-    ty::Data::Any => ty::Ty::ANY,
+    ty::Data::Prim(ty::Prim::Any) => ty::Ty::ANY,
     ty::Data::Fn(ty::Fn::Std(func)) => {
       log::warn!("TODO: get std call {func}");
       ty::Ty::ANY
@@ -326,13 +329,7 @@ fn get_call(
       log::warn!("TODO: get union call");
       ty::Ty::ANY
     }
-    ty::Data::True
-    | ty::Data::False
-    | ty::Data::Null
-    | ty::Data::String
-    | ty::Data::Number
-    | ty::Data::Array(_)
-    | ty::Data::Object(_) => {
+    ty::Data::Prim(_) | ty::Data::Array(_) | ty::Data::Object(_) => {
       st.err(expr, error::Kind::CallNonFn(func_ty));
       ty::Ty::ANY
     }
@@ -362,11 +359,11 @@ fn define_binds(
 
 fn is_orderable(st: &st::St<'_>, ty: ty::Ty) -> bool {
   match st.data(ty) {
-    ty::Data::Any | ty::Data::String | ty::Data::Number => true,
+    ty::Data::Prim(ty::Prim::Any | ty::Prim::Number | ty::Prim::String) => true,
+    ty::Data::Prim(ty::Prim::True | ty::Prim::False | ty::Prim::Null)
+    | ty::Data::Object(_)
+    | ty::Data::Fn(_) => false,
     ty::Data::Array(ty) => is_orderable(st, *ty),
     ty::Data::Union(tys) => tys.iter().all(|&ty| is_orderable(st, ty)),
-    ty::Data::True | ty::Data::False | ty::Data::Null | ty::Data::Object(_) | ty::Data::Fn(_) => {
-      false
-    }
   }
 }

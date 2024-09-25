@@ -17,22 +17,8 @@ pub type Exprs = FxHashMap<ExprMust, Ty>;
 /// Data about a type.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub(crate) enum Data {
-  /// Anything at all.
-  ///
-  /// This is like `any` in TypeScript and `T.untyped` in Sorbet (Ruby type-checker). It is BOTH a
-  /// "top type" and a "bottom type". That is, anything can be coerced to it, and it can be coerced
-  /// to anything. In that sense, it is the ultimate escape-hatch type.
-  Any,
-  /// The type of `true`.
-  True,
-  /// The type of `false`.
-  False,
-  /// The type of `null`.
-  Null,
-  /// A string.
-  String,
-  /// A number.
-  Number,
+  /// A primitive type.
+  Prim(Prim),
   /// An array of elements, where each element has the given type.
   Array(Ty),
   /// An object, possibly with known and unknown fields.
@@ -64,9 +50,30 @@ impl Data {
           })
           .collect();
       }
-      Data::Any | Data::True | Data::False | Data::Null | Data::String | Data::Number => {}
+      Data::Prim(_) => {}
     }
   }
+}
+
+/// A primitive type, containing no recursive data inside.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub(crate) enum Prim {
+  /// Anything at all.
+  ///
+  /// This is like `any` in TypeScript and `T.untyped` in Sorbet (Ruby type-checker). It is BOTH a
+  /// "top type" and a "bottom type". That is, anything can be coerced to it, and it can be coerced
+  /// to anything. In that sense, it is the ultimate escape-hatch type.
+  Any,
+  /// The type of `true`.
+  True,
+  /// The type of `false`.
+  False,
+  /// The type of `null`.
+  Null,
+  /// A string.
+  String,
+  /// A number.
+  Number,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -207,7 +214,7 @@ impl Store {
     match self.idx_to_data.get(idx) {
       None => {
         always!(false, "no ty data for {ty:?}");
-        Some(&Data::Any)
+        Some(&Data::Prim(Prim::Any))
       }
       x => x,
     }
@@ -228,24 +235,26 @@ impl<'a> MutStore<'a> {
 
   pub(crate) fn get(&mut self, data: Data) -> Ty {
     match data {
-      Data::Any => Ty::ANY,
-      Data::True => Ty::TRUE,
-      Data::False => Ty::FALSE,
-      Data::Null => Ty::NULL,
-      Data::String => Ty::STRING,
-      Data::Number => Ty::NUMBER,
-      Data::Fn(ref f) => match f {
-        Fn::Regular(_) => self.get_inner(data),
-        // micro optimization (maybe). deferring to get_inner would also be correct
-        Fn::Std(f) => Ty::std_fn(*f),
+      // micro optimization (maybe). deferring to get_inner would also be correct
+      Data::Prim(prim) => match prim {
+        Prim::Any => Ty::ANY,
+        Prim::True => Ty::TRUE,
+        Prim::False => Ty::FALSE,
+        Prim::Null => Ty::NULL,
+        Prim::String => Ty::STRING,
+        Prim::Number => Ty::NUMBER,
       },
-      Data::Array(_) | Data::Object(_) => self.get_inner(data),
+      // another one.
+      Data::Fn(Fn::Std(f)) => Ty::std_fn(f),
+      // go directly to get inner.
+      Data::Array(_) | Data::Object(_) | Data::Fn(Fn::Regular(_)) => self.get_inner(data),
+      // the interesting case.
       Data::Union(work) => {
         let mut work: Vec<_> = work.into_iter().collect();
         let mut parts = BTreeSet::<Ty>::new();
         while let Some(ty) = work.pop() {
           match self.global.0.data(ty, false) {
-            Some(Data::Any) => return Ty::ANY,
+            Some(Data::Prim(Prim::Any)) => return Ty::ANY,
             Some(Data::Union(parts)) => work.extend(parts),
             None | Some(_) => {
               // don't need special handling for the None case
@@ -292,7 +301,7 @@ impl<'a> MutStore<'a> {
     match store.idx_to_data.get(idx) {
       None => {
         always!(false, "should be able to get data");
-        &Data::Any
+        &Data::Prim(Prim::Any)
       }
       Some(x) => x,
     }

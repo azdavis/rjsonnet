@@ -5,12 +5,12 @@ use quote::{format_ident as i, quote as q};
 
 fn main() {
   let things = [
-    (i!("ANY"), q!(Data::Any)),
-    (i!("TRUE"), q!(Data::True)),
-    (i!("FALSE"), q!(Data::False)),
-    (i!("NULL"), q!(Data::Null)),
-    (i!("STRING"), q!(Data::String)),
-    (i!("NUMBER"), q!(Data::Number)),
+    (i!("ANY"), q!(Data::Prim(super::Prim::Any))),
+    (i!("TRUE"), q!(Data::Prim(super::Prim::True))),
+    (i!("FALSE"), q!(Data::Prim(super::Prim::False))),
+    (i!("NULL"), q!(Data::Prim(super::Prim::Null))),
+    (i!("STRING"), q!(Data::Prim(super::Prim::String))),
+    (i!("NUMBER"), q!(Data::Prim(super::Prim::Number))),
     (i!("NEVER"), q!(Data::Union(BTreeSet::new()))),
     (i!("BOOL"), q!(Data::Union(BTreeSet::from([Ty::TRUE, Ty::FALSE])))),
     (i!("ARRAY_NUMBER"), q!(Data::Array(Ty::NUMBER))),

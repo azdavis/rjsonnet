@@ -35,13 +35,12 @@ struct Marker {
 /// than `want`. aka, got should be a subtype of want, i suppose.
 pub(crate) fn get(st: &mut St<'_>, store: &ty::MutStore<'_>, want: ty::Ty, got: ty::Ty) {
   match (store.data(want), store.data(got)) {
-    (ty::Data::Any, _)
-    | (_, ty::Data::Any)
-    | (ty::Data::True, ty::Data::True)
-    | (ty::Data::False, ty::Data::False)
-    | (ty::Data::Null, ty::Data::Null)
-    | (ty::Data::String, ty::Data::String)
-    | (ty::Data::Number, ty::Data::Number) => {}
+    (ty::Data::Prim(ty::Prim::Any), _) | (_, ty::Data::Prim(ty::Prim::Any)) => {}
+    (ty::Data::Prim(w), ty::Data::Prim(g)) => {
+      if w != g {
+        st.err(error::Kind::Incompatible(want, got));
+      }
+    }
     (ty::Data::Array(want), ty::Data::Array(got)) => get(st, store, *want, *got),
     (ty::Data::Object(want), ty::Data::Object(got)) => {
       for (name, w) in &want.known {
