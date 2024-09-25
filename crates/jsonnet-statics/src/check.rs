@@ -320,7 +320,6 @@ fn get_call(
       }
       fn_data.ret
     }
-    ty::Data::Prim(ty::Prim::Any) => ty::Ty::ANY,
     ty::Data::Fn(ty::Fn::Std(func)) => {
       log::warn!("TODO: get std call {func}");
       ty::Ty::ANY
@@ -329,6 +328,7 @@ fn get_call(
       log::warn!("TODO: get union call");
       ty::Ty::ANY
     }
+    ty::Data::Prim(ty::Prim::Any) => ty::Ty::ANY,
     ty::Data::Prim(_) | ty::Data::Array(_) | ty::Data::Object(_) => {
       st.err(expr, error::Kind::CallNonFn(func_ty));
       ty::Ty::ANY
