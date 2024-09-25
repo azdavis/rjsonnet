@@ -3,16 +3,12 @@
 use crate::util::{GlobalArtifacts, PathIoError, Result};
 use crate::{const_eval, util};
 use always::always;
+use jsonnet_expr::StdField;
 use jsonnet_syntax::ast::AstNode as _;
 use paths::{PathId, PathMap};
 use rayon::iter::{IntoParallelIterator as _, ParallelIterator as _};
-use rustc_hash::{FxHashMap, FxHashSet};
+use rustc_hash::FxHashSet;
 use std::collections::hash_map::Entry;
-use std::sync::LazyLock;
-
-static STD_LIB_DOC: LazyLock<FxHashMap<&str, String>> = LazyLock::new(|| {
-  code_h2_md_map::get(include_str!("../../../docs/std_lib.md"), |x| format!("std item: `{x}`"))
-});
 
 /// The part of the state that vaguely has to do with the filesystem.
 ///
@@ -549,9 +545,7 @@ impl lang_srv_state::State for St {
     });
     // TODO expose any errors here?
     let from_std_field = match const_eval::get(self, fs, path_id, expr) {
-      Some(const_eval::ConstEval::Std(Some(x))) => {
-        STD_LIB_DOC.get(self.with_fs.artifacts.syntax.strings.get(&x)).map(String::as_str)
-      }
+      Some(const_eval::ConstEval::Std(Some(x))) => StdField::try_from(&x).ok().map(|x| x.doc()),
       Some(const_eval::ConstEval::Std(None)) => Some("std: The standard library."),
       None | Some(const_eval::ConstEval::Real(_)) => None,
     };

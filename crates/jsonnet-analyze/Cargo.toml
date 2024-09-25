@@ -14,7 +14,6 @@ doctest = false
 
 [dependencies]
 apply-changes.workspace = true
-code-h2-md-map.workspace = true
 env_logger.workspace = true
 log.workspace = true
 paths.workspace = true

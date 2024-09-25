@@ -21,6 +21,7 @@ always.path = "../always"
 finite-float.path = "../finite-float"
 
 [build-dependencies]
+code-h2-md-map.workspace = true
 proc-macro2.workspace = true
 quote.workspace = true
 write-rs-tokens.workspace = true

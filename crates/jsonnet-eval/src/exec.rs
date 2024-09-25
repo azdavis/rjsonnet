@@ -1,11 +1,13 @@
 //! Executing Jsonnet expression to produce Jsonnet values.
 
 use crate::error::{self, Result};
-use crate::val::jsonnet::{Array, Env, Field, Fn, Get, Object, RegularFn, StdField, Val};
+use crate::val::jsonnet::{Array, Env, Field, Fn, Get, Object, RegularFn, Val};
 use crate::{manifest, mk_todo, std_lib, Cx};
 use always::always;
 use finite_float::Float;
-use jsonnet_expr::{arg, BinaryOp, Expr, ExprData, ExprMust, Id, Prim, Str, StrArena, Visibility};
+use jsonnet_expr::{
+  arg, BinaryOp, Expr, ExprData, ExprMust, Id, Prim, StdField, Str, StrArena, Visibility,
+};
 use rustc_hash::FxHashSet;
 use std::cmp::Ordering;
 use std::collections::BTreeMap;

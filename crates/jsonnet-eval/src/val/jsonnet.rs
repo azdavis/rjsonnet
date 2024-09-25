@@ -1,7 +1,7 @@
 //! Jsonnet values.
 
 use crate::error::Cycle;
-use jsonnet_expr::{Expr, Id, Prim, StdFn, Str, Visibility};
+use jsonnet_expr::{Expr, Id, Prim, StdField, StdFn, Str, Visibility};
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::BTreeMap;
 
@@ -235,33 +235,6 @@ struct RegularObjectKind {
 pub(crate) enum Field {
   Std(StdField),
   Expr(Env, Expr),
-}
-
-#[derive(Debug, Clone, Copy)]
-pub(crate) enum StdField {
-  ThisFile,
-  Fn(StdFn),
-}
-
-impl StdField {
-  fn all() -> impl Iterator<Item = (Str, Self)> {
-    let it = StdFn::ALL.into_iter().map(|(a, b)| (a, StdField::Fn(b)));
-    std::iter::once((Str::thisFile, StdField::ThisFile)).chain(it)
-  }
-}
-
-impl TryFrom<&Str> for StdField {
-  type Error = ();
-
-  fn try_from(s: &Str) -> Result<Self, Self::Error> {
-    if *s == Str::thisFile {
-      return Ok(Self::ThisFile);
-    }
-    if let Some(&(_, x)) = StdFn::ALL.iter().find(|&(x, _)| x == s) {
-      return Ok(Self::Fn(x));
-    }
-    Err(())
-  }
 }
 
 #[derive(Debug, Default, Clone)]

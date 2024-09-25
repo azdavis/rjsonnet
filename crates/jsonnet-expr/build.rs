@@ -1,5 +1,7 @@
 //! Generate some string/identifier names.
 
+#![expect(clippy::disallowed_methods, reason = "can panic in build script")]
+
 use jsonnet_std::{Sig, S};
 use quote::{format_ident, quote};
 use std::collections::{BTreeMap, BTreeSet, HashSet};
@@ -162,15 +164,36 @@ fn main() {
   };
 
   let std_fn = {
+    let (fn_doc, this_file_doc) = {
+      let mut tmp =
+        code_h2_md_map::get(include_str!("../../docs/std_lib.md"), |x| format!("std field: {x}"));
+      let tf = tmp.remove("thisFile").unwrap();
+      let from_doc: HashSet<_> = tmp.keys().copied().collect();
+      let from_fns: HashSet<_> = jsonnet_std::FNS.iter().map(|f| f.name.content()).collect();
+      let in_doc: Vec<_> = from_doc.difference(&from_fns).collect();
+      assert!(in_doc.is_empty(), "got in_doc: {in_doc:?}");
+      let in_fns: Vec<_> = from_fns.difference(&from_doc).collect();
+      assert!(in_fns.is_empty(), "got in_fns: {in_fns:?}");
+      (tmp, tf)
+    };
     let variants = jsonnet_std::FNS.iter().map(|f| format_ident!("{}", f.name.ident()));
     let count = jsonnet_std::FNS.len();
     let str_variant_tuples = jsonnet_std::FNS.iter().map(|f| {
       let name = format_ident!("{}", f.name.ident());
       quote! { (Str::#name, Self::#name) }
     });
+    let from_str_arms = jsonnet_std::FNS.iter().map(|f| {
+      let name = format_ident!("{}", f.name.ident());
+      quote! { Str::#name => Self::#name, }
+    });
     let as_static_str_arms = jsonnet_std::FNS.iter().map(|f| {
       let name = format_ident!("{}", f.name.ident());
       let content = f.name.content();
+      quote! { Self::#name => #content, }
+    });
+    let doc_arms = jsonnet_std::FNS.iter().map(|f| {
+      let name = format_ident!("{}", f.name.ident());
+      let content = fn_doc.get(f.name.content()).expect("should have doc");
       quote! { Self::#name => #content, }
     });
     let unique_params_lens = {
@@ -195,19 +218,23 @@ fn main() {
     let get_params = unique_param_lists.iter().map(|params| mk_get_params(params));
     let get_args = jsonnet_std::FNS.iter().map(mk_get_args);
     quote! {
+      pub const THIS_FILE_DOC: &str = #this_file_doc;
+
       #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
       #[expect(non_camel_case_types)]
       pub enum StdFn {
         #(#variants,)*
       }
 
+      #[expect(clippy::too_many_lines)]
       impl StdFn {
         pub const ALL: [(Str, Self); #count] = [
           #(#str_variant_tuples,)*
         ];
 
+        // TODO: what about optional arguments?
+        #[doc = "Returns the max number of parameters this takes."]
         #[must_use]
-        #[expect(clippy::too_many_lines)]
         pub fn params_len(&self) -> usize {
           match self {
             #(#params_len_arms)*
@@ -215,13 +242,34 @@ fn main() {
         }
 
         #[doc = "Returns a static str for this."]
-        #[expect(clippy::too_many_lines)]
         #[must_use]
         pub const fn as_static_str(self) -> &'static str {
           match self {
             #(#as_static_str_arms)*
           }
         }
+
+        #[doc = "Returns Markdown documentation for this."]
+        #[must_use]
+        pub const fn doc(self) -> &'static str {
+          match self {
+            #(#doc_arms)*
+          }
+        }
+      }
+
+      #[expect(clippy::too_many_lines)]
+      impl<'a> TryFrom<&'a Str> for StdFn {
+        type Error = ();
+
+        fn try_from(s: &Str) -> Result<Self, Self::Error> {
+          let ret = match *s {
+            #(#from_str_arms)*
+            _ => return Err(()),
+          };
+          Ok(ret)
+        }
+
       }
 
       pub mod std_fn {

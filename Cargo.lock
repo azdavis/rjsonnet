@@ -385,7 +385,6 @@ version = "0.4.0"
 dependencies = [
  "always",
  "apply-changes",
- "code-h2-md-map",
  "diagnostic",
  "env_logger",
  "jsonnet-ast-escape",
@@ -461,6 +460,7 @@ name = "jsonnet-expr"
 version = "0.4.0"
 dependencies = [
  "always",
+ "code-h2-md-map",
  "finite-float",
  "jsonnet-std",
  "la-arena",
