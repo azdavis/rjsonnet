@@ -58,12 +58,7 @@ pub(crate) fn get(st: &mut St<'_>, store: &ty::MutStore<'_>, want: ty::Ty, got: 
       }
       // ignore the fields that ARE in `got` but are NOT in `want`.
     }
-    (ty::Data::Fn(want), ty::Data::Fn(got)) => {
-      let (want, got) = match (want, got) {
-        (ty::Fn::Regular(w), ty::Fn::Regular(g)) => (w, g),
-        // TODO impl better checking for std fns
-        (ty::Fn::Std(_), _) | (_, ty::Fn::Std(_)) => return,
-      };
+    (ty::Data::Fn(ty::Fn::Regular(want)), ty::Data::Fn(ty::Fn::Regular(got))) => {
       if want.params.len() > got.params.len() {
         st.err(error::Kind::NotEnoughParams(want.params.len(), got.params.len()));
       }
@@ -84,6 +79,17 @@ pub(crate) fn get(st: &mut St<'_>, store: &ty::MutStore<'_>, want: ty::Ty, got: 
         }
       }
       get(st, store, want.ret, got.ret);
+    }
+    (ty::Data::Fn(ty::Fn::Std(w)), ty::Data::Fn(ty::Fn::Std(g))) => {
+      // NOTE this is overly strict
+      if w != g {
+        st.err(error::Kind::Incompatible(want, got));
+      }
+    }
+    (ty::Data::Fn(ty::Fn::Std(_)), ty::Data::Fn(ty::Fn::Regular(_)))
+    | (ty::Data::Fn(ty::Fn::Regular(_)), ty::Data::Fn(ty::Fn::Std(_))) => {
+      // TODO do more here
+      log::warn!("unify std fn with regular fn");
     }
     // need to put this (got-union) before the next (want-union)
     (_, ty::Data::Union(got)) => {
