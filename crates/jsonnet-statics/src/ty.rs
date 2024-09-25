@@ -335,7 +335,7 @@ impl Subst {
         }
       };
       if old != new {
-        ret.old_to_new.insert(old, new);
+        always!(ret.old_to_new.insert(old, new).is_none());
       }
     }
     for data in &mut this.0.idx_to_data[orig_len..] {
