@@ -115,20 +115,20 @@ impl WithFs {
     let mut level_idx = 0usize;
     let mut levels = Vec::<paths::PathSet>::new();
     while let Some(Action(path_id, kind)) = work.pop() {
-      log::debug!("{kind:?} {}", self.display_path_id(path_id));
+      log::debug!("{kind:?} {path_id:?} {}", self.display_path_id(path_id));
       match kind {
         ActionKind::Start => {
           if done.contains(&path_id) {
-            log::info!("already processed this run");
+            log::info!("already done");
             continue;
           }
           if self.file_tys.contains_key(&path_id) {
-            log::info!("already have the result cached");
+            log::info!("already cached");
             // TODO: invalidate cache when files change on disk.
             continue;
           }
           if !cur.insert(path_id) {
-            log::info!("cycle error");
+            log::warn!("cycle");
             continue;
           }
           work.push(Action::end(path_id));
@@ -148,10 +148,9 @@ impl WithFs {
             let dirs = jsonnet_resolve_import::NonEmptyDirs::new(parent, &self.root_dirs);
             let import = jsonnet_resolve_import::get(import, dirs.iter(), &util::FsAdapter(fs));
             let Some(import) = import else { continue };
-            log::debug!("new import: {import:?}");
+            log::debug!("new import: {}", import.as_clean_path().as_path().display());
             // ...because we mutate `paths` here.
             let import = self.artifacts.syntax.paths.get_id_owned(import);
-            log::debug!("with import id: {import:?}");
             // this mutation also makes it too annoying to write this for-push as a
             // iter-filter-map-extend.
             work.push(Action::start(import));
@@ -206,7 +205,7 @@ impl WithFs {
         Some((path_id, res))
       });
       // unzip so we don't have to carry around the path_id unchanged in the next few
-      // transformations. order will be preserved.
+      // transformations, in which order will be preserved.
       let (order, syntax_files): (Vec<_>, Vec<_>) = syntax_files.unzip();
       // seq
       let syntax_files = syntax_files.into_iter().map(|res| res.combine(&mut self.artifacts));

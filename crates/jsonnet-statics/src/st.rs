@@ -132,7 +132,7 @@ impl<'a> St<'a> {
     if let Some(&x) = self.other_files.get(&path) {
       x
     } else {
-      log::debug!("import_ty failed: {path:?}");
+      log::warn!("import_ty failed: {path:?}");
       ty::Ty::ANY
     }
   }
