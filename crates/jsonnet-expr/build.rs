@@ -1,6 +1,6 @@
 //! Generate some string/identifier names.
 
-use jsonnet_std::S;
+use jsonnet_std::{Sig, S};
 use quote::{format_ident, quote};
 use std::collections::{BTreeMap, BTreeSet, HashSet};
 
@@ -8,9 +8,18 @@ const JOINER: &str = "__";
 
 #[expect(clippy::too_many_lines)]
 fn main() {
-  let arg_names: BTreeSet<_> = jsonnet_std::FNS.iter().flat_map(|&(_, xs)| xs).copied().collect();
+  let arg_names = {
+    let mut tmp = BTreeSet::<&str>::new();
+    for f in jsonnet_std::FNS {
+      match f.sig {
+        Sig::Regular(params, _) => tmp.extend(params.iter().map(|x| x.name)),
+        Sig::Special(params) => tmp.extend(params),
+      }
+    }
+    tmp
+  };
   let arg_names_except_std_fn_names = {
-    let std_fn_names: HashSet<_> = jsonnet_std::FNS.iter().map(|&(s, _)| s.name()).collect();
+    let std_fn_names: HashSet<_> = jsonnet_std::FNS.iter().map(|f| f.name.name()).collect();
     let mut tmp = arg_names.clone();
     tmp.retain(|x| !std_fn_names.contains(x));
     tmp
@@ -36,7 +45,7 @@ fn main() {
   ];
   let strings = || {
     std::iter::once(S::new("thisFile"))
-      .chain(jsonnet_std::FNS.iter().map(|&(s, _)| s))
+      .chain(jsonnet_std::FNS.iter().map(|f| f.name))
       .chain(messages.iter().copied())
   };
 
@@ -50,7 +59,7 @@ fn main() {
   let mut names = HashSet::<&'static str>::new();
   let mut contents = HashSet::<&'static str>::new();
   for s in all() {
-    assert!(names.insert(s.name()), "duplicate name: {}", s.name());
+    assert!(names.insert(s.name()), "duplicate ident: {}", s.name());
     assert!(contents.insert(s.content()), "duplicate content: {}", s.content());
     assert!(!s.name().contains(JOINER));
   }
@@ -153,21 +162,25 @@ fn main() {
   };
 
   let std_fn = {
-    let variants = jsonnet_std::FNS.iter().map(|&(s, _)| format_ident!("{}", s.name()));
+    let variants = jsonnet_std::FNS.iter().map(|f| format_ident!("{}", f.name.name()));
     let count = jsonnet_std::FNS.len();
-    let str_variant_tuples = jsonnet_std::FNS.iter().map(|&(s, _)| {
-      let name = format_ident!("{}", s.name());
+    let str_variant_tuples = jsonnet_std::FNS.iter().map(|f| {
+      let name = format_ident!("{}", f.name.name());
       quote! { (Str::#name, Self::#name) }
     });
-    let as_static_str_arms = jsonnet_std::FNS.iter().map(|&(s, _)| {
-      let name = format_ident!("{}", s.name());
-      let content = s.content();
+    let as_static_str_arms = jsonnet_std::FNS.iter().map(|f| {
+      let name = format_ident!("{}", f.name.name());
+      let content = f.name.content();
       quote! { Self::#name => #content, }
     });
     let unique_params_lens = {
       let mut tmp = BTreeMap::<usize, BTreeSet<&str>>::new();
-      for &(s, params) in &jsonnet_std::FNS {
-        tmp.entry(params.len()).or_default().insert(s.name());
+      for f in &jsonnet_std::FNS {
+        let params_len = match f.sig {
+          Sig::Regular(xs, _) => xs.len(),
+          Sig::Special(xs) => xs.len(),
+        };
+        tmp.entry(params_len).or_default().insert(f.name.name());
       }
       tmp
     };
@@ -178,10 +191,9 @@ fn main() {
       });
       quote! { #(#pats)* => #len, }
     });
-    let unique_param_lists: BTreeSet<_> =
-      jsonnet_std::FNS.iter().map(|&(_, params)| params).collect();
-    let get_params = unique_param_lists.iter().map(|&params| mk_get_params(params));
-    let get_args = jsonnet_std::FNS.iter().map(|&(s, params)| mk_get_args(s.name(), params));
+    let unique_param_lists: BTreeSet<Vec<_>> = jsonnet_std::FNS.iter().map(param_names).collect();
+    let get_params = unique_param_lists.iter().map(|params| mk_get_params(params));
+    let get_args = jsonnet_std::FNS.iter().map(mk_get_args);
     quote! {
       #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
       #[expect(non_camel_case_types)]
@@ -251,10 +263,10 @@ fn main() {
   write_rs_tokens::go(contents, "generated.rs");
 }
 
-fn mk_get_args(name: &str, params: &[&str]) -> proc_macro2::TokenStream {
-  let args_struct = params.join(JOINER);
+fn mk_get_args(f: &jsonnet_std::Fn) -> proc_macro2::TokenStream {
+  let args_struct = param_names(f).join(JOINER);
   let args_struct = format_ident!("{args_struct}");
-  let name = format_ident!("{name}");
+  let name = format_ident!("{}", f.name.name());
   quote! {
     #[doc = "# Errors"]
     #[doc = "If getting the args failed."]
@@ -355,5 +367,12 @@ fn mk_get_params(params: &[&str]) -> proc_macro2::TokenStream {
         Ok(Self { #(#unwraps_unchecked)* })
       }
     }
+  }
+}
+
+fn param_names(f: &jsonnet_std::Fn) -> Vec<&'static str> {
+  match f.sig {
+    Sig::Regular(xs, _) => xs.iter().map(|x| x.name).collect(),
+    Sig::Special(xs) => xs.to_vec(),
   }
 }
