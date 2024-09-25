@@ -81,6 +81,12 @@ pub struct Param {
   pub required: bool,
 }
 
+impl Param {
+  const fn new(name: &'static str, ty: Ty) -> Self {
+    Self { name, ty, required: true }
+  }
+}
+
 /// A simple type.
 #[derive(Debug)]
 pub enum Ty {
@@ -94,16 +100,23 @@ pub enum Ty {
   String,
 }
 
+const V_ANY_RET_BOOL: Sig = Sig::Regular(&[Param::new("v", Ty::Any)], Ty::Boolean);
+const X_NUM_RET_NUM: Sig = Sig::Regular(&[Param::new("x", Ty::Number)], Ty::Number);
+const STR_RET_STR: Sig = Sig::Regular(&[Param::new("str", Ty::String)], Ty::String);
+
 /// The std fns.
 pub const FNS: [Fn; 121] = [
-  Fn::new("extVar", &["x"]),
-  Fn::named("type", "type_", &["x"]),
-  Fn::new("isArray", &["v"]),
-  Fn::new("isBoolean", &["v"]),
-  Fn::new("isFunction", &["v"]),
-  Fn::new("isNumber", &["v"]),
-  Fn::new("isObject", &["v"]),
-  Fn::new("isString", &["v"]),
+  Fn { name: S::new("extVar"), sig: Sig::Regular(&[Param::new("x", Ty::String)], Ty::String) },
+  Fn {
+    name: S::named("type", "type_"),
+    sig: Sig::Regular(&[Param::new("x", Ty::Any)], Ty::String),
+  },
+  Fn { name: S::new("isArray"), sig: V_ANY_RET_BOOL },
+  Fn { name: S::new("isBoolean"), sig: V_ANY_RET_BOOL },
+  Fn { name: S::new("isFunction"), sig: V_ANY_RET_BOOL },
+  Fn { name: S::new("isNumber"), sig: V_ANY_RET_BOOL },
+  Fn { name: S::new("isObject"), sig: V_ANY_RET_BOOL },
+  Fn { name: S::new("isString"), sig: V_ANY_RET_BOOL },
   Fn::new("length", &["x"]),
   Fn::new("get", &["o", "f", "default", "inc_hidden"]),
   Fn::new("objectHas", &["o", "f"]),
@@ -121,20 +134,20 @@ pub const FNS: [Fn; 121] = [
   Fn::new("max", &["a", "b"]),
   Fn::new("min", &["a", "b"]),
   Fn::new("pow", &["x", "n"]),
-  Fn::new("exp", &["x"]),
-  Fn::new("log", &["x"]),
-  Fn::new("exponent", &["x"]),
-  Fn::new("mantissa", &["x"]),
-  Fn::new("floor", &["x"]),
-  Fn::new("ceil", &["x"]),
-  Fn::new("sqrt", &["x"]),
-  Fn::new("sin", &["x"]),
-  Fn::new("cos", &["x"]),
-  Fn::new("tan", &["x"]),
-  Fn::new("asin", &["x"]),
-  Fn::new("acos", &["x"]),
-  Fn::new("atan", &["x"]),
-  Fn::new("round", &["x"]),
+  Fn { name: S::new("exp"), sig: X_NUM_RET_NUM },
+  Fn { name: S::new("log"), sig: X_NUM_RET_NUM },
+  Fn { name: S::new("exponent"), sig: X_NUM_RET_NUM },
+  Fn { name: S::new("mantissa"), sig: X_NUM_RET_NUM },
+  Fn { name: S::new("floor"), sig: X_NUM_RET_NUM },
+  Fn { name: S::new("ceil"), sig: X_NUM_RET_NUM },
+  Fn { name: S::new("sqrt"), sig: X_NUM_RET_NUM },
+  Fn { name: S::new("sin"), sig: X_NUM_RET_NUM },
+  Fn { name: S::new("cos"), sig: X_NUM_RET_NUM },
+  Fn { name: S::new("tan"), sig: X_NUM_RET_NUM },
+  Fn { name: S::new("asin"), sig: X_NUM_RET_NUM },
+  Fn { name: S::new("acos"), sig: X_NUM_RET_NUM },
+  Fn { name: S::new("atan"), sig: X_NUM_RET_NUM },
+  Fn { name: S::new("round"), sig: X_NUM_RET_NUM },
   Fn::named("mod", "mod_", &["a", "b"]),
   Fn::new("clamp", &["x", "minVal", "maxVal"]),
   Fn::new("assertEqual", &["a", "b"]),
@@ -153,15 +166,15 @@ pub const FNS: [Fn; 121] = [
   Fn::new("splitLimitR", &["str", "c", "maxsplits"]),
   Fn::new("strReplace", &["str", "from", "to"]),
   Fn::new("isEmpty", &["str"]),
-  Fn::new("asciiUpper", &["str"]),
-  Fn::new("asciiLower", &["str"]),
-  Fn::new("stringChars", &["str"]),
+  Fn { name: S::new("asciiUpper"), sig: STR_RET_STR },
+  Fn { name: S::new("asciiLower"), sig: STR_RET_STR },
+  Fn { name: S::new("stringChars"), sig: STR_RET_STR },
   Fn::new("format", &["str", "vals"]),
-  Fn::new("escapeStringBash", &["str"]),
-  Fn::new("escapeStringDollars", &["str"]),
-  Fn::new("escapeStringJson", &["str"]),
-  Fn::new("escapeStringPython", &["str"]),
-  Fn::new("escapeStringXml", &["str"]),
+  Fn { name: S::new("escapeStringBash"), sig: STR_RET_STR },
+  Fn { name: S::new("escapeStringDollars"), sig: STR_RET_STR },
+  Fn { name: S::new("escapeStringJson"), sig: STR_RET_STR },
+  Fn { name: S::new("escapeStringPython"), sig: STR_RET_STR },
+  Fn { name: S::new("escapeStringXml"), sig: STR_RET_STR },
   Fn::new("parseInt", &["str"]),
   Fn::new("parseOctal", &["str"]),
   Fn::new("parseHex", &["str"]),
