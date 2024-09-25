@@ -250,19 +250,19 @@ impl StrIdx {
 
 #[derive(Debug, Default)]
 pub struct StrArena {
-  idx_to_contents: Vec<Box<str>>,
-  contents_to_idx: FxHashMap<Box<str>, StrIdx>,
+  idx_to_data: Vec<Box<str>>,
+  data_to_idx: FxHashMap<Box<str>, StrIdx>,
 }
 
 impl StrArena {
   /// Should only call this when we know the contents are NOT one of the builtin strings. The
   /// `NotBuiltinStr` argument serves as a witness to this fact.
   fn dangerous_mk_idx(&mut self, contents: Box<str>, _: NotBuiltinStr) -> StrIdx {
-    match self.contents_to_idx.entry(contents) {
+    match self.data_to_idx.entry(contents) {
       Entry::Occupied(entry) => *entry.get(),
       Entry::Vacant(entry) => {
-        let ret = StrIdx::from_usize(self.idx_to_contents.len());
-        self.idx_to_contents.push(entry.key().clone());
+        let ret = StrIdx::from_usize(self.idx_to_data.len());
+        self.idx_to_data.push(entry.key().clone());
         entry.insert(ret);
         ret
       }
@@ -287,7 +287,7 @@ impl StrArena {
     // invariant: if there is a str idx for the contents, always return that instead of allocating
     match contents.as_ref().parse::<BuiltinStr>() {
       Ok(bs) => Str(StrRepr::Copy(CopyStrRepr::Builtin(bs))),
-      Err(_) => match self.contents_to_idx.get(contents.as_ref()) {
+      Err(_) => match self.data_to_idx.get(contents.as_ref()) {
         Some(idx) => Str(StrRepr::Copy(CopyStrRepr::Idx(*idx))),
         None => Str(StrRepr::Alloc(contents)),
       },
@@ -299,7 +299,7 @@ impl StrArena {
   }
 
   fn get_idx(&self, idx: StrIdx) -> &str {
-    &self.idx_to_contents[idx.to_usize()]
+    &self.idx_to_data[idx.to_usize()]
   }
 
   #[must_use]

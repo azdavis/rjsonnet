@@ -13,14 +13,14 @@ pub struct Subst {
 
 impl Subst {
   /// Combine artifacts and produce a substitution to apply to other things.
-  pub fn get(art: &mut Artifacts, other: Artifacts) -> Self {
+  pub fn get(this: &mut Artifacts, other: Artifacts) -> Self {
     let mut ret = Subst::default();
-    for (idx, s) in other.strings.idx_to_contents.into_iter().enumerate() {
+    for (idx, s) in other.strings.idx_to_data.into_iter().enumerate() {
       let old = StrIdx::from_usize(idx);
-      let new = art.strings.dangerous_mk_idx(s, NotBuiltinStr::from_str_arena());
+      let new = this.strings.dangerous_mk_idx(s, NotBuiltinStr::from_str_arena());
       always!(ret.strings.insert(old, new).is_none());
     }
-    art.paths.combine(other.paths, &mut |old, new| {
+    this.paths.combine(other.paths, &mut |old, new| {
       always!(ret.paths.insert(old, new).is_none());
     });
     ret
