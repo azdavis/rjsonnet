@@ -197,8 +197,8 @@ impl WithFs {
     drop(cur);
     drop(done);
     log::debug!("levels: {levels:?}");
-    // TODO ask for less analysis to just get the types
-    for level in levels {
+    // reverse so we do the leaves first. TODO ask for less analysis to just get the types
+    for level in levels.into_iter().rev() {
       // par
       let syntax_files = level.into_par_iter().filter_map(|path_id| {
         let path = self.artifacts.syntax.paths.get_path(path_id);
