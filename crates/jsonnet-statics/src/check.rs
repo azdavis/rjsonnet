@@ -317,8 +317,22 @@ fn get_call(
       }
       fn_data.ret
     }
-    ty::Data::Fn(ty::Fn::Std(_)) | ty::Data::Any => ty::Ty::ANY,
-    _ => {
+    ty::Data::Any => ty::Ty::ANY,
+    ty::Data::Fn(ty::Fn::Std(func)) => {
+      log::warn!("TODO: get std call {func}");
+      ty::Ty::ANY
+    }
+    ty::Data::Union(_) => {
+      log::warn!("TODO: get union call");
+      ty::Ty::ANY
+    }
+    ty::Data::True
+    | ty::Data::False
+    | ty::Data::Null
+    | ty::Data::String
+    | ty::Data::Number
+    | ty::Data::Array(_)
+    | ty::Data::Object(_) => {
       st.err(expr, error::Kind::CallNonFn(func_ty));
       ty::Ty::ANY
     }
