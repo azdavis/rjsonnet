@@ -334,7 +334,9 @@ impl Subst {
           *entry.insert(new)
         }
       };
-      ret.old_to_new.insert(old, new);
+      if old != new {
+        ret.old_to_new.insert(old, new);
+      }
     }
     for data in &mut this.0.idx_to_data[orig_len..] {
       data.apply(&ret);

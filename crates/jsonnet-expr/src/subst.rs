@@ -18,10 +18,14 @@ impl Subst {
     for (idx, s) in other.strings.idx_to_data.into_iter().enumerate() {
       let old = StrIdx::from_usize(idx);
       let new = this.strings.dangerous_mk_idx(s, NotBuiltinStr::from_str_arena());
-      always!(ret.strings.insert(old, new).is_none());
+      if old != new {
+        always!(ret.strings.insert(old, new).is_none());
+      }
     }
     this.paths.combine(other.paths, &mut |old, new| {
-      always!(ret.paths.insert(old, new).is_none());
+      if old != new {
+        always!(ret.paths.insert(old, new).is_none());
+      }
     });
     ret
   }
