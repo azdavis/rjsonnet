@@ -9,7 +9,7 @@ mod generated {
 use always::{always, convert};
 use jsonnet_expr::{ExprMust, Id, Str};
 use rustc_hash::FxHashMap;
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::{hash_map::Entry, BTreeMap, BTreeSet};
 
 /// A map from expr to type.
 pub type Exprs = FxHashMap<ExprMust, Ty>;
@@ -326,10 +326,14 @@ impl Subst {
     for (data, mut old_ty) in other.0.data_to_idx {
       always!(!old_ty.is_local());
       old_ty.make_local();
-      always!(!this.0.data_to_idx.contains_key(&data));
-      let new_ty = Ty::from_idx(this.0.idx_to_data.len());
-      this.0.idx_to_data.push(data.clone());
-      always!(this.0.data_to_idx.insert(data, new_ty).is_none());
+      let new_ty = match this.0.data_to_idx.entry(data) {
+        Entry::Occupied(entry) => *entry.get(),
+        Entry::Vacant(entry) => {
+          let new_ty = Ty::from_idx(this.0.idx_to_data.len());
+          this.0.idx_to_data.push(entry.key().clone());
+          *entry.insert(new_ty)
+        }
+      };
       ret.old_to_new.insert(old_ty, new_ty);
     }
     for data in &mut this.0.idx_to_data[orig_len..] {
