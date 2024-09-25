@@ -3,23 +3,38 @@
 /// A name-content string pair.
 #[derive(Debug, Clone, Copy)]
 pub struct S {
-  /// The name.
-  pub name: &'static str,
+  /// The name. If None, the content is the name.
+  name: Option<&'static str>,
   /// The content.
-  pub content: &'static str,
+  content: &'static str,
 }
 
 impl S {
   /// Make a new k-v pair (actually the param order is v first then k).
   #[must_use]
   pub const fn named(content: &'static str, name: &'static str) -> S {
-    S { name, content }
+    S { name: Some(name), content }
   }
 
   /// Make a new one whose name (k) is the content (v).
   #[must_use]
   pub const fn new(content: &'static str) -> S {
-    S { name: content, content }
+    S { name: None, content }
+  }
+
+  /// Returns the name. Must be a valid Rust identifier.
+  #[must_use]
+  pub const fn name(&self) -> &'static str {
+    match self.name {
+      Some(x) => x,
+      None => self.content,
+    }
+  }
+
+  /// Returns the content. Can be an arbitrary string, including whitespace.
+  #[must_use]
+  pub const fn content(&self) -> &'static str {
+    self.content
   }
 }
 

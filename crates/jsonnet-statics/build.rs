@@ -1,6 +1,5 @@
 //! Build some ty-related things.
 
-use jsonnet_std::S;
 use quote::{format_ident as i, quote as q};
 
 fn main() {
@@ -19,16 +18,16 @@ fn main() {
     (i!("OBJECT"), q!(Data::Object(super::Object::unknown()))),
     (i!("STD"), q!(Data::Object(super::Object::std()))),
   ];
-  let std_fn_types = jsonnet_std::FNS.iter().map(|&(S { name, .. }, _)| {
-    let name = i!("{name}");
+  let std_fn_types = jsonnet_std::FNS.iter().map(|&(s, _)| {
+    let name = i!("{}", s.name());
     (name.clone(), q!(Data::Fn(super::Fn::Std(StdFn::#name))), false)
   });
-  let std_fn_match_arms = jsonnet_std::FNS.iter().map(|&(S { name, .. }, _)| {
-    let name = i!("{name}");
+  let std_fn_match_arms = jsonnet_std::FNS.iter().map(|&(s, _)| {
+    let name = i!("{}", s.name());
     q! { StdFn::#name => Ty::#name, }
   });
-  let std_map_entries = jsonnet_std::FNS.iter().map(|&(S { name, .. }, _)| {
-    let name = i!("{name}");
+  let std_map_entries = jsonnet_std::FNS.iter().map(|&(s, _)| {
+    let name = i!("{}", s.name());
     q! { (Str::#name, Ty::#name) }
   });
   let things: Vec<_> = things.into_iter().map(|(a, b)| (a, b, true)).chain(std_fn_types).collect();

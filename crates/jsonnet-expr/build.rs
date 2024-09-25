@@ -10,8 +10,7 @@ const JOINER: &str = "__";
 fn main() {
   let arg_names: BTreeSet<_> = jsonnet_std::FNS.iter().flat_map(|&(_, xs)| xs).copied().collect();
   let arg_names_except_std_fn_names = {
-    let std_fn_names: HashSet<_> =
-      jsonnet_std::FNS.iter().map(|&(S { name, .. }, _)| name).collect();
+    let std_fn_names: HashSet<_> = jsonnet_std::FNS.iter().map(|&(s, _)| s.name()).collect();
     let mut tmp = arg_names.clone();
     tmp.retain(|x| !std_fn_names.contains(x));
     tmp
@@ -50,25 +49,27 @@ fn main() {
 
   let mut names = HashSet::<&'static str>::new();
   let mut contents = HashSet::<&'static str>::new();
-  for S { name, content } in all() {
-    assert!(names.insert(name), "duplicate name: {name}",);
-    assert!(contents.insert(content), "duplicate content: {content}",);
-    assert!(!name.contains(JOINER));
+  for s in all() {
+    assert!(names.insert(s.name()), "duplicate name: {}", s.name());
+    assert!(contents.insert(s.content()), "duplicate content: {}", s.content());
+    assert!(!s.name().contains(JOINER));
   }
   drop(names);
   drop(contents);
 
   let builtin_str = {
-    let variants = all().map(|S { name, .. }| {
-      let name = format_ident!("{name}");
+    let variants = all().map(|s| {
+      let name = format_ident!("{}", s.name());
       quote! { #name, }
     });
-    let as_static_str_arms = all().map(|S { name, content }| {
-      let name = format_ident!("{name}");
+    let as_static_str_arms = all().map(|s| {
+      let name = format_ident!("{}", s.name());
+      let content = s.content();
       quote! { Self::#name => #content, }
     });
-    let from_str_arms = all().map(|S { name, content }| {
-      let name = format_ident!("{name}");
+    let from_str_arms = all().map(|s| {
+      let name = format_ident!("{}", s.name());
+      let content = s.content();
       quote! { #content => Self::#name, }
     });
 
@@ -119,8 +120,8 @@ fn main() {
     let constants = std::iter::empty()
       .chain(builtin_identifiers.iter().copied().map(|x| (x, true)))
       .chain(arg_names.iter().map(|&x| (S::new(x), false)))
-      .map(|(S { name, .. }, is_pub)| {
-        let name = format_ident!("{name}");
+      .map(|(s, is_pub)| {
+        let name = format_ident!("{}", s.name());
         let vis = if is_pub {
           quote! { pub }
         } else {
@@ -138,8 +139,8 @@ fn main() {
   };
 
   let impl_str = {
-    let constants = strings().map(|S { name, .. }| {
-      let name = format_ident!("{name}");
+    let constants = strings().map(|s| {
+      let name = format_ident!("{}", s.name());
       quote! { pub const #name: Self = Self::builtin(BuiltinStr::#name); }
     });
 
@@ -152,20 +153,21 @@ fn main() {
   };
 
   let std_fn = {
-    let variants = jsonnet_std::FNS.iter().map(|&(S { name, .. }, _)| format_ident!("{name}"));
+    let variants = jsonnet_std::FNS.iter().map(|&(s, _)| format_ident!("{}", s.name()));
     let count = jsonnet_std::FNS.len();
-    let str_variant_tuples = jsonnet_std::FNS.iter().map(|&(S { name, .. }, _)| {
-      let name = format_ident!("{name}");
+    let str_variant_tuples = jsonnet_std::FNS.iter().map(|&(s, _)| {
+      let name = format_ident!("{}", s.name());
       quote! { (Str::#name, Self::#name) }
     });
-    let as_static_str_arms = jsonnet_std::FNS.iter().map(|&(S { name, content }, _)| {
-      let name = format_ident!("{name}");
+    let as_static_str_arms = jsonnet_std::FNS.iter().map(|&(s, _)| {
+      let name = format_ident!("{}", s.name());
+      let content = s.content();
       quote! { Self::#name => #content, }
     });
     let unique_params_lens = {
       let mut tmp = BTreeMap::<usize, BTreeSet<&str>>::new();
-      for &(S { name, .. }, params) in &jsonnet_std::FNS {
-        tmp.entry(params.len()).or_default().insert(name);
+      for &(s, params) in &jsonnet_std::FNS {
+        tmp.entry(params.len()).or_default().insert(s.name());
       }
       tmp
     };
@@ -179,8 +181,7 @@ fn main() {
     let unique_param_lists: BTreeSet<_> =
       jsonnet_std::FNS.iter().map(|&(_, params)| params).collect();
     let get_params = unique_param_lists.iter().map(|&params| mk_get_params(params));
-    let get_args =
-      jsonnet_std::FNS.iter().map(|&(S { name, .. }, params)| mk_get_args(name, params));
+    let get_args = jsonnet_std::FNS.iter().map(|&(s, params)| mk_get_args(s.name(), params));
     quote! {
       #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
       #[expect(non_camel_case_types)]
