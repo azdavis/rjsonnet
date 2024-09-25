@@ -340,6 +340,10 @@ pub(crate) fn get(
       let _ = std_fn::args::manifestJsonEx(positional, named, expr)?;
       Err(mk_todo(expr, "std.manifestJsonEx"))
     }
+    StdFn::manifestJson => {
+      let _ = std_fn::args::manifestJson(positional, named, expr)?;
+      Err(mk_todo(expr, "std.manifestJson"))
+    }
     StdFn::manifestJsonMinified => {
       let _ = std_fn::args::manifestJsonMinified(positional, named, expr)?;
       Err(mk_todo(expr, "std.manifestJsonMinified"))
@@ -499,6 +503,10 @@ pub(crate) fn get(
     StdFn::sum => {
       let _ = std_fn::args::sum(positional, named, expr)?;
       Err(mk_todo(expr, "std.sum"))
+    }
+    StdFn::avg => {
+      let _ = std_fn::args::avg(positional, named, expr)?;
+      Err(mk_todo(expr, "std.avg"))
     }
     StdFn::set => {
       let _ = std_fn::args::set(positional, named, expr)?;

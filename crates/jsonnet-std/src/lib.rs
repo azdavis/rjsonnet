@@ -108,7 +108,7 @@ const X_NUM_RET_BOOL: Sig = Sig::Regular(&[Param::new("x", Ty::Number)], Ty::Boo
 const STR_RET_STR: Sig = Sig::Regular(&[Param::new("str", Ty::String)], Ty::String);
 
 /// The std fns.
-pub const FNS: [Fn; 125] = [
+pub const FNS: [Fn; 127] = [
   Fn { name: S::new("extVar"), sig: Sig::Regular(&[Param::new("x", Ty::String)], Ty::String) },
   Fn {
     name: S::named("type", "type_"),
@@ -193,6 +193,7 @@ pub const FNS: [Fn; 125] = [
   Fn::new("manifestPython", &["v"]),
   Fn::new("manifestPythonVars", &["conf"]),
   Fn::new("manifestJsonEx", &["value", "indent", "newline", "key_val_sep"]),
+  Fn::new("manifestJson", &["value"]),
   Fn::new("manifestJsonMinified", &["value"]),
   Fn::new("manifestYamlDoc", &["value", "indent_array_in_object", "quote_keys"]),
   Fn::new(
@@ -224,6 +225,7 @@ pub const FNS: [Fn; 125] = [
   Fn::new("all", &["arr"]),
   Fn::new("any", &["arr"]),
   Fn::new("sum", &["arr"]),
+  Fn::new("avg", &["arr"]),
   Fn::new("set", &["arr", "keyF"]),
   Fn::new("setInter", &["a", "b", "keyF"]),
   Fn::new("setUnion", &["a", "b", "keyF"]),

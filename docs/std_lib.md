@@ -296,7 +296,7 @@ assert std.lstripChars("aaabbbbcccc", "ac") == "bbbbcccc";
 assert std.lstripChars("cacabbbbaacc", "ac") == "bbbbaacc";
 ```
 
-## `std.rstripChars`
+## `rstripChars`
 
 _Available since version 0.15.0._
 
@@ -1300,3 +1300,15 @@ And evaluates to:
   }
 }
 ```
+
+## `equals`
+
+TODO
+
+## `cmp`
+
+TODO
+
+## `objectHasEx`
+
+TODO
