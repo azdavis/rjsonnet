@@ -96,6 +96,10 @@ impl<'a> fmt::Display for TyDisplay<'a> {
             field_sep(f, new_level)?;
             f.write_str("...")?;
           }
+          // trailing comma iff multi line
+          if level.is_some() {
+            f.write_str(",")?;
+          }
           field_sep(f, level)?;
         } else if obj.has_unknown {
           f.write_str(" ... ")?;
