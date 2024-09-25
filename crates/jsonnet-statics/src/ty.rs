@@ -39,8 +39,6 @@ pub(crate) enum Data {
   Object(Object),
   /// A function type, with some arguments and a return type.
   Fn(Fn),
-  /// A function from the standard library. These are treated specially.
-  StdFn(jsonnet_expr::StdFn),
   /// A union type.
   ///
   /// A value whose type is the empty union can never exist. This type is sometimes called "never"
@@ -66,13 +64,7 @@ impl Data {
           })
           .collect();
       }
-      Data::Any
-      | Data::True
-      | Data::False
-      | Data::Null
-      | Data::String
-      | Data::Number
-      | Data::StdFn(_) => {}
+      Data::Any | Data::True | Data::False | Data::Null | Data::String | Data::Number => {}
     }
   }
 }
@@ -99,16 +91,31 @@ impl Object {
   }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub(crate) enum Fn {
+  Regular(RegularFn),
+  Std(jsonnet_expr::StdFn),
+}
+
+impl Fn {
+  fn apply(&mut self, subst: &Subst) {
+    match self {
+      Fn::Regular(f) => f.apply(subst),
+      Fn::Std(_) => {}
+    }
+  }
+}
+
 /// A function type.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub(crate) struct Fn {
+pub(crate) struct RegularFn {
   /// The parameters.
   pub(crate) params: Vec<Param>,
   /// The return type.
   pub(crate) ret: Ty,
 }
 
-impl Fn {
+impl RegularFn {
   fn apply(&mut self, subst: &Subst) {
     for param in &mut self.params {
       param.apply(subst);
@@ -227,8 +234,12 @@ impl<'a> MutStore<'a> {
       Data::Null => Ty::NULL,
       Data::String => Ty::STRING,
       Data::Number => Ty::NUMBER,
-      Data::StdFn(f) => Ty::std_fn(f),
-      Data::Array(_) | Data::Object(_) | Data::Fn(_) => self.get_inner(data),
+      Data::Fn(ref f) => match f {
+        Fn::Regular(_) => self.get_inner(data),
+        // micro optimization (maybe). deferring to get_inner would also be correct
+        Fn::Std(f) => Ty::std_fn(*f),
+      },
+      Data::Array(_) | Data::Object(_) => self.get_inner(data),
       Data::Union(work) => {
         let mut work: Vec<_> = work.into_iter().collect();
         let mut parts = BTreeSet::<Ty>::new();

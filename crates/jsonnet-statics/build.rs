@@ -21,7 +21,7 @@ fn main() {
   ];
   let std_fn_types = jsonnet_std::FNS.iter().map(|&(S { name, .. }, _)| {
     let name = i!("{name}");
-    (name.clone(), q!(Data::StdFn(StdFn::#name)), false)
+    (name.clone(), q!(Data::Fn(super::Fn::Std(StdFn::#name))), false)
   });
   let std_fn_match_arms = jsonnet_std::FNS.iter().map(|&(S { name, .. }, _)| {
     let name = i!("{name}");

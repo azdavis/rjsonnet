@@ -135,9 +135,9 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
           }
         }
       }
-      // TODO handle unions
+      // TODO handle unions and std fns
       match st.data(func_ty).clone() {
-        ty::Data::Fn(fn_data) => {
+        ty::Data::Fn(ty::Fn::Regular(fn_data)) => {
           let positional_iter = fn_data.params.iter().zip(positional_tys).zip(positional.iter());
           for ((param, ty), arg) in positional_iter {
             st.unify(arg.unwrap_or(expr), param.ty, ty);
@@ -160,7 +160,7 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
           }
           fn_data.ret
         }
-        ty::Data::StdFn(_) | ty::Data::Any => ty::Ty::ANY,
+        ty::Data::Fn(ty::Fn::Std(_)) | ty::Data::Any => ty::Ty::ANY,
         _ => {
           st.err(expr, error::Kind::CallNonFn(func_ty));
           ty::Ty::ANY
@@ -207,8 +207,8 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
         };
         fn_params.push(ty::Param { id, ty, required: rhs.is_none() });
       }
-      let fn_ty = ty::Fn { params: fn_params, ret: body_ty };
-      st.get_ty(ty::Data::Fn(fn_ty))
+      let fn_ty = ty::RegularFn { params: fn_params, ret: body_ty };
+      st.get_ty(ty::Data::Fn(ty::Fn::Regular(fn_ty)))
     }
     ExprData::If { cond, yes, no } => {
       let cond_ty = get(st, ar, *cond);
@@ -271,10 +271,10 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
         | jsonnet_expr::BinaryOp::GtEq => {
           // TODO something about how the lhs_ty and rhs_ty need to be "similar" somehow (both
           // numbers or both strings, etc)
-          if !is_comparable(st, lhs_ty) {
+          if !is_orderable(st, lhs_ty) {
             st.err(lhs.unwrap_or(expr), error::Kind::Incomparable(lhs_ty));
           }
-          if !is_comparable(st, rhs_ty) {
+          if !is_orderable(st, rhs_ty) {
             st.err(rhs.unwrap_or(expr), error::Kind::Incomparable(rhs_ty));
           }
           ty::Ty::BOOL
@@ -334,16 +334,13 @@ fn define_binds(
   }
 }
 
-fn is_comparable(st: &st::St<'_>, ty: ty::Ty) -> bool {
+fn is_orderable(st: &st::St<'_>, ty: ty::Ty) -> bool {
   match st.data(ty) {
     ty::Data::Any | ty::Data::String | ty::Data::Number => true,
-    ty::Data::Array(ty) => is_comparable(st, *ty),
-    ty::Data::Union(tys) => tys.iter().all(|&ty| is_comparable(st, ty)),
-    ty::Data::True
-    | ty::Data::False
-    | ty::Data::Null
-    | ty::Data::Object(_)
-    | ty::Data::Fn(_)
-    | ty::Data::StdFn(_) => false,
+    ty::Data::Array(ty) => is_orderable(st, *ty),
+    ty::Data::Union(tys) => tys.iter().all(|&ty| is_orderable(st, ty)),
+    ty::Data::True | ty::Data::False | ty::Data::Null | ty::Data::Object(_) | ty::Data::Fn(_) => {
+      false
+    }
   }
 }

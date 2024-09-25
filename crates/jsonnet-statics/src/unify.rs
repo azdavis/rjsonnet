@@ -59,6 +59,11 @@ pub(crate) fn get(st: &mut St<'_>, store: &ty::MutStore<'_>, want: ty::Ty, got: 
       // ignore the fields that ARE in `got` but are NOT in `want`.
     }
     (ty::Data::Fn(want), ty::Data::Fn(got)) => {
+      let (want, got) = match (want, got) {
+        (ty::Fn::Regular(w), ty::Fn::Regular(g)) => (w, g),
+        // TODO impl better checking for std fns
+        (ty::Fn::Std(_), _) | (_, ty::Fn::Std(_)) => return,
+      };
       if want.params.len() > got.params.len() {
         st.err(error::Kind::NotEnoughParams(want.params.len(), got.params.len()));
       }

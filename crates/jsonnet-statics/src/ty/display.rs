@@ -1,6 +1,6 @@
 //! Display types.
 
-use super::{Data, GlobalStore, Param, Store, Ty};
+use super::{Data, Fn, GlobalStore, Param, Store, Ty};
 use always::always;
 use jsonnet_expr::StrArena;
 use std::fmt;
@@ -101,6 +101,10 @@ impl<'a> fmt::Display for TyDisplay<'a> {
         f.write_str("}")
       }
       Data::Fn(func) => {
+        let func = match func {
+          Fn::Regular(func) => func,
+          Fn::Std(func) => return write!(f, "<std.{func}>"),
+        };
         let needs_paren = self.prec > Prec::Min;
         if needs_paren {
           f.write_str("(")?;
@@ -121,7 +125,6 @@ impl<'a> fmt::Display for TyDisplay<'a> {
         }
         Ok(())
       }
-      Data::StdFn(func) => write!(f, "<std.{func}>"),
       Data::Union(tys) => {
         // special case
         // TODO: make this better: e.g. `true | false | number` should show as `boolean | number`
