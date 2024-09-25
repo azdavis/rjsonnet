@@ -24,7 +24,7 @@ impl S {
 
   /// Returns the identifier. Must be a valid Rust identifier.
   #[must_use]
-  pub const fn name(&self) -> &'static str {
+  pub const fn ident(&self) -> &'static str {
     match self.name {
       Some(x) => x,
       None => self.content,

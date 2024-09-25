@@ -19,7 +19,7 @@ fn main() {
     tmp
   };
   let arg_names_except_std_fn_names = {
-    let std_fn_names: HashSet<_> = jsonnet_std::FNS.iter().map(|f| f.name.name()).collect();
+    let std_fn_names: HashSet<_> = jsonnet_std::FNS.iter().map(|f| f.name.ident()).collect();
     let mut tmp = arg_names.clone();
     tmp.retain(|x| !std_fn_names.contains(x));
     tmp
@@ -59,25 +59,25 @@ fn main() {
   let mut names = HashSet::<&'static str>::new();
   let mut contents = HashSet::<&'static str>::new();
   for s in all() {
-    assert!(names.insert(s.name()), "duplicate ident: {}", s.name());
+    assert!(names.insert(s.ident()), "duplicate ident: {}", s.ident());
     assert!(contents.insert(s.content()), "duplicate content: {}", s.content());
-    assert!(!s.name().contains(JOINER));
+    assert!(!s.ident().contains(JOINER));
   }
   drop(names);
   drop(contents);
 
   let builtin_str = {
     let variants = all().map(|s| {
-      let name = format_ident!("{}", s.name());
+      let name = format_ident!("{}", s.ident());
       quote! { #name, }
     });
     let as_static_str_arms = all().map(|s| {
-      let name = format_ident!("{}", s.name());
+      let name = format_ident!("{}", s.ident());
       let content = s.content();
       quote! { Self::#name => #content, }
     });
     let from_str_arms = all().map(|s| {
-      let name = format_ident!("{}", s.name());
+      let name = format_ident!("{}", s.ident());
       let content = s.content();
       quote! { #content => Self::#name, }
     });
@@ -130,7 +130,7 @@ fn main() {
       .chain(builtin_identifiers.iter().copied().map(|x| (x, true)))
       .chain(arg_names.iter().map(|&x| (S::new(x), false)))
       .map(|(s, is_pub)| {
-        let name = format_ident!("{}", s.name());
+        let name = format_ident!("{}", s.ident());
         let vis = if is_pub {
           quote! { pub }
         } else {
@@ -149,7 +149,7 @@ fn main() {
 
   let impl_str = {
     let constants = strings().map(|s| {
-      let name = format_ident!("{}", s.name());
+      let name = format_ident!("{}", s.ident());
       quote! { pub const #name: Self = Self::builtin(BuiltinStr::#name); }
     });
 
@@ -162,14 +162,14 @@ fn main() {
   };
 
   let std_fn = {
-    let variants = jsonnet_std::FNS.iter().map(|f| format_ident!("{}", f.name.name()));
+    let variants = jsonnet_std::FNS.iter().map(|f| format_ident!("{}", f.name.ident()));
     let count = jsonnet_std::FNS.len();
     let str_variant_tuples = jsonnet_std::FNS.iter().map(|f| {
-      let name = format_ident!("{}", f.name.name());
+      let name = format_ident!("{}", f.name.ident());
       quote! { (Str::#name, Self::#name) }
     });
     let as_static_str_arms = jsonnet_std::FNS.iter().map(|f| {
-      let name = format_ident!("{}", f.name.name());
+      let name = format_ident!("{}", f.name.ident());
       let content = f.name.content();
       quote! { Self::#name => #content, }
     });
@@ -180,7 +180,7 @@ fn main() {
           Sig::Regular(xs, _) => xs.len(),
           Sig::Special(xs) => xs.len(),
         };
-        tmp.entry(params_len).or_default().insert(f.name.name());
+        tmp.entry(params_len).or_default().insert(f.name.ident());
       }
       tmp
     };
@@ -266,7 +266,7 @@ fn main() {
 fn mk_get_args(f: &jsonnet_std::Fn) -> proc_macro2::TokenStream {
   let args_struct = param_names(f).join(JOINER);
   let args_struct = format_ident!("{args_struct}");
-  let name = format_ident!("{}", f.name.name());
+  let name = format_ident!("{}", f.name.ident());
   quote! {
     #[doc = "# Errors"]
     #[doc = "If getting the args failed."]
