@@ -323,18 +323,18 @@ impl Subst {
   pub fn get(this: &mut GlobalStore, other: LocalStore) -> Self {
     let mut ret = Subst { old_to_new: FxHashMap::default() };
     let orig_len = this.0.idx_to_data.len();
-    for (data, mut old_ty) in other.0.data_to_idx {
-      always!(!old_ty.is_local());
-      old_ty.make_local();
-      let new_ty = match this.0.data_to_idx.entry(data) {
+    for (data, mut old) in other.0.data_to_idx {
+      always!(!old.is_local());
+      old.make_local();
+      let new = match this.0.data_to_idx.entry(data) {
         Entry::Occupied(entry) => *entry.get(),
         Entry::Vacant(entry) => {
-          let new_ty = Ty::from_idx(this.0.idx_to_data.len());
+          let new = Ty::from_idx(this.0.idx_to_data.len());
           this.0.idx_to_data.push(entry.key().clone());
-          *entry.insert(new_ty)
+          *entry.insert(new)
         }
       };
-      ret.old_to_new.insert(old_ty, new_ty);
+      ret.old_to_new.insert(old, new);
     }
     for data in &mut this.0.idx_to_data[orig_len..] {
       data.apply(&ret);
