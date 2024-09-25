@@ -10,7 +10,7 @@ pub(crate) enum ConstEval {
   /// A real result - somewhere in user code.
   Real(Real),
   /// The std lib, perhaps narrowed down by selecting a field off of it.
-  Std(Option<jsonnet_expr::Str>),
+  Std(Option<jsonnet_expr::StdField>),
 }
 
 /// Somewhere in "real", user-written code.
@@ -111,7 +111,10 @@ where
     idx.clone()
   };
   let on = match get(st, fs, path_id, on)? {
-    ConstEval::Std(None) => return Some(ConstEval::Std(Some(idx))),
+    ConstEval::Std(None) => {
+      let field = jsonnet_expr::StdField::try_from(&idx).ok()?;
+      return Some(ConstEval::Std(Some(field)));
+    }
     ConstEval::Std(Some(_)) => return None,
     ConstEval::Real(on) => on,
   };

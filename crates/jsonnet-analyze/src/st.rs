@@ -3,7 +3,6 @@
 use crate::util::{GlobalArtifacts, PathIoError, Result};
 use crate::{const_eval, util};
 use always::always;
-use jsonnet_expr::StdField;
 use jsonnet_syntax::ast::AstNode as _;
 use paths::{PathId, PathMap};
 use rayon::iter::{IntoParallelIterator as _, ParallelIterator as _};
@@ -546,7 +545,7 @@ impl lang_srv_state::State for St {
     });
     // TODO expose any errors here?
     let from_std_field = match const_eval::get(self, fs, path_id, expr) {
-      Some(const_eval::ConstEval::Std(Some(x))) => StdField::try_from(&x).ok().map(|x| x.doc()),
+      Some(const_eval::ConstEval::Std(Some(x))) => Some(x.doc()),
       Some(const_eval::ConstEval::Std(None)) => Some("std: The standard library."),
       None | Some(const_eval::ConstEval::Real(_)) => None,
     };
