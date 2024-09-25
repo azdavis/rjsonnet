@@ -212,6 +212,7 @@ impl WithFs {
         .map(|res| util::StaticsFileToCombine::new(res, &self.artifacts, &self.file_tys));
       let statics_files: Vec<_> = statics_files.collect();
       // seq
+      always!(order.len() == statics_files.len());
       let new_file_tys = order.into_iter().zip(statics_files).filter_map(|(path_id, res)| {
         let res = res.combine(&mut self.artifacts);
         let top_expr = res.syntax.exprs.top?;
