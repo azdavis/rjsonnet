@@ -319,9 +319,12 @@ fn get_call(
       log::warn!("TODO: get std call {func}");
       ty::Ty::ANY
     }
-    ty::Data::Union(_) => {
-      log::warn!("TODO: get union call");
-      ty::Ty::ANY
+    ty::Data::Union(tys) => {
+      // must be compatible with ALL of the union parts.
+      let ret_tys =
+        tys.into_iter().map(|func_ty| get_call(st, expr, func, func_ty, positional, named));
+      let ret_ty = ty::Data::Union(ret_tys.collect());
+      st.get_ty(ret_ty)
     }
     ty::Data::Prim(ty::Prim::Any) => ty::Ty::ANY,
     ty::Data::Prim(_) | ty::Data::Array(_) | ty::Data::Object(_) => {
