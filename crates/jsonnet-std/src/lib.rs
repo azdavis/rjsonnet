@@ -104,10 +104,11 @@ pub enum Ty {
 
 const V_ANY_RET_BOOL: Sig = Sig::Regular(&[Param::new("v", Ty::Any)], Ty::Boolean);
 const X_NUM_RET_NUM: Sig = Sig::Regular(&[Param::new("x", Ty::Number)], Ty::Number);
+const X_NUM_RET_BOOL: Sig = Sig::Regular(&[Param::new("x", Ty::Number)], Ty::Boolean);
 const STR_RET_STR: Sig = Sig::Regular(&[Param::new("str", Ty::String)], Ty::String);
 
 /// The std fns.
-pub const FNS: [Fn; 121] = [
+pub const FNS: [Fn; 125] = [
   Fn { name: S::new("extVar"), sig: Sig::Regular(&[Param::new("x", Ty::String)], Ty::String) },
   Fn {
     name: S::named("type", "type_"),
@@ -150,6 +151,10 @@ pub const FNS: [Fn; 121] = [
   Fn { name: S::new("acos"), sig: X_NUM_RET_NUM },
   Fn { name: S::new("atan"), sig: X_NUM_RET_NUM },
   Fn { name: S::new("round"), sig: X_NUM_RET_NUM },
+  Fn { name: S::new("isEven"), sig: X_NUM_RET_BOOL },
+  Fn { name: S::new("isOdd"), sig: X_NUM_RET_BOOL },
+  Fn { name: S::new("isInteger"), sig: X_NUM_RET_BOOL },
+  Fn { name: S::new("isDecimal"), sig: X_NUM_RET_BOOL },
   Fn::named("mod", "mod_", &["a", "b"]),
   Fn::new("clamp", &["x", "minVal", "maxVal"]),
   Fn::new("assertEqual", &["a", "b"]),

@@ -172,6 +172,22 @@ pub(crate) fn get(
     StdFn::acos => math_op(cx, env, positional, named, expr, f64::acos),
     StdFn::atan => math_op(cx, env, positional, named, expr, f64::atan),
     StdFn::round => math_op(cx, env, positional, named, expr, f64::round),
+    StdFn::isEven => {
+      let _ = std_fn::args::isEven(positional, named, expr)?;
+      Err(mk_todo(expr, "std.isEven"))
+    }
+    StdFn::isOdd => {
+      let _ = std_fn::args::isOdd(positional, named, expr)?;
+      Err(mk_todo(expr, "std.isOdd"))
+    }
+    StdFn::isInteger => {
+      let _ = std_fn::args::isInteger(positional, named, expr)?;
+      Err(mk_todo(expr, "std.isInteger"))
+    }
+    StdFn::isDecimal => {
+      let _ = std_fn::args::isDecimal(positional, named, expr)?;
+      Err(mk_todo(expr, "std.isDecimal"))
+    }
     StdFn::mod_ => {
       let _ = std_fn::args::mod_(positional, named, expr)?;
       Err(mk_todo(expr, "std.mod"))
