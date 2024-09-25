@@ -36,7 +36,7 @@ pub fn get(cx: Cx<'_>, val: jsonnet::Val) -> error::Result<json::Val> {
       let vs = iter.collect::<error::Result<Vec<_>>>()?;
       Ok(json::Val::Array(vs))
     }
-    jsonnet::Val::Function { .. } | jsonnet::Val::StdFn(_) => Err(error::Error::ManifestFn),
+    jsonnet::Val::Fn(_) => Err(error::Error::ManifestFn),
   }
 }
 

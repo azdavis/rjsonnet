@@ -93,8 +93,7 @@ pub(crate) enum Val {
   Prim(Prim),
   Object(Object),
   Array(Array),
-  Function(Function),
-  StdFn(StdFn),
+  Fn(Fn),
 }
 
 #[derive(Debug, Clone)]
@@ -309,7 +308,13 @@ struct ArrayPart {
 }
 
 #[derive(Debug, Clone)]
-pub(crate) struct Function {
+pub(crate) enum Fn {
+  Regular(RegularFn),
+  Std(StdFn),
+}
+
+#[derive(Debug, Clone)]
+pub(crate) struct RegularFn {
   pub(crate) env: Env,
   /// we'd like to get good performance for lookup by both index for positional arguments and name
   /// for keyword arguments, but to do that we'd need to something like double the memory and

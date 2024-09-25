@@ -1,7 +1,7 @@
 //! The standard library for Jsonnet, implemented in Rust.
 
 use crate::error::Result;
-use crate::val::jsonnet::{Array, Env, Val};
+use crate::val::jsonnet::{Array, Env, Fn, Val};
 use crate::{error, exec, mk_todo, Cx};
 use finite_float::Float;
 use jsonnet_expr::{std_fn, Expr, ExprMust, Id, Prim, StdFn, Str};
@@ -32,7 +32,7 @@ pub(crate) fn get(
         },
         Val::Object(_) => Str::object,
         Val::Array(_) => Str::array,
-        Val::Function(_) | Val::StdFn(_) => Str::function,
+        Val::Fn(_) => Str::function,
       };
       Ok(Val::Prim(Prim::String(ret)))
     }
@@ -49,7 +49,7 @@ pub(crate) fn get(
     StdFn::isFunction => {
       let arguments = std_fn::args::isFunction(positional, named, expr)?;
       let v = exec::get(cx, env, arguments.v)?;
-      Ok(Val::Prim(Prim::Bool(matches!(v, Val::Function(_) | Val::StdFn(_)))))
+      Ok(Val::Prim(Prim::Bool(matches!(v, Val::Fn(_)))))
     }
     StdFn::isNumber => {
       let arguments = std_fn::args::isNumber(positional, named, expr)?;
@@ -82,8 +82,8 @@ pub(crate) fn get(
         },
         Val::Object(obj) => obj.fields().len(),
         Val::Array(arr) => arr.len(),
-        Val::Function(func) => func.params.len(),
-        Val::StdFn(std_fn) => std_fn.params_len(),
+        Val::Fn(Fn::Regular(func)) => func.params.len(),
+        Val::Fn(Fn::Std(std_fn)) => std_fn.params_len(),
       };
       Ok(Val::Prim(Prim::Number(Float::from(ret))))
     }
@@ -467,7 +467,7 @@ pub(crate) fn get(
           }
           Ok(Val::Array(ret))
         }
-        Val::Prim(_) | Val::Object(_) | Val::Function(_) | Val::StdFn(_) => {
+        Val::Prim(_) | Val::Object(_) | Val::Fn(_) => {
           Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes })
         }
       }

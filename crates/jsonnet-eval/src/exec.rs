@@ -1,7 +1,7 @@
 //! Executing Jsonnet expression to produce Jsonnet values.
 
 use crate::error::{self, Result};
-use crate::val::jsonnet::{Array, Env, Field, Function, Get, Object, StdField, Val};
+use crate::val::jsonnet::{Array, Env, Field, Fn, Get, Object, RegularFn, StdField, Val};
 use crate::{manifest, mk_todo, std_lib, Cx};
 use always::always;
 use finite_float::Float;
@@ -88,7 +88,7 @@ pub(crate) fn get(cx: Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
                 .into_boxed_str();
               Ok(Val::Prim(Prim::String(cx.str_ar.str_shared(s))))
             }
-            StdField::Fn(f) => Ok(Val::StdFn(f)),
+            StdField::Fn(f) => Ok(Val::Fn(Fn::Std(f))),
           },
           Field::Expr(env, expr) => get(cx, &env, expr),
         }
@@ -119,7 +119,7 @@ pub(crate) fn get(cx: Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
       _ => Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes }),
     },
     ExprData::Call { func, positional, named } => match get(cx, env, *func)? {
-      Val::Function(mut func) => {
+      Val::Fn(Fn::Regular(mut func)) => {
         if let Some(tma) = arg::TooMany::new(
           func.params.iter().map(|&(id, _)| id),
           positional.len(),
@@ -171,7 +171,7 @@ pub(crate) fn get(cx: Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
         }
         get(cx, &env, func.body)
       }
-      Val::StdFn(std_fn) => std_lib::get(cx, env, positional, named, expr, std_fn),
+      Val::Fn(Fn::Std(std_fn)) => std_lib::get(cx, env, positional, named, expr, std_fn),
       _ => Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes }),
     },
     ExprData::Id(id) => match env.get(*id) {
@@ -289,7 +289,7 @@ pub(crate) fn get(cx: Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
       }
     }
     ExprData::Function { params, body } => {
-      Ok(Val::Function(Function { env: env.clone(), params: params.clone(), body: *body }))
+      Ok(Val::Fn(Fn::Regular(RegularFn { env: env.clone(), params: params.clone(), body: *body })))
     }
     ExprData::Error(inner) => {
       let val = get(cx, env, *inner)?;
@@ -430,8 +430,8 @@ pub(crate) fn eq_val(expr: ExprMust, cx: Cx<'_>, lhs: &Val, rhs: &Val) -> Result
     (Val::Prim(_), Val::Object(_) | Val::Array(_))
     | (Val::Object(_), Val::Prim(_) | Val::Array(_))
     | (Val::Array(_), Val::Prim(_) | Val::Object(_))
-    | (Val::Function(_) | Val::StdFn(_), _)
-    | (_, Val::Function(_) | Val::StdFn(_)) => Ok(false),
+    | (Val::Fn(_), _)
+    | (_, Val::Fn(_)) => Ok(false),
   }
 }
 
