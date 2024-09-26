@@ -10,6 +10,7 @@ use always::{always, convert};
 use jsonnet_expr::{ExprMust, Id, Str};
 use rustc_hash::FxHashMap;
 use std::collections::{hash_map::Entry, BTreeMap, BTreeSet};
+use std::fmt;
 
 /// A map from expr to type.
 pub type Exprs = FxHashMap<ExprMust, Ty>;
@@ -155,8 +156,15 @@ pub(crate) type Union = BTreeSet<Ty>;
 ///
 /// BUT NOTE that the SEMANTICS of a type can be the same as another type but the types are
 /// different, like `{ a: int } | { a: string }` and `{ a: int | string }`
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Ty(u32);
+
+impl fmt::Debug for Ty {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    let (idx, is_local) = self.to_data();
+    f.debug_struct("Ty").field("idx", &idx).field("is_local", &is_local).finish()
+  }
+}
 
 impl Ty {
   const LOCAL_MASK: u32 = 1u32 << 31u32;
