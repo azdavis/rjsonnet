@@ -66,7 +66,6 @@ pub fn run<S: lang_srv_state::State>() {
   }
 
   for msg in &conn.receiver {
-    log::debug!("recv {msg:?}");
     match msg {
       lsp_server::Message::Request(req) => {
         if conn.handle_shutdown(&req).expect("handle shutdown") {
