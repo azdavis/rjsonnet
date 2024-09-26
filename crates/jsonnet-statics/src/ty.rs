@@ -9,7 +9,7 @@ mod generated {
 use always::{always, convert};
 use jsonnet_expr::{ExprMust, Id, Str};
 use rustc_hash::FxHashMap;
-use std::collections::{hash_map::Entry, BTreeMap, BTreeSet};
+use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
 
 /// A map from expr to type.
@@ -355,17 +355,13 @@ impl Subst {
     for (data, mut old) in other.0.data_to_idx {
       always!(!old.is_local());
       old.make_local();
-      let new = match this.0.data_to_idx.entry(data) {
-        Entry::Occupied(entry) => {
-          let new = *entry.get();
-          always!(!new.is_local());
-          new
-        }
-        Entry::Vacant(entry) => {
-          let new = Ty::from_idx(this.0.idx_to_data.len());
-          this.0.idx_to_data.push(entry.key().clone());
-          *entry.insert(new)
-        }
+      let new = if let Some(&new) = this.0.data_to_idx.get(&data) {
+        always!(!new.is_local());
+        new
+      } else {
+        let new = Ty::from_idx(this.0.idx_to_data.len());
+        this.0.idx_to_data.push(data);
+        new
       };
       if old != new {
         always!(ret.old_to_new.insert(old, new).is_none());
@@ -373,6 +369,15 @@ impl Subst {
     }
     for data in &mut this.0.idx_to_data[orig_len..] {
       data.apply(&ret);
+    }
+    for (idx, mut data) in other.0.idx_to_data.into_iter().enumerate() {
+      let mut old = Ty::from_idx(idx);
+      old.make_local();
+      if let Some(&new) = ret.old_to_new.get(&old) {
+        always!(!this.0.data_to_idx.contains_key(&data));
+        data.apply(&ret);
+        always!(this.0.data_to_idx.insert(data, new).is_none());
+      }
     }
     ret
   }
