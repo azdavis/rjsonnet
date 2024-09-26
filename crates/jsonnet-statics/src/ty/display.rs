@@ -41,6 +41,10 @@ pub enum MultiLine {
   May,
 }
 
+impl MultiLine {
+  const THRESHOLD: usize = 3;
+}
+
 #[derive(Clone, Copy)]
 struct TyDisplay<'a> {
   ty: Ty,
@@ -55,6 +59,7 @@ impl<'a> TyDisplay<'a> {
 }
 
 impl<'a> fmt::Display for TyDisplay<'a> {
+  #[expect(clippy::too_many_lines)]
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     let Some(data) = self.stuff.store.data(self.ty, false) else {
       always!(false, "should not use local store for display");
@@ -82,8 +87,11 @@ impl<'a> fmt::Display for TyDisplay<'a> {
           stuff: Stuff { level: new_level, ..self.stuff },
         });
         if let Some(field) = iter.next() {
-          let (level, new_level) =
-            if obj.known.len() < 4 { (None, None) } else { (self.stuff.level, new_level) };
+          let (level, new_level) = if obj.known.len() < MultiLine::THRESHOLD {
+            (None, None)
+          } else {
+            (self.stuff.level, new_level)
+          };
           field_sep(f, new_level)?;
           field.fmt(f)?;
           for field in iter {
@@ -112,13 +120,30 @@ impl<'a> fmt::Display for TyDisplay<'a> {
           f.write_str("(")?;
         }
         f.write_str("(")?;
-        let mut iter = func.params.iter().map(|&param| ParamDisplay { param, stuff: self.stuff });
-        if let Some(ty) = iter.next() {
-          ty.fmt(f)?;
+        let new_level = self.stuff.level.map(|x| x + 1);
+        let mut iter = func
+          .params
+          .iter()
+          .map(|&param| ParamDisplay { param, stuff: Stuff { level: new_level, ..self.stuff } });
+        let (level, new_level) = if func.params.len() < MultiLine::THRESHOLD {
+          (None, None)
+        } else {
+          (self.stuff.level, new_level)
+        };
+        if let Some(new_level) = new_level {
+          nl_indent(f, new_level)?;
         }
-        for ty in iter {
-          f.write_str(", ")?;
-          ty.fmt(f)?;
+        if let Some(p) = iter.next() {
+          p.fmt(f)?;
+        }
+        for p in iter {
+          f.write_str(",")?;
+          field_sep(f, new_level)?;
+          p.fmt(f)?;
+        }
+        if let Some(level) = level {
+          f.write_str(",")?;
+          nl_indent(f, level)?;
         }
         f.write_str(") => ")?;
         self.with(func.ret, self.prec).fmt(f)?;
@@ -197,14 +222,16 @@ struct Stuff<'a> {
 fn field_sep(f: &mut fmt::Formatter<'_>, level: Option<usize>) -> fmt::Result {
   match level {
     None => f.write_str(" "),
-    Some(level) => {
-      f.write_str("\n")?;
-      for _ in 0..level {
-        f.write_str("  ")?;
-      }
-      Ok(())
-    }
+    Some(level) => nl_indent(f, level),
   }
+}
+
+fn nl_indent(f: &mut fmt::Formatter<'_>, level: usize) -> fmt::Result {
+  f.write_str("\n")?;
+  for _ in 0..level {
+    f.write_str("  ")?;
+  }
+  Ok(())
 }
 
 /// Precedence when printing a type.
