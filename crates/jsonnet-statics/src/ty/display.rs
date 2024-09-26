@@ -1,6 +1,6 @@
 //! Display types.
 
-use super::{Data, Fn, GlobalStore, Param, Prim, Store, Ty};
+use super::{Data, Fn, GlobalStore, LocalStore, Param, Prim, Ty};
 use always::always;
 use jsonnet_expr::StrArena;
 use std::fmt;
@@ -9,18 +9,24 @@ impl Ty {
   /// Displays a type.
   ///
   /// Meant to be somewhat similar to how TypeScript does it.
+  ///
+  /// NOTE: in most cases, you'll pass `None` for the local store, because local stores are meant to
+  /// be immediately combined into the global store. But we allow passing `Some` for debugging
+  /// purposes.
   #[must_use]
   pub fn display<'a>(
     self,
     multi_line: MultiLine,
-    store: &'a GlobalStore,
+    global: &'a GlobalStore,
+    local: Option<&'a LocalStore>,
     str_ar: &'a StrArena,
   ) -> impl fmt::Display + 'a {
     TyDisplay {
       ty: self,
       prec: Prec::Min,
       stuff: Stuff {
-        store: &store.0,
+        global,
+        local,
         str_ar,
         level: match multi_line {
           MultiLine::MustNot => None,
@@ -61,8 +67,10 @@ impl<'a> TyDisplay<'a> {
 impl<'a> fmt::Display for TyDisplay<'a> {
   #[expect(clippy::too_many_lines)]
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    let Some(data) = self.stuff.store.data(self.ty, false) else {
-      always!(false, "should not use local store for display");
+    let data =
+      self.stuff.global.0.data(self.ty, false).or_else(|| self.stuff.local?.0.data(self.ty, true));
+    let Some(data) = data else {
+      always!(false, "not in store: {:?}", self.ty);
       return f.write_str("_");
     };
     match data {
@@ -214,7 +222,8 @@ impl<'a> fmt::Display for ParamDisplay<'a> {
 /// Just a bunch of common stuff we need in a few places. Naming is hard.
 #[derive(Clone, Copy)]
 struct Stuff<'a> {
-  store: &'a Store,
+  global: &'a GlobalStore,
+  local: Option<&'a LocalStore>,
   str_ar: &'a StrArena,
   level: Option<usize>,
 }

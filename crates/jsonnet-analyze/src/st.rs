@@ -540,7 +540,7 @@ impl lang_srv_state::State for St {
     let ty = expr.and_then(|expr| {
       let wa = &self.with_fs.artifacts;
       let ty = arts.expr_tys.get(&expr)?;
-      let ty = ty.display(self.multi_line, &wa.statics, &wa.syntax.strings);
+      let ty = ty.display(self.multi_line, &wa.statics, None, &wa.syntax.strings);
       Some(format!("type:\n```ts\n{ty}\n```"))
     });
     // TODO expose any errors here?
