@@ -343,6 +343,7 @@ impl Default for LocalStore {
 /// A substitution between two [`Store`]s.
 #[derive(Debug)]
 pub struct Subst {
+  /// INVARIANT: map from local to non-local tys
   old_to_new: FxHashMap<Ty, Ty>,
 }
 
@@ -355,7 +356,11 @@ impl Subst {
       always!(!old.is_local());
       old.make_local();
       let new = match this.0.data_to_idx.entry(data) {
-        Entry::Occupied(entry) => *entry.get(),
+        Entry::Occupied(entry) => {
+          let new = *entry.get();
+          always!(!new.is_local());
+          new
+        }
         Entry::Vacant(entry) => {
           let new = Ty::from_idx(this.0.idx_to_data.len());
           this.0.idx_to_data.push(entry.key().clone());
