@@ -43,7 +43,7 @@ impl WithFs {
   where
     F: Sync + paths::FileSystem,
   {
-    self.ensure_import_tys_cached(fs, path_id);
+    self.ensure_import_tys_cached(fs, path_id, None);
     let path = self.artifacts.syntax.paths.get_path(path_id);
     let res = match util::SyntaxFileToCombine::from_fs(path, &self.root_dirs, fs) {
       Ok(x) => x,
@@ -97,13 +97,21 @@ impl WithFs {
   }
 
   #[allow(clippy::too_many_lines)]
-  fn ensure_import_tys_cached<F>(&mut self, fs: &F, path_id: PathId)
-  where
+  fn ensure_import_tys_cached<F>(
+    &mut self,
+    fs: &F,
+    orig_path_id: PathId,
+    mut contents: Option<&str>,
+  ) where
     F: Sync + paths::FileSystem,
   {
-    log::debug!("ensure_import_tys_cached {:?} {}", path_id, self.display_path_id(path_id));
-    self.file_tys.remove(&path_id);
-    let mut work = vec![Action::start(path_id)];
+    log::debug!(
+      "ensure_import_tys_cached {:?} {}",
+      orig_path_id,
+      self.display_path_id(orig_path_id)
+    );
+    self.file_tys.remove(&orig_path_id);
+    let mut work = vec![Action::start(orig_path_id)];
     let mut cur = paths::PathSet::default();
     let mut done = paths::PathSet::default();
     // INVARIANT: level_idx = how many Ends are in work.
@@ -130,12 +138,28 @@ impl WithFs {
           level_idx += 1;
           let path = self.artifacts.syntax.paths.get_path(path_id);
           let parent = util::path_parent_must(path);
-          let Ok(contents) = fs.read_to_string(path.as_path()) else { continue };
+          let fs_contents: String;
+          let contents = match contents.take() {
+            Some(x) => {
+              always!(path_id == orig_path_id);
+              x
+            }
+            None => match fs.read_to_string(path.as_path()) {
+              Ok(x) => {
+                fs_contents = x;
+                fs_contents.as_str()
+              }
+              Err(e) => {
+                log::warn!("io error: {e}");
+                continue;
+              }
+            },
+          };
           // need to make this `parent` owned...
           let parent = parent.to_owned();
           // ...and then shadow it with the borrowed form...
           let parent = parent.as_clean_path();
-          let imports = util::approximate_code_imports(contents.as_str());
+          let imports = util::approximate_code_imports(contents);
           log::debug!("imports: {imports:?}");
           for import in imports {
             let import = std::path::Path::new(import.as_str());
@@ -183,7 +207,7 @@ impl WithFs {
     if let Some(fst) = levels.first_mut() {
       // remove the original path id since we handle that specially, outside of this fn. e.g. we
       // want ALL of its artifacts. this fn is just for caching the types.
-      always!(fst.remove(&path_id));
+      always!(fst.remove(&orig_path_id));
     } else {
       always!(false, "should have a first level");
     }
@@ -461,7 +485,7 @@ impl lang_srv_state::State for St {
     let path_id = self.path_id(path.clone());
     let Some(contents) = self.open_files.get_mut(&path_id) else { return (path_id, Vec::new()) };
     apply_changes::get(contents, changes);
-    self.with_fs.ensure_import_tys_cached(fs, path_id);
+    self.with_fs.ensure_import_tys_cached(fs, path_id, Some(contents));
     let p = path.as_clean_path();
     let res = util::SyntaxFileToCombine::from_str(p, contents, &self.with_fs.root_dirs, fs);
     let res = res.combine(&mut self.with_fs.artifacts);
