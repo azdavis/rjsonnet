@@ -1,5 +1,16 @@
 # Changelog
 
+## main
+
+- Make some micro-optimizations.
+- Fix an issue where files were analyzed in the reverse order.
+- Improve type checking of function calls.
+- Add more std items and docs.
+- Show multi-line object types with trailing `,`.
+- Show functions with many parameters across many lines.
+- Fix an issue where files were not correctly analyzed after being updated.
+- Fix an where types were incorrectly shared across files.
+
 ## v0.4.0
 
 - Allow for type-checking across files.
