@@ -24,6 +24,8 @@ fn go<S: lang_srv_state::State>(
   conn: &lsp_server::Connection,
   mut notif: lsp_server::Notification,
 ) -> ControlFlowResult {
+  // idk what set trace is but i'm just going to ignore it.
+  notif = try_notif::<lsp_types::notification::SetTrace, _>(notif, |_| Ok(()))?;
   notif = try_notif::<lsp_types::notification::DidChangeWatchedFiles, _>(notif, |params| {
     let mut updated = Vec::<paths::CleanPathBuf>::new();
     for change in params.changes {
