@@ -8,7 +8,8 @@ mod generated {
 
 use always::{always, convert};
 use jsonnet_expr::{ExprMust, Id, Str};
-use rustc_hash::FxHashMap;
+use rustc_hash::{FxHashMap, FxHashSet};
+use std::collections::hash_map::Entry;
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
 
@@ -54,6 +55,16 @@ impl Data {
       Data::Prim(_) => {}
     }
   }
+
+  fn has_local(&self) -> bool {
+    match self {
+      Data::Prim(_) => false,
+      Data::Array(ty) => ty.is_local(),
+      Data::Object(object) => object.has_local(),
+      Data::Fn(f) => f.has_local(),
+      Data::Union(parts) => parts.iter().any(|x| x.is_local()),
+    }
+  }
 }
 
 /// A primitive type, containing no recursive data inside.
@@ -90,6 +101,10 @@ impl Object {
     }
   }
 
+  fn has_local(&self) -> bool {
+    self.known.values().any(|x| x.is_local())
+  }
+
   pub(crate) fn empty() -> Self {
     Self { known: BTreeMap::new(), has_unknown: false }
   }
@@ -112,6 +127,13 @@ impl Fn {
       Fn::Std(_) => {}
     }
   }
+
+  fn has_local(&self) -> bool {
+    match self {
+      Fn::Regular(f) => f.has_local(),
+      Fn::Std(_) => false,
+    }
+  }
 }
 
 /// A function type.
@@ -130,6 +152,10 @@ impl RegularFn {
     }
     self.ret.apply(subst);
   }
+
+  fn has_local(&self) -> bool {
+    self.params.iter().any(Param::has_local) || self.ret.is_local()
+  }
 }
 
 /// A function parameter.
@@ -143,6 +169,10 @@ pub(crate) struct Param {
 impl Param {
   fn apply(&mut self, subst: &Subst) {
     self.ty.apply(subst);
+  }
+
+  fn has_local(&self) -> bool {
+    self.ty.is_local()
   }
 }
 
@@ -354,35 +384,100 @@ impl Subst {
   /// # Panics
   ///
   /// On internal error in debug mode only.
-  pub fn get(this: &mut GlobalStore, other: LocalStore) -> Self {
+  pub fn get(this: &mut GlobalStore, mut other: LocalStore) -> Self {
+    // topological sort to determine what order to add the data from the local store to the global
+    // store.
+    let mut work: Vec<_> = (0..other.0.idx_to_data.len())
+      .map(|idx| {
+        let mut t = Ty::from_idx(idx);
+        t.make_local();
+        Action::start(t)
+      })
+      .collect();
+    let mut cur = FxHashSet::<Ty>::default();
+    let mut done = FxHashSet::<Ty>::default();
+    let mut order = Vec::<Ty>::default();
+    let mut saw_cycle = false;
+    while let Some(Action(ty, kind)) = work.pop() {
+      match kind {
+        ActionKind::Start => {
+          if done.contains(&ty) {
+            continue;
+          }
+          let Some(data) = other.0.data(ty, true) else { continue };
+          if !cur.insert(ty) {
+            always!(false, "cycle with {ty:?}");
+            saw_cycle = true;
+            continue;
+          }
+          work.push(Action::end(ty));
+          match data {
+            Data::Prim(_) => {}
+            Data::Array(ty) => work.push(Action::start(*ty)),
+            Data::Object(object) => {
+              let iter = object.known.values().map(|&t| Action::start(t));
+              work.extend(iter);
+            }
+            Data::Fn(func) => match func {
+              Fn::Regular(func) => {
+                let params = func.params.iter().map(|x| x.ty);
+                let iter = params.chain(std::iter::once(func.ret)).map(Action::start);
+                work.extend(iter);
+              }
+              Fn::Std(_) => {}
+            },
+            Data::Union(tys) => {
+              let iter = tys.iter().map(|&t| Action::start(t));
+              work.extend(iter);
+            }
+          }
+        }
+        ActionKind::End => {
+          always!(ty.is_local());
+          always!(cur.remove(&ty));
+          always!(done.insert(ty));
+          order.push(ty);
+        }
+      }
+    }
+    always!(cur.is_empty() != saw_cycle);
+    always!(done.len() == order.len());
+    drop(work);
+    drop(cur);
+    drop(done);
     let mut ret = Subst { old_to_new: FxHashMap::default() };
-    let orig_len = this.0.idx_to_data.len();
-    for (data, mut old) in other.0.data_to_idx {
-      always!(!old.is_local());
-      old.make_local();
-      let new = if let Some(&new) = this.0.data_to_idx.get(&data) {
-        always!(!new.is_local());
-        new
-      } else {
-        let new = Ty::from_idx(this.0.idx_to_data.len());
-        this.0.idx_to_data.push(data);
-        new
+    for old in order {
+      let (idx, is_local) = old.to_data();
+      always!(is_local);
+      let Some(data) = other.0.idx_to_data.get_mut(idx) else {
+        always!(
+          false,
+          "should be able to index into idx_to_data with a ty that came from that len: {idx:?}"
+        );
+        continue;
       };
-      if old != new {
-        always!(ret.old_to_new.insert(old, new).is_none());
-      }
-    }
-    for data in &mut this.0.idx_to_data[orig_len..] {
+      // take the data out without cloning and replace it with something inert.
+      always!(!matches!(*data, Data::Prim(_)));
+      let mut data = std::mem::replace(data, Data::Prim(Prim::Any));
+      // apply the subst in progress to each data. since we topologically sorted, after applying,
+      // the data should contain no local types. this might NOT be the case if we processed the
+      // local data in an arbitrary order.
       data.apply(&ret);
-    }
-    for (idx, mut data) in other.0.idx_to_data.into_iter().enumerate() {
-      let mut old = Ty::from_idx(idx);
-      old.make_local();
-      if let Some(&new) = ret.old_to_new.get(&old) {
-        always!(!this.0.data_to_idx.contains_key(&data));
-        data.apply(&ret);
-        always!(this.0.data_to_idx.insert(data, new).is_none());
-      }
+      debug_assert!(!data.has_local());
+      let new = match this.0.data_to_idx.entry(data) {
+        Entry::Occupied(entry) => *entry.get(),
+        Entry::Vacant(entry) => {
+          let new = Ty::from_idx(this.0.idx_to_data.len());
+          this.0.idx_to_data.push(entry.key().clone());
+          *entry.insert(new)
+        }
+      };
+      always!(!new.is_local());
+      // in the expr subst, we check if old != new before inserting. we can save and avoid the
+      // insertion if they are the same. however, here, they will ALWAYS be different because old is
+      // local and new is not.
+      always!(old != new);
+      always!(ret.old_to_new.insert(old, new).is_none());
     }
     always!(this.0.data_to_idx.len() == this.0.idx_to_data.len());
     if cfg!(debug_assertions) {
@@ -391,8 +486,28 @@ impl Subst {
         assert!(!is_local);
         let other_data = &this.0.idx_to_data[idx];
         assert_eq!(data, other_data);
+        assert!(!data.has_local());
       }
     }
     ret
+  }
+}
+
+#[derive(Debug)]
+enum ActionKind {
+  Start,
+  End,
+}
+
+#[derive(Debug)]
+struct Action(Ty, ActionKind);
+
+impl Action {
+  const fn start(t: Ty) -> Self {
+    Self(t, ActionKind::Start)
+  }
+
+  const fn end(t: Ty) -> Self {
+    Self(t, ActionKind::End)
   }
 }
