@@ -440,6 +440,11 @@ impl Subst {
         }
       }
     }
+    // make a few checks, drop some intermediate values, then proceed to build the subst in the
+    // topologically sorted order.
+    //
+    // the important thing is that for a type T in the order, for all types U in data(T), U precedes
+    // T in the order.
     always!(cur.is_empty() != saw_cycle);
     always!(done.len() == order.len());
     drop(work);
@@ -479,6 +484,7 @@ impl Subst {
       always!(old != new);
       always!(ret.old_to_new.insert(old, new).is_none());
     }
+    // some final consistency checks.
     always!(global.0.data_to_idx.len() == global.0.idx_to_data.len());
     if cfg!(debug_assertions) {
       for (data, ty) in &global.0.data_to_idx {
