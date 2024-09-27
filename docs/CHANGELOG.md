@@ -1,6 +1,6 @@
 # Changelog
 
-## main
+## v0.4.1
 
 - Make some micro-optimizations.
 - Fix an issue where files were analyzed in the reverse order.
