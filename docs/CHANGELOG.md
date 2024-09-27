@@ -9,7 +9,7 @@
 - Show multi-line object types with trailing `,`.
 - Show functions with many parameters across many lines.
 - Fix an issue where files were not correctly analyzed after being updated.
-- Fix an where types were incorrectly shared across files.
+- Fix issues where types were incorrectly shared or combined across files.
 
 ## v0.4.0
 
