@@ -51,6 +51,19 @@ impl MultiLine {
   const THRESHOLD: usize = 3;
 }
 
+fn increase_level(n: usize, lv: Option<usize>) -> [Option<usize>; 3] {
+  match lv {
+    None => [None; 3],
+    Some(x) => {
+      if n > MultiLine::THRESHOLD {
+        [Some(x), Some(x + 1), Some(x + 1)]
+      } else {
+        [None, None, Some(x)]
+      }
+    }
+  }
+}
+
 #[derive(Clone, Copy)]
 struct TyDisplay<'a> {
   ty: Ty,
@@ -88,18 +101,13 @@ impl<'a> fmt::Display for TyDisplay<'a> {
       }
       Data::Object(obj) => {
         f.write_str("{")?;
-        let new_level = self.stuff.level.map(|x| x + 1);
+        let [cur_level, new_level, rec_level] = increase_level(obj.known.len(), self.stuff.level);
         let mut iter = obj.known.iter().map(|(key, ty)| FieldDisplay {
           key,
           ty: *ty,
-          stuff: Stuff { level: new_level, ..self.stuff },
+          stuff: Stuff { level: rec_level, ..self.stuff },
         });
         if let Some(field) = iter.next() {
-          let (level, new_level) = if obj.known.len() < MultiLine::THRESHOLD {
-            (None, None)
-          } else {
-            (self.stuff.level, new_level)
-          };
           field_sep(f, new_level)?;
           field.fmt(f)?;
           for field in iter {
@@ -113,10 +121,10 @@ impl<'a> fmt::Display for TyDisplay<'a> {
             f.write_str("...")?;
           }
           // trailing comma iff multi line
-          if level.is_some() {
+          if cur_level.is_some() {
             f.write_str(",")?;
           }
-          field_sep(f, level)?;
+          field_sep(f, cur_level)?;
         } else if obj.has_unknown {
           f.write_str(" ... ")?;
         }
@@ -128,16 +136,11 @@ impl<'a> fmt::Display for TyDisplay<'a> {
           f.write_str("(")?;
         }
         f.write_str("(")?;
-        let new_level = self.stuff.level.map(|x| x + 1);
+        let [cur_level, new_level, rec_level] = increase_level(func.params.len(), self.stuff.level);
         let mut iter = func
           .params
           .iter()
-          .map(|&param| ParamDisplay { param, stuff: Stuff { level: new_level, ..self.stuff } });
-        let (level, new_level) = if func.params.len() < MultiLine::THRESHOLD {
-          (None, None)
-        } else {
-          (self.stuff.level, new_level)
-        };
+          .map(|&param| ParamDisplay { param, stuff: Stuff { level: rec_level, ..self.stuff } });
         if let Some(new_level) = new_level {
           nl_indent(f, new_level)?;
         }
@@ -149,9 +152,9 @@ impl<'a> fmt::Display for TyDisplay<'a> {
           field_sep(f, new_level)?;
           p.fmt(f)?;
         }
-        if let Some(level) = level {
+        if let Some(cur_level) = cur_level {
           f.write_str(",")?;
-          nl_indent(f, level)?;
+          nl_indent(f, cur_level)?;
         }
         f.write_str(") => ")?;
         self.with(func.ret, self.prec).fmt(f)?;
