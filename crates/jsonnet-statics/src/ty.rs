@@ -384,10 +384,10 @@ impl Subst {
   /// # Panics
   ///
   /// On internal error in debug mode only.
-  pub fn get(this: &mut GlobalStore, mut other: LocalStore) -> Self {
+  pub fn get(global: &mut GlobalStore, mut local: LocalStore) -> Self {
     // topological sort to determine what order to add the data from the local store to the global
     // store.
-    let mut work: Vec<_> = (0..other.0.idx_to_data.len())
+    let mut work: Vec<_> = (0..local.0.idx_to_data.len())
       .map(|idx| {
         let mut t = Ty::from_idx(idx);
         t.make_local();
@@ -404,7 +404,7 @@ impl Subst {
           if done.contains(&ty) {
             continue;
           }
-          let Some(data) = other.0.data(ty, true) else { continue };
+          let Some(data) = local.0.data(ty, true) else { continue };
           if !cur.insert(ty) {
             always!(false, "cycle with {ty:?}");
             saw_cycle = true;
@@ -449,7 +449,7 @@ impl Subst {
     for old in order {
       let (idx, is_local) = old.to_data();
       always!(is_local);
-      let Some(data) = other.0.idx_to_data.get_mut(idx) else {
+      let Some(data) = local.0.idx_to_data.get_mut(idx) else {
         always!(
           false,
           "should be able to index into idx_to_data with a ty that came from that len: {idx:?}"
@@ -464,11 +464,11 @@ impl Subst {
       // local data in an arbitrary order.
       data.apply(&ret);
       debug_assert!(!data.has_local());
-      let new = match this.0.data_to_idx.entry(data) {
+      let new = match global.0.data_to_idx.entry(data) {
         Entry::Occupied(entry) => *entry.get(),
         Entry::Vacant(entry) => {
-          let new = Ty::from_idx(this.0.idx_to_data.len());
-          this.0.idx_to_data.push(entry.key().clone());
+          let new = Ty::from_idx(global.0.idx_to_data.len());
+          global.0.idx_to_data.push(entry.key().clone());
           *entry.insert(new)
         }
       };
@@ -479,12 +479,12 @@ impl Subst {
       always!(old != new);
       always!(ret.old_to_new.insert(old, new).is_none());
     }
-    always!(this.0.data_to_idx.len() == this.0.idx_to_data.len());
+    always!(global.0.data_to_idx.len() == global.0.idx_to_data.len());
     if cfg!(debug_assertions) {
-      for (data, ty) in &this.0.data_to_idx {
+      for (data, ty) in &global.0.data_to_idx {
         let (idx, is_local) = ty.to_data();
         assert!(!is_local);
-        let other_data = &this.0.idx_to_data[idx];
+        let other_data = &global.0.idx_to_data[idx];
         assert_eq!(data, other_data);
         assert!(!data.has_local());
       }
