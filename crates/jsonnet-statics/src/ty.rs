@@ -179,6 +179,7 @@ impl Ty {
     self.0 & Self::LOCAL_MASK == Self::LOCAL_MASK
   }
 
+  /// returns a tuple of (index, is local)
   fn to_data(mut self) -> (usize, bool) {
     // NOTE: the build script depends on the non-mut case being 0
     let is_local = self.is_local();
@@ -349,6 +350,10 @@ pub struct Subst {
 
 impl Subst {
   /// Combine stores and produce a substitution to apply to other things.
+  ///
+  /// # Panics
+  ///
+  /// On internal error in debug mode only.
   pub fn get(this: &mut GlobalStore, other: LocalStore) -> Self {
     let mut ret = Subst { old_to_new: FxHashMap::default() };
     let orig_len = this.0.idx_to_data.len();
@@ -377,6 +382,15 @@ impl Subst {
         always!(!this.0.data_to_idx.contains_key(&data));
         data.apply(&ret);
         always!(this.0.data_to_idx.insert(data, new).is_none());
+      }
+    }
+    always!(this.0.data_to_idx.len() == this.0.idx_to_data.len());
+    if cfg!(debug_assertions) {
+      for (data, ty) in &this.0.data_to_idx {
+        let (idx, is_local) = ty.to_data();
+        assert!(!is_local);
+        let other_data = &this.0.idx_to_data[idx];
+        assert_eq!(data, other_data);
       }
     }
     ret
