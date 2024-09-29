@@ -84,6 +84,10 @@ assert 2 >= 2;
 
 Bit-shift right.
 
+```jsonnet
+assert 4 >> 2 == 1;
+```
+
 ## `||`
 
 Logical or. Short-circuits.
@@ -106,6 +110,18 @@ assert !false;
 
 A variable that refers to the root object.
 
+```jsonnet
+{
+  a: 3,
+  b: 4,
+  c: {
+    d: {
+      e: $.a,
+    },
+  },
+}
+```
+
 ## `%`
 
 1. Compute numerical modulus.
@@ -125,10 +141,25 @@ A variable that refers to the root object.
 
 Bitwise and.
 
+```jsonnet
+assert 4 & 5 == 4;
+```
+
 ## `(`
 
 1. Override the default expression parsing precedence.
+
+   ```jsonnet
+   assert 1 + 2 * 3 == 7;
+   assert (1 + 2) * 3 == 9;
+   ```
+
 2. Begin a parameter or argument list in a function definition or call.
+
+   ```jsonnet
+   local foo(x, y) = if x then y;
+   local four = foo(true, 4);
+   ```
 
 ## `)`
 
@@ -158,6 +189,11 @@ assert { a: -321, b: str } + { a: num, c: ary }
 
 Separate elements in a parameter list, argument list, array, object, etc.
 
+```jsonnet
+local xs = [1, 2, 3];
+local ys = { a: 4, b; 6 };
+```
+
 ## `-`
 
 Numerical negation and subtraction.
@@ -180,6 +216,10 @@ assert a.foo.bar == "quz";
 
 Numerical division.
 
+```jsonnet
+assert 15 / 5 == 3;
+```
+
 ## `:`
 
 The default field marker.
@@ -201,17 +241,35 @@ assert x + 1 == 4;
 
 Less than comparator.
 
+```jsonnet
+assert 4 < 5;
+```
+
 ## `=`
 
 Assign an expression to a binding.
+
+```jsonnet
+local x = 4;
+assert x + 1 == 5;
+```
 
 ## `>`
 
 Greater than comparator.
 
+```jsonnet
+assert 7 > 3;
+```
+
 ## `[`
 
 Begin an array or array subscript.
+
+```jsonnet
+local xs = [1, 5, 7];
+assert xs[1] - 1 == 4;
+```
 
 ## `]`
 
