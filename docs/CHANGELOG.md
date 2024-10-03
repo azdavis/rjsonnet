@@ -3,6 +3,7 @@
 ## main
 
 - Add type checking for some std functions.
+- Display types on hover for some std functions.
 
 ## v0.4.1
 
