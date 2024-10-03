@@ -1303,11 +1303,7 @@ And evaluates to:
 
 ## `equals`
 
-TODO
-
-## `cmp`
-
-TODO
+Returns whether the two arguments equal each other.
 
 ## `objectHasEx`
 

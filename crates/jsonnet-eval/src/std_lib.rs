@@ -5,7 +5,6 @@ use crate::val::jsonnet::{Array, Env, Fn, Val};
 use crate::{error, exec, mk_todo, Cx};
 use finite_float::Float;
 use jsonnet_expr::{std_fn, Expr, ExprMust, Id, Prim, StdFn, Str};
-use std::cmp::Ordering;
 
 pub(crate) fn get(
   cx: Cx<'_>,
@@ -560,21 +559,10 @@ pub(crate) fn get(
       let _ = std_fn::args::trace(positional, named, expr)?;
       Err(mk_todo(expr, "std.trace"))
     }
-    StdFn::cmp => {
-      let arguments = std_fn::args::cmp(positional, named, expr)?;
-      exec::cmp_op(expr, cx, env, arguments.a, arguments.b, |ord| {
-        let num = match ord {
-          Ordering::Less => Float::negative_one(),
-          Ordering::Equal => Float::positive_zero(),
-          Ordering::Greater => Float::positive_one(),
-        };
-        Prim::Number(num)
-      })
-    }
     StdFn::equals => {
       let arguments = std_fn::args::equals(positional, named, expr)?;
-      let lhs = exec::get(cx, env, arguments.a)?;
-      let rhs = exec::get(cx, env, arguments.b)?;
+      let lhs = exec::get(cx, env, arguments.x)?;
+      let rhs = exec::get(cx, env, arguments.y)?;
       Ok(Val::Prim(Prim::Bool(exec::eq_val(expr, cx, &lhs, &rhs)?)))
     }
     StdFn::objectHasEx => {

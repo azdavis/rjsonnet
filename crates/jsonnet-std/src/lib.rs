@@ -85,15 +85,24 @@ pub enum Ty {
 
 const V_ANY_RET_BOOL: Sig = Sig::Regular(&[Param::new("v", Ty::Any)], Ty::Boolean);
 const X_NUM_RET_NUM: Sig = Sig::Regular(&[Param::new("x", Ty::Number)], Ty::Number);
+const N_NUM_RET_NUM: Sig = Sig::Regular(&[Param::new("n", Ty::Number)], Ty::Number);
 const X_NUM_RET_BOOL: Sig = Sig::Regular(&[Param::new("x", Ty::Number)], Ty::Boolean);
 const STR_RET_STR: Sig = Sig::Regular(&[Param::new("str", Ty::String)], Ty::String);
+const X_Y_BOOL_RET_BOOL: Sig =
+  Sig::Regular(&[Param::new("x", Ty::Boolean), Param::new("y", Ty::Boolean)], Ty::Boolean);
+const A_B_STR_RET_BOOL: Sig =
+  Sig::Regular(&[Param::new("a", Ty::String), Param::new("b", Ty::String)], Ty::Boolean);
+const STR_CHARS_STR_RET_STR: Sig =
+  Sig::Regular(&[Param::new("str", Ty::String), Param::new("chars", Ty::String)], Ty::String);
+const STR_RET_NUM: Sig = Sig::Regular(&[Param::new("str", Ty::String)], Ty::Number);
+const STR_RET_ANY: Sig = Sig::Regular(&[Param::new("str", Ty::String)], Ty::Any);
 
 const fn f(name: &'static str, sig: Sig) -> Fn {
   Fn { name: S::new(name), sig }
 }
 
 /// The std fns.
-pub const FNS: [Fn; 127] = [
+pub const FNS: [Fn; 126] = [
   f("extVar", Sig::Regular(&[Param::new("x", Ty::String)], Ty::String)),
   Fn {
     name: S::named("type", "type_"),
@@ -117,11 +126,11 @@ pub const FNS: [Fn; 127] = [
   f("objectKeysValuesAll", Sig::Special(&["o"])),
   f("prune", Sig::Special(&["a"])),
   f("mapWithKey", Sig::Special(&["func", "obj"])),
-  f("abs", Sig::Special(&["n"])),
-  f("sign", Sig::Special(&["n"])),
-  f("max", Sig::Special(&["a", "b"])),
-  f("min", Sig::Special(&["a", "b"])),
-  f("pow", Sig::Special(&["x", "n"])),
+  f("abs", N_NUM_RET_NUM),
+  f("sign", N_NUM_RET_NUM),
+  f("max", Sig::Regular(&[Param::new("a", Ty::Number), Param::new("b", Ty::Number)], Ty::Number)),
+  f("min", Sig::Regular(&[Param::new("a", Ty::Number), Param::new("b", Ty::Number)], Ty::Number)),
+  f("pow", Sig::Regular(&[Param::new("x", Ty::Number), Param::new("n", Ty::Number)], Ty::Number)),
   f("exp", X_NUM_RET_NUM),
   f("log", X_NUM_RET_NUM),
   f("exponent", X_NUM_RET_NUM),
@@ -141,18 +150,38 @@ pub const FNS: [Fn; 127] = [
   f("isInteger", X_NUM_RET_BOOL),
   f("isDecimal", X_NUM_RET_BOOL),
   Fn { name: S::named("mod", "mod_"), sig: Sig::Special(&["a", "b"]) },
-  f("clamp", Sig::Special(&["x", "minVal", "maxVal"])),
+  f(
+    "clamp",
+    Sig::Regular(
+      &[
+        Param::new("x", Ty::Number),
+        Param::new("minVal", Ty::Number),
+        Param::new("maxVal", Ty::Number),
+      ],
+      Ty::Number,
+    ),
+  ),
   f("assertEqual", Sig::Special(&["a", "b"])),
-  f("toString", Sig::Special(&["a"])),
-  f("codepoint", Sig::Special(&["str"])),
-  f("char", Sig::Special(&["n"])),
-  f("substr", Sig::Special(&["str", "from", "len"])),
+  f("toString", Sig::Regular(&[Param::new("a", Ty::Any)], Ty::String)),
+  f("codepoint", Sig::Regular(&[Param::new("str", Ty::String)], Ty::Number)),
+  f("char", Sig::Regular(&[Param::new("n", Ty::Number)], Ty::String)),
+  f(
+    "substr",
+    Sig::Regular(
+      &[
+        Param::new("str", Ty::String),
+        Param::new("from", Ty::Number),
+        Param::new("len", Ty::Number),
+      ],
+      Ty::String,
+    ),
+  ),
   f("findSubstr", Sig::Special(&["pat", "str"])),
-  f("startsWith", Sig::Special(&["a", "b"])),
-  f("endsWith", Sig::Special(&["a", "b"])),
-  f("stripChars", Sig::Special(&["str", "chars"])),
-  f("lstripChars", Sig::Special(&["str", "chars"])),
-  f("rstripChars", Sig::Special(&["str", "chars"])),
+  f("startsWith", A_B_STR_RET_BOOL),
+  f("endsWith", A_B_STR_RET_BOOL),
+  f("stripChars", STR_CHARS_STR_RET_STR),
+  f("lstripChars", STR_CHARS_STR_RET_STR),
+  f("rstripChars", STR_CHARS_STR_RET_STR),
   f("split", Sig::Special(&["str", "c"])),
   f("splitLimit", Sig::Special(&["str", "c", "maxsplits"])),
   f("splitLimitR", Sig::Special(&["str", "c", "maxsplits"])),
@@ -167,11 +196,11 @@ pub const FNS: [Fn; 127] = [
   f("escapeStringJson", STR_RET_STR),
   f("escapeStringPython", STR_RET_STR),
   f("escapeStringXml", STR_RET_STR),
-  f("parseInt", Sig::Special(&["str"])),
-  f("parseOctal", Sig::Special(&["str"])),
-  f("parseHex", Sig::Special(&["str"])),
-  f("parseJson", Sig::Special(&["str"])),
-  f("parseYaml", Sig::Special(&["str"])),
+  f("parseInt", STR_RET_NUM),
+  f("parseOctal", STR_RET_NUM),
+  f("parseHex", STR_RET_NUM),
+  f("parseJson", STR_RET_ANY),
+  f("parseYaml", STR_RET_ANY),
   f("encodeUTF8", Sig::Special(&["str"])),
   f("decodeUTF8", Sig::Special(&["arr"])),
   f("manifestIni", Sig::Special(&["ini"])),
@@ -204,7 +233,7 @@ pub const FNS: [Fn; 127] = [
   f("join", Sig::Special(&["sep", "arr"])),
   f("lines", Sig::Special(&["arr"])),
   f("flattenArrays", Sig::Special(&["arr"])),
-  f("reverse", Sig::Special(&["arrs"])),
+  f("reverse", Sig::Special(&["arr"])),
   f("sort", Sig::Special(&["arr", "keyF"])),
   f("uniq", Sig::Special(&["arr", "keyF"])),
   f("all", Sig::Special(&["arr"])),
@@ -218,14 +247,13 @@ pub const FNS: [Fn; 127] = [
   f("setMember", Sig::Special(&["x", "arr", "keyF"])),
   f("base64", Sig::Special(&["input"])),
   f("base64DecodeBytes", Sig::Special(&["str"])),
-  f("base64Decode", Sig::Special(&["str"])),
-  f("md5", Sig::Special(&["s"])),
-  f("xor", Sig::Special(&["x", "y"])),
-  f("xnor", Sig::Special(&["x", "y"])),
+  f("base64Decode", STR_RET_STR),
+  f("md5", Sig::Regular(&[Param::new("s", Ty::String)], Ty::String)),
+  f("xor", X_Y_BOOL_RET_BOOL),
+  f("xnor", X_Y_BOOL_RET_BOOL),
   f("mergePatch", Sig::Special(&["target", "patch"])),
   f("trace", Sig::Special(&["str", "rest"])),
   // alluded to in the spec but not mentioned on the std lib page
-  f("cmp", Sig::Special(&["a", "b"])),
-  f("equals", Sig::Special(&["a", "b"])),
-  f("objectHasEx", Sig::Special(&["o", "f"])),
+  f("equals", Sig::Special(&["x", "y"])),
+  f("objectHasEx", Sig::Special(&["obj", "fname", "hidden"])),
 ];
