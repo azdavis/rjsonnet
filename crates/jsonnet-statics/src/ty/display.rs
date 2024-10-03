@@ -78,7 +78,6 @@ impl<'a> TyDisplay<'a> {
 }
 
 impl<'a> fmt::Display for TyDisplay<'a> {
-  #[expect(clippy::too_many_lines)]
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     let data =
       self.stuff.global.0.data(self.ty, false).or_else(|| self.stuff.local?.0.data(self.ty, true));
@@ -131,37 +130,7 @@ impl<'a> fmt::Display for TyDisplay<'a> {
         f.write_str("}")
       }
       Data::Fn(Fn::Regular(func)) => {
-        let needs_paren = self.prec > Prec::Min;
-        if needs_paren {
-          f.write_str("(")?;
-        }
-        f.write_str("(")?;
-        let [cur_level, new_level, rec_level] = increase_level(func.params.len(), self.stuff.level);
-        let mut iter = func
-          .params
-          .iter()
-          .map(|&param| ParamDisplay { param, stuff: Stuff { level: rec_level, ..self.stuff } });
-        if let Some(new_level) = new_level {
-          nl_indent(f, new_level)?;
-        }
-        if let Some(p) = iter.next() {
-          p.fmt(f)?;
-        }
-        for p in iter {
-          f.write_str(",")?;
-          field_sep(f, new_level)?;
-          p.fmt(f)?;
-        }
-        if let Some(cur_level) = cur_level {
-          f.write_str(",")?;
-          nl_indent(f, cur_level)?;
-        }
-        f.write_str(") => ")?;
-        self.with(func.ret, self.prec).fmt(f)?;
-        if needs_paren {
-          f.write_str(")")?;
-        }
-        Ok(())
+        FnDisplay { params: &func.params, ret: func.ret, prec: self.prec, stuff: self.stuff }.fmt(f)
       }
       Data::Fn(Fn::Std(func)) => write!(f, "<std.{func}>"),
       Data::Union(tys) => {
@@ -187,6 +156,50 @@ impl<'a> fmt::Display for TyDisplay<'a> {
         Ok(())
       }
     }
+  }
+}
+
+#[derive(Clone, Copy)]
+struct FnDisplay<'a> {
+  params: &'a [Param],
+  ret: Ty,
+  prec: Prec,
+  stuff: Stuff<'a>,
+}
+
+impl<'a> fmt::Display for FnDisplay<'a> {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    let needs_paren = self.prec > Prec::Min;
+    if needs_paren {
+      f.write_str("(")?;
+    }
+    f.write_str("(")?;
+    let [cur_level, new_level, rec_level] = increase_level(self.params.len(), self.stuff.level);
+    let mut iter = self
+      .params
+      .iter()
+      .map(|&param| ParamDisplay { param, stuff: Stuff { level: rec_level, ..self.stuff } });
+    if let Some(new_level) = new_level {
+      nl_indent(f, new_level)?;
+    }
+    if let Some(p) = iter.next() {
+      p.fmt(f)?;
+    }
+    for p in iter {
+      f.write_str(",")?;
+      field_sep(f, new_level)?;
+      p.fmt(f)?;
+    }
+    if let Some(cur_level) = cur_level {
+      f.write_str(",")?;
+      nl_indent(f, cur_level)?;
+    }
+    f.write_str(") => ")?;
+    TyDisplay { ty: self.ret, prec: self.prec, stuff: self.stuff }.fmt(f)?;
+    if needs_paren {
+      f.write_str(")")?;
+    }
+    Ok(())
   }
 }
 
