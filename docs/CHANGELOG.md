@@ -1,5 +1,9 @@
 # Changelog
 
+## main
+
+- Add type checking for some std functions.
+
 ## v0.4.1
 
 - Make some micro-optimizations.
