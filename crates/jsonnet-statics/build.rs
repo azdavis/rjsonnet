@@ -1,6 +1,7 @@
 //! Build some ty-related things.
 
 use quote::{format_ident as i, quote as q};
+use std::collections::{BTreeMap, BTreeSet};
 
 #[expect(clippy::too_many_lines)]
 fn main() {
@@ -31,17 +32,28 @@ fn main() {
     let name = i!("{}", f.name.ident());
     q! { (Str::#name, Ty::#name) }
   });
-  let std_fn_sig_arms = jsonnet_std::FNS.iter().map(|f| {
+  let all_simple_sigs = {
+    let mut tmp =
+      BTreeMap::<(&'static [jsonnet_std::Param], jsonnet_std::Ty), BTreeSet<jsonnet_std::S>>::new();
+    for f in &jsonnet_std::FNS {
+      let jsonnet_std::Sig::Simple(params, ret) = f.sig else { continue };
+      assert!(tmp.entry((params, ret)).or_default().insert(f.name));
+    }
+    tmp
+  };
+  let std_fn_sig_simple_arms = all_simple_sigs.iter().map(|(&(params, ret), names)| {
+    let names = names.iter().map(|x| {
+      let name = i!("{}", x.ident());
+      q! { StdFn::#name }
+    });
+    let params = params.iter().map(|p| mk_param(*p));
+    let ret = mk_ty(ret);
+    q! { #(#names)|* => StdFnSig::Simple(&[ #(#params,)* ], #ret) }
+  });
+  let std_fn_sig_complex_arms = jsonnet_std::FNS.iter().filter_map(|f| {
+    let jsonnet_std::Sig::Complex(_) = f.sig else { return None };
     let name = i!("{}", f.name.ident());
-    let body = match f.sig {
-      jsonnet_std::Sig::Simple(params, ret) => {
-        let params = params.iter().map(|p| mk_param(*p));
-        let ret = mk_ty(ret);
-        q! { StdFnSig::Simple(&[ #(#params,)* ], #ret) }
-      }
-      jsonnet_std::Sig::Complex(_) => q! { StdFnSig::Complex(ComplexStdFn::#name) },
-    };
-    q! { StdFn::#name => #body }
+    Some(q! { StdFn::#name => StdFnSig::Complex(ComplexStdFn::#name) })
   });
   let complex_std_fn_variants = jsonnet_std::FNS.iter().filter_map(|f| {
     let jsonnet_std::Sig::Complex(..) = f.sig else { return None };
@@ -66,8 +78,8 @@ fn main() {
   let file = file!();
   let all = q! {
     use std::collections::{BTreeMap, BTreeSet};
-    use jsonnet_expr::{StdFn, Str};
-    use super::{Ty, Data, StdFnSig};
+    use jsonnet_expr::{StdFn, Str, Id};
+    use super::{Ty, Data, StdFnSig, Param};
 
     pub const _GENERATED_BY: &str = #file;
 
@@ -115,10 +127,11 @@ fn main() {
     }
 
     impl StdFnSig {
-      #[expect(clippy::too_many_lines, clippy::match_same_arms)]
+      #[expect(clippy::too_many_lines)]
       pub(crate) fn get(f: StdFn) -> Self {
         match f {
-          #(#std_fn_sig_arms,)*
+          #(#std_fn_sig_simple_arms,)*
+          #(#std_fn_sig_complex_arms,)*
         }
       }
     }
@@ -128,10 +141,10 @@ fn main() {
 
 fn mk_ty(ty: jsonnet_std::Ty) -> proc_macro2::TokenStream {
   match ty {
-    jsonnet_std::Ty::Any => q!(crate::ty::Ty::ANY),
-    jsonnet_std::Ty::Bool => q!(crate::ty::Ty::BOOL),
-    jsonnet_std::Ty::Num => q!(crate::ty::Ty::NUMBER),
-    jsonnet_std::Ty::Str => q!(crate::ty::Ty::STRING),
+    jsonnet_std::Ty::Any => q!(Ty::ANY),
+    jsonnet_std::Ty::Bool => q!(Ty::BOOL),
+    jsonnet_std::Ty::Num => q!(Ty::NUMBER),
+    jsonnet_std::Ty::Str => q!(Ty::STRING),
   }
 }
 
@@ -140,8 +153,8 @@ fn mk_param(param: jsonnet_std::Param) -> proc_macro2::TokenStream {
   let ty = mk_ty(param.ty);
   let required = param.required;
   q! {
-    crate::ty::Param {
-      id: jsonnet_expr::Id::#id,
+    Param {
+      id: Id::#id,
       ty: #ty,
       required: #required,
     }
