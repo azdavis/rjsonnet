@@ -3,8 +3,8 @@
 /// A name-content string pair.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct S {
-  /// The name. If None, the content is the name.
-  name: Option<&'static str>,
+  /// The name.
+  name: &'static str,
   /// The content.
   content: &'static str,
 }
@@ -13,24 +13,19 @@ impl S {
   /// Make a new k-v pair (actually the param order is v first then k).
   #[must_use]
   pub const fn named(content: &'static str, name: &'static str) -> S {
-    // NOTE: would like to check content != name, but not available in const context at time of
-    // writing.
-    S { name: Some(name), content }
+    S { name, content }
   }
 
   /// Make a new one whose name (k) is the content (v).
   #[must_use]
   pub const fn new(content: &'static str) -> S {
-    S { name: None, content }
+    S { name: content, content }
   }
 
   /// Returns the identifier. Must be a valid Rust identifier.
   #[must_use]
   pub const fn ident(&self) -> &'static str {
-    match self.name {
-      Some(x) => x,
-      None => self.content,
-    }
+    self.name
   }
 
   /// Returns the content. Can be an arbitrary string, including whitespace.
