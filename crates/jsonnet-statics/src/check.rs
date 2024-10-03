@@ -284,13 +284,12 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
 fn get_call(
   st: &mut st::St<'_>,
   expr: ExprMust,
-  func: Expr,
-  func_ty: ty::Ty,
+  fn_expr: Expr,
+  fn_ty: ty::Ty,
   positional: &[(Expr, ty::Ty)],
   named: &FxHashMap<Id, (Expr, ty::Ty)>,
 ) -> ty::Ty {
-  // TODO handle unions and std fns
-  match st.data(func_ty).clone() {
+  match st.data(fn_ty).clone() {
     ty::Data::Fn(ty::Fn::Regular(fn_data)) => {
       let positional_iter = fn_data.params.iter().zip(positional.iter());
       for (param, &(arg, ty)) in positional_iter {
@@ -302,7 +301,7 @@ fn get_call(
           Some((arg, ty)) => st.unify(arg.unwrap_or(expr), param.ty, ty),
           None => {
             if param.required {
-              st.err(func.unwrap_or(expr), error::Kind::MissingArgument(param.id, param.ty));
+              st.err(fn_expr.unwrap_or(expr), error::Kind::MissingArgument(param.id, param.ty));
             }
           }
         }
@@ -315,20 +314,20 @@ fn get_call(
       }
       fn_data.ret
     }
-    ty::Data::Fn(ty::Fn::Std(func)) => {
-      log::warn!("TODO: get std call {func}");
+    ty::Data::Fn(ty::Fn::Std(std_fn)) => {
+      log::warn!("TODO: get std call {std_fn}");
       ty::Ty::ANY
     }
     ty::Data::Union(tys) => {
       // must be compatible with ALL of the union parts.
       let ret_tys =
-        tys.into_iter().map(|func_ty| get_call(st, expr, func, func_ty, positional, named));
+        tys.into_iter().map(|fn_ty| get_call(st, expr, fn_expr, fn_ty, positional, named));
       let ret_ty = ty::Data::Union(ret_tys.collect());
       st.get_ty(ret_ty)
     }
     ty::Data::Prim(ty::Prim::Any) => ty::Ty::ANY,
     ty::Data::Prim(_) | ty::Data::Array(_) | ty::Data::Object(_) => {
-      st.err(expr, error::Kind::CallNonFn(func_ty));
+      st.err(expr, error::Kind::CallNonFn(fn_ty));
       ty::Ty::ANY
     }
   }
