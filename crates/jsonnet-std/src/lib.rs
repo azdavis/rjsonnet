@@ -76,26 +76,26 @@ pub enum Ty {
   /// Anything at all.
   Any,
   /// Either `true` or `false`.
-  Boolean,
+  Bool,
   /// A number like `0` or `123` or `-456`.
-  Number,
+  Num,
   /// A string like `"foo"` or `"bar"` or `""`.
-  String,
+  Str,
 }
 
-const V_ANY_RET_BOOL: Sig = Sig::Regular(&[Param::new("v", Ty::Any)], Ty::Boolean);
-const X_NUM_RET_NUM: Sig = Sig::Regular(&[Param::new("x", Ty::Number)], Ty::Number);
-const N_NUM_RET_NUM: Sig = Sig::Regular(&[Param::new("n", Ty::Number)], Ty::Number);
-const X_NUM_RET_BOOL: Sig = Sig::Regular(&[Param::new("x", Ty::Number)], Ty::Boolean);
-const STR_RET_STR: Sig = Sig::Regular(&[Param::new("str", Ty::String)], Ty::String);
+const V_ANY_RET_BOOL: Sig = Sig::Regular(&[Param::new("v", Ty::Any)], Ty::Bool);
+const X_NUM_RET_NUM: Sig = Sig::Regular(&[Param::new("x", Ty::Num)], Ty::Num);
+const N_NUM_RET_NUM: Sig = Sig::Regular(&[Param::new("n", Ty::Num)], Ty::Num);
+const X_NUM_RET_BOOL: Sig = Sig::Regular(&[Param::new("x", Ty::Num)], Ty::Bool);
+const STR_RET_STR: Sig = Sig::Regular(&[Param::new("str", Ty::Str)], Ty::Str);
 const X_Y_BOOL_RET_BOOL: Sig =
-  Sig::Regular(&[Param::new("x", Ty::Boolean), Param::new("y", Ty::Boolean)], Ty::Boolean);
+  Sig::Regular(&[Param::new("x", Ty::Bool), Param::new("y", Ty::Bool)], Ty::Bool);
 const A_B_STR_RET_BOOL: Sig =
-  Sig::Regular(&[Param::new("a", Ty::String), Param::new("b", Ty::String)], Ty::Boolean);
+  Sig::Regular(&[Param::new("a", Ty::Str), Param::new("b", Ty::Str)], Ty::Bool);
 const STR_CHARS_STR_RET_STR: Sig =
-  Sig::Regular(&[Param::new("str", Ty::String), Param::new("chars", Ty::String)], Ty::String);
-const STR_RET_NUM: Sig = Sig::Regular(&[Param::new("str", Ty::String)], Ty::Number);
-const STR_RET_ANY: Sig = Sig::Regular(&[Param::new("str", Ty::String)], Ty::Any);
+  Sig::Regular(&[Param::new("str", Ty::Str), Param::new("chars", Ty::Str)], Ty::Str);
+const STR_RET_NUM: Sig = Sig::Regular(&[Param::new("str", Ty::Str)], Ty::Num);
+const STR_RET_ANY: Sig = Sig::Regular(&[Param::new("str", Ty::Str)], Ty::Any);
 
 const fn f(name: &'static str, sig: Sig) -> Fn {
   Fn { name: S::new(name), sig }
@@ -103,11 +103,8 @@ const fn f(name: &'static str, sig: Sig) -> Fn {
 
 /// The std fns.
 pub const FNS: [Fn; 126] = [
-  f("extVar", Sig::Regular(&[Param::new("x", Ty::String)], Ty::String)),
-  Fn {
-    name: S::named("type", "type_"),
-    sig: Sig::Regular(&[Param::new("x", Ty::Any)], Ty::String),
-  },
+  f("extVar", Sig::Regular(&[Param::new("x", Ty::Str)], Ty::Str)),
+  Fn { name: S::named("type", "type_"), sig: Sig::Regular(&[Param::new("x", Ty::Any)], Ty::Str) },
   f("isArray", V_ANY_RET_BOOL),
   f("isBoolean", V_ANY_RET_BOOL),
   f("isFunction", V_ANY_RET_BOOL),
@@ -128,9 +125,9 @@ pub const FNS: [Fn; 126] = [
   f("mapWithKey", Sig::Special(&["func", "obj"])),
   f("abs", N_NUM_RET_NUM),
   f("sign", N_NUM_RET_NUM),
-  f("max", Sig::Regular(&[Param::new("a", Ty::Number), Param::new("b", Ty::Number)], Ty::Number)),
-  f("min", Sig::Regular(&[Param::new("a", Ty::Number), Param::new("b", Ty::Number)], Ty::Number)),
-  f("pow", Sig::Regular(&[Param::new("x", Ty::Number), Param::new("n", Ty::Number)], Ty::Number)),
+  f("max", Sig::Regular(&[Param::new("a", Ty::Num), Param::new("b", Ty::Num)], Ty::Num)),
+  f("min", Sig::Regular(&[Param::new("a", Ty::Num), Param::new("b", Ty::Num)], Ty::Num)),
+  f("pow", Sig::Regular(&[Param::new("x", Ty::Num), Param::new("n", Ty::Num)], Ty::Num)),
   f("exp", X_NUM_RET_NUM),
   f("log", X_NUM_RET_NUM),
   f("exponent", X_NUM_RET_NUM),
@@ -153,27 +150,19 @@ pub const FNS: [Fn; 126] = [
   f(
     "clamp",
     Sig::Regular(
-      &[
-        Param::new("x", Ty::Number),
-        Param::new("minVal", Ty::Number),
-        Param::new("maxVal", Ty::Number),
-      ],
-      Ty::Number,
+      &[Param::new("x", Ty::Num), Param::new("minVal", Ty::Num), Param::new("maxVal", Ty::Num)],
+      Ty::Num,
     ),
   ),
   f("assertEqual", Sig::Special(&["a", "b"])),
-  f("toString", Sig::Regular(&[Param::new("a", Ty::Any)], Ty::String)),
-  f("codepoint", Sig::Regular(&[Param::new("str", Ty::String)], Ty::Number)),
-  f("char", Sig::Regular(&[Param::new("n", Ty::Number)], Ty::String)),
+  f("toString", Sig::Regular(&[Param::new("a", Ty::Any)], Ty::Str)),
+  f("codepoint", Sig::Regular(&[Param::new("str", Ty::Str)], Ty::Num)),
+  f("char", Sig::Regular(&[Param::new("n", Ty::Num)], Ty::Str)),
   f(
     "substr",
     Sig::Regular(
-      &[
-        Param::new("str", Ty::String),
-        Param::new("from", Ty::Number),
-        Param::new("len", Ty::Number),
-      ],
-      Ty::String,
+      &[Param::new("str", Ty::Str), Param::new("from", Ty::Num), Param::new("len", Ty::Num)],
+      Ty::Str,
     ),
   ),
   f("findSubstr", Sig::Special(&["pat", "str"])),
@@ -248,7 +237,7 @@ pub const FNS: [Fn; 126] = [
   f("base64", Sig::Special(&["input"])),
   f("base64DecodeBytes", Sig::Special(&["str"])),
   f("base64Decode", STR_RET_STR),
-  f("md5", Sig::Regular(&[Param::new("s", Ty::String)], Ty::String)),
+  f("md5", Sig::Regular(&[Param::new("s", Ty::Str)], Ty::Str)),
   f("xor", X_Y_BOOL_RET_BOOL),
   f("xnor", X_Y_BOOL_RET_BOOL),
   f("mergePatch", Sig::Special(&["target", "patch"])),
