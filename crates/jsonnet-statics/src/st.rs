@@ -1,8 +1,9 @@
 //! The state of statics.
 
-use crate::{error, ty, unify};
+use crate::{error, unify};
 use always::always;
 use jsonnet_expr::{def::Def, ExprMust, Id};
+use jsonnet_ty as ty;
 use paths::PathMap;
 use rustc_hash::FxHashMap;
 

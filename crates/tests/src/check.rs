@@ -27,7 +27,7 @@ impl<'a> MultiInput<'a> {
     let pwd = fs.current_dir().expect("no current dir for in-mem fs");
     let init = jsonnet_analyze::Init {
       relative_to: Some(pwd.clone()),
-      multi_line: jsonnet_statics::ty::display::MultiLine::MustNot,
+      multi_line: jsonnet_ty::display::MultiLine::MustNot,
       ..Default::default()
     };
     let mut st = jsonnet_analyze::St::init(init);

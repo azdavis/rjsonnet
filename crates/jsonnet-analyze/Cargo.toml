@@ -36,6 +36,7 @@ jsonnet-parse.path = "../jsonnet-parse"
 jsonnet-resolve-import.path = "../jsonnet-resolve-import"
 jsonnet-statics.path = "../jsonnet-statics"
 jsonnet-syntax.path = "../jsonnet-syntax"
+jsonnet-ty.path = "../jsonnet-ty"
 lang-srv-state.path = "../lang-srv-state"
 
 [features]

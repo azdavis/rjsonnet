@@ -1,5 +1,7 @@
 //! A type system for Jsonnet.
 
+#![allow(missing_docs)]
+
 pub mod display;
 
 mod generated {
@@ -13,14 +15,14 @@ use std::collections::hash_map::Entry;
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
 
-pub(crate) use generated::ComplexStdFn;
+pub use generated::ComplexStdFn;
 
 /// A map from expr to type.
 pub type Exprs = FxHashMap<ExprMust, Ty>;
 
 /// Data about a type.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub(crate) enum Data {
+pub enum Data {
   /// A primitive type.
   Prim(Prim),
   /// An array of elements, where each element has the given type.
@@ -71,7 +73,7 @@ impl Data {
 
 /// A primitive type, containing no recursive data inside.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub(crate) enum Prim {
+pub enum Prim {
   /// Anything at all.
   ///
   /// This is like `any` in TypeScript and `T.untyped` in Sorbet (Ruby type-checker). It is BOTH a
@@ -91,9 +93,9 @@ pub(crate) enum Prim {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub(crate) struct Object {
-  pub(crate) known: BTreeMap<Str, Ty>,
-  pub(crate) has_unknown: bool,
+pub struct Object {
+  pub known: BTreeMap<Str, Ty>,
+  pub has_unknown: bool,
 }
 
 impl Object {
@@ -107,18 +109,20 @@ impl Object {
     self.known.values().any(|x| x.is_local())
   }
 
-  pub(crate) fn empty() -> Self {
+  #[must_use]
+  pub fn empty() -> Self {
     Self { known: BTreeMap::new(), has_unknown: false }
   }
 
-  pub(crate) fn unknown() -> Self {
+  #[must_use]
+  pub fn unknown() -> Self {
     Self { known: BTreeMap::new(), has_unknown: true }
   }
 }
 
 /// A function type.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub(crate) enum Fn {
+pub enum Fn {
   /// A regular, user-written function, with some arguments and a return type.
   Regular(RegularFn),
   /// A standard library function.
@@ -143,11 +147,11 @@ impl Fn {
 
 /// A regular function type, the type of a user-written function.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub(crate) struct RegularFn {
+pub struct RegularFn {
   /// The parameters.
-  pub(crate) params: Vec<Param>,
+  pub params: Vec<Param>,
   /// The return type.
-  pub(crate) ret: Ty,
+  pub ret: Ty,
 }
 
 impl RegularFn {
@@ -165,10 +169,10 @@ impl RegularFn {
 
 /// A function parameter.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub(crate) struct Param {
-  pub(crate) id: Id,
-  pub(crate) ty: Ty,
-  pub(crate) required: bool,
+pub struct Param {
+  pub id: Id,
+  pub ty: Ty,
+  pub required: bool,
 }
 
 impl Param {
@@ -181,7 +185,7 @@ impl Param {
   }
 }
 
-pub(crate) type Union = BTreeSet<Ty>;
+pub type Union = BTreeSet<Ty>;
 
 /// A type.
 ///
@@ -267,17 +271,18 @@ impl Store {
 
 /// A store that allows mutation.
 #[derive(Debug)]
-pub(crate) struct MutStore<'a> {
+pub struct MutStore<'a> {
   global: &'a GlobalStore,
   local: LocalStore,
 }
 
 impl<'a> MutStore<'a> {
-  pub(crate) fn new(global: &'a GlobalStore) -> Self {
+  #[must_use]
+  pub fn new(global: &'a GlobalStore) -> Self {
     Self { global, local: LocalStore::default() }
   }
 
-  pub(crate) fn get(&mut self, data: Data) -> Ty {
+  pub fn get(&mut self, data: Data) -> Ty {
     match data {
       // micro optimization (maybe). deferring to get_inner would also be correct
       Data::Prim(prim) => match prim {
@@ -339,7 +344,8 @@ impl<'a> MutStore<'a> {
     ret
   }
 
-  pub(crate) fn data(&self, ty: Ty) -> &Data {
+  #[must_use]
+  pub fn data(&self, ty: Ty) -> &Data {
     let (idx, is_local) = ty.to_data();
     let store = if is_local { &self.local.0 } else { &self.global.0 };
     match store.idx_to_data.get(idx) {
@@ -351,7 +357,8 @@ impl<'a> MutStore<'a> {
     }
   }
 
-  pub(crate) fn into_local(self) -> LocalStore {
+  #[must_use]
+  pub fn into_local(self) -> LocalStore {
     self.local
   }
 }
@@ -524,8 +531,7 @@ impl Action {
 }
 
 #[derive(Debug)]
-pub(crate) enum StdFnSig {
+pub enum StdFnSig {
   Simple(&'static [Param], Ty),
-  #[expect(dead_code)]
   Complex(ComplexStdFn),
 }

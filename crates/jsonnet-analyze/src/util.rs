@@ -21,7 +21,7 @@ pub struct Init {
   /// Whether to output extra debug info.
   pub debug: bool,
   /// Whether to display types on multiple lines.
-  pub multi_line: jsonnet_statics::ty::display::MultiLine,
+  pub multi_line: jsonnet_ty::display::MultiLine,
 }
 
 /// An adaptor between file system traits.
@@ -40,7 +40,7 @@ where
 #[derive(Debug, Default)]
 pub(crate) struct GlobalArtifacts {
   pub(crate) syntax: jsonnet_expr::Artifacts,
-  pub(crate) statics: jsonnet_statics::ty::GlobalStore,
+  pub(crate) statics: jsonnet_ty::GlobalStore,
 }
 
 #[derive(Debug)]
@@ -155,8 +155,8 @@ impl StaticsFile {
 
   pub(crate) fn diagnostics<'a>(
     &'a self,
-    multi_line: jsonnet_statics::ty::display::MultiLine,
-    store: &'a jsonnet_statics::ty::GlobalStore,
+    multi_line: jsonnet_ty::display::MultiLine,
+    store: &'a jsonnet_ty::GlobalStore,
     str_ar: &'a jsonnet_expr::StrArena,
   ) -> impl Iterator<Item = Diagnostic> + 'a {
     let root = self.syntax.artifacts.root.clone();
@@ -195,14 +195,14 @@ impl StaticsFile {
 #[derive(Debug)]
 pub(crate) struct StaticsFileToCombine {
   file: StaticsFile,
-  to_combine: jsonnet_statics::ty::LocalStore,
+  to_combine: jsonnet_ty::LocalStore,
 }
 
 impl StaticsFileToCombine {
   pub(crate) fn new(
     syntax: SyntaxFile,
     artifacts: &GlobalArtifacts,
-    file_tys: &paths::PathMap<jsonnet_statics::ty::Ty>,
+    file_tys: &paths::PathMap<jsonnet_ty::Ty>,
   ) -> Self {
     let st = jsonnet_statics::st::St::new(&artifacts.statics, file_tys);
     let (statics, to_combine) = jsonnet_statics::get(st, &syntax.exprs.ar, syntax.exprs.top);
@@ -211,7 +211,7 @@ impl StaticsFileToCombine {
 
   pub(crate) fn combine(self, artifacts: &mut GlobalArtifacts) -> StaticsFile {
     let mut ret = self.file;
-    let ty_subst = jsonnet_statics::ty::Subst::get(&mut artifacts.statics, self.to_combine);
+    let ty_subst = jsonnet_ty::Subst::get(&mut artifacts.statics, self.to_combine);
     for err in &mut ret.statics.errors {
       err.apply(&ty_subst);
     }
@@ -226,7 +226,7 @@ impl StaticsFileToCombine {
 pub(crate) struct FileArtifacts {
   pub(crate) syntax: SyntaxFileArtifacts,
   pub(crate) defs: jsonnet_expr::def::Map,
-  pub(crate) expr_tys: jsonnet_statics::ty::Exprs,
+  pub(crate) expr_tys: jsonnet_ty::Exprs,
 }
 
 /// An I/O error with an associated path.

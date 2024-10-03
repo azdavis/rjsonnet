@@ -22,6 +22,10 @@ For strings, the arena IDs are identical if the strings are identical. This is u
 
 For expressions, not so. This means syntactically identical expressions at different places in a given file each have their own "identity". This is prudent, since each expression may have different semantics depending on the surrounding environment.
 
+### `crates/jsonnet-ty`
+
+A type system for Jsonnet.
+
 ## Stages crates
 
 These are the separate stages of analysis.

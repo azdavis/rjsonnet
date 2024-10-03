@@ -21,7 +21,7 @@ struct WithFs {
   relative_to: Option<paths::CleanPathBuf>,
   root_dirs: Vec<paths::CleanPathBuf>,
   artifacts: GlobalArtifacts,
-  file_tys: paths::PathMap<jsonnet_statics::ty::Ty>,
+  file_tys: paths::PathMap<jsonnet_ty::Ty>,
   /// INVARIANT: this is exactly the set of files that do have errors that have been loaded into
   /// either `file_artifacts` or `file_exprs` on the [`St`] that contains this.
   has_errors: paths::PathSet,
@@ -277,7 +277,7 @@ pub struct St {
   import_bin: PathMap<Vec<u8>>,
   manifest: bool,
   debug: bool,
-  multi_line: jsonnet_statics::ty::display::MultiLine,
+  multi_line: jsonnet_ty::display::MultiLine,
 }
 
 impl St {

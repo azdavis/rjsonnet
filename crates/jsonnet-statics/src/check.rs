@@ -2,10 +2,11 @@
 
 mod call;
 
-use crate::{error, st, ty};
+use crate::{error, st};
 use always::always;
 use jsonnet_expr::def::{self, Def};
 use jsonnet_expr::{BinaryOp, Expr, ExprArena, ExprData, Id, Prim, UnaryOp};
+use jsonnet_ty as ty;
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::BTreeSet;
 

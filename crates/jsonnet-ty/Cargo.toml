@@ -1,5 +1,5 @@
 [package]
-name = "jsonnet-statics"
+name = "jsonnet-ty"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -13,13 +13,14 @@ test = false
 doctest = false
 
 [dependencies]
-drop_bomb.workspace = true
-log.workspace = true
-paths.workspace = true
 rustc-hash.workspace = true
-uniq.workspace = true
 
 always.path = "../always"
-diagnostic.path = "../diagnostic"
 jsonnet-expr.path = "../jsonnet-expr"
-jsonnet-ty.path = "../jsonnet-ty"
+
+[build-dependencies]
+proc-macro2.workspace = true
+quote.workspace = true
+write-rs-tokens.workspace = true
+
+jsonnet-std.path = "../jsonnet-std"

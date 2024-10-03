@@ -1,7 +1,8 @@
 //! Checking function calls.
 
-use crate::{error, st, ty};
+use crate::{error, st};
 use jsonnet_expr::{Expr, ExprMust, Id};
+use jsonnet_ty as ty;
 use rustc_hash::FxHashMap;
 
 pub(crate) fn get(

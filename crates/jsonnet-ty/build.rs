@@ -61,13 +61,13 @@ fn main() {
     Some(q! { #name })
   });
   let things: Vec<_> = things.into_iter().map(|(a, b)| (a, b, true)).chain(std_fn_types).collect();
-  let impl_ty_const = things.iter().enumerate().map(|(idx, (name, _, pub_crate))| {
+  let impl_ty_const = things.iter().enumerate().map(|(idx, (name, _, is_pub))| {
     #[expect(clippy::disallowed_methods, reason = "ok to panic in build script")]
     let idx = u32::try_from(idx).expect("usize to u32");
     // NOTE: we depend on the layout of Ty being just a regular index with no extra bit manipulation
     // for the shared case here.
-    let vis = if *pub_crate {
-      q! { pub(crate) }
+    let vis = if *is_pub {
+      q! { pub }
     } else {
       q! {}
     };
@@ -122,13 +122,14 @@ fn main() {
 
     #[derive(Debug, Clone, Copy)]
     #[expect(non_camel_case_types)]
-    pub(crate) enum ComplexStdFn {
+    pub enum ComplexStdFn {
       #(#complex_std_fn_variants,)*
     }
 
     impl StdFnSig {
       #[expect(clippy::too_many_lines)]
-      pub(crate) fn get(f: StdFn) -> Self {
+      #[must_use]
+      pub fn get(f: StdFn) -> Self {
         match f {
           #(#std_fn_sig_simple_arms,)*
           #(#std_fn_sig_complex_arms,)*

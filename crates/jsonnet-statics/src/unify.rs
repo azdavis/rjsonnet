@@ -1,7 +1,8 @@
 //! Unification of types.
 
-use crate::{error, ty};
+use crate::error;
 use drop_bomb::DebugDropBomb;
+use jsonnet_ty as ty;
 
 pub(crate) struct St<'a> {
   pub(crate) expr: jsonnet_expr::ExprMust,

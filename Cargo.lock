@@ -382,6 +382,7 @@ dependencies = [
  "jsonnet-resolve-import",
  "jsonnet-statics",
  "jsonnet-syntax",
+ "jsonnet-ty",
  "lang-srv-state",
  "log",
  "paths",
@@ -502,14 +503,11 @@ dependencies = [
  "diagnostic",
  "drop_bomb",
  "jsonnet-expr",
- "jsonnet-std",
+ "jsonnet-ty",
  "log",
  "paths",
- "proc-macro2",
- "quote",
  "rustc-hash",
  "uniq",
- "write-rs-tokens",
 ]
 
 [[package]]
@@ -525,6 +523,19 @@ dependencies = [
  "rustc-hash",
  "syntax-gen",
  "token",
+]
+
+[[package]]
+name = "jsonnet-ty"
+version = "0.4.1"
+dependencies = [
+ "always",
+ "jsonnet-expr",
+ "jsonnet-std",
+ "proc-macro2",
+ "quote",
+ "rustc-hash",
+ "write-rs-tokens",
 ]
 
 [[package]]
@@ -885,7 +896,7 @@ dependencies = [
  "env_logger",
  "jsonnet-analyze",
  "jsonnet-eval",
- "jsonnet-statics",
+ "jsonnet-ty",
  "lang-srv-state",
  "log",
  "paths",

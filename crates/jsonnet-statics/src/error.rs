@@ -1,7 +1,7 @@
 //! Static errors.
 
-use crate::ty;
 use jsonnet_expr::{def, ExprMust, Id, Str};
+use jsonnet_ty as ty;
 use std::fmt;
 
 /// An error.
