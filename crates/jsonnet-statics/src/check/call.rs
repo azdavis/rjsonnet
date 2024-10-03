@@ -14,7 +14,8 @@ pub(crate) fn get(
 ) -> ty::Ty {
   match st.data(fn_ty).clone() {
     ty::Data::Fn(ty::Fn::Regular(fn_data)) => {
-      get_regular(st, expr, fn_expr, &fn_data, pos_args, named_args.clone())
+      get_regular(st, expr, fn_expr, &fn_data.params, pos_args, named_args.clone());
+      fn_data.ret
     }
     ty::Data::Fn(ty::Fn::Std(std_fn)) => {
       log::warn!("TODO: get std call {std_fn}");
@@ -39,15 +40,15 @@ fn get_regular(
   st: &mut st::St<'_>,
   expr: jsonnet_expr::Idx<jsonnet_expr::ExprData>,
   fn_expr: Expr,
-  fn_data: &ty::RegularFn,
+  params: &[ty::Param],
   pos_args: &[(Expr, ty::Ty)],
   mut named_args: FxHashMap<Id, (Expr, ty::Ty)>,
-) -> ty::Ty {
-  let positional_iter = fn_data.params.iter().zip(pos_args.iter());
+) {
+  let positional_iter = params.iter().zip(pos_args.iter());
   for (param, &(arg, ty)) in positional_iter {
     st.unify(arg.unwrap_or(expr), param.ty, ty);
   }
-  for param in fn_data.params.iter().skip(pos_args.len()) {
+  for param in params.iter().skip(pos_args.len()) {
     match named_args.remove(&param.id) {
       Some((arg, ty)) => st.unify(arg.unwrap_or(expr), param.ty, ty),
       None => {
@@ -57,11 +58,10 @@ fn get_regular(
       }
     }
   }
-  for (idx, &(arg, _)) in pos_args.iter().enumerate().skip(fn_data.params.len()) {
+  for (idx, &(arg, _)) in pos_args.iter().enumerate().skip(params.len()) {
     st.err(arg.unwrap_or(expr), error::Kind::ExtraPositionalArgument(idx + 1));
   }
   for (id, (arg, _)) in named_args {
     st.err(arg.unwrap_or(expr), error::Kind::ExtraNamedArgument(id));
   }
-  fn_data.ret
 }
