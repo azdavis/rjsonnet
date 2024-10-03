@@ -47,10 +47,10 @@ pub struct Fn {
 /// A signature for a std fn.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Sig {
-  /// A regular signature, expressible in a simple type system. It has parameters and a return type.
-  Regular(&'static [Param], Ty),
-  /// A special signature with complex type handling.
-  Special(&'static [&'static str]),
+  /// A simple signature, expressible in a simple type system. It has parameters and a return type.
+  Simple(&'static [Param], Ty),
+  /// A complex signature with custom type handling.
+  Complex(&'static [&'static str]),
 }
 
 /// A function parameter.
@@ -83,19 +83,19 @@ pub enum Ty {
   Str,
 }
 
-const V_ANY_RET_BOOL: Sig = Sig::Regular(&[Param::new("v", Ty::Any)], Ty::Bool);
-const X_NUM_RET_NUM: Sig = Sig::Regular(&[Param::new("x", Ty::Num)], Ty::Num);
-const N_NUM_RET_NUM: Sig = Sig::Regular(&[Param::new("n", Ty::Num)], Ty::Num);
-const X_NUM_RET_BOOL: Sig = Sig::Regular(&[Param::new("x", Ty::Num)], Ty::Bool);
-const STR_RET_STR: Sig = Sig::Regular(&[Param::new("str", Ty::Str)], Ty::Str);
+const V_ANY_RET_BOOL: Sig = Sig::Simple(&[Param::new("v", Ty::Any)], Ty::Bool);
+const X_NUM_RET_NUM: Sig = Sig::Simple(&[Param::new("x", Ty::Num)], Ty::Num);
+const N_NUM_RET_NUM: Sig = Sig::Simple(&[Param::new("n", Ty::Num)], Ty::Num);
+const X_NUM_RET_BOOL: Sig = Sig::Simple(&[Param::new("x", Ty::Num)], Ty::Bool);
+const STR_RET_STR: Sig = Sig::Simple(&[Param::new("str", Ty::Str)], Ty::Str);
 const X_Y_BOOL_RET_BOOL: Sig =
-  Sig::Regular(&[Param::new("x", Ty::Bool), Param::new("y", Ty::Bool)], Ty::Bool);
+  Sig::Simple(&[Param::new("x", Ty::Bool), Param::new("y", Ty::Bool)], Ty::Bool);
 const A_B_STR_RET_BOOL: Sig =
-  Sig::Regular(&[Param::new("a", Ty::Str), Param::new("b", Ty::Str)], Ty::Bool);
+  Sig::Simple(&[Param::new("a", Ty::Str), Param::new("b", Ty::Str)], Ty::Bool);
 const STR_CHARS_STR_RET_STR: Sig =
-  Sig::Regular(&[Param::new("str", Ty::Str), Param::new("chars", Ty::Str)], Ty::Str);
-const STR_RET_NUM: Sig = Sig::Regular(&[Param::new("str", Ty::Str)], Ty::Num);
-const STR_RET_ANY: Sig = Sig::Regular(&[Param::new("str", Ty::Str)], Ty::Any);
+  Sig::Simple(&[Param::new("str", Ty::Str), Param::new("chars", Ty::Str)], Ty::Str);
+const STR_RET_NUM: Sig = Sig::Simple(&[Param::new("str", Ty::Str)], Ty::Num);
+const STR_RET_ANY: Sig = Sig::Simple(&[Param::new("str", Ty::Str)], Ty::Any);
 
 const fn f(name: &'static str, sig: Sig) -> Fn {
   Fn { name: S::new(name), sig }
@@ -103,31 +103,31 @@ const fn f(name: &'static str, sig: Sig) -> Fn {
 
 /// The std fns.
 pub const FNS: [Fn; 126] = [
-  f("extVar", Sig::Regular(&[Param::new("x", Ty::Str)], Ty::Str)),
-  Fn { name: S::named("type", "type_"), sig: Sig::Regular(&[Param::new("x", Ty::Any)], Ty::Str) },
+  f("extVar", Sig::Simple(&[Param::new("x", Ty::Str)], Ty::Str)),
+  Fn { name: S::named("type", "type_"), sig: Sig::Simple(&[Param::new("x", Ty::Any)], Ty::Str) },
   f("isArray", V_ANY_RET_BOOL),
   f("isBoolean", V_ANY_RET_BOOL),
   f("isFunction", V_ANY_RET_BOOL),
   f("isNumber", V_ANY_RET_BOOL),
   f("isObject", V_ANY_RET_BOOL),
   f("isString", V_ANY_RET_BOOL),
-  f("length", Sig::Special(&["x"])),
-  f("get", Sig::Special(&["o", "f", "default", "inc_hidden"])),
-  f("objectHas", Sig::Special(&["o", "f"])),
-  f("objectFields", Sig::Special(&["o"])),
-  f("objectValues", Sig::Special(&["o"])),
-  f("objectKeysValues", Sig::Special(&["o"])),
-  f("objectHasAll", Sig::Special(&["o", "f"])),
-  f("objectFieldsAll", Sig::Special(&["o"])),
-  f("objectValuesAll", Sig::Special(&["o"])),
-  f("objectKeysValuesAll", Sig::Special(&["o"])),
-  f("prune", Sig::Special(&["a"])),
-  f("mapWithKey", Sig::Special(&["func", "obj"])),
+  f("length", Sig::Complex(&["x"])),
+  f("get", Sig::Complex(&["o", "f", "default", "inc_hidden"])),
+  f("objectHas", Sig::Complex(&["o", "f"])),
+  f("objectFields", Sig::Complex(&["o"])),
+  f("objectValues", Sig::Complex(&["o"])),
+  f("objectKeysValues", Sig::Complex(&["o"])),
+  f("objectHasAll", Sig::Complex(&["o", "f"])),
+  f("objectFieldsAll", Sig::Complex(&["o"])),
+  f("objectValuesAll", Sig::Complex(&["o"])),
+  f("objectKeysValuesAll", Sig::Complex(&["o"])),
+  f("prune", Sig::Complex(&["a"])),
+  f("mapWithKey", Sig::Complex(&["func", "obj"])),
   f("abs", N_NUM_RET_NUM),
   f("sign", N_NUM_RET_NUM),
-  f("max", Sig::Regular(&[Param::new("a", Ty::Num), Param::new("b", Ty::Num)], Ty::Num)),
-  f("min", Sig::Regular(&[Param::new("a", Ty::Num), Param::new("b", Ty::Num)], Ty::Num)),
-  f("pow", Sig::Regular(&[Param::new("x", Ty::Num), Param::new("n", Ty::Num)], Ty::Num)),
+  f("max", Sig::Simple(&[Param::new("a", Ty::Num), Param::new("b", Ty::Num)], Ty::Num)),
+  f("min", Sig::Simple(&[Param::new("a", Ty::Num), Param::new("b", Ty::Num)], Ty::Num)),
+  f("pow", Sig::Simple(&[Param::new("x", Ty::Num), Param::new("n", Ty::Num)], Ty::Num)),
   f("exp", X_NUM_RET_NUM),
   f("log", X_NUM_RET_NUM),
   f("exponent", X_NUM_RET_NUM),
@@ -146,40 +146,40 @@ pub const FNS: [Fn; 126] = [
   f("isOdd", X_NUM_RET_BOOL),
   f("isInteger", X_NUM_RET_BOOL),
   f("isDecimal", X_NUM_RET_BOOL),
-  Fn { name: S::named("mod", "mod_"), sig: Sig::Special(&["a", "b"]) },
+  Fn { name: S::named("mod", "mod_"), sig: Sig::Complex(&["a", "b"]) },
   f(
     "clamp",
-    Sig::Regular(
+    Sig::Simple(
       &[Param::new("x", Ty::Num), Param::new("minVal", Ty::Num), Param::new("maxVal", Ty::Num)],
       Ty::Num,
     ),
   ),
-  f("assertEqual", Sig::Special(&["a", "b"])),
-  f("toString", Sig::Regular(&[Param::new("a", Ty::Any)], Ty::Str)),
-  f("codepoint", Sig::Regular(&[Param::new("str", Ty::Str)], Ty::Num)),
-  f("char", Sig::Regular(&[Param::new("n", Ty::Num)], Ty::Str)),
+  f("assertEqual", Sig::Complex(&["a", "b"])),
+  f("toString", Sig::Simple(&[Param::new("a", Ty::Any)], Ty::Str)),
+  f("codepoint", Sig::Simple(&[Param::new("str", Ty::Str)], Ty::Num)),
+  f("char", Sig::Simple(&[Param::new("n", Ty::Num)], Ty::Str)),
   f(
     "substr",
-    Sig::Regular(
+    Sig::Simple(
       &[Param::new("str", Ty::Str), Param::new("from", Ty::Num), Param::new("len", Ty::Num)],
       Ty::Str,
     ),
   ),
-  f("findSubstr", Sig::Special(&["pat", "str"])),
+  f("findSubstr", Sig::Complex(&["pat", "str"])),
   f("startsWith", A_B_STR_RET_BOOL),
   f("endsWith", A_B_STR_RET_BOOL),
   f("stripChars", STR_CHARS_STR_RET_STR),
   f("lstripChars", STR_CHARS_STR_RET_STR),
   f("rstripChars", STR_CHARS_STR_RET_STR),
-  f("split", Sig::Special(&["str", "c"])),
-  f("splitLimit", Sig::Special(&["str", "c", "maxsplits"])),
-  f("splitLimitR", Sig::Special(&["str", "c", "maxsplits"])),
-  f("strReplace", Sig::Special(&["str", "from", "to"])),
-  f("isEmpty", Sig::Special(&["str"])),
+  f("split", Sig::Complex(&["str", "c"])),
+  f("splitLimit", Sig::Complex(&["str", "c", "maxsplits"])),
+  f("splitLimitR", Sig::Complex(&["str", "c", "maxsplits"])),
+  f("strReplace", Sig::Complex(&["str", "from", "to"])),
+  f("isEmpty", Sig::Complex(&["str"])),
   f("asciiUpper", STR_RET_STR),
   f("asciiLower", STR_RET_STR),
   f("stringChars", STR_RET_STR),
-  f("format", Sig::Special(&["str", "vals"])),
+  f("format", Sig::Complex(&["str", "vals"])),
   f("escapeStringBash", STR_RET_STR),
   f("escapeStringDollars", STR_RET_STR),
   f("escapeStringJson", STR_RET_STR),
@@ -190,59 +190,59 @@ pub const FNS: [Fn; 126] = [
   f("parseHex", STR_RET_NUM),
   f("parseJson", STR_RET_ANY),
   f("parseYaml", STR_RET_ANY),
-  f("encodeUTF8", Sig::Special(&["str"])),
-  f("decodeUTF8", Sig::Special(&["arr"])),
-  f("manifestIni", Sig::Special(&["ini"])),
-  f("manifestPython", Sig::Special(&["v"])),
-  f("manifestPythonVars", Sig::Special(&["conf"])),
-  f("manifestJsonEx", Sig::Special(&["value", "indent", "newline", "key_val_sep"])),
-  f("manifestJson", Sig::Special(&["value"])),
-  f("manifestJsonMinified", Sig::Special(&["value"])),
-  f("manifestYamlDoc", Sig::Special(&["value", "indent_array_in_object", "quote_keys"])),
+  f("encodeUTF8", Sig::Complex(&["str"])),
+  f("decodeUTF8", Sig::Complex(&["arr"])),
+  f("manifestIni", Sig::Complex(&["ini"])),
+  f("manifestPython", Sig::Complex(&["v"])),
+  f("manifestPythonVars", Sig::Complex(&["conf"])),
+  f("manifestJsonEx", Sig::Complex(&["value", "indent", "newline", "key_val_sep"])),
+  f("manifestJson", Sig::Complex(&["value"])),
+  f("manifestJsonMinified", Sig::Complex(&["value"])),
+  f("manifestYamlDoc", Sig::Complex(&["value", "indent_array_in_object", "quote_keys"])),
   f(
     "manifestYamlStream",
-    Sig::Special(&["value", "indent_array_in_object", "c_document_end", "quote_keys"]),
+    Sig::Complex(&["value", "indent_array_in_object", "c_document_end", "quote_keys"]),
   ),
-  f("manifestXmlJsonml", Sig::Special(&["value"])),
-  f("manifestTomlEx", Sig::Special(&["toml", "indent"])),
-  f("makeArray", Sig::Special(&["sz", "func"])),
-  f("member", Sig::Special(&["arr", "x"])),
-  f("count", Sig::Special(&["arr", "x"])),
-  f("find", Sig::Special(&["value", "arr"])),
-  f("map", Sig::Special(&["func", "arr"])),
-  f("mapWithIndex", Sig::Special(&["func", "arr"])),
-  f("filterMap", Sig::Special(&["filter_func", "map_func", "arr"])),
-  f("flatMap", Sig::Special(&["func", "arr"])),
-  f("filter", Sig::Special(&["func", "arr"])),
-  f("foldl", Sig::Special(&["func", "arr", "init"])),
-  f("foldr", Sig::Special(&["func", "arr", "init"])),
-  f("range", Sig::Special(&["from", "to"])),
-  f("repeat", Sig::Special(&["what", "count"])),
-  f("slice", Sig::Special(&["indexable", "index", "end", "step"])),
-  f("join", Sig::Special(&["sep", "arr"])),
-  f("lines", Sig::Special(&["arr"])),
-  f("flattenArrays", Sig::Special(&["arr"])),
-  f("reverse", Sig::Special(&["arr"])),
-  f("sort", Sig::Special(&["arr", "keyF"])),
-  f("uniq", Sig::Special(&["arr", "keyF"])),
-  f("all", Sig::Special(&["arr"])),
-  f("any", Sig::Special(&["arr"])),
-  f("sum", Sig::Special(&["arr"])),
-  f("avg", Sig::Special(&["arr"])),
-  f("set", Sig::Special(&["arr", "keyF"])),
-  f("setInter", Sig::Special(&["a", "b", "keyF"])),
-  f("setUnion", Sig::Special(&["a", "b", "keyF"])),
-  f("setDiff", Sig::Special(&["a", "b", "keyF"])),
-  f("setMember", Sig::Special(&["x", "arr", "keyF"])),
-  f("base64", Sig::Special(&["input"])),
-  f("base64DecodeBytes", Sig::Special(&["str"])),
+  f("manifestXmlJsonml", Sig::Complex(&["value"])),
+  f("manifestTomlEx", Sig::Complex(&["toml", "indent"])),
+  f("makeArray", Sig::Complex(&["sz", "func"])),
+  f("member", Sig::Complex(&["arr", "x"])),
+  f("count", Sig::Complex(&["arr", "x"])),
+  f("find", Sig::Complex(&["value", "arr"])),
+  f("map", Sig::Complex(&["func", "arr"])),
+  f("mapWithIndex", Sig::Complex(&["func", "arr"])),
+  f("filterMap", Sig::Complex(&["filter_func", "map_func", "arr"])),
+  f("flatMap", Sig::Complex(&["func", "arr"])),
+  f("filter", Sig::Complex(&["func", "arr"])),
+  f("foldl", Sig::Complex(&["func", "arr", "init"])),
+  f("foldr", Sig::Complex(&["func", "arr", "init"])),
+  f("range", Sig::Complex(&["from", "to"])),
+  f("repeat", Sig::Complex(&["what", "count"])),
+  f("slice", Sig::Complex(&["indexable", "index", "end", "step"])),
+  f("join", Sig::Complex(&["sep", "arr"])),
+  f("lines", Sig::Complex(&["arr"])),
+  f("flattenArrays", Sig::Complex(&["arr"])),
+  f("reverse", Sig::Complex(&["arr"])),
+  f("sort", Sig::Complex(&["arr", "keyF"])),
+  f("uniq", Sig::Complex(&["arr", "keyF"])),
+  f("all", Sig::Complex(&["arr"])),
+  f("any", Sig::Complex(&["arr"])),
+  f("sum", Sig::Complex(&["arr"])),
+  f("avg", Sig::Complex(&["arr"])),
+  f("set", Sig::Complex(&["arr", "keyF"])),
+  f("setInter", Sig::Complex(&["a", "b", "keyF"])),
+  f("setUnion", Sig::Complex(&["a", "b", "keyF"])),
+  f("setDiff", Sig::Complex(&["a", "b", "keyF"])),
+  f("setMember", Sig::Complex(&["x", "arr", "keyF"])),
+  f("base64", Sig::Complex(&["input"])),
+  f("base64DecodeBytes", Sig::Complex(&["str"])),
   f("base64Decode", STR_RET_STR),
-  f("md5", Sig::Regular(&[Param::new("s", Ty::Str)], Ty::Str)),
+  f("md5", Sig::Simple(&[Param::new("s", Ty::Str)], Ty::Str)),
   f("xor", X_Y_BOOL_RET_BOOL),
   f("xnor", X_Y_BOOL_RET_BOOL),
-  f("mergePatch", Sig::Special(&["target", "patch"])),
-  f("trace", Sig::Special(&["str", "rest"])),
+  f("mergePatch", Sig::Complex(&["target", "patch"])),
+  f("trace", Sig::Complex(&["str", "rest"])),
   // alluded to in the spec but not mentioned on the std lib page
-  f("equals", Sig::Special(&["x", "y"])),
-  f("objectHasEx", Sig::Special(&["obj", "fname", "hidden"])),
+  f("equals", Sig::Complex(&["x", "y"])),
+  f("objectHasEx", Sig::Complex(&["obj", "fname", "hidden"])),
 ];

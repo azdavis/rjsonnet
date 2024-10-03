@@ -14,8 +14,8 @@ fn main() {
     let mut tmp = BTreeSet::<&str>::new();
     for f in jsonnet_std::FNS {
       match f.sig {
-        Sig::Regular(params, _) => tmp.extend(params.iter().map(|x| x.name)),
-        Sig::Special(params) => tmp.extend(params),
+        Sig::Simple(params, _) => tmp.extend(params.iter().map(|x| x.name)),
+        Sig::Complex(params) => tmp.extend(params),
       }
     }
     tmp
@@ -200,8 +200,8 @@ fn main() {
       let mut tmp = BTreeMap::<usize, BTreeSet<&str>>::new();
       for f in &jsonnet_std::FNS {
         let params_len = match f.sig {
-          Sig::Regular(xs, _) => xs.len(),
-          Sig::Special(xs) => xs.len(),
+          Sig::Simple(xs, _) => xs.len(),
+          Sig::Complex(xs) => xs.len(),
         };
         tmp.entry(params_len).or_default().insert(f.name.ident());
       }
@@ -420,7 +420,7 @@ fn mk_get_params(params: &[&str]) -> proc_macro2::TokenStream {
 
 fn param_names(f: &jsonnet_std::Fn) -> Vec<&'static str> {
   match f.sig {
-    Sig::Regular(xs, _) => xs.iter().map(|x| x.name).collect(),
-    Sig::Special(xs) => xs.to_vec(),
+    Sig::Simple(xs, _) => xs.iter().map(|x| x.name).collect(),
+    Sig::Complex(xs) => xs.to_vec(),
   }
 }
