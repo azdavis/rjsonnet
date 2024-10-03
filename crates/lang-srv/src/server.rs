@@ -30,7 +30,7 @@ impl<S> Server<S> {
     conn: &lsp_server::Connection,
     response: lsp_server::Response,
   ) -> Result<()> {
-    match self.queue.incoming.complete(response.id.clone()) {
+    match self.queue.incoming.complete(&response.id) {
       Some(()) => send(conn, response.into()),
       None => bail!("respond to non-queued request with {response:?}"),
     }
