@@ -14,7 +14,9 @@ fn main() {
     (i!("NUMBER"), q!(Data::Prim(super::Prim::Number))),
     (i!("NEVER"), q!(Data::Union(BTreeSet::new()))),
     (i!("BOOL"), q!(Data::Union(BTreeSet::from([Ty::TRUE, Ty::FALSE])))),
+    (i!("ARRAY_BOOL"), q!(Data::Array(Ty::BOOL))),
     (i!("ARRAY_NUMBER"), q!(Data::Array(Ty::NUMBER))),
+    (i!("ARRAY_STRING"), q!(Data::Array(Ty::STRING))),
     (i!("ARRAY_ANY"), q!(Data::Array(Ty::ANY))),
     (i!("ARRAY_OR_OBJECT"), q!(Data::Union(BTreeSet::from([Ty::ARRAY_ANY, Ty::OBJECT])))),
     (i!("OBJECT"), q!(Data::Object(super::Object::unknown()))),
@@ -147,6 +149,10 @@ fn mk_ty(ty: jsonnet_std::Ty) -> proc_macro2::TokenStream {
     jsonnet_std::Ty::Bool => q!(Ty::BOOL),
     jsonnet_std::Ty::Num => q!(Ty::NUMBER),
     jsonnet_std::Ty::Str => q!(Ty::STRING),
+    jsonnet_std::Ty::BoolArr => q!(Ty::ARRAY_BOOL),
+    jsonnet_std::Ty::NumArr => q!(Ty::ARRAY_NUMBER),
+    jsonnet_std::Ty::StrArr => q!(Ty::ARRAY_STRING),
+    jsonnet_std::Ty::Object => q!(Ty::OBJECT),
   }
 }
 

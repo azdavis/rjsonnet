@@ -81,6 +81,14 @@ pub enum Ty {
   Num,
   /// A string like `"foo"` or `"bar"` or `""`.
   Str,
+  /// A boolean array like `[false, true]`.
+  BoolArr,
+  /// A number array like `[1, 4]`.
+  NumArr,
+  /// A string array like `["hi", "bye"]`.
+  StrArr,
+  /// An object with arbitrary fields like `{ foo: 3 }` or `{}`.
+  Object,
 }
 
 const V_ANY_RET_BOOL: Sig = Sig::Simple(&[Param::new("v", Ty::Any)], Ty::Bool);
@@ -96,6 +104,10 @@ const STR_CHARS_STR_RET_STR: Sig =
   Sig::Simple(&[Param::new("str", Ty::Str), Param::new("chars", Ty::Str)], Ty::Str);
 const STR_RET_NUM: Sig = Sig::Simple(&[Param::new("str", Ty::Str)], Ty::Num);
 const STR_RET_ANY: Sig = Sig::Simple(&[Param::new("str", Ty::Str)], Ty::Any);
+const SPLIT_LIMIT: Sig = Sig::Simple(
+  &[Param::new("str", Ty::Str), Param::new("c", Ty::Str), Param::new("maxsplits", Ty::Str)],
+  Ty::StrArr,
+);
 
 const fn f(name: &'static str, sig: Sig) -> Fn {
   Fn { name: S::new(name), sig }
@@ -165,17 +177,26 @@ pub const FNS: [Fn; 126] = [
       Ty::Str,
     ),
   ),
-  f("findSubstr", Sig::Complex(&["pat", "str"])),
+  f(
+    "findSubstr",
+    Sig::Simple(&[Param::new("pat", Ty::Str), Param::new("str", Ty::Str)], Ty::NumArr),
+  ),
   f("startsWith", A_B_STR_RET_BOOL),
   f("endsWith", A_B_STR_RET_BOOL),
   f("stripChars", STR_CHARS_STR_RET_STR),
   f("lstripChars", STR_CHARS_STR_RET_STR),
   f("rstripChars", STR_CHARS_STR_RET_STR),
-  f("split", Sig::Complex(&["str", "c"])),
-  f("splitLimit", Sig::Complex(&["str", "c", "maxsplits"])),
-  f("splitLimitR", Sig::Complex(&["str", "c", "maxsplits"])),
-  f("strReplace", Sig::Complex(&["str", "from", "to"])),
-  f("isEmpty", Sig::Complex(&["str"])),
+  f("split", Sig::Simple(&[Param::new("str", Ty::Str), Param::new("c", Ty::Str)], Ty::StrArr)),
+  f("splitLimit", SPLIT_LIMIT),
+  f("splitLimitR", SPLIT_LIMIT),
+  f(
+    "strReplace",
+    Sig::Simple(
+      &[Param::new("str", Ty::Str), Param::new("from", Ty::Str), Param::new("to", Ty::Str)],
+      Ty::Str,
+    ),
+  ),
+  f("isEmpty", Sig::Simple(&[Param::new("str", Ty::Str)], Ty::Bool)),
   f("asciiUpper", STR_RET_STR),
   f("asciiLower", STR_RET_STR),
   f("stringChars", STR_RET_STR),
@@ -190,13 +211,24 @@ pub const FNS: [Fn; 126] = [
   f("parseHex", STR_RET_NUM),
   f("parseJson", STR_RET_ANY),
   f("parseYaml", STR_RET_ANY),
-  f("encodeUTF8", Sig::Complex(&["str"])),
-  f("decodeUTF8", Sig::Complex(&["arr"])),
-  f("manifestIni", Sig::Complex(&["ini"])),
-  f("manifestPython", Sig::Complex(&["v"])),
-  f("manifestPythonVars", Sig::Complex(&["conf"])),
-  f("manifestJsonEx", Sig::Complex(&["value", "indent", "newline", "key_val_sep"])),
-  f("manifestJson", Sig::Complex(&["value"])),
+  f("encodeUTF8", Sig::Simple(&[Param::new("str", Ty::Str)], Ty::NumArr)),
+  f("decodeUTF8", Sig::Simple(&[Param::new("arr", Ty::NumArr)], Ty::Str)),
+  f("manifestIni", Sig::Simple(&[Param::new("ini", Ty::Object)], Ty::Str)),
+  f("manifestPython", Sig::Simple(&[Param::new("v", Ty::Any)], Ty::Str)),
+  f("manifestPythonVars", Sig::Simple(&[Param::new("conf", Ty::Any)], Ty::Str)),
+  f(
+    "manifestJsonEx",
+    Sig::Simple(
+      &[
+        Param::new("value", Ty::Any),
+        Param::new("indent", Ty::Str),
+        Param::new("newline", Ty::Str),
+        Param::new("key_val_sep", Ty::Str),
+      ],
+      Ty::Str,
+    ),
+  ),
+  f("manifestJson", Sig::Simple(&[Param::new("value", Ty::Any)], Ty::Str)),
   f("manifestJsonMinified", Sig::Complex(&["value"])),
   f("manifestYamlDoc", Sig::Complex(&["value", "indent_array_in_object", "quote_keys"])),
   f(
@@ -220,15 +252,15 @@ pub const FNS: [Fn; 126] = [
   f("repeat", Sig::Complex(&["what", "count"])),
   f("slice", Sig::Complex(&["indexable", "index", "end", "step"])),
   f("join", Sig::Complex(&["sep", "arr"])),
-  f("lines", Sig::Complex(&["arr"])),
+  f("lines", Sig::Simple(&[Param::new("arr", Ty::StrArr)], Ty::Str)),
   f("flattenArrays", Sig::Complex(&["arr"])),
   f("reverse", Sig::Complex(&["arr"])),
   f("sort", Sig::Complex(&["arr", "keyF"])),
   f("uniq", Sig::Complex(&["arr", "keyF"])),
-  f("all", Sig::Complex(&["arr"])),
-  f("any", Sig::Complex(&["arr"])),
-  f("sum", Sig::Complex(&["arr"])),
-  f("avg", Sig::Complex(&["arr"])),
+  f("all", Sig::Simple(&[Param::new("arr", Ty::BoolArr)], Ty::Bool)),
+  f("any", Sig::Simple(&[Param::new("arr", Ty::BoolArr)], Ty::Bool)),
+  f("sum", Sig::Simple(&[Param::new("arr", Ty::NumArr)], Ty::Num)),
+  f("avg", Sig::Simple(&[Param::new("arr", Ty::NumArr)], Ty::Num)),
   f("set", Sig::Complex(&["arr", "keyF"])),
   f("setInter", Sig::Complex(&["a", "b", "keyF"])),
   f("setUnion", Sig::Complex(&["a", "b", "keyF"])),
