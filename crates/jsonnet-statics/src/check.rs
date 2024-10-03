@@ -126,18 +126,18 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
       }
     }
     ExprData::Call { func, positional, named } => {
-      let func_ty = get(st, ar, *func);
-      let positional_tys: Vec<_> = positional.iter().map(|&arg| (arg, get(st, ar, arg))).collect();
-      let mut named_tys = FxHashMap::<Id, (Expr, ty::Ty)>::default();
+      let fn_ty = get(st, ar, *func);
+      let pos_args: Vec<_> = positional.iter().map(|&arg| (arg, get(st, ar, arg))).collect();
+      let mut named_args = FxHashMap::<Id, (Expr, ty::Ty)>::default();
       for &(id, arg) in named {
         let arg_ty = get(st, ar, arg);
-        if named_tys.insert(id, (arg, arg_ty)).is_some() {
+        if named_args.insert(id, (arg, arg_ty)).is_some() {
           if let Some(arg) = arg {
             st.err(arg, error::Kind::DuplicateNamedArg(id));
           }
         }
       }
-      call::get(st, expr, *func, func_ty, &positional_tys, &named_tys)
+      call::get(st, expr, *func, fn_ty, &pos_args, &named_args)
     }
     ExprData::Id(id) => {
       if let Some((ty, def)) = st.get(*id) {

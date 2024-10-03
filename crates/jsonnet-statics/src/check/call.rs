@@ -9,12 +9,12 @@ pub(crate) fn get(
   expr: ExprMust,
   fn_expr: Expr,
   fn_ty: ty::Ty,
-  positional: &[(Expr, ty::Ty)],
-  named: &FxHashMap<Id, (Expr, ty::Ty)>,
+  pos_args: &[(Expr, ty::Ty)],
+  named_args: &FxHashMap<Id, (Expr, ty::Ty)>,
 ) -> ty::Ty {
   match st.data(fn_ty).clone() {
     ty::Data::Fn(ty::Fn::Regular(fn_data)) => {
-      get_regular(st, expr, fn_expr, &fn_data, positional, named.clone())
+      get_regular(st, expr, fn_expr, &fn_data, pos_args, named_args.clone())
     }
     ty::Data::Fn(ty::Fn::Std(std_fn)) => {
       log::warn!("TODO: get std call {std_fn}");
@@ -22,7 +22,8 @@ pub(crate) fn get(
     }
     ty::Data::Union(tys) => {
       // must be compatible with ALL of the union parts.
-      let ret_tys = tys.into_iter().map(|fn_ty| get(st, expr, fn_expr, fn_ty, positional, named));
+      let ret_tys =
+        tys.into_iter().map(|fn_ty| get(st, expr, fn_expr, fn_ty, pos_args, named_args));
       let ret_ty = ty::Data::Union(ret_tys.collect());
       st.get_ty(ret_ty)
     }
@@ -39,15 +40,15 @@ fn get_regular(
   expr: jsonnet_expr::Idx<jsonnet_expr::ExprData>,
   fn_expr: Expr,
   fn_data: &ty::RegularFn,
-  positional: &[(Expr, ty::Ty)],
-  mut named: FxHashMap<Id, (Expr, ty::Ty)>,
+  pos_args: &[(Expr, ty::Ty)],
+  mut named_args: FxHashMap<Id, (Expr, ty::Ty)>,
 ) -> ty::Ty {
-  let positional_iter = fn_data.params.iter().zip(positional.iter());
+  let positional_iter = fn_data.params.iter().zip(pos_args.iter());
   for (param, &(arg, ty)) in positional_iter {
     st.unify(arg.unwrap_or(expr), param.ty, ty);
   }
-  for param in fn_data.params.iter().skip(positional.len()) {
-    match named.remove(&param.id) {
+  for param in fn_data.params.iter().skip(pos_args.len()) {
+    match named_args.remove(&param.id) {
       Some((arg, ty)) => st.unify(arg.unwrap_or(expr), param.ty, ty),
       None => {
         if param.required {
@@ -56,10 +57,10 @@ fn get_regular(
       }
     }
   }
-  for (idx, &(arg, _)) in positional.iter().enumerate().skip(fn_data.params.len()) {
+  for (idx, &(arg, _)) in pos_args.iter().enumerate().skip(fn_data.params.len()) {
     st.err(arg.unwrap_or(expr), error::Kind::ExtraPositionalArgument(idx + 1));
   }
-  for (id, (arg, _)) in named {
+  for (id, (arg, _)) in named_args {
     st.err(arg.unwrap_or(expr), error::Kind::ExtraNamedArgument(id));
   }
   fn_data.ret
