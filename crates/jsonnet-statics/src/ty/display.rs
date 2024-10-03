@@ -1,6 +1,6 @@
 //! Display types.
 
-use super::{Data, Fn, GlobalStore, LocalStore, Param, Prim, Ty};
+use super::{Data, Fn, GlobalStore, LocalStore, Param, Prim, StdFnSig, Ty};
 use always::always;
 use jsonnet_expr::StrArena;
 use std::fmt;
@@ -132,7 +132,12 @@ impl<'a> fmt::Display for TyDisplay<'a> {
       Data::Fn(Fn::Regular(func)) => {
         FnDisplay { params: &func.params, ret: func.ret, prec: self.prec, stuff: self.stuff }.fmt(f)
       }
-      Data::Fn(Fn::Std(func)) => write!(f, "<std.{func}>"),
+      Data::Fn(Fn::Std(func)) => match StdFnSig::get(*func) {
+        StdFnSig::Simple(params, ret) => {
+          FnDisplay { params, ret, prec: self.prec, stuff: self.stuff }.fmt(f)
+        }
+        StdFnSig::Complex(_) => write!(f, "<std.{func}>"),
+      },
       Data::Union(tys) => {
         // special case
         // TODO: make this better: e.g. `true | false | number` should show as `boolean | number`
