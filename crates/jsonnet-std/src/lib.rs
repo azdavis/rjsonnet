@@ -48,14 +48,6 @@ impl Fn {
   const fn new(name: &'static str, params: &'static [&'static str]) -> Self {
     Self { name: S::new(name), sig: Sig::Special(params) }
   }
-
-  const fn named(
-    content: &'static str,
-    name: &'static str,
-    params: &'static [&'static str],
-  ) -> Self {
-    Self { name: S::named(content, name), sig: Sig::Special(params) }
-  }
 }
 
 /// A signature for a std fn.
@@ -150,7 +142,7 @@ pub const FNS: [Fn; 127] = [
   Fn { name: S::new("isOdd"), sig: X_NUM_RET_BOOL },
   Fn { name: S::new("isInteger"), sig: X_NUM_RET_BOOL },
   Fn { name: S::new("isDecimal"), sig: X_NUM_RET_BOOL },
-  Fn::named("mod", "mod_", &["a", "b"]),
+  Fn { name: S::named("mod", "mod_"), sig: Sig::Special(&["a", "b"]) },
   Fn::new("clamp", &["x", "minVal", "maxVal"]),
   Fn::new("assertEqual", &["a", "b"]),
   Fn::new("toString", &["a"]),
