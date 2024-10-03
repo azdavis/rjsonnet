@@ -64,12 +64,6 @@ pub struct Param {
   pub required: bool,
 }
 
-impl Param {
-  const fn new(name: &'static str, ty: Ty) -> Self {
-    Self { name, ty, required: true }
-  }
-}
-
 /// A simple type.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Ty {
@@ -91,23 +85,23 @@ pub enum Ty {
   Object,
 }
 
-const V_ANY_RET_BOOL: Sig = Sig::Simple(&[Param::new("v", Ty::Any)], Ty::Bool);
-const X_NUM_RET_NUM: Sig = Sig::Simple(&[Param::new("x", Ty::Num)], Ty::Num);
-const N_NUM_RET_NUM: Sig = Sig::Simple(&[Param::new("n", Ty::Num)], Ty::Num);
-const X_NUM_RET_BOOL: Sig = Sig::Simple(&[Param::new("x", Ty::Num)], Ty::Bool);
-const STR_RET_STR: Sig = Sig::Simple(&[Param::new("str", Ty::Str)], Ty::Str);
-const X_Y_BOOL_RET_BOOL: Sig =
-  Sig::Simple(&[Param::new("x", Ty::Bool), Param::new("y", Ty::Bool)], Ty::Bool);
-const A_B_STR_RET_BOOL: Sig =
-  Sig::Simple(&[Param::new("a", Ty::Str), Param::new("b", Ty::Str)], Ty::Bool);
-const STR_CHARS_STR_RET_STR: Sig =
-  Sig::Simple(&[Param::new("str", Ty::Str), Param::new("chars", Ty::Str)], Ty::Str);
-const STR_RET_NUM: Sig = Sig::Simple(&[Param::new("str", Ty::Str)], Ty::Num);
-const STR_RET_ANY: Sig = Sig::Simple(&[Param::new("str", Ty::Str)], Ty::Any);
-const SPLIT_LIMIT: Sig = Sig::Simple(
-  &[Param::new("str", Ty::Str), Param::new("c", Ty::Str), Param::new("maxsplits", Ty::Str)],
-  Ty::StrArr,
-);
+/// `r` for "required"
+const fn r(name: &'static str, ty: Ty) -> Param {
+  Param { name, ty, required: true }
+}
+
+const V_ANY_RET_BOOL: Sig = Sig::Simple(&[r("v", Ty::Any)], Ty::Bool);
+const X_NUM_RET_NUM: Sig = Sig::Simple(&[r("x", Ty::Num)], Ty::Num);
+const N_NUM_RET_NUM: Sig = Sig::Simple(&[r("n", Ty::Num)], Ty::Num);
+const X_NUM_RET_BOOL: Sig = Sig::Simple(&[r("x", Ty::Num)], Ty::Bool);
+const STR_RET_STR: Sig = Sig::Simple(&[r("str", Ty::Str)], Ty::Str);
+const X_Y_BOOL_RET_BOOL: Sig = Sig::Simple(&[r("x", Ty::Bool), r("y", Ty::Bool)], Ty::Bool);
+const A_B_STR_RET_BOOL: Sig = Sig::Simple(&[r("a", Ty::Str), r("b", Ty::Str)], Ty::Bool);
+const STR_CHARS_STR_RET_STR: Sig = Sig::Simple(&[r("str", Ty::Str), r("chars", Ty::Str)], Ty::Str);
+const STR_RET_NUM: Sig = Sig::Simple(&[r("str", Ty::Str)], Ty::Num);
+const STR_RET_ANY: Sig = Sig::Simple(&[r("str", Ty::Str)], Ty::Any);
+const SPLIT_LIMIT: Sig =
+  Sig::Simple(&[r("str", Ty::Str), r("c", Ty::Str), r("maxsplits", Ty::Str)], Ty::StrArr);
 
 const fn f(name: &'static str, sig: Sig) -> Fn {
   Fn { name: S::new(name), sig }
@@ -115,8 +109,8 @@ const fn f(name: &'static str, sig: Sig) -> Fn {
 
 /// The std fns.
 pub const FNS: [Fn; 126] = [
-  f("extVar", Sig::Simple(&[Param::new("x", Ty::Str)], Ty::Str)),
-  Fn { name: S::named("type", "type_"), sig: Sig::Simple(&[Param::new("x", Ty::Any)], Ty::Str) },
+  f("extVar", Sig::Simple(&[r("x", Ty::Str)], Ty::Str)),
+  Fn { name: S::named("type", "type_"), sig: Sig::Simple(&[r("x", Ty::Any)], Ty::Str) },
   f("isArray", V_ANY_RET_BOOL),
   f("isBoolean", V_ANY_RET_BOOL),
   f("isFunction", V_ANY_RET_BOOL),
@@ -137,9 +131,9 @@ pub const FNS: [Fn; 126] = [
   f("mapWithKey", Sig::Complex(&["func", "obj"])),
   f("abs", N_NUM_RET_NUM),
   f("sign", N_NUM_RET_NUM),
-  f("max", Sig::Simple(&[Param::new("a", Ty::Num), Param::new("b", Ty::Num)], Ty::Num)),
-  f("min", Sig::Simple(&[Param::new("a", Ty::Num), Param::new("b", Ty::Num)], Ty::Num)),
-  f("pow", Sig::Simple(&[Param::new("x", Ty::Num), Param::new("n", Ty::Num)], Ty::Num)),
+  f("max", Sig::Simple(&[r("a", Ty::Num), r("b", Ty::Num)], Ty::Num)),
+  f("min", Sig::Simple(&[r("a", Ty::Num), r("b", Ty::Num)], Ty::Num)),
+  f("pow", Sig::Simple(&[r("x", Ty::Num), r("n", Ty::Num)], Ty::Num)),
   f("exp", X_NUM_RET_NUM),
   f("log", X_NUM_RET_NUM),
   f("exponent", X_NUM_RET_NUM),
@@ -159,44 +153,23 @@ pub const FNS: [Fn; 126] = [
   f("isInteger", X_NUM_RET_BOOL),
   f("isDecimal", X_NUM_RET_BOOL),
   Fn { name: S::named("mod", "mod_"), sig: Sig::Complex(&["a", "b"]) },
-  f(
-    "clamp",
-    Sig::Simple(
-      &[Param::new("x", Ty::Num), Param::new("minVal", Ty::Num), Param::new("maxVal", Ty::Num)],
-      Ty::Num,
-    ),
-  ),
+  f("clamp", Sig::Simple(&[r("x", Ty::Num), r("minVal", Ty::Num), r("maxVal", Ty::Num)], Ty::Num)),
   f("assertEqual", Sig::Complex(&["a", "b"])),
-  f("toString", Sig::Simple(&[Param::new("a", Ty::Any)], Ty::Str)),
-  f("codepoint", Sig::Simple(&[Param::new("str", Ty::Str)], Ty::Num)),
-  f("char", Sig::Simple(&[Param::new("n", Ty::Num)], Ty::Str)),
-  f(
-    "substr",
-    Sig::Simple(
-      &[Param::new("str", Ty::Str), Param::new("from", Ty::Num), Param::new("len", Ty::Num)],
-      Ty::Str,
-    ),
-  ),
-  f(
-    "findSubstr",
-    Sig::Simple(&[Param::new("pat", Ty::Str), Param::new("str", Ty::Str)], Ty::NumArr),
-  ),
+  f("toString", Sig::Simple(&[r("a", Ty::Any)], Ty::Str)),
+  f("codepoint", Sig::Simple(&[r("str", Ty::Str)], Ty::Num)),
+  f("char", Sig::Simple(&[r("n", Ty::Num)], Ty::Str)),
+  f("substr", Sig::Simple(&[r("str", Ty::Str), r("from", Ty::Num), r("len", Ty::Num)], Ty::Str)),
+  f("findSubstr", Sig::Simple(&[r("pat", Ty::Str), r("str", Ty::Str)], Ty::NumArr)),
   f("startsWith", A_B_STR_RET_BOOL),
   f("endsWith", A_B_STR_RET_BOOL),
   f("stripChars", STR_CHARS_STR_RET_STR),
   f("lstripChars", STR_CHARS_STR_RET_STR),
   f("rstripChars", STR_CHARS_STR_RET_STR),
-  f("split", Sig::Simple(&[Param::new("str", Ty::Str), Param::new("c", Ty::Str)], Ty::StrArr)),
+  f("split", Sig::Simple(&[r("str", Ty::Str), r("c", Ty::Str)], Ty::StrArr)),
   f("splitLimit", SPLIT_LIMIT),
   f("splitLimitR", SPLIT_LIMIT),
-  f(
-    "strReplace",
-    Sig::Simple(
-      &[Param::new("str", Ty::Str), Param::new("from", Ty::Str), Param::new("to", Ty::Str)],
-      Ty::Str,
-    ),
-  ),
-  f("isEmpty", Sig::Simple(&[Param::new("str", Ty::Str)], Ty::Bool)),
+  f("strReplace", Sig::Simple(&[r("str", Ty::Str), r("from", Ty::Str), r("to", Ty::Str)], Ty::Str)),
+  f("isEmpty", Sig::Simple(&[r("str", Ty::Str)], Ty::Bool)),
   f("asciiUpper", STR_RET_STR),
   f("asciiLower", STR_RET_STR),
   f("stringChars", STR_RET_STR),
@@ -211,24 +184,24 @@ pub const FNS: [Fn; 126] = [
   f("parseHex", STR_RET_NUM),
   f("parseJson", STR_RET_ANY),
   f("parseYaml", STR_RET_ANY),
-  f("encodeUTF8", Sig::Simple(&[Param::new("str", Ty::Str)], Ty::NumArr)),
-  f("decodeUTF8", Sig::Simple(&[Param::new("arr", Ty::NumArr)], Ty::Str)),
-  f("manifestIni", Sig::Simple(&[Param::new("ini", Ty::Object)], Ty::Str)),
-  f("manifestPython", Sig::Simple(&[Param::new("v", Ty::Any)], Ty::Str)),
-  f("manifestPythonVars", Sig::Simple(&[Param::new("conf", Ty::Any)], Ty::Str)),
+  f("encodeUTF8", Sig::Simple(&[r("str", Ty::Str)], Ty::NumArr)),
+  f("decodeUTF8", Sig::Simple(&[r("arr", Ty::NumArr)], Ty::Str)),
+  f("manifestIni", Sig::Simple(&[r("ini", Ty::Object)], Ty::Str)),
+  f("manifestPython", Sig::Simple(&[r("v", Ty::Any)], Ty::Str)),
+  f("manifestPythonVars", Sig::Simple(&[r("conf", Ty::Any)], Ty::Str)),
   f(
     "manifestJsonEx",
     Sig::Simple(
       &[
-        Param::new("value", Ty::Any),
-        Param::new("indent", Ty::Str),
-        Param::new("newline", Ty::Str),
-        Param::new("key_val_sep", Ty::Str),
+        r("value", Ty::Any),
+        r("indent", Ty::Str),
+        r("newline", Ty::Str),
+        r("key_val_sep", Ty::Str),
       ],
       Ty::Str,
     ),
   ),
-  f("manifestJson", Sig::Simple(&[Param::new("value", Ty::Any)], Ty::Str)),
+  f("manifestJson", Sig::Simple(&[r("value", Ty::Any)], Ty::Str)),
   f("manifestJsonMinified", Sig::Complex(&["value"])),
   f("manifestYamlDoc", Sig::Complex(&["value", "indent_array_in_object", "quote_keys"])),
   f(
@@ -252,15 +225,15 @@ pub const FNS: [Fn; 126] = [
   f("repeat", Sig::Complex(&["what", "count"])),
   f("slice", Sig::Complex(&["indexable", "index", "end", "step"])),
   f("join", Sig::Complex(&["sep", "arr"])),
-  f("lines", Sig::Simple(&[Param::new("arr", Ty::StrArr)], Ty::Str)),
+  f("lines", Sig::Simple(&[r("arr", Ty::StrArr)], Ty::Str)),
   f("flattenArrays", Sig::Complex(&["arr"])),
   f("reverse", Sig::Complex(&["arr"])),
   f("sort", Sig::Complex(&["arr", "keyF"])),
   f("uniq", Sig::Complex(&["arr", "keyF"])),
-  f("all", Sig::Simple(&[Param::new("arr", Ty::BoolArr)], Ty::Bool)),
-  f("any", Sig::Simple(&[Param::new("arr", Ty::BoolArr)], Ty::Bool)),
-  f("sum", Sig::Simple(&[Param::new("arr", Ty::NumArr)], Ty::Num)),
-  f("avg", Sig::Simple(&[Param::new("arr", Ty::NumArr)], Ty::Num)),
+  f("all", Sig::Simple(&[r("arr", Ty::BoolArr)], Ty::Bool)),
+  f("any", Sig::Simple(&[r("arr", Ty::BoolArr)], Ty::Bool)),
+  f("sum", Sig::Simple(&[r("arr", Ty::NumArr)], Ty::Num)),
+  f("avg", Sig::Simple(&[r("arr", Ty::NumArr)], Ty::Num)),
   f("set", Sig::Complex(&["arr", "keyF"])),
   f("setInter", Sig::Complex(&["a", "b", "keyF"])),
   f("setUnion", Sig::Complex(&["a", "b", "keyF"])),
@@ -269,7 +242,7 @@ pub const FNS: [Fn; 126] = [
   f("base64", Sig::Complex(&["input"])),
   f("base64DecodeBytes", Sig::Complex(&["str"])),
   f("base64Decode", STR_RET_STR),
-  f("md5", Sig::Simple(&[Param::new("s", Ty::Str)], Ty::Str)),
+  f("md5", Sig::Simple(&[r("s", Ty::Str)], Ty::Str)),
   f("xor", X_Y_BOOL_RET_BOOL),
   f("xnor", X_Y_BOOL_RET_BOOL),
   f("mergePatch", Sig::Complex(&["target", "patch"])),
