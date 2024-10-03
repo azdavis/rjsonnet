@@ -1,4 +1,4 @@
-//! A rudimentary type system for Jsonnet.
+//! A type system for Jsonnet.
 
 pub mod display;
 
@@ -25,7 +25,7 @@ pub(crate) enum Data {
   Array(Ty),
   /// An object, possibly with known and unknown fields.
   Object(Object),
-  /// A function type, with some arguments and a return type.
+  /// A function type.
   Fn(Fn),
   /// A union type.
   ///
@@ -114,9 +114,12 @@ impl Object {
   }
 }
 
+/// A function type.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub(crate) enum Fn {
+  /// A regular, user-written function, with some arguments and a return type.
   Regular(RegularFn),
+  /// A standard library function.
   Std(jsonnet_expr::StdFn),
 }
 
@@ -136,7 +139,7 @@ impl Fn {
   }
 }
 
-/// A function type.
+/// A regular function type, the type of a user-written function.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub(crate) struct RegularFn {
   /// The parameters.

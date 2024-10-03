@@ -1,4 +1,4 @@
-//! Run the checks.
+//! Check expressions for static validity: variables are in scope, types match up, etc.
 
 use crate::{error, st, ty};
 use always::always;

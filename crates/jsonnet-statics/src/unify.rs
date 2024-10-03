@@ -1,4 +1,4 @@
-//! Unification.
+//! Unification of types.
 
 use crate::{error, ty};
 use drop_bomb::DebugDropBomb;

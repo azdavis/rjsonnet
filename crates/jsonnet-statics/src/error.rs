@@ -1,4 +1,4 @@
-//! Errors.
+//! Static errors.
 
 use crate::ty;
 use jsonnet_expr::{def, ExprMust, Id, Str};
