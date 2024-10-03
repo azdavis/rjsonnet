@@ -1,7 +1,5 @@
 //! A type system for Jsonnet.
 
-#![allow(missing_docs)]
-
 pub mod display;
 
 mod generated {
@@ -92,9 +90,15 @@ pub enum Prim {
   Number,
 }
 
+/// An object type.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Object {
+  /// The known fields.
   pub known: BTreeMap<Str, Ty>,
+  /// Whether this has unknown (dynamic) fields. For example, this guy does:
+  /// ```jsonnet
+  /// { [std.extVar("SHELL")]: "hi" }
+  /// ```
   pub has_unknown: bool,
 }
 
@@ -109,11 +113,13 @@ impl Object {
     self.known.values().any(|x| x.is_local())
   }
 
+  /// Returns a totally empty object that is known to be empty. It has no known OR unknown fields.
   #[must_use]
   pub fn empty() -> Self {
     Self { known: BTreeMap::new(), has_unknown: false }
   }
 
+  /// Returns an object with no known fields, but may have unknown fields.
   #[must_use]
   pub fn unknown() -> Self {
     Self { known: BTreeMap::new(), has_unknown: true }
@@ -170,8 +176,11 @@ impl RegularFn {
 /// A function parameter.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Param {
+  /// The name of it.
   pub id: Id,
+  /// Its type.
   pub ty: Ty,
+  /// Whether it is required.
   pub required: bool,
 }
 
@@ -185,6 +194,7 @@ impl Param {
   }
 }
 
+/// A union of types.
 pub type Union = BTreeSet<Ty>;
 
 /// A type.
@@ -277,11 +287,14 @@ pub struct MutStore<'a> {
 }
 
 impl<'a> MutStore<'a> {
+  /// Returns a new one based off a `GlobalStore`.
   #[must_use]
   pub fn new(global: &'a GlobalStore) -> Self {
     Self { global, local: LocalStore::default() }
   }
 
+  /// Get the `Ty` for the data. If one existed already in this, return that. Else create a new `Ty`
+  /// for it.
   pub fn get(&mut self, data: Data) -> Ty {
     match data {
       // micro optimization (maybe). deferring to get_inner would also be correct
@@ -344,6 +357,7 @@ impl<'a> MutStore<'a> {
     ret
   }
 
+  /// Returns the data for the `Ty`.
   #[must_use]
   pub fn data(&self, ty: Ty) -> &Data {
     let (idx, is_local) = ty.to_data();
@@ -357,6 +371,8 @@ impl<'a> MutStore<'a> {
     }
   }
 
+  /// Turns this into a `LocalStore`, which holds all the `Ty`s we created in this via calls to
+  /// `get` that mutated this.
   #[must_use]
   pub fn into_local(self) -> LocalStore {
     self.local
@@ -530,8 +546,11 @@ impl Action {
   }
 }
 
+/// A signature for a standard library function.
 #[derive(Debug)]
 pub enum StdFnSig {
+  /// A simple one.
   Simple(&'static [Param], Ty),
+  /// A complex one.
   Complex(ComplexStdFn),
 }

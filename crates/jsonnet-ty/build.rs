@@ -83,7 +83,7 @@ fn main() {
 
     pub const _GENERATED_BY: &str = #file;
 
-    #[expect(non_upper_case_globals)]
+    #[expect(missing_docs, non_upper_case_globals)]
     impl Ty {
       #(#impl_ty_const)*
 
@@ -121,13 +121,14 @@ fn main() {
     }
 
     #[derive(Debug, Clone, Copy)]
-    #[expect(non_camel_case_types)]
+    #[expect(missing_docs, non_camel_case_types)]
     pub enum ComplexStdFn {
       #(#complex_std_fn_variants,)*
     }
 
     impl StdFnSig {
       #[expect(clippy::too_many_lines)]
+      #[doc = "Get the signature for the std fn."]
       #[must_use]
       pub fn get(f: StdFn) -> Self {
         match f {
