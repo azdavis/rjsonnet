@@ -13,6 +13,8 @@ use std::collections::hash_map::Entry;
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
 
+pub(crate) use generated::ComplexStdFn;
+
 /// A map from expr to type.
 pub type Exprs = FxHashMap<ExprMust, Ty>;
 
@@ -519,4 +521,11 @@ impl Action {
   const fn end(t: Ty) -> Self {
     Self(t, ActionKind::End)
   }
+}
+
+#[derive(Debug)]
+pub(crate) enum StdFnSig {
+  Simple(&'static [Param], Ty),
+  #[expect(dead_code)]
+  Complex(ComplexStdFn),
 }

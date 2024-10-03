@@ -129,16 +129,11 @@ fn main() {
 
   let impl_id = {
     let constants = std::iter::empty()
-      .chain(builtin_identifiers.iter().copied().map(|x| (x, true)))
-      .chain(arg_names.iter().map(|&x| (S::new(x), false)))
-      .map(|(s, is_pub)| {
+      .chain(builtin_identifiers.iter().copied())
+      .chain(arg_names.iter().map(|&x| S::new(x)))
+      .map(|s| {
         let name = format_ident!("{}", s.ident());
-        let vis = if is_pub {
-          quote! { pub }
-        } else {
-          quote! {}
-        };
-        quote! { #vis const #name: Self = Self::builtin(BuiltinStr::#name); }
+        quote! { pub const #name: Self = Self::builtin(BuiltinStr::#name); }
       });
 
     quote! {

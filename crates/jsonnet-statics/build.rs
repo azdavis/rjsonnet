@@ -2,6 +2,7 @@
 
 use quote::{format_ident as i, quote as q};
 
+#[expect(clippy::too_many_lines)]
 fn main() {
   let things = [
     (i!("ANY"), q!(Data::Prim(super::Prim::Any))),
@@ -30,6 +31,23 @@ fn main() {
     let name = i!("{}", f.name.ident());
     q! { (Str::#name, Ty::#name) }
   });
+  let std_fn_sig_arms = jsonnet_std::FNS.iter().map(|f| {
+    let name = i!("{}", f.name.ident());
+    let body = match f.sig {
+      jsonnet_std::Sig::Simple(params, ret) => {
+        let params = params.iter().map(|p| mk_param(*p));
+        let ret = mk_ty(ret);
+        q! { StdFnSig::Simple(&[ #(#params,)* ], #ret) }
+      }
+      jsonnet_std::Sig::Complex(_) => q! { StdFnSig::Complex(ComplexStdFn::#name) },
+    };
+    q! { StdFn::#name => #body }
+  });
+  let complex_std_fn_variants = jsonnet_std::FNS.iter().filter_map(|f| {
+    let jsonnet_std::Sig::Complex(..) = f.sig else { return None };
+    let name = i!("{}", f.name.ident());
+    Some(q! { #name })
+  });
   let things: Vec<_> = things.into_iter().map(|(a, b)| (a, b, true)).chain(std_fn_types).collect();
   let impl_ty_const = things.iter().enumerate().map(|(idx, (name, _, pub_crate))| {
     #[expect(clippy::disallowed_methods, reason = "ok to panic in build script")]
@@ -49,7 +67,7 @@ fn main() {
   let all = q! {
     use std::collections::{BTreeMap, BTreeSet};
     use jsonnet_expr::{StdFn, Str};
-    use super::{Ty, Data};
+    use super::{Ty, Data, StdFnSig};
 
     pub const _GENERATED_BY: &str = #file;
 
@@ -89,6 +107,43 @@ fn main() {
         }
       }
     }
+
+    #[derive(Debug, Clone, Copy)]
+    #[expect(non_camel_case_types)]
+    pub(crate) enum ComplexStdFn {
+      #(#complex_std_fn_variants,)*
+    }
+
+    impl StdFnSig {
+      #[expect(clippy::too_many_lines, clippy::match_same_arms)]
+      pub(crate) fn get(f: StdFn) -> Self {
+        match f {
+          #(#std_fn_sig_arms,)*
+        }
+      }
+    }
   };
   write_rs_tokens::go(all, "generated.rs");
+}
+
+fn mk_ty(ty: jsonnet_std::Ty) -> proc_macro2::TokenStream {
+  match ty {
+    jsonnet_std::Ty::Any => q!(crate::ty::Ty::ANY),
+    jsonnet_std::Ty::Bool => q!(crate::ty::Ty::BOOL),
+    jsonnet_std::Ty::Num => q!(crate::ty::Ty::NUMBER),
+    jsonnet_std::Ty::Str => q!(crate::ty::Ty::STRING),
+  }
+}
+
+fn mk_param(param: jsonnet_std::Param) -> proc_macro2::TokenStream {
+  let id = i!("{}", param.name);
+  let ty = mk_ty(param.ty);
+  let required = param.required;
+  q! {
+    crate::ty::Param {
+      id: jsonnet_expr::Id::#id,
+      ty: #ty,
+      required: #required,
+    }
+  }
 }
