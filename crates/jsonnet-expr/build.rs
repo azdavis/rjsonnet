@@ -36,6 +36,8 @@ fn main() {
     S::new("number"),
     S::new("object"),
     S::new("string"),
+    // needed for { key: string, value: T } for std.objectKeysValues
+    S::new("key"),
   ];
   let strings = || {
     std::iter::once(S::new("thisFile"))
@@ -57,6 +59,11 @@ fn main() {
     assert!(contents.insert(s.content()), "duplicate content: {}", s.content());
     assert!(!s.ident().contains(JOINER));
   }
+
+  // needed for { key: string, value: T } for std.objectKeysValues
+  let value = S::new("value");
+  assert!(names.contains("value"));
+  assert!(contents.contains("value"));
   drop(names);
   drop(contents);
 
@@ -137,7 +144,7 @@ fn main() {
   };
 
   let impl_str = {
-    let constants = strings().map(|s| {
+    let constants = strings().chain(std::iter::once(value)).map(|s| {
       let name = format_ident!("{}", s.ident());
       quote! { pub const #name: Self = Self::builtin(BuiltinStr::#name); }
     });
