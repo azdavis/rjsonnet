@@ -75,14 +75,14 @@ pub enum Ty {
   Num,
   /// A string like `"foo"` or `"bar"` or `""`.
   Str,
-  /// A boolean array like `[false, true]`.
-  BoolArr,
-  /// A number array like `[1, 4]`.
-  NumArr,
-  /// A string array like `["hi", "bye"]`.
-  StrArr,
-  /// An array with any contents like `["hi", 3, null, false]`.
-  AnyArr,
+  /// An array of booleans, like `[false, true]`.
+  ArrBool,
+  /// An array of numbers, like `[1, 4]`.
+  ArrNum,
+  /// An array of strings, like `["hi", "bye"]`.
+  ArrStr,
+  /// An array with any contents, like `["hi", 3, null, false]`.
+  ArrAny,
   /// An object with arbitrary fields like `{ foo: 3 }` or `{}`.
   Obj,
 }
@@ -103,9 +103,9 @@ const STR_CHARS_STR_RET_STR: Sig = Sig::Simple(&[r("str", Ty::Str), r("chars", T
 const STR_RET_NUM: Sig = Sig::Simple(&[r("str", Ty::Str)], Ty::Num);
 const STR_RET_ANY: Sig = Sig::Simple(&[r("str", Ty::Str)], Ty::Any);
 const SPLIT_LIMIT: Sig =
-  Sig::Simple(&[r("str", Ty::Str), r("c", Ty::Str), r("maxsplits", Ty::Str)], Ty::StrArr);
+  Sig::Simple(&[r("str", Ty::Str), r("c", Ty::Str), r("maxsplits", Ty::Str)], Ty::ArrStr);
 const OBJ_HAS: Sig = Sig::Simple(&[r("o", Ty::Obj), r("f", Ty::Str)], Ty::Bool);
-const OBJ_FIELDS: Sig = Sig::Simple(&[r("o", Ty::Obj)], Ty::StrArr);
+const OBJ_FIELDS: Sig = Sig::Simple(&[r("o", Ty::Obj)], Ty::ArrStr);
 const MANIFEST_JSON: Sig = Sig::Simple(&[r("value", Ty::Any)], Ty::Str);
 
 const fn f(name: &'static str, sig: Sig) -> Fn {
@@ -164,13 +164,13 @@ pub const FNS: [Fn; 126] = [
   f("codepoint", Sig::Simple(&[r("str", Ty::Str)], Ty::Num)),
   f("char", Sig::Simple(&[r("n", Ty::Num)], Ty::Str)),
   f("substr", Sig::Simple(&[r("str", Ty::Str), r("from", Ty::Num), r("len", Ty::Num)], Ty::Str)),
-  f("findSubstr", Sig::Simple(&[r("pat", Ty::Str), r("str", Ty::Str)], Ty::NumArr)),
+  f("findSubstr", Sig::Simple(&[r("pat", Ty::Str), r("str", Ty::Str)], Ty::ArrNum)),
   f("startsWith", A_B_STR_RET_BOOL),
   f("endsWith", A_B_STR_RET_BOOL),
   f("stripChars", STR_CHARS_STR_RET_STR),
   f("lstripChars", STR_CHARS_STR_RET_STR),
   f("rstripChars", STR_CHARS_STR_RET_STR),
-  f("split", Sig::Simple(&[r("str", Ty::Str), r("c", Ty::Str)], Ty::StrArr)),
+  f("split", Sig::Simple(&[r("str", Ty::Str), r("c", Ty::Str)], Ty::ArrStr)),
   f("splitLimit", SPLIT_LIMIT),
   f("splitLimitR", SPLIT_LIMIT),
   f("strReplace", Sig::Simple(&[r("str", Ty::Str), r("from", Ty::Str), r("to", Ty::Str)], Ty::Str)),
@@ -189,8 +189,8 @@ pub const FNS: [Fn; 126] = [
   f("parseHex", STR_RET_NUM),
   f("parseJson", STR_RET_ANY),
   f("parseYaml", STR_RET_ANY),
-  f("encodeUTF8", Sig::Simple(&[r("str", Ty::Str)], Ty::NumArr)),
-  f("decodeUTF8", Sig::Simple(&[r("arr", Ty::NumArr)], Ty::Str)),
+  f("encodeUTF8", Sig::Simple(&[r("str", Ty::Str)], Ty::ArrNum)),
+  f("decodeUTF8", Sig::Simple(&[r("arr", Ty::ArrNum)], Ty::Str)),
   f("manifestIni", Sig::Simple(&[r("ini", Ty::Obj)], Ty::Str)),
   f("manifestPython", Sig::Simple(&[r("v", Ty::Any)], Ty::Str)),
   f("manifestPythonVars", Sig::Simple(&[r("conf", Ty::Any)], Ty::Str)),
@@ -213,7 +213,7 @@ pub const FNS: [Fn; 126] = [
     "manifestYamlStream",
     Sig::Complex(&["value", "indent_array_in_object", "c_document_end", "quote_keys"]),
   ),
-  f("manifestXmlJsonml", Sig::Simple(&[r("value", Ty::AnyArr)], Ty::Str)),
+  f("manifestXmlJsonml", Sig::Simple(&[r("value", Ty::ArrAny)], Ty::Str)),
   f("manifestTomlEx", Sig::Complex(&["toml", "indent"])),
   f("makeArray", Sig::Complex(&["sz", "func"])),
   f("member", Sig::Complex(&["arr", "x"])),
@@ -230,15 +230,15 @@ pub const FNS: [Fn; 126] = [
   f("repeat", Sig::Complex(&["what", "count"])),
   f("slice", Sig::Complex(&["indexable", "index", "end", "step"])),
   f("join", Sig::Complex(&["sep", "arr"])),
-  f("lines", Sig::Simple(&[r("arr", Ty::StrArr)], Ty::Str)),
+  f("lines", Sig::Simple(&[r("arr", Ty::ArrStr)], Ty::Str)),
   f("flattenArrays", Sig::Complex(&["arr"])),
   f("reverse", Sig::Complex(&["arr"])),
   f("sort", Sig::Complex(&["arr", "keyF"])),
   f("uniq", Sig::Complex(&["arr", "keyF"])),
-  f("all", Sig::Simple(&[r("arr", Ty::BoolArr)], Ty::Bool)),
-  f("any", Sig::Simple(&[r("arr", Ty::BoolArr)], Ty::Bool)),
-  f("sum", Sig::Simple(&[r("arr", Ty::NumArr)], Ty::Num)),
-  f("avg", Sig::Simple(&[r("arr", Ty::NumArr)], Ty::Num)),
+  f("all", Sig::Simple(&[r("arr", Ty::ArrBool)], Ty::Bool)),
+  f("any", Sig::Simple(&[r("arr", Ty::ArrBool)], Ty::Bool)),
+  f("sum", Sig::Simple(&[r("arr", Ty::ArrNum)], Ty::Num)),
+  f("avg", Sig::Simple(&[r("arr", Ty::ArrNum)], Ty::Num)),
   f("set", Sig::Complex(&["arr", "keyF"])),
   f("setInter", Sig::Complex(&["a", "b", "keyF"])),
   f("setUnion", Sig::Complex(&["a", "b", "keyF"])),
