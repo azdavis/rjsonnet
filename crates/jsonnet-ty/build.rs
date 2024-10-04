@@ -152,7 +152,7 @@ fn mk_ty(ty: jsonnet_std::Ty) -> proc_macro2::TokenStream {
     jsonnet_std::Ty::BoolArr => q!(Ty::ARRAY_BOOL),
     jsonnet_std::Ty::NumArr => q!(Ty::ARRAY_NUMBER),
     jsonnet_std::Ty::StrArr => q!(Ty::ARRAY_STRING),
-    jsonnet_std::Ty::Object => q!(Ty::OBJECT),
+    jsonnet_std::Ty::Obj => q!(Ty::OBJECT),
   }
 }
 

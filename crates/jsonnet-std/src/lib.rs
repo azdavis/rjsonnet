@@ -82,7 +82,7 @@ pub enum Ty {
   /// A string array like `["hi", "bye"]`.
   StrArr,
   /// An object with arbitrary fields like `{ foo: 3 }` or `{}`.
-  Object,
+  Obj,
 }
 
 /// `r` for "required"
@@ -186,7 +186,7 @@ pub const FNS: [Fn; 126] = [
   f("parseYaml", STR_RET_ANY),
   f("encodeUTF8", Sig::Simple(&[r("str", Ty::Str)], Ty::NumArr)),
   f("decodeUTF8", Sig::Simple(&[r("arr", Ty::NumArr)], Ty::Str)),
-  f("manifestIni", Sig::Simple(&[r("ini", Ty::Object)], Ty::Str)),
+  f("manifestIni", Sig::Simple(&[r("ini", Ty::Obj)], Ty::Str)),
   f("manifestPython", Sig::Simple(&[r("v", Ty::Any)], Ty::Str)),
   f("manifestPythonVars", Sig::Simple(&[r("conf", Ty::Any)], Ty::Str)),
   f(
