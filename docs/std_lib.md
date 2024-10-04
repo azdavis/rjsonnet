@@ -1307,4 +1307,4 @@ Returns whether the two arguments equal each other.
 
 ## `objectHasEx`
 
-TODO
+`std.objectHasEx(obj, fname, hidden)` is the same as `std.objectHasAll(obj, fname)` when `hidden` is `true`, and the same as `std.objectHas(obj, fname)` when `hidden` is `false`.
