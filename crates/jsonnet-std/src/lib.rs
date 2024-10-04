@@ -264,7 +264,7 @@ pub const FNS: [Fn; 126] = [
   f("count", s(&[r("arr", Ty::ArrAny), r("x", Ty::Any)], Ty::Num)),
   f("find", s(&[r("value", Ty::Any), r("arr", Ty::ArrAny)], Ty::ArrNum)),
   f("map", MAP),
-  f("mapWithIndex", MAP),
+  f("mapWithIndex", s(&[r("func", Ty::Hof2), r("arr", Ty::ArrAny)], Ty::ArrAny)),
   f(
     "filterMap",
     s(&[r("filter_func", Ty::Hof1), r("map_func", Ty::Hof1), r("arr", Ty::ArrAny)], Ty::ArrAny),
