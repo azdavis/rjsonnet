@@ -2,7 +2,7 @@
 
 #![expect(clippy::disallowed_methods, reason = "can panic in build script")]
 
-use jsonnet_std::{Sig, S};
+use jsonnet_std::S;
 use quote::{format_ident, quote};
 use std::collections::{BTreeSet, HashSet};
 
@@ -10,16 +10,8 @@ const JOINER: &str = "__";
 
 #[expect(clippy::too_many_lines)]
 fn main() {
-  let arg_names = {
-    let mut tmp = BTreeSet::<&str>::new();
-    for f in jsonnet_std::FNS {
-      match f.sig {
-        Sig::Simple(params, _) => tmp.extend(params.iter().map(|x| x.name)),
-        Sig::Complex(params) => tmp.extend(params),
-      }
-    }
-    tmp
-  };
+  let arg_names: BTreeSet<_> =
+    jsonnet_std::FNS.into_iter().flat_map(|f| f.sig.params).map(|x| x.name).collect();
   let arg_names_except_std_fn_names = {
     let std_fn_names: HashSet<_> = jsonnet_std::FNS.iter().map(|f| f.name.ident()).collect();
     let mut tmp = arg_names.clone();
@@ -387,8 +379,5 @@ fn mk_get_params(params: &[&str]) -> proc_macro2::TokenStream {
 }
 
 fn param_names(f: &jsonnet_std::Fn) -> Vec<&'static str> {
-  match f.sig {
-    Sig::Simple(xs, _) => xs.iter().map(|x| x.name).collect(),
-    Sig::Complex(xs) => xs.to_vec(),
-  }
+  f.sig.params.iter().map(|x| x.name).collect()
 }

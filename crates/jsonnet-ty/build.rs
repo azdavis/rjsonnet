@@ -35,33 +35,21 @@ fn main() {
     let name = i!("{}", f.name.ident());
     q! { (Str::#name, Ty::#name) }
   });
-  let all_simple_sigs = {
-    let mut tmp =
-      BTreeMap::<(&'static [jsonnet_std::Param], jsonnet_std::Ty), BTreeSet<jsonnet_std::S>>::new();
+  let all_std_sigs = {
+    let mut tmp = BTreeMap::<jsonnet_std::Sig, BTreeSet<jsonnet_std::S>>::new();
     for f in &jsonnet_std::FNS {
-      let jsonnet_std::Sig::Simple(params, ret) = f.sig else { continue };
-      assert!(tmp.entry((params, ret)).or_default().insert(f.name));
+      assert!(tmp.entry(f.sig).or_default().insert(f.name));
     }
     tmp
   };
-  let std_fn_sig_simple_arms = all_simple_sigs.iter().map(|(&(params, ret), names)| {
+  let std_fn_sig_arms = all_std_sigs.iter().map(|(sig, names)| {
     let names = names.iter().map(|x| {
       let name = i!("{}", x.ident());
       q! { StdFn::#name }
     });
-    let params = params.iter().map(|p| mk_param(*p));
-    let ret = mk_ty(ret);
-    q! { #(#names)|* => StdFnSig::Simple(&[ #(#params,)* ], #ret) }
-  });
-  let std_fn_sig_complex_arms = jsonnet_std::FNS.iter().filter_map(|f| {
-    let jsonnet_std::Sig::Complex(_) = f.sig else { return None };
-    let name = i!("{}", f.name.ident());
-    Some(q! { StdFn::#name => StdFnSig::Complex(ComplexStdFn::#name) })
-  });
-  let complex_std_fn_variants = jsonnet_std::FNS.iter().filter_map(|f| {
-    let jsonnet_std::Sig::Complex(..) = f.sig else { return None };
-    let name = i!("{}", f.name.ident());
-    Some(q! { #name })
+    let params = sig.params.iter().map(|p| mk_param(*p));
+    let ret = mk_ty(sig.ret);
+    q! { #(#names)|* => StdFnSig { params: &[ #(#params,)* ], ret: #ret } }
   });
   let things: Vec<_> = things.into_iter().map(|(a, b)| (a, b, true)).chain(std_fn_types).collect();
   let impl_ty_const = things.iter().enumerate().map(|(idx, (name, _, is_pub))| {
@@ -125,20 +113,13 @@ fn main() {
       }
     }
 
-    #[derive(Debug, Clone, Copy)]
-    #[expect(missing_docs, non_camel_case_types)]
-    pub enum ComplexStdFn {
-      #(#complex_std_fn_variants,)*
-    }
-
     impl StdFnSig {
       #[expect(clippy::too_many_lines)]
       #[doc = "Get the signature for the std fn."]
       #[must_use]
       pub fn get(f: StdFn) -> Self {
         match f {
-          #(#std_fn_sig_simple_arms,)*
-          #(#std_fn_sig_complex_arms,)*
+          #(#std_fn_sig_arms,)*
         }
       }
     }

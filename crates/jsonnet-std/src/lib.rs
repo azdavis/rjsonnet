@@ -46,11 +46,11 @@ pub struct Fn {
 
 /// A signature for a std fn.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum Sig {
-  /// A simple signature, expressible in a simple type system. It has parameters and a return type.
-  Simple(&'static [Param], Ty),
-  /// A complex signature with custom type handling.
-  Complex(&'static [&'static str]),
+pub struct Sig {
+  /// The params.
+  pub params: &'static [Param],
+  /// The return type.
+  pub ret: Ty,
 }
 
 /// A function parameter.
@@ -99,21 +99,32 @@ const fn o(name: &'static str, ty: Ty) -> Param {
   Param { name, ty, required: false }
 }
 
-const V_ANY_RET_BOOL: Sig = Sig::Simple(&[r("v", Ty::Any)], Ty::Bool);
-const X_NUM_RET_NUM: Sig = Sig::Simple(&[r("x", Ty::Num)], Ty::Num);
-const N_NUM_RET_NUM: Sig = Sig::Simple(&[r("n", Ty::Num)], Ty::Num);
-const X_NUM_RET_BOOL: Sig = Sig::Simple(&[r("x", Ty::Num)], Ty::Bool);
-const STR_RET_STR: Sig = Sig::Simple(&[r("str", Ty::Str)], Ty::Str);
-const X_Y_BOOL_RET_BOOL: Sig = Sig::Simple(&[r("x", Ty::Bool), r("y", Ty::Bool)], Ty::Bool);
-const A_B_STR_RET_BOOL: Sig = Sig::Simple(&[r("a", Ty::Str), r("b", Ty::Str)], Ty::Bool);
-const STR_CHARS_STR_RET_STR: Sig = Sig::Simple(&[r("str", Ty::Str), r("chars", Ty::Str)], Ty::Str);
-const STR_RET_NUM: Sig = Sig::Simple(&[r("str", Ty::Str)], Ty::Num);
-const STR_RET_ANY: Sig = Sig::Simple(&[r("str", Ty::Str)], Ty::Any);
+/// `s` for "sig"
+const fn s(params: &'static [Param], ret: Ty) -> Sig {
+  Sig { params, ret }
+}
+
+const V_ANY_RET_BOOL: Sig = s(&[r("v", Ty::Any)], Ty::Bool);
+const X_NUM_RET_NUM: Sig = s(&[r("x", Ty::Num)], Ty::Num);
+const N_NUM_RET_NUM: Sig = s(&[r("n", Ty::Num)], Ty::Num);
+const X_NUM_RET_BOOL: Sig = s(&[r("x", Ty::Num)], Ty::Bool);
+const STR_RET_STR: Sig = s(&[r("str", Ty::Str)], Ty::Str);
+const X_Y_BOOL_RET_BOOL: Sig = s(&[r("x", Ty::Bool), r("y", Ty::Bool)], Ty::Bool);
+const A_B_STR_RET_BOOL: Sig = s(&[r("a", Ty::Str), r("b", Ty::Str)], Ty::Bool);
+const STR_CHARS_STR_RET_STR: Sig = s(&[r("str", Ty::Str), r("chars", Ty::Str)], Ty::Str);
+const STR_RET_NUM: Sig = s(&[r("str", Ty::Str)], Ty::Num);
+const STR_RET_ANY: Sig = s(&[r("str", Ty::Str)], Ty::Any);
 const SPLIT_LIMIT: Sig =
-  Sig::Simple(&[r("str", Ty::Str), r("c", Ty::Str), r("maxsplits", Ty::Str)], Ty::ArrStr);
-const OBJ_HAS: Sig = Sig::Simple(&[r("o", Ty::Obj), r("f", Ty::Str)], Ty::Bool);
-const OBJ_FIELDS: Sig = Sig::Simple(&[r("o", Ty::Obj)], Ty::ArrStr);
-const MANIFEST_JSON: Sig = Sig::Simple(&[r("value", Ty::Any)], Ty::Str);
+  s(&[r("str", Ty::Str), r("c", Ty::Str), r("maxsplits", Ty::Str)], Ty::ArrStr);
+const OBJ_HAS: Sig = s(&[r("o", Ty::Obj), r("f", Ty::Str)], Ty::Bool);
+const OBJ_FIELDS: Sig = s(&[r("o", Ty::Obj)], Ty::ArrStr);
+const OBJ_VALUES: Sig = s(&[r("o", Ty::Obj)], Ty::ArrAny);
+const MANIFEST_JSON: Sig = s(&[r("value", Ty::Any)], Ty::Str);
+const MAP: Sig = s(&[r("func", Ty::Any), r("arr", Ty::ArrAny)], Ty::ArrAny);
+const FOLD: Sig = s(&[r("func", Ty::Any), r("arr", Ty::ArrAny), r("init", Ty::Any)], Ty::Any);
+const ARR_KEY_F: Sig = s(&[r("arr", Ty::ArrAny), o("keyF", Ty::Any)], Ty::ArrAny);
+const BINARY_SET_FN: Sig =
+  s(&[r("a", Ty::ArrAny), r("b", Ty::ArrAny), o("keyF", Ty::Any)], Ty::ArrAny);
 
 const fn f(name: &'static str, sig: Sig) -> Fn {
   Fn { name: S::new(name), sig }
@@ -121,37 +132,37 @@ const fn f(name: &'static str, sig: Sig) -> Fn {
 
 /// The std fns.
 pub const FNS: [Fn; 126] = [
-  f("extVar", Sig::Simple(&[r("x", Ty::Str)], Ty::Str)),
-  Fn { name: S::named("type", "type_"), sig: Sig::Simple(&[r("x", Ty::Any)], Ty::Str) },
+  f("extVar", s(&[r("x", Ty::Str)], Ty::Str)),
+  Fn { name: S::named("type", "type_"), sig: s(&[r("x", Ty::Any)], Ty::Str) },
   f("isArray", V_ANY_RET_BOOL),
   f("isBoolean", V_ANY_RET_BOOL),
   f("isFunction", V_ANY_RET_BOOL),
   f("isNumber", V_ANY_RET_BOOL),
   f("isObject", V_ANY_RET_BOOL),
   f("isString", V_ANY_RET_BOOL),
-  f("length", Sig::Complex(&["x"])),
+  f("length", s(&[r("x", Ty::Any)], Ty::Num)),
   f(
     "get",
-    Sig::Simple(
+    s(
       &[r("o", Ty::Obj), r("f", Ty::Str), o("default", Ty::Any), o("inc_hidden", Ty::Bool)],
       Ty::Any,
     ),
   ),
   f("objectHas", OBJ_HAS),
   f("objectFields", OBJ_FIELDS),
-  f("objectValues", Sig::Complex(&["o"])),
-  f("objectKeysValues", Sig::Complex(&["o"])),
+  f("objectValues", OBJ_VALUES),
+  f("objectKeysValues", s(&[r("o", Ty::Obj)], Ty::ArrAny)),
   f("objectHasAll", OBJ_HAS),
   f("objectFieldsAll", OBJ_FIELDS),
-  f("objectValuesAll", Sig::Complex(&["o"])),
-  f("objectKeysValuesAll", Sig::Complex(&["o"])),
-  f("prune", Sig::Complex(&["a"])),
-  f("mapWithKey", Sig::Complex(&["func", "obj"])),
+  f("objectValuesAll", OBJ_VALUES),
+  f("objectKeysValuesAll", OBJ_VALUES),
+  f("prune", s(&[r("a", Ty::Any)], Ty::Any)),
+  f("mapWithKey", s(&[r("func", Ty::Any), r("obj", Ty::Obj)], Ty::Obj)),
   f("abs", N_NUM_RET_NUM),
   f("sign", N_NUM_RET_NUM),
-  f("max", Sig::Simple(&[r("a", Ty::Num), r("b", Ty::Num)], Ty::Num)),
-  f("min", Sig::Simple(&[r("a", Ty::Num), r("b", Ty::Num)], Ty::Num)),
-  f("pow", Sig::Simple(&[r("x", Ty::Num), r("n", Ty::Num)], Ty::Num)),
+  f("max", s(&[r("a", Ty::Num), r("b", Ty::Num)], Ty::Num)),
+  f("min", s(&[r("a", Ty::Num), r("b", Ty::Num)], Ty::Num)),
+  f("pow", s(&[r("x", Ty::Num), r("n", Ty::Num)], Ty::Num)),
   f("exp", X_NUM_RET_NUM),
   f("log", X_NUM_RET_NUM),
   f("exponent", X_NUM_RET_NUM),
@@ -170,28 +181,28 @@ pub const FNS: [Fn; 126] = [
   f("isOdd", X_NUM_RET_BOOL),
   f("isInteger", X_NUM_RET_BOOL),
   f("isDecimal", X_NUM_RET_BOOL),
-  Fn { name: S::named("mod", "mod_"), sig: Sig::Complex(&["a", "b"]) },
-  f("clamp", Sig::Simple(&[r("x", Ty::Num), r("minVal", Ty::Num), r("maxVal", Ty::Num)], Ty::Num)),
-  f("assertEqual", Sig::Complex(&["a", "b"])),
-  f("toString", Sig::Simple(&[r("a", Ty::Any)], Ty::Str)),
-  f("codepoint", Sig::Simple(&[r("str", Ty::Str)], Ty::Num)),
-  f("char", Sig::Simple(&[r("n", Ty::Num)], Ty::Str)),
-  f("substr", Sig::Simple(&[r("str", Ty::Str), r("from", Ty::Num), r("len", Ty::Num)], Ty::Str)),
-  f("findSubstr", Sig::Simple(&[r("pat", Ty::Str), r("str", Ty::Str)], Ty::ArrNum)),
+  Fn { name: S::named("mod", "mod_"), sig: s(&[r("a", Ty::Any), r("b", Ty::Any)], Ty::Any) },
+  f("clamp", s(&[r("x", Ty::Num), r("minVal", Ty::Num), r("maxVal", Ty::Num)], Ty::Num)),
+  f("assertEqual", s(&[r("a", Ty::Any), r("b", Ty::Any)], Ty::Bool)),
+  f("toString", s(&[r("a", Ty::Any)], Ty::Str)),
+  f("codepoint", s(&[r("str", Ty::Str)], Ty::Num)),
+  f("char", s(&[r("n", Ty::Num)], Ty::Str)),
+  f("substr", s(&[r("str", Ty::Str), r("from", Ty::Num), r("len", Ty::Num)], Ty::Str)),
+  f("findSubstr", s(&[r("pat", Ty::Str), r("str", Ty::Str)], Ty::ArrNum)),
   f("startsWith", A_B_STR_RET_BOOL),
   f("endsWith", A_B_STR_RET_BOOL),
   f("stripChars", STR_CHARS_STR_RET_STR),
   f("lstripChars", STR_CHARS_STR_RET_STR),
   f("rstripChars", STR_CHARS_STR_RET_STR),
-  f("split", Sig::Simple(&[r("str", Ty::Str), r("c", Ty::Str)], Ty::ArrStr)),
+  f("split", s(&[r("str", Ty::Str), r("c", Ty::Str)], Ty::ArrStr)),
   f("splitLimit", SPLIT_LIMIT),
   f("splitLimitR", SPLIT_LIMIT),
-  f("strReplace", Sig::Simple(&[r("str", Ty::Str), r("from", Ty::Str), r("to", Ty::Str)], Ty::Str)),
-  f("isEmpty", Sig::Simple(&[r("str", Ty::Str)], Ty::Bool)),
+  f("strReplace", s(&[r("str", Ty::Str), r("from", Ty::Str), r("to", Ty::Str)], Ty::Str)),
+  f("isEmpty", s(&[r("str", Ty::Str)], Ty::Bool)),
   f("asciiUpper", STR_RET_STR),
   f("asciiLower", STR_RET_STR),
   f("stringChars", STR_RET_STR),
-  f("format", Sig::Complex(&["str", "vals"])),
+  f("format", s(&[r("str", Ty::Str), r("vals", Ty::ArrAny)], Ty::Str)),
   f("escapeStringBash", STR_RET_STR),
   f("escapeStringDollars", STR_RET_STR),
   f("escapeStringJson", STR_RET_STR),
@@ -202,14 +213,14 @@ pub const FNS: [Fn; 126] = [
   f("parseHex", STR_RET_NUM),
   f("parseJson", STR_RET_ANY),
   f("parseYaml", STR_RET_ANY),
-  f("encodeUTF8", Sig::Simple(&[r("str", Ty::Str)], Ty::ArrNum)),
-  f("decodeUTF8", Sig::Simple(&[r("arr", Ty::ArrNum)], Ty::Str)),
-  f("manifestIni", Sig::Simple(&[r("ini", Ty::Obj)], Ty::Str)),
-  f("manifestPython", Sig::Simple(&[r("v", Ty::Any)], Ty::Str)),
-  f("manifestPythonVars", Sig::Simple(&[r("conf", Ty::Any)], Ty::Str)),
+  f("encodeUTF8", s(&[r("str", Ty::Str)], Ty::ArrNum)),
+  f("decodeUTF8", s(&[r("arr", Ty::ArrNum)], Ty::Str)),
+  f("manifestIni", s(&[r("ini", Ty::Obj)], Ty::Str)),
+  f("manifestPython", s(&[r("v", Ty::Any)], Ty::Str)),
+  f("manifestPythonVars", s(&[r("conf", Ty::Any)], Ty::Str)),
   f(
     "manifestJsonEx",
-    Sig::Simple(
+    s(
       &[
         r("value", Ty::Any),
         r("indent", Ty::Str),
@@ -223,14 +234,14 @@ pub const FNS: [Fn; 126] = [
   f("manifestJsonMinified", MANIFEST_JSON),
   f(
     "manifestYamlDoc",
-    Sig::Simple(
+    s(
       &[r("value", Ty::Any), o("indent_array_in_object", Ty::Bool), o("quote_keys", Ty::Bool)],
       Ty::Str,
     ),
   ),
   f(
     "manifestYamlStream",
-    Sig::Simple(
+    s(
       &[
         r("value", Ty::ArrAny),
         o("indent_array_in_object", Ty::Bool),
@@ -240,49 +251,55 @@ pub const FNS: [Fn; 126] = [
       Ty::Str,
     ),
   ),
-  f("manifestXmlJsonml", Sig::Simple(&[r("value", Ty::ArrAny)], Ty::Str)),
-  f("manifestTomlEx", Sig::Simple(&[r("toml", Ty::Obj), r("indent", Ty::Str)], Ty::Str)),
-  f("makeArray", Sig::Complex(&["sz", "func"])),
-  f("member", Sig::Complex(&["arr", "x"])),
-  f("count", Sig::Complex(&["arr", "x"])),
-  f("find", Sig::Complex(&["value", "arr"])),
-  f("map", Sig::Complex(&["func", "arr"])),
-  f("mapWithIndex", Sig::Complex(&["func", "arr"])),
-  f("filterMap", Sig::Complex(&["filter_func", "map_func", "arr"])),
-  f("flatMap", Sig::Complex(&["func", "arr"])),
-  f("filter", Sig::Complex(&["func", "arr"])),
-  f("foldl", Sig::Complex(&["func", "arr", "init"])),
-  f("foldr", Sig::Complex(&["func", "arr", "init"])),
-  f("range", Sig::Simple(&[r("from", Ty::Num), r("to", Ty::Num)], Ty::Num)),
-  f("repeat", Sig::Complex(&["what", "count"])),
-  f("slice", Sig::Complex(&["indexable", "index", "end", "step"])),
-  f("join", Sig::Complex(&["sep", "arr"])),
-  f("lines", Sig::Simple(&[r("arr", Ty::ArrStr)], Ty::Str)),
-  f("flattenArrays", Sig::Complex(&["arr"])),
-  f("reverse", Sig::Complex(&["arr"])),
-  f("sort", Sig::Complex(&["arr", "keyF"])),
-  f("uniq", Sig::Complex(&["arr", "keyF"])),
-  f("all", Sig::Simple(&[r("arr", Ty::ArrBool)], Ty::Bool)),
-  f("any", Sig::Simple(&[r("arr", Ty::ArrBool)], Ty::Bool)),
-  f("sum", Sig::Simple(&[r("arr", Ty::ArrNum)], Ty::Num)),
-  f("avg", Sig::Simple(&[r("arr", Ty::ArrNum)], Ty::Num)),
-  f("set", Sig::Complex(&["arr", "keyF"])),
-  f("setInter", Sig::Complex(&["a", "b", "keyF"])),
-  f("setUnion", Sig::Complex(&["a", "b", "keyF"])),
-  f("setDiff", Sig::Complex(&["a", "b", "keyF"])),
-  f("setMember", Sig::Complex(&["x", "arr", "keyF"])),
-  f("base64", Sig::Simple(&[r("input", Ty::StrOrArrNum)], Ty::Str)),
-  f("base64DecodeBytes", Sig::Simple(&[r("str", Ty::Str)], Ty::ArrNum)),
+  f("manifestXmlJsonml", s(&[r("value", Ty::ArrAny)], Ty::Str)),
+  f("manifestTomlEx", s(&[r("toml", Ty::Obj), r("indent", Ty::Str)], Ty::Str)),
+  f("makeArray", s(&[r("sz", Ty::Num), r("func", Ty::Any)], Ty::ArrAny)),
+  f("member", s(&[r("arr", Ty::Any), r("x", Ty::Any)], Ty::Bool)),
+  f("count", s(&[r("arr", Ty::ArrAny), r("x", Ty::Any)], Ty::Num)),
+  f("find", s(&[r("value", Ty::Any), r("arr", Ty::ArrAny)], Ty::ArrNum)),
+  f("map", MAP),
+  f("mapWithIndex", MAP),
+  f(
+    "filterMap",
+    s(&[r("filter_func", Ty::Any), r("map_func", Ty::Any), r("arr", Ty::ArrAny)], Ty::ArrAny),
+  ),
+  f("flatMap", MAP),
+  f("filter", MAP),
+  f("foldl", FOLD),
+  f("foldr", FOLD),
+  f("range", s(&[r("from", Ty::Num), r("to", Ty::Num)], Ty::Num)),
+  f("repeat", s(&[r("what", Ty::Any), r("count", Ty::Num)], Ty::Any)),
+  f(
+    "slice",
+    s(
+      &[r("indexable", Ty::Any), r("index", Ty::Num), r("end", Ty::Num), r("step", Ty::Num)],
+      Ty::Any,
+    ),
+  ),
+  f("join", s(&[r("sep", Ty::Any), r("arr", Ty::Any)], Ty::Any)),
+  f("lines", s(&[r("arr", Ty::ArrStr)], Ty::Str)),
+  f("flattenArrays", s(&[r("arr", Ty::ArrAny)], Ty::ArrAny)),
+  f("reverse", s(&[r("arr", Ty::ArrAny)], Ty::ArrAny)),
+  f("sort", ARR_KEY_F),
+  f("uniq", ARR_KEY_F),
+  f("all", s(&[r("arr", Ty::ArrBool)], Ty::Bool)),
+  f("any", s(&[r("arr", Ty::ArrBool)], Ty::Bool)),
+  f("sum", s(&[r("arr", Ty::ArrNum)], Ty::Num)),
+  f("avg", s(&[r("arr", Ty::ArrNum)], Ty::Num)),
+  f("set", ARR_KEY_F),
+  f("setInter", BINARY_SET_FN),
+  f("setUnion", BINARY_SET_FN),
+  f("setDiff", BINARY_SET_FN),
+  f("setMember", s(&[r("x", Ty::Any), r("arr", Ty::ArrAny), o("keyF", Ty::Any)], Ty::Bool)),
+  f("base64", s(&[r("input", Ty::StrOrArrNum)], Ty::Str)),
+  f("base64DecodeBytes", s(&[r("str", Ty::Str)], Ty::ArrNum)),
   f("base64Decode", STR_RET_STR),
-  f("md5", Sig::Simple(&[r("s", Ty::Str)], Ty::Str)),
+  f("md5", s(&[r("s", Ty::Str)], Ty::Str)),
   f("xor", X_Y_BOOL_RET_BOOL),
   f("xnor", X_Y_BOOL_RET_BOOL),
-  f("mergePatch", Sig::Simple(&[r("target", Ty::Any), r("patch", Ty::Any)], Ty::Any)),
-  f("trace", Sig::Complex(&["str", "rest"])),
+  f("mergePatch", s(&[r("target", Ty::Any), r("patch", Ty::Any)], Ty::Any)),
+  f("trace", s(&[r("str", Ty::Str), r("rest", Ty::Any)], Ty::Any)),
   // alluded to in the spec but not mentioned on the std lib page
-  f("equals", Sig::Complex(&["x", "y"])),
-  f(
-    "objectHasEx",
-    Sig::Simple(&[r("obj", Ty::Obj), r("fname", Ty::Str), r("hidden", Ty::Bool)], Ty::Bool),
-  ),
+  f("equals", s(&[r("x", Ty::Any), r("y", Ty::Any)], Ty::Bool)),
+  f("objectHasEx", s(&[r("obj", Ty::Obj), r("fname", Ty::Str), r("hidden", Ty::Bool)], Ty::Bool)),
 ];

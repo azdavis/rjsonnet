@@ -13,8 +13,6 @@ use std::collections::hash_map::Entry;
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
 
-pub use generated::ComplexStdFn;
-
 /// A map from expr to type.
 pub type Exprs = FxHashMap<ExprMust, Ty>;
 
@@ -548,9 +546,9 @@ impl Action {
 
 /// A signature for a standard library function.
 #[derive(Debug)]
-pub enum StdFnSig {
-  /// A simple one.
-  Simple(&'static [Param], Ty),
-  /// A complex one.
-  Complex(ComplexStdFn),
+pub struct StdFnSig {
+  /// The params
+  pub params: &'static [Param],
+  /// The return type.
+  pub ret: Ty,
 }

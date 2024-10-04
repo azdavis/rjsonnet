@@ -132,12 +132,10 @@ impl<'a> fmt::Display for TyDisplay<'a> {
       Data::Fn(Fn::Regular(func)) => {
         FnDisplay { params: &func.params, ret: func.ret, prec: self.prec, stuff: self.stuff }.fmt(f)
       }
-      Data::Fn(Fn::Std(func)) => match StdFnSig::get(*func) {
-        StdFnSig::Simple(params, ret) => {
-          FnDisplay { params, ret, prec: self.prec, stuff: self.stuff }.fmt(f)
-        }
-        StdFnSig::Complex(_) => write!(f, "<std.{func}>"),
-      },
+      Data::Fn(Fn::Std(func)) => {
+        let StdFnSig { params, ret } = StdFnSig::get(*func);
+        FnDisplay { params, ret, prec: self.prec, stuff: self.stuff }.fmt(f)
+      }
       Data::Union(tys) => {
         // special case
         // TODO: make this better: e.g. `true | false | number` should show as `boolean | number`

@@ -18,16 +18,11 @@ pub(crate) fn get(
       get_regular(st, expr, fn_expr, &fn_data.params, pos_args, named_args.clone());
       fn_data.ret
     }
-    ty::Data::Fn(ty::Fn::Std(std_fn)) => match ty::StdFnSig::get(std_fn) {
-      ty::StdFnSig::Simple(params, ret) => {
-        get_regular(st, expr, fn_expr, params, pos_args, named_args.clone());
-        ret
-      }
-      ty::StdFnSig::Complex(_) => {
-        log::warn!("TODO: get call: std.{std_fn}");
-        ty::Ty::ANY
-      }
-    },
+    ty::Data::Fn(ty::Fn::Std(std_fn)) => {
+      let sig = ty::StdFnSig::get(std_fn);
+      get_regular(st, expr, fn_expr, sig.params, pos_args, named_args.clone());
+      sig.ret
+    }
     ty::Data::Union(tys) => {
       // must be compatible with ALL of the union parts.
       let ret_tys =
