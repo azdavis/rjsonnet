@@ -116,6 +116,30 @@ fn maybe_extra_checks(
       let elem = st.get_ty(ty::Data::Object(obj));
       Some(st.get_ty(ty::Data::Array(elem)))
     }
+    StdFn::map => {
+      let &(func_expr, func_ty) = params.get(&Id::func)?;
+      let &(_, arr_ty) = params.get(&Id::arr)?;
+      // TODO handle unions
+      let ty::Data::Fn(func) = st.data(func_ty) else { return None };
+      let &ty::Data::Array(elem) = st.data(arr_ty) else { return None };
+      let tmp: ty::StdFnSig;
+      let (params, ret) = match func {
+        ty::Fn::Regular(func) => (func.params.as_slice(), func.ret),
+        ty::Fn::Std(func) => {
+          tmp = ty::StdFnSig::get(*func);
+          (tmp.params, tmp.ret)
+        }
+        ty::Fn::Hof(_) => {
+          always!(false, "should never get a hof as a fn arg");
+          return None;
+        }
+      };
+      // NOTE no need to emit error when not 1 param, covered by unify with Hof
+      let &[param] = params else { return None };
+      let ret = st.get_ty(ty::Data::Array(ret));
+      st.unify(func_expr, elem, param.ty);
+      Some(ret)
+    }
     _ => None,
   }
 }
