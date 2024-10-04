@@ -131,20 +131,47 @@ pub enum Fn {
   Regular(RegularFn),
   /// A standard library function.
   Std(jsonnet_expr::StdFn),
+  /// A higher-order function known to never have named params or optional params, only a given
+  /// number of required positional params.
+  ///
+  /// Only used for std fn types, not writeable in user code.
+  ///
+  /// The params and return type are not known (aka any).
+  Hof(HofParams),
+}
+
+/// A number of arguments a HOF can take.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum HofParams {
+  /// 1
+  One,
+  /// 2
+  Two,
+}
+
+impl HofParams {
+  /// Converts this to a usize.
+  #[must_use]
+  pub fn to_usize(self) -> usize {
+    match self {
+      HofParams::One => 1,
+      HofParams::Two => 2,
+    }
+  }
 }
 
 impl Fn {
   fn apply(&mut self, subst: &Subst) {
     match self {
       Fn::Regular(f) => f.apply(subst),
-      Fn::Std(_) => {}
+      Fn::Std(_) | Fn::Hof(_) => {}
     }
   }
 
   fn has_local(&self) -> bool {
     match self {
       Fn::Regular(f) => f.has_local(),
-      Fn::Std(_) => false,
+      Fn::Std(_) | Fn::Hof(_) => false,
     }
   }
 }
@@ -307,7 +334,9 @@ impl<'a> MutStore<'a> {
       // another one.
       Data::Fn(Fn::Std(f)) => Ty::std_fn(f),
       // go directly to get inner.
-      Data::Array(_) | Data::Object(_) | Data::Fn(Fn::Regular(_)) => self.get_inner(data),
+      Data::Array(_) | Data::Object(_) | Data::Fn(Fn::Regular(_) | Fn::Hof(_)) => {
+        self.get_inner(data)
+      }
       // the interesting case.
       Data::Union(work) => {
         let mut work: Vec<_> = work.into_iter().collect();
@@ -438,20 +467,18 @@ impl Subst {
           }
           work.push(Action::end(ty));
           match data {
-            Data::Prim(_) => {}
+            // known to all already exist in the global store.
+            Data::Prim(_) | Data::Fn(Fn::Std(_) | Fn::Hof(_)) => {}
             Data::Array(ty) => work.push(Action::start(*ty)),
             Data::Object(object) => {
               let iter = object.known.values().map(|&t| Action::start(t));
               work.extend(iter);
             }
-            Data::Fn(func) => match func {
-              Fn::Regular(func) => {
-                let params = func.params.iter().map(|x| x.ty);
-                let iter = params.chain(std::iter::once(func.ret)).map(Action::start);
-                work.extend(iter);
-              }
-              Fn::Std(_) => {}
-            },
+            Data::Fn(Fn::Regular(func)) => {
+              let params = func.params.iter().map(|x| x.ty);
+              let iter = params.chain(std::iter::once(func.ret)).map(Action::start);
+              work.extend(iter);
+            }
             Data::Union(tys) => {
               let iter = tys.iter().map(|&t| Action::start(t));
               work.extend(iter);

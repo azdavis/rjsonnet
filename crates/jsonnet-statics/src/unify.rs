@@ -98,10 +98,20 @@ pub(crate) fn get(st: &mut St<'_>, store: &ty::MutStore<'_>, want: ty::Ty, got: 
         st.err(error::Kind::Incompatible(want, got));
       }
     }
+    (ty::Data::Fn(ty::Fn::Hof(w)), ty::Data::Fn(g)) => {
+      let got_required = match g {
+        ty::Fn::Regular(g) => g.params.iter().filter(|x| x.required).count(),
+        ty::Fn::Std(g) => ty::StdFnSig::get(*g).params.iter().filter(|x| x.required).count(),
+        ty::Fn::Hof(g) => g.to_usize(),
+      };
+      if w.to_usize() != got_required {
+        st.err(error::Kind::NotEnoughParams(w.to_usize(), got_required));
+      }
+    }
     (ty::Data::Fn(ty::Fn::Std(_)), ty::Data::Fn(ty::Fn::Regular(_)))
-    | (ty::Data::Fn(ty::Fn::Regular(_)), ty::Data::Fn(ty::Fn::Std(_))) => {
+    | (ty::Data::Fn(ty::Fn::Regular(_)), ty::Data::Fn(ty::Fn::Std(_) | ty::Fn::Hof(_))) => {
       // TODO do more here
-      log::warn!("unify std fn with regular fn");
+      log::warn!("unify various fn types");
     }
     // need to put this (got-union) before the next (want-union)
     (_, ty::Data::Union(got)) => {

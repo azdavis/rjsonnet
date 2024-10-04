@@ -89,6 +89,10 @@ pub enum Ty {
   Obj,
   /// A string or an array of numbers.
   StrOrArrNum,
+  /// A HOF with 1 param.
+  Hof1,
+  /// A HOF with 2 params.
+  Hof2,
 }
 
 /// `r` for "required"
@@ -122,11 +126,11 @@ const OBJ_HAS: Sig = s(&[r("o", Ty::Obj), r("f", Ty::Str)], Ty::Bool);
 const OBJ_FIELDS: Sig = s(&[r("o", Ty::Obj)], Ty::ArrStr);
 const OBJ_VALUES: Sig = s(&[r("o", Ty::Obj)], Ty::ArrAny);
 const MANIFEST_JSON: Sig = s(&[r("value", Ty::Any)], Ty::Str);
-const MAP: Sig = s(&[r("func", Ty::Any), r("arr", Ty::ArrAny)], Ty::ArrAny);
-const FOLD: Sig = s(&[r("func", Ty::Any), r("arr", Ty::ArrAny), r("init", Ty::Any)], Ty::Any);
-const ARR_KEY_F: Sig = s(&[r("arr", Ty::ArrAny), o("keyF", Ty::Any)], Ty::ArrAny);
+const MAP: Sig = s(&[r("func", Ty::Hof1), r("arr", Ty::ArrAny)], Ty::ArrAny);
+const FOLD: Sig = s(&[r("func", Ty::Hof2), r("arr", Ty::ArrAny), r("init", Ty::Any)], Ty::Any);
+const ARR_KEY_F: Sig = s(&[r("arr", Ty::ArrAny), o("keyF", Ty::Hof1)], Ty::ArrAny);
 const BINARY_SET_FN: Sig =
-  s(&[r("a", Ty::ArrAny), r("b", Ty::ArrAny), o("keyF", Ty::Any)], Ty::ArrAny);
+  s(&[r("a", Ty::ArrAny), r("b", Ty::ArrAny), o("keyF", Ty::Hof1)], Ty::ArrAny);
 
 const fn f(name: &'static str, sig: Sig) -> Fn {
   Fn { name: S::new(name), sig }
@@ -159,7 +163,7 @@ pub const FNS: [Fn; 126] = [
   f("objectValuesAll", OBJ_VALUES),
   f("objectKeysValuesAll", OBJ_VALUES),
   f("prune", s(&[r("a", Ty::Any)], Ty::Any)),
-  f("mapWithKey", s(&[r("func", Ty::Any), r("obj", Ty::Obj)], Ty::Obj)),
+  f("mapWithKey", s(&[r("func", Ty::Hof1), r("obj", Ty::Obj)], Ty::Obj)),
   f("abs", N_NUM_RET_NUM),
   f("sign", N_NUM_RET_NUM),
   f("max", s(&[r("a", Ty::Num), r("b", Ty::Num)], Ty::Num)),
@@ -255,7 +259,7 @@ pub const FNS: [Fn; 126] = [
   ),
   f("manifestXmlJsonml", s(&[r("value", Ty::ArrAny)], Ty::Str)),
   f("manifestTomlEx", s(&[r("toml", Ty::Obj), r("indent", Ty::Str)], Ty::Str)),
-  f("makeArray", s(&[r("sz", Ty::Num), r("func", Ty::Any)], Ty::ArrAny)),
+  f("makeArray", s(&[r("sz", Ty::Num), r("func", Ty::Hof1)], Ty::ArrAny)),
   f("member", s(&[r("arr", Ty::Any), r("x", Ty::Any)], Ty::Bool)),
   f("count", s(&[r("arr", Ty::ArrAny), r("x", Ty::Any)], Ty::Num)),
   f("find", s(&[r("value", Ty::Any), r("arr", Ty::ArrAny)], Ty::ArrNum)),
@@ -263,7 +267,7 @@ pub const FNS: [Fn; 126] = [
   f("mapWithIndex", MAP),
   f(
     "filterMap",
-    s(&[r("filter_func", Ty::Any), r("map_func", Ty::Any), r("arr", Ty::ArrAny)], Ty::ArrAny),
+    s(&[r("filter_func", Ty::Hof1), r("map_func", Ty::Hof1), r("arr", Ty::ArrAny)], Ty::ArrAny),
   ),
   f("flatMap", MAP),
   f("filter", MAP),
@@ -292,7 +296,7 @@ pub const FNS: [Fn; 126] = [
   f("setInter", BINARY_SET_FN),
   f("setUnion", BINARY_SET_FN),
   f("setDiff", BINARY_SET_FN),
-  f("setMember", s(&[r("x", Ty::Any), r("arr", Ty::ArrAny), o("keyF", Ty::Any)], Ty::Bool)),
+  f("setMember", s(&[r("x", Ty::Any), r("arr", Ty::ArrAny), o("keyF", Ty::Hof1)], Ty::Bool)),
   f("base64", s(&[r("input", Ty::StrOrArrNum)], Ty::Str)),
   f("base64DecodeBytes", s(&[r("str", Ty::Str)], Ty::ArrNum)),
   f("base64Decode", STR_RET_STR),

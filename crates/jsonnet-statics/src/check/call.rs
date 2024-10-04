@@ -1,6 +1,7 @@
 //! Checking function calls.
 
 use crate::{error, st};
+use always::always;
 use jsonnet_expr::{Expr, ExprMust, Id, StdFn, Str};
 use jsonnet_ty as ty;
 use rustc_hash::FxHashMap;
@@ -28,6 +29,10 @@ pub(crate) fn get(
         params.insert(id, (expr, ty));
       });
       maybe_extra_checks(st, std_fn, &params).unwrap_or(sig.ret)
+    }
+    ty::Data::Fn(ty::Fn::Hof(_)) => {
+      always!(false, "should never call a HOF");
+      ty::Ty::ANY
     }
     ty::Data::Union(tys) => {
       // must be compatible with ALL of the union parts.
