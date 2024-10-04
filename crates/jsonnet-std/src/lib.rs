@@ -153,7 +153,7 @@ pub const FNS: [Fn; 126] = [
   f("objectHas", OBJ_HAS),
   f("objectFields", OBJ_FIELDS),
   f("objectValues", OBJ_VALUES),
-  f("objectKeysValues", s(&[r("o", Ty::Obj)], Ty::ArrAny)),
+  f("objectKeysValues", OBJ_VALUES),
   f("objectHasAll", OBJ_HAS),
   f("objectFieldsAll", OBJ_FIELDS),
   f("objectValuesAll", OBJ_VALUES),
