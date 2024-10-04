@@ -608,6 +608,18 @@ impl lang_srv_state::State for St {
     }
   }
 
+  fn completions<F>(
+    &mut self,
+    _fs: &F,
+    _path: paths::CleanPathBuf,
+    _pos: text_pos::PositionUtf16,
+  ) -> Option<Vec<lang_srv_state::CompletionItem>>
+  where
+    F: Sync + paths::FileSystem,
+  {
+    None
+  }
+
   /// Get the definition site of a part of a file.
   fn get_def<F>(
     &mut self,

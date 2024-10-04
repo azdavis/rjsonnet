@@ -76,3 +76,26 @@ pub(crate) fn text_pos_range(r: lsp_types::Range) -> text_pos::RangeUtf16 {
 pub(crate) fn text_pos_position(p: lsp_types::Position) -> text_pos::PositionUtf16 {
   text_pos::PositionUtf16 { line: p.line, col: p.character }
 }
+
+pub(crate) fn completion(c: lang_srv_state::CompletionItem) -> lsp_types::CompletionItem {
+  lsp_types::CompletionItem {
+    label: c.label,
+    label_details: None,
+    kind: None,
+    detail: None,
+    documentation: None,
+    deprecated: None,
+    preselect: None,
+    sort_text: None,
+    filter_text: None,
+    insert_text: None,
+    insert_text_format: None,
+    insert_text_mode: None,
+    text_edit: None,
+    additional_text_edits: None,
+    command: None,
+    commit_characters: None,
+    data: None,
+    tags: None,
+  }
+}

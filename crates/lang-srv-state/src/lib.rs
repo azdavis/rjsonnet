@@ -61,6 +61,16 @@ pub trait State {
   where
     F: Sync + paths::FileSystem;
 
+  /// Get completions for part of a file.
+  fn completions<F>(
+    &mut self,
+    fs: &F,
+    path: paths::CleanPathBuf,
+    pos: text_pos::PositionUtf16,
+  ) -> Option<Vec<CompletionItem>>
+  where
+    F: Sync + paths::FileSystem;
+
   /// Get the definition site of a part of a file.
   fn get_def<F>(
     &mut self,
@@ -76,4 +86,11 @@ pub trait State {
 
   /// Returns a path id for this path.
   fn path_id(&mut self, path: paths::CleanPathBuf) -> paths::PathId;
+}
+
+/// A completion item.
+#[derive(Debug)]
+pub struct CompletionItem {
+  /// The label.
+  pub label: String,
 }

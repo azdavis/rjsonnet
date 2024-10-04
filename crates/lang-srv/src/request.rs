@@ -36,6 +36,15 @@ fn go<S: lang_srv_state::State>(
     });
     Ok(mk_res::<lsp_types::request::HoverRequest>(id, result))
   })?;
+  req = try_req::<lsp_types::request::Completion, _, _>(req, |id, params| {
+    let td_params = params.text_document_position;
+    let path = convert::clean_path_buf(&td_params.text_document.uri)?;
+    let pos = convert::text_pos_position(td_params.position);
+    let completions = srv.st.completions(&srv.fs, path, pos).map(|xs| {
+      lsp_types::CompletionResponse::Array(xs.into_iter().map(convert::completion).collect())
+    });
+    Ok(mk_res::<lsp_types::request::Completion>(id, completions))
+  })?;
   req = try_req::<lsp_types::request::GotoDefinition, _, _>(req, |id, params| {
     let td_params = params.text_document_position_params;
     let path = convert::clean_path_buf(&td_params.text_document.uri)?;

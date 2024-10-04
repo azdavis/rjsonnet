@@ -15,6 +15,10 @@ pub(crate) fn get() -> lsp_types::ServerCapabilities {
     )),
     hover_provider: Some(lsp_types::HoverProviderCapability::Simple(true)),
     definition_provider: Some(lsp_types::OneOf::Left(true)),
+    completion_provider: Some(lsp_types::CompletionOptions {
+      trigger_characters: Some(vec![".".to_owned()]),
+      ..lsp_types::CompletionOptions::default()
+    }),
     ..Default::default()
   }
 }
