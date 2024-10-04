@@ -130,6 +130,7 @@ fn main() {
 fn mk_ty(ty: jsonnet_std::Ty) -> proc_macro2::TokenStream {
   match ty {
     jsonnet_std::Ty::Any => q!(Ty::ANY),
+    jsonnet_std::Ty::True => q!(Ty::TRUE),
     jsonnet_std::Ty::Bool => q!(Ty::BOOL),
     jsonnet_std::Ty::Num => q!(Ty::NUMBER),
     jsonnet_std::Ty::Str => q!(Ty::STRING),

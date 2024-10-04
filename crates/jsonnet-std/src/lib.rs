@@ -69,6 +69,8 @@ pub struct Param {
 pub enum Ty {
   /// Anything at all.
   Any,
+  /// Exactly `true`.
+  True,
   /// Either `true` or `false`.
   Bool,
   /// A number like `0` or `123` or `-456`.
@@ -183,7 +185,7 @@ pub const FNS: [Fn; 126] = [
   f("isDecimal", X_NUM_RET_BOOL),
   Fn { name: S::named("mod", "mod_"), sig: s(&[r("a", Ty::Any), r("b", Ty::Any)], Ty::Any) },
   f("clamp", s(&[r("x", Ty::Num), r("minVal", Ty::Num), r("maxVal", Ty::Num)], Ty::Num)),
-  f("assertEqual", s(&[r("a", Ty::Any), r("b", Ty::Any)], Ty::Bool)),
+  f("assertEqual", s(&[r("a", Ty::Any), r("b", Ty::Any)], Ty::True)),
   f("toString", s(&[r("a", Ty::Any)], Ty::Str)),
   f("codepoint", s(&[r("str", Ty::Str)], Ty::Num)),
   f("char", s(&[r("n", Ty::Num)], Ty::Str)),
