@@ -112,14 +112,16 @@ fn main() {
       #[doc = "Returns a store with the builtin types, like `Ty::ANY`."]
       #[expect(clippy::too_many_lines)]
       pub(crate) fn with_builtin() -> Self {
-        Self {
+        let ret = Self {
           idx_to_data: vec![
             #(#ty_data,)*
           ],
           data_to_idx: rustc_hash::FxHashMap::from_iter([
             #(#map_entries,)*
           ]),
-        }
+        };
+        debug_assert_eq!(ret.data_to_idx.len(), ret.idx_to_data.len());
+        ret
       }
     }
 
