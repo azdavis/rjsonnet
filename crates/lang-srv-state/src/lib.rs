@@ -22,7 +22,6 @@ pub trait State {
   fn mark_as_updated(&mut self, updated: Vec<paths::CleanPathBuf>);
 
   /// Updates one path.
-  #[must_use]
   fn update_one<F>(
     &mut self,
     fs: &F,
@@ -33,7 +32,6 @@ pub trait State {
     F: Sync + paths::FileSystem;
 
   /// Opens a path.
-  #[must_use]
   fn open<F>(
     &mut self,
     fs: &F,
@@ -44,11 +42,9 @@ pub trait State {
     F: Sync + paths::FileSystem;
 
   /// Closes a path.
-  #[must_use]
   fn close(&mut self, path: paths::CleanPathBuf) -> paths::PathMap<Vec<diagnostic::Diagnostic>>;
 
   /// Returns whether the path is open.
-  #[must_use]
   fn is_open(&mut self, path: &paths::CleanPath) -> bool;
 
   /// Hover over part of a file.

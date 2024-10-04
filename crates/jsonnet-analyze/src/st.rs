@@ -510,8 +510,6 @@ impl lang_srv_state::State for St {
     (path_id, ds)
   }
 
-  /// Opens a path.
-  #[must_use]
   fn open<F>(
     &mut self,
     fs: &F,
@@ -526,16 +524,12 @@ impl lang_srv_state::State for St {
     self.update_one(fs, path, Vec::new())
   }
 
-  /// Closes a path.
-  #[must_use]
   fn close(&mut self, path: paths::CleanPathBuf) -> PathMap<Vec<diagnostic::Diagnostic>> {
     let path_id = self.path_id(path.clone());
     self.open_files.remove(&path_id);
     std::iter::once((path_id, Vec::new())).collect()
   }
 
-  /// Returns whether the path is open.
-  #[must_use]
   fn is_open(&mut self, path: &paths::CleanPath) -> bool {
     let path_id = self.path_id(path.to_owned());
     self.open_files.contains_key(&path_id)
@@ -620,7 +614,6 @@ impl lang_srv_state::State for St {
     None
   }
 
-  /// Get the definition site of a part of a file.
   fn get_def<F>(
     &mut self,
     fs: &F,
