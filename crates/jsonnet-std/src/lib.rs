@@ -102,6 +102,9 @@ const STR_RET_NUM: Sig = Sig::Simple(&[r("str", Ty::Str)], Ty::Num);
 const STR_RET_ANY: Sig = Sig::Simple(&[r("str", Ty::Str)], Ty::Any);
 const SPLIT_LIMIT: Sig =
   Sig::Simple(&[r("str", Ty::Str), r("c", Ty::Str), r("maxsplits", Ty::Str)], Ty::StrArr);
+const OBJ_HAS: Sig = Sig::Simple(&[r("o", Ty::Obj), r("f", Ty::Str)], Ty::Bool);
+const OBJ_FIELDS: Sig = Sig::Simple(&[r("o", Ty::Obj)], Ty::StrArr);
+const MANIFEST_JSON: Sig = Sig::Simple(&[r("value", Ty::Any)], Ty::Str);
 
 const fn f(name: &'static str, sig: Sig) -> Fn {
   Fn { name: S::new(name), sig }
@@ -119,12 +122,12 @@ pub const FNS: [Fn; 126] = [
   f("isString", V_ANY_RET_BOOL),
   f("length", Sig::Complex(&["x"])),
   f("get", Sig::Complex(&["o", "f", "default", "inc_hidden"])),
-  f("objectHas", Sig::Complex(&["o", "f"])),
-  f("objectFields", Sig::Complex(&["o"])),
+  f("objectHas", OBJ_HAS),
+  f("objectFields", OBJ_FIELDS),
   f("objectValues", Sig::Complex(&["o"])),
   f("objectKeysValues", Sig::Complex(&["o"])),
-  f("objectHasAll", Sig::Complex(&["o", "f"])),
-  f("objectFieldsAll", Sig::Complex(&["o"])),
+  f("objectHasAll", OBJ_HAS),
+  f("objectFieldsAll", OBJ_FIELDS),
   f("objectValuesAll", Sig::Complex(&["o"])),
   f("objectKeysValuesAll", Sig::Complex(&["o"])),
   f("prune", Sig::Complex(&["a"])),
@@ -201,8 +204,8 @@ pub const FNS: [Fn; 126] = [
       Ty::Str,
     ),
   ),
-  f("manifestJson", Sig::Simple(&[r("value", Ty::Any)], Ty::Str)),
-  f("manifestJsonMinified", Sig::Complex(&["value"])),
+  f("manifestJson", MANIFEST_JSON),
+  f("manifestJsonMinified", MANIFEST_JSON),
   f("manifestYamlDoc", Sig::Complex(&["value", "indent_array_in_object", "quote_keys"])),
   f(
     "manifestYamlStream",
