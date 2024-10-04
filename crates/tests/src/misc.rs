@@ -229,3 +229,14 @@ quz()
   )
   .check();
 }
+
+#[test]
+fn length_num() {
+  JsonnetInput::pre_eval_error(
+    r#"
+std.length(3)
+##         ^ diagnostic: not a type which has length: `number`
+"#,
+  )
+  .check();
+}

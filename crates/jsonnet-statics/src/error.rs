@@ -51,7 +51,8 @@ impl Error {
       | Kind::ExtraPositionalArgument(_)
       | Kind::ExtraNamedArgument(_)
       | Kind::InvalidPlus(_, _)
-      | Kind::CallNonFn(_) => diagnostic::Severity::Warning,
+      | Kind::CallNonFn(_)
+      | Kind::InvalidLength(_) => diagnostic::Severity::Warning,
     }
   }
 
@@ -61,7 +62,10 @@ impl Error {
   /// syntax artifacts.
   pub fn apply(&mut self, ty_subst: &ty::Subst) {
     match &mut self.kind {
-      Kind::MissingArgument(_, ty) | Kind::Incomparable(ty) | Kind::CallNonFn(ty) => {
+      Kind::MissingArgument(_, ty)
+      | Kind::Incomparable(ty)
+      | Kind::CallNonFn(ty)
+      | Kind::InvalidLength(ty) => {
         ty.apply(ty_subst);
       }
       Kind::Incompatible(a, b) | Kind::InvalidPlus(a, b) => {
@@ -103,6 +107,7 @@ pub(crate) enum Kind {
   ExtraNamedArgument(Id),
   InvalidPlus(ty::Ty, ty::Ty),
   CallNonFn(ty::Ty),
+  InvalidLength(ty::Ty),
 }
 
 struct Display<'a> {
@@ -176,6 +181,10 @@ impl fmt::Display for Display<'_> {
       Kind::CallNonFn(got) => {
         let got = got.display(self.multi_line, self.store, None, self.str_ar);
         write!(f, "expected a function type, found `{got}`")
+      }
+      Kind::InvalidLength(ty) => {
+        let ty = ty.display(self.multi_line, self.store, None, self.str_ar);
+        write!(f, "not a type which has length: `{ty}`")
       }
     }
   }
