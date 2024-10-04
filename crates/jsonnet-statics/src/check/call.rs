@@ -122,12 +122,11 @@ fn maybe_extra_checks(
       // TODO handle unions
       let ty::Data::Fn(func) = st.data(func_ty) else { return None };
       let &ty::Data::Array(elem) = st.data(arr_ty) else { return None };
-      let tmp: ty::StdFnSig;
       let (params, ret) = match func {
         ty::Fn::Regular(func) => (func.params.as_slice(), func.ret),
         ty::Fn::Std(func) => {
-          tmp = ty::StdFnSig::get(*func);
-          (tmp.params, tmp.ret)
+          let sig = ty::StdFnSig::get(*func);
+          (sig.params, sig.ret)
         }
         ty::Fn::Hof(_) => {
           always!(false, "should never get a hof as a fn arg");
