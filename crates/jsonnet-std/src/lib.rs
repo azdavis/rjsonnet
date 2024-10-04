@@ -85,6 +85,8 @@ pub enum Ty {
   ArrAny,
   /// An object with arbitrary fields like `{ foo: 3 }` or `{}`.
   Obj,
+  /// A string or an array of numbers.
+  StrOrArrNum,
 }
 
 /// `r` for "required"
@@ -244,8 +246,8 @@ pub const FNS: [Fn; 126] = [
   f("setUnion", Sig::Complex(&["a", "b", "keyF"])),
   f("setDiff", Sig::Complex(&["a", "b", "keyF"])),
   f("setMember", Sig::Complex(&["x", "arr", "keyF"])),
-  f("base64", Sig::Complex(&["input"])),
-  f("base64DecodeBytes", Sig::Complex(&["str"])),
+  f("base64", Sig::Simple(&[r("input", Ty::StrOrArrNum)], Ty::Str)),
+  f("base64DecodeBytes", Sig::Simple(&[r("str", Ty::Str)], Ty::ArrNum)),
   f("base64Decode", STR_RET_STR),
   f("md5", Sig::Simple(&[r("s", Ty::Str)], Ty::Str)),
   f("xor", X_Y_BOOL_RET_BOOL),

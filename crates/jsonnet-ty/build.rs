@@ -19,6 +19,7 @@ fn main() {
     (i!("ARRAY_STRING"), q!(Data::Array(Ty::STRING))),
     (i!("ARRAY_ANY"), q!(Data::Array(Ty::ANY))),
     (i!("ARRAY_OR_OBJECT"), q!(Data::Union(BTreeSet::from([Ty::ARRAY_ANY, Ty::OBJECT])))),
+    (i!("STRING_OR_ARRAY_NUMBER"), q!(Data::Union(BTreeSet::from([Ty::STRING, Ty::ARRAY_NUMBER])))),
     (i!("OBJECT"), q!(Data::Object(super::Object::unknown()))),
     (i!("STD"), q!(Data::Object(super::Object::std()))),
   ];
@@ -154,6 +155,7 @@ fn mk_ty(ty: jsonnet_std::Ty) -> proc_macro2::TokenStream {
     jsonnet_std::Ty::ArrStr => q!(Ty::ARRAY_STRING),
     jsonnet_std::Ty::ArrAny => q!(Ty::ARRAY_ANY),
     jsonnet_std::Ty::Obj => q!(Ty::OBJECT),
+    jsonnet_std::Ty::StrOrArrNum => q!(Ty::STRING_OR_ARRAY_NUMBER),
   }
 }
 
