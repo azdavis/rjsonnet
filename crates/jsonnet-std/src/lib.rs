@@ -283,5 +283,8 @@ pub const FNS: [Fn; 126] = [
   f("trace", Sig::Complex(&["str", "rest"])),
   // alluded to in the spec but not mentioned on the std lib page
   f("equals", Sig::Complex(&["x", "y"])),
-  f("objectHasEx", Sig::Complex(&["obj", "fname", "hidden"])),
+  f(
+    "objectHasEx",
+    Sig::Simple(&[r("obj", Ty::Obj), r("fname", Ty::Str), r("hidden", Ty::Bool)], Ty::Bool),
+  ),
 ];
