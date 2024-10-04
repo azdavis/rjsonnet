@@ -141,7 +141,9 @@ pub const FNS: [Fn; 126] = [
   f("objectFields", OBJ_FIELDS),
   f("objectValues", Sig::Complex(&["o"])),
   f("objectKeysValues", Sig::Complex(&["o"])),
-  f("objectHasAll", OBJ_HAS),
+  // TODO fix this
+  // f("objectHasAll", OBJ_HAS),
+  f("objectHasAll", Sig::Complex(&["o", "f"])),
   f("objectFieldsAll", OBJ_FIELDS),
   f("objectValuesAll", Sig::Complex(&["o"])),
   f("objectKeysValuesAll", Sig::Complex(&["o"])),

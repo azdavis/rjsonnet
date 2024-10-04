@@ -493,7 +493,7 @@ fn get_binary_op(
       let inner = Some(st.expr(ptr, bop(BinaryOp::Eq, lhs, rhs)));
       ExprData::UnaryOp { op: UnaryOp::LogicalNot, inner }
     }
-    ast::BinaryOpKind::InKw => call_std_func_data(st, ptr, Str::objectHasEx, vec![lhs, rhs]),
+    ast::BinaryOpKind::InKw => call_std_func_data(st, ptr, Str::objectHasAll, vec![rhs, lhs]),
     ast::BinaryOpKind::And => bop(BinaryOp::BitAnd, lhs, rhs),
     ast::BinaryOpKind::Carat => bop(BinaryOp::BitXor, lhs, rhs),
     ast::BinaryOpKind::Bar => bop(BinaryOp::BitOr, lhs, rhs),
