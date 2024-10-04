@@ -130,7 +130,13 @@ pub const FNS: [Fn; 126] = [
   f("isObject", V_ANY_RET_BOOL),
   f("isString", V_ANY_RET_BOOL),
   f("length", Sig::Complex(&["x"])),
-  f("get", Sig::Complex(&["o", "f", "default", "inc_hidden"])),
+  f(
+    "get",
+    Sig::Simple(
+      &[r("o", Ty::Obj), r("f", Ty::Str), o("default", Ty::Any), o("inc_hidden", Ty::Bool)],
+      Ty::Any,
+    ),
+  ),
   f("objectHas", OBJ_HAS),
   f("objectFields", OBJ_FIELDS),
   f("objectValues", Sig::Complex(&["o"])),
