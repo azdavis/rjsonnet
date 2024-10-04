@@ -232,11 +232,12 @@ struct ParamDisplay<'a> {
 impl<'a> fmt::Display for ParamDisplay<'a> {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     self.param.id.display(self.stuff.str_ar).fmt(f)?;
-    if !self.param.required {
-      f.write_str("?")?;
-    }
     f.write_str(": ")?;
-    TyDisplay { ty: self.param.ty, prec: Prec::Min, stuff: self.stuff }.fmt(f)
+    TyDisplay { ty: self.param.ty, prec: Prec::Min, stuff: self.stuff }.fmt(f)?;
+    if !self.param.required {
+      f.write_str(" = ...")?;
+    }
+    Ok(())
   }
 }
 
