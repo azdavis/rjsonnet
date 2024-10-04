@@ -53,10 +53,22 @@ pub(crate) fn get(st: &mut St<'_>, store: &ty::MutStore<'_>, want: ty::Ty, got: 
         };
         get(st, store, *w, *g);
       }
-      if want.has_unknown && !got.has_unknown {
-        st.err(error::Kind::MissingUnknown);
-      }
-      // ignore the fields that ARE in `got` but are NOT in `want`.
+      // we used to error when `want.has_unknown && !got.has_unknown`. the idea was that this may
+      // arguably be an error, since it means that we are doing something like e.g. `"foo" in {}`,
+      // i.e. we are asking if there is a certain field in an object whose fields we know
+      // statically.
+      //
+      // but we do not emit an error here since it would probably be disruptive and unexpected to
+      // users.
+      //
+      // further, it is sound to not emit an error here. since the only operation that we could do
+      // when wanting unknown fields is to query for whatever fields we wanted, which MAY fail:
+      // since we don't know what fields we have, the field may or may not exist.
+      //
+      // when we know we're getting something with NO unknown fields, the only thing that changes is
+      // that we KNOW those unknown field gets will fail every time. which is fine.
+      //
+      // also, ignore the fields that ARE in `got` but are NOT in `want`. kind of like sub-typing.
     }
     (ty::Data::Fn(ty::Fn::Regular(want)), ty::Data::Fn(ty::Fn::Regular(got))) => {
       if want.params.len() > got.params.len() {

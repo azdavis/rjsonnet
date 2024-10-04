@@ -42,7 +42,6 @@ impl Error {
       Kind::Unused(_, _)
       | Kind::Incompatible(_, _)
       | Kind::MissingField(_)
-      | Kind::MissingUnknown
       | Kind::NotEnoughParams(_, _)
       | Kind::MismatchedParamNames(_, _)
       | Kind::WantOptionalParamGotRequired(_)
@@ -80,7 +79,6 @@ impl Error {
       | Kind::MissingField(_)
       | Kind::MismatchedParamNames(_, _)
       | Kind::NotEnoughParams(_, _)
-      | Kind::MissingUnknown
       | Kind::ExtraPositionalArgument(_) => {}
     }
   }
@@ -95,8 +93,6 @@ pub(crate) enum Kind {
   Unused(Id, def::ExprDefKind),
   Incompatible(ty::Ty, ty::Ty),
   MissingField(Str),
-  /// TODO this is weird.
-  MissingUnknown,
   NotEnoughParams(usize, usize),
   MismatchedParamNames(Id, Id),
   WantOptionalParamGotRequired(Id),
@@ -136,7 +132,6 @@ impl fmt::Display for Display<'_> {
         write!(f, "     found `{got}`")
       }
       Kind::MissingField(s) => write!(f, "missing field: `{}`", self.str_ar.get(s)),
-      Kind::MissingUnknown => f.write_str("missing unknown object fields"),
       Kind::NotEnoughParams(want, got) => {
         f.write_str("not enough parameters\n")?;
         writeln!(f, "  expected at least {want}")?;
