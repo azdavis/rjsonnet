@@ -81,6 +81,8 @@ pub enum Ty {
   NumArr,
   /// A string array like `["hi", "bye"]`.
   StrArr,
+  /// An array with any contents like `["hi", 3, null, false]`.
+  AnyArr,
   /// An object with arbitrary fields like `{ foo: 3 }` or `{}`.
   Obj,
 }
@@ -211,7 +213,7 @@ pub const FNS: [Fn; 126] = [
     "manifestYamlStream",
     Sig::Complex(&["value", "indent_array_in_object", "c_document_end", "quote_keys"]),
   ),
-  f("manifestXmlJsonml", Sig::Complex(&["value"])),
+  f("manifestXmlJsonml", Sig::Simple(&[r("value", Ty::AnyArr)], Ty::Str)),
   f("manifestTomlEx", Sig::Complex(&["toml", "indent"])),
   f("makeArray", Sig::Complex(&["sz", "func"])),
   f("member", Sig::Complex(&["arr", "x"])),
@@ -224,7 +226,7 @@ pub const FNS: [Fn; 126] = [
   f("filter", Sig::Complex(&["func", "arr"])),
   f("foldl", Sig::Complex(&["func", "arr", "init"])),
   f("foldr", Sig::Complex(&["func", "arr", "init"])),
-  f("range", Sig::Complex(&["from", "to"])),
+  f("range", Sig::Simple(&[r("from", Ty::Num), r("to", Ty::Num)], Ty::Num)),
   f("repeat", Sig::Complex(&["what", "count"])),
   f("slice", Sig::Complex(&["indexable", "index", "end", "step"])),
   f("join", Sig::Complex(&["sep", "arr"])),
