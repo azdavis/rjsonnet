@@ -277,7 +277,7 @@ pub const FNS: [Fn; 126] = [
   f("md5", Sig::Simple(&[r("s", Ty::Str)], Ty::Str)),
   f("xor", X_Y_BOOL_RET_BOOL),
   f("xnor", X_Y_BOOL_RET_BOOL),
-  f("mergePatch", Sig::Complex(&["target", "patch"])),
+  f("mergePatch", Sig::Simple(&[r("target", Ty::Any), r("patch", Ty::Any)], Ty::Any)),
   f("trace", Sig::Complex(&["str", "rest"])),
   // alluded to in the spec but not mentioned on the std lib page
   f("equals", Sig::Complex(&["x", "y"])),
