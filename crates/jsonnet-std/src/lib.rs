@@ -94,6 +94,11 @@ const fn r(name: &'static str, ty: Ty) -> Param {
   Param { name, ty, required: true }
 }
 
+/// `o` for "optional"
+const fn o(name: &'static str, ty: Ty) -> Param {
+  Param { name, ty, required: false }
+}
+
 const V_ANY_RET_BOOL: Sig = Sig::Simple(&[r("v", Ty::Any)], Ty::Bool);
 const X_NUM_RET_NUM: Sig = Sig::Simple(&[r("x", Ty::Num)], Ty::Num);
 const N_NUM_RET_NUM: Sig = Sig::Simple(&[r("n", Ty::Num)], Ty::Num);
@@ -210,13 +215,27 @@ pub const FNS: [Fn; 126] = [
   ),
   f("manifestJson", MANIFEST_JSON),
   f("manifestJsonMinified", MANIFEST_JSON),
-  f("manifestYamlDoc", Sig::Complex(&["value", "indent_array_in_object", "quote_keys"])),
+  f(
+    "manifestYamlDoc",
+    Sig::Simple(
+      &[r("value", Ty::Any), o("indent_array_in_object", Ty::Bool), o("quote_keys", Ty::Bool)],
+      Ty::Str,
+    ),
+  ),
   f(
     "manifestYamlStream",
-    Sig::Complex(&["value", "indent_array_in_object", "c_document_end", "quote_keys"]),
+    Sig::Simple(
+      &[
+        r("value", Ty::ArrAny),
+        o("indent_array_in_object", Ty::Bool),
+        o("c_document_end", Ty::Bool),
+        o("quote_keys", Ty::Bool),
+      ],
+      Ty::Str,
+    ),
   ),
   f("manifestXmlJsonml", Sig::Simple(&[r("value", Ty::ArrAny)], Ty::Str)),
-  f("manifestTomlEx", Sig::Complex(&["toml", "indent"])),
+  f("manifestTomlEx", Sig::Simple(&[r("toml", Ty::Obj), r("indent", Ty::Str)], Ty::Str)),
   f("makeArray", Sig::Complex(&["sz", "func"])),
   f("member", Sig::Complex(&["arr", "x"])),
   f("count", Sig::Complex(&["arr", "x"])),
