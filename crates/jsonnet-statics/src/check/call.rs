@@ -40,7 +40,7 @@ pub(crate) fn get(
 
 fn get_regular(
   st: &mut st::St<'_>,
-  expr: jsonnet_expr::Idx<jsonnet_expr::ExprData>,
+  expr: ExprMust,
   fn_expr: Expr,
   params: &[ty::Param],
   pos_args: &[(Expr, ty::Ty)],
