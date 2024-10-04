@@ -72,7 +72,7 @@ Depending on the type of the value given, this functions returns the number of _
 | function | parameters |
 | object   | fields     |
 
-Raises an error if given a primitive value, i.e. `null`, `true` or `false`.
+Raises an error if given `null`, `true`, `false`, or a number.
 
 ## `prune`
 
