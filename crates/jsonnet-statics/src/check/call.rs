@@ -44,78 +44,6 @@ pub(crate) fn get(
   }
 }
 
-fn ignore(_: Id, _: ExprMust, _: ty::Ty) {}
-
-fn maybe_extra_checks(
-  st: &mut st::St<'_>,
-  std_fn: StdFn,
-  params: &FxHashMap<Id, (ExprMust, ty::Ty)>,
-) -> Option<ty::Ty> {
-  match std_fn {
-    StdFn::length => {
-      let &(expr, ty) = params.get(&Id::x)?;
-      if !length_ok(st, ty) {
-        st.err(expr, error::Kind::InvalidLength(ty));
-      }
-      None
-    }
-    StdFn::objectValues | StdFn::objectValuesAll => {
-      let val_ty = object_values(st, params)?;
-      Some(st.get_ty(ty::Data::Array(val_ty)))
-    }
-    StdFn::objectKeysValues | StdFn::objectKeysValuesAll => {
-      let val_ty = object_values(st, params)?;
-      let obj = ty::Object {
-        known: BTreeMap::from([(Str::key, ty::Ty::STRING), (Str::value, val_ty)]),
-        has_unknown: false,
-      };
-      let elem = st.get_ty(ty::Data::Object(obj));
-      Some(st.get_ty(ty::Data::Array(elem)))
-    }
-    _ => None,
-  }
-}
-
-fn object_values(
-  st: &mut st::St<'_>,
-  params: &FxHashMap<Id, (ExprMust, ty::Ty)>,
-) -> Option<ty::Ty> {
-  let &(_, ty) = params.get(&Id::o)?;
-  let mut ac = BTreeSet::<ty::Ty>::new();
-  object_values_inner(st, ty, &mut ac);
-  Some(st.get_ty(ty::Data::Union(ac)))
-}
-
-/// TODO case on whether we are considering hidden fields?
-fn object_values_inner(st: &st::St<'_>, ty: ty::Ty, ac: &mut BTreeSet<ty::Ty>) {
-  match st.data(ty) {
-    ty::Data::Prim(_) | ty::Data::Array(_) | ty::Data::Fn(_) => {}
-    ty::Data::Object(obj) => {
-      if obj.has_unknown {
-        ac.insert(ty::Ty::ANY);
-      } else {
-        ac.extend(obj.known.values().copied());
-      }
-    }
-    ty::Data::Union(tys) => {
-      for &ty in tys {
-        object_values_inner(st, ty, ac);
-      }
-    }
-  }
-}
-
-fn length_ok(st: &st::St<'_>, ty: ty::Ty) -> bool {
-  match st.data(ty) {
-    ty::Data::Prim(prim) => match prim {
-      ty::Prim::Any | ty::Prim::String => true,
-      ty::Prim::True | ty::Prim::False | ty::Prim::Null | ty::Prim::Number => false,
-    },
-    ty::Data::Array(_) | ty::Data::Object(_) | ty::Data::Fn(_) => true,
-    ty::Data::Union(tys) => tys.iter().all(|&ty| length_ok(st, ty)),
-  }
-}
-
 fn get_regular<F>(
   st: &mut st::St<'_>,
   expr: ExprMust,
@@ -152,5 +80,77 @@ fn get_regular<F>(
   }
   for (id, (arg, _)) in named_args {
     st.err(arg.unwrap_or(expr), error::Kind::ExtraNamedArgument(id));
+  }
+}
+
+fn ignore(_: Id, _: ExprMust, _: ty::Ty) {}
+
+fn maybe_extra_checks(
+  st: &mut st::St<'_>,
+  std_fn: StdFn,
+  params: &FxHashMap<Id, (ExprMust, ty::Ty)>,
+) -> Option<ty::Ty> {
+  match std_fn {
+    StdFn::length => {
+      let &(expr, ty) = params.get(&Id::x)?;
+      if !length_ok(st, ty) {
+        st.err(expr, error::Kind::InvalidLength(ty));
+      }
+      None
+    }
+    StdFn::objectValues | StdFn::objectValuesAll => {
+      let val_ty = object_values(st, params)?;
+      Some(st.get_ty(ty::Data::Array(val_ty)))
+    }
+    StdFn::objectKeysValues | StdFn::objectKeysValuesAll => {
+      let val_ty = object_values(st, params)?;
+      let obj = ty::Object {
+        known: BTreeMap::from([(Str::key, ty::Ty::STRING), (Str::value, val_ty)]),
+        has_unknown: false,
+      };
+      let elem = st.get_ty(ty::Data::Object(obj));
+      Some(st.get_ty(ty::Data::Array(elem)))
+    }
+    _ => None,
+  }
+}
+
+fn length_ok(st: &st::St<'_>, ty: ty::Ty) -> bool {
+  match st.data(ty) {
+    ty::Data::Prim(prim) => match prim {
+      ty::Prim::Any | ty::Prim::String => true,
+      ty::Prim::True | ty::Prim::False | ty::Prim::Null | ty::Prim::Number => false,
+    },
+    ty::Data::Array(_) | ty::Data::Object(_) | ty::Data::Fn(_) => true,
+    ty::Data::Union(tys) => tys.iter().all(|&ty| length_ok(st, ty)),
+  }
+}
+
+fn object_values(
+  st: &mut st::St<'_>,
+  params: &FxHashMap<Id, (ExprMust, ty::Ty)>,
+) -> Option<ty::Ty> {
+  let &(_, ty) = params.get(&Id::o)?;
+  let mut ac = BTreeSet::<ty::Ty>::new();
+  object_values_inner(st, ty, &mut ac);
+  Some(st.get_ty(ty::Data::Union(ac)))
+}
+
+/// TODO case on whether we are considering hidden fields?
+fn object_values_inner(st: &st::St<'_>, ty: ty::Ty, ac: &mut BTreeSet<ty::Ty>) {
+  match st.data(ty) {
+    ty::Data::Prim(_) | ty::Data::Array(_) | ty::Data::Fn(_) => {}
+    ty::Data::Object(obj) => {
+      if obj.has_unknown {
+        ac.insert(ty::Ty::ANY);
+      } else {
+        ac.extend(obj.known.values().copied());
+      }
+    }
+    ty::Data::Union(tys) => {
+      for &ty in tys {
+        object_values_inner(st, ty, ac);
+      }
+    }
   }
 }
