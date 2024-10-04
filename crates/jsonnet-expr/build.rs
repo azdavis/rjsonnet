@@ -4,7 +4,7 @@
 
 use jsonnet_std::{Sig, S};
 use quote::{format_ident, quote};
-use std::collections::{BTreeMap, BTreeSet, HashSet};
+use std::collections::{BTreeSet, HashSet};
 
 const JOINER: &str = "__";
 
@@ -191,24 +191,6 @@ fn main() {
       let content = fn_doc.get(f.name.content()).expect("should have doc");
       quote! { Self::#name => #content, }
     });
-    let unique_params_lens = {
-      let mut tmp = BTreeMap::<usize, BTreeSet<&str>>::new();
-      for f in &jsonnet_std::FNS {
-        let params_len = match f.sig {
-          Sig::Simple(xs, _) => xs.len(),
-          Sig::Complex(xs) => xs.len(),
-        };
-        tmp.entry(params_len).or_default().insert(f.name.ident());
-      }
-      tmp
-    };
-    let params_len_arms = unique_params_lens.iter().map(|(&len, names)| {
-      let pats = names.iter().map(|name| {
-        let name = format_ident!("{name}");
-        quote! { | Self::#name }
-      });
-      quote! { #(#pats)* => #len, }
-    });
     let unique_param_lists: BTreeSet<Vec<_>> = jsonnet_std::FNS.iter().map(param_names).collect();
     let get_params = unique_param_lists.iter().map(|params| mk_get_params(params));
     let get_args = jsonnet_std::FNS.iter().map(mk_get_args);
@@ -226,15 +208,6 @@ fn main() {
         pub const ALL: [(Str, Self); #count] = [
           #(#str_variant_tuples,)*
         ];
-
-        // TODO: what about optional arguments?
-        #[doc = "Returns the max number of parameters this takes."]
-        #[must_use]
-        pub fn params_len(&self) -> usize {
-          match self {
-            #(#params_len_arms)*
-          }
-        }
 
         #[doc = "Returns a static str for this."]
         #[must_use]
