@@ -29,9 +29,7 @@ The primary intended way to use this is via the [language server][lsp] and its o
 
 You can also use the language server with any editor that supports language servers. You'll just have to write your own glue code between this server and your editor.
 
-## Try it
-
-### First time repo setup
+## Building from source
 
 1. Get [Rust][rustup].
 1. Clone or download the repo.
@@ -47,7 +45,7 @@ $ cargo fmt
 $ cargo xtask ci
 ```
 
-### Language server + VS Code extension
+You can also build the VS Code extension:
 
 1. Get [VS Code][vscode].
 1. Get [Node][node].
