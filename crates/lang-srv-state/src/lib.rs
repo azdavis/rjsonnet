@@ -87,6 +87,17 @@ pub trait State {
 /// A completion item.
 #[derive(Debug)]
 pub struct CompletionItem {
-  /// The label.
-  pub label: String,
+  /// The name.
+  pub name: String,
+  /// The type.
+  pub ty: String,
+  /// The kind.
+  pub kind: CompletionItemKind,
+}
+
+/// A kind of completion item.
+#[derive(Debug, Clone, Copy)]
+pub enum CompletionItemKind {
+  /// A field, like for a "struct" or "object".
+  Field,
 }

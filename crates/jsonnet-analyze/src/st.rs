@@ -633,11 +633,17 @@ impl lang_srv_state::State for St {
       arts.syntax.pointers.get_idx(ptr)?
     };
     let &ty = arts.expr_tys.get(&expr)?;
-    let fields = self.with_fs.artifacts.statics.object_fields(ty)?;
-    let field_names = fields.keys().map(|&k| lang_srv_state::CompletionItem {
-      label: self.with_fs.artifacts.syntax.strings.get(k).to_owned(),
+    let wa = &self.with_fs.artifacts;
+    let fields = wa.statics.object_fields(ty)?;
+    let fields = fields.iter().map(|(&name, &ty)| {
+      let ty = ty.display(MultiLine::MustNot, &wa.statics, None, &wa.syntax.strings);
+      lang_srv_state::CompletionItem {
+        name: wa.syntax.strings.get(name).to_owned(),
+        ty: format!(": {ty}"),
+        kind: lang_srv_state::CompletionItemKind::Field,
+      }
     });
-    Some(field_names.collect())
+    Some(fields.collect())
   }
 
   fn get_def<F>(

@@ -78,10 +78,14 @@ pub(crate) fn text_pos_position(p: lsp_types::Position) -> text_pos::PositionUtf
 }
 
 pub(crate) fn completion(c: lang_srv_state::CompletionItem) -> lsp_types::CompletionItem {
+  let kind = match c.kind {
+    lang_srv_state::CompletionItemKind::Field => lsp_types::CompletionItemKind::FIELD,
+  };
+  let details = lsp_types::CompletionItemLabelDetails { detail: Some(c.ty), description: None };
   lsp_types::CompletionItem {
-    label: c.label,
-    label_details: None,
-    kind: None,
+    label: c.name,
+    label_details: Some(details),
+    kind: Some(kind),
     detail: None,
     documentation: None,
     deprecated: None,
