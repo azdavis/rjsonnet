@@ -638,10 +638,10 @@ impl lang_srv_state::State for St {
     let wa = &self.with_fs.artifacts;
     let fields = wa.statics.object_fields(ty)?;
     let fields = fields.iter().map(|(&name, &ty)| {
-      let ty = ty.display(MultiLine::MustNot, &wa.statics, None, &wa.syntax.strings);
+      let ty = ty.display(self.multi_line, &wa.statics, None, &wa.syntax.strings);
       lang_srv_state::CompletionItem {
         name: wa.syntax.strings.get(name).to_owned(),
-        ty: format!(": {ty}"),
+        ty: ty.to_string(),
         kind: lang_srv_state::CompletionItemKind::Field,
       }
     });

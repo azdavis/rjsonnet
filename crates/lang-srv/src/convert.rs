@@ -81,12 +81,11 @@ pub(crate) fn completion(c: lang_srv_state::CompletionItem) -> lsp_types::Comple
   let kind = match c.kind {
     lang_srv_state::CompletionItemKind::Field => lsp_types::CompletionItemKind::FIELD,
   };
-  let details = lsp_types::CompletionItemLabelDetails { detail: Some(c.ty), description: None };
   lsp_types::CompletionItem {
     label: c.name,
-    label_details: Some(details),
+    label_details: None,
     kind: Some(kind),
-    detail: None,
+    detail: Some(c.ty),
     documentation: None,
     deprecated: None,
     preselect: None,
