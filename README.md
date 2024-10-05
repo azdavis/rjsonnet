@@ -49,11 +49,11 @@ You can also build the VS Code extension:
 
 1. Get [VS Code][vscode].
 1. Get [Node][node].
+1. Ensure other Jsonnet-related extensions like [Jsonnet LSP][carl] are disabled.
 1. Open the repo in VS Code.
 1. Click "Run and Debug" (by default, the triangular play button with bug on the left).
 1. In the "Run and Debug" sidebar that appears, click the triangular play button by "extension" (you may need to select it from the drop-down). Another VS Code will pop up, with the extension enabled.
 1. Open that VS Code on a folder with Jsonnet files.
-1. Ensure other Jsonnet-related extensions like [Jsonnet LSP][carl] are disabled.
 1. Try out the IDE features like inline diagnostics and go-to-def.
 
 ## Credits
