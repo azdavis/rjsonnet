@@ -1,5 +1,10 @@
 # Changelog
 
+## main
+
+- Fix types for `std.slice` params.
+- Improve hover for `local` binds.
+
 ## v0.5.0
 
 - Add type checking for std functions.
