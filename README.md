@@ -2,15 +2,6 @@
 
 An implementation of [Jsonnet][] in [Rust][], which aims to conform to the [spec][], and is built with the IDE use-case in mind.
 
-## Warning
-
-This project is a very minimal MVP. Most IDE features are not implemented. Some **language** features haven't even been implemented. There are a lot of TODOs and probably a good amount of latent bugs.
-
-For more mature alternatives, consider:
-
-- [Jsonnet LSP][carl], by Carl Verge
-- [Jsonnet Language Server][grafana], by Grafana
-
 ## Install
 
 - [VS Code Marketplace][vs-code-marketplace]
@@ -21,7 +12,8 @@ For more mature alternatives, consider:
 - Inline diagnostics
 - Go-to-definition
 - Hover for info
-- Some type-checking
+- Type-checking
+- Auto-completions
 
 ## Demo
 
@@ -69,6 +61,11 @@ $ cargo xtask ci
 ## Credits
 
 I took a lot of inspiration from the existing [Jsonnet LSP][carl] extension, but I wanted to try doing it myself, in Rust, from scratch, specifically for IDEs. I had already done so with Standard ML in [Millet][millet].
+
+## Alternatives
+
+- [Jsonnet LSP][carl], by Carl Verge
+- [Jsonnet Language Server][grafana], by Grafana
 
 ## License
 
