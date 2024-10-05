@@ -229,7 +229,10 @@ pub type Union = BTreeSet<Ty>;
 /// Types are unique. That is, for two types a and b, if a != b, then a's data != b's data.
 ///
 /// BUT NOTE that the SEMANTICS of a type can be the same as another type but the types are
-/// different, like `{ a: int } | { a: string }` and `{ a: int | string }`
+/// different, like:
+///
+/// - `{ a: int } | { a: string }`
+/// - `{ a: int | string }`
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Ty(u32);
 
