@@ -157,6 +157,17 @@ impl<'a> Input<'a> {
               assert!(ds_map.remove(&range).expect("just got it").is_empty());
             }
           }
+          expect::Kind::Hover => {
+            let pos = text_pos::PositionUtf16 { line: region.line, col: region.col_start };
+            let Some(got) = st.hover(fs, path.clone(), pos) else {
+              panic!("{path_str}:{pos}: no hover")
+            };
+            let want = ex.msg.as_str();
+            assert!(
+              got.lines().any(|line| line == want),
+              "{path_str}:{pos}: none of the lines were equal to '{want}':\n\n{got}"
+            );
+          }
         }
       }
 

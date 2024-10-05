@@ -112,6 +112,9 @@ impl Expect {
     if let Some(msg) = msg.strip_prefix("diagnostic: ") {
       return Self { kind: Kind::Diagnostic, msg: msg.to_owned() };
     }
+    if let Some(msg) = msg.strip_prefix("hover: ") {
+      return Self { kind: Kind::Hover, msg: msg.to_owned() };
+    }
     panic!("no prefix: {msg}")
   }
 }
@@ -131,6 +134,8 @@ pub(crate) enum Kind {
   Use,
   /// A diagnostic.
   Diagnostic,
+  /// A hover.
+  Hover,
 }
 
 impl fmt::Display for Kind {
@@ -139,6 +144,7 @@ impl fmt::Display for Kind {
       Kind::Def => f.write_str("def"),
       Kind::Use => f.write_str("use"),
       Kind::Diagnostic => f.write_str("diagnostic"),
+      Kind::Hover => f.write_str("hover"),
     }
   }
 }
