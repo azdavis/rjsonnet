@@ -89,6 +89,8 @@ pub enum Ty {
   Obj,
   /// A string or an array of numbers.
   StrOrArrNum,
+  /// A number or `null`.
+  NumOrNull,
   /// A HOF with 1 param.
   Hof1,
   /// A HOF with 2 params.
@@ -278,7 +280,12 @@ pub const FNS: [Fn; 126] = [
   f(
     "slice",
     s(
-      &[r("indexable", Ty::Any), r("index", Ty::Num), r("end", Ty::Num), r("step", Ty::Num)],
+      &[
+        r("indexable", Ty::Any),
+        r("index", Ty::Num),
+        r("end", Ty::NumOrNull),
+        r("step", Ty::NumOrNull),
+      ],
       Ty::Any,
     ),
   ),
