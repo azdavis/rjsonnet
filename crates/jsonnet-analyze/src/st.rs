@@ -4,6 +4,7 @@ use crate::util::{GlobalArtifacts, PathIoError, Result};
 use crate::{const_eval, util};
 use always::always;
 use jsonnet_syntax::ast::AstNode as _;
+use jsonnet_ty::display::MultiLine;
 use paths::{PathId, PathMap};
 use rayon::iter::{IntoParallelIterator as _, ParallelIterator as _};
 use rustc_hash::FxHashSet;
@@ -277,7 +278,7 @@ pub struct St {
   import_bin: PathMap<Vec<u8>>,
   manifest: bool,
   debug: bool,
-  multi_line: jsonnet_ty::display::MultiLine,
+  multi_line: MultiLine,
 }
 
 impl St {
