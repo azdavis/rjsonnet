@@ -80,17 +80,28 @@ pub fn node_token(syntax: &kind::SyntaxNode, offset: rowan::TextSize) -> Option<
 
 fn priority(kind: kind::SyntaxKind) -> u8 {
   match kind {
-    kind::SyntaxKind::Id => 5,
-    kind::SyntaxKind::Dot => 4,
+    kind::SyntaxKind::Id => 6,
+    kind::SyntaxKind::Dot => 5,
     kind::SyntaxKind::LRound
     | kind::SyntaxKind::RRound
     | kind::SyntaxKind::LCurly
-    | kind::SyntaxKind::RCurly => 3,
+    | kind::SyntaxKind::RCurly
+    | kind::SyntaxKind::LSquare
+    | kind::SyntaxKind::RSquare => 4,
     kind::SyntaxKind::Comma
     | kind::SyntaxKind::Colon
     | kind::SyntaxKind::Star
-    | kind::SyntaxKind::Eq => 2,
+    | kind::SyntaxKind::Plus
+    | kind::SyntaxKind::Eq => 3,
+    kind::SyntaxKind::SingleQuotedString
+    | kind::SyntaxKind::SingleQuotedVerbatimString
+    | kind::SyntaxKind::DoubleQuotedString
+    | kind::SyntaxKind::DoubleQuotedVerbatimString
+    | kind::SyntaxKind::TrueKw
+    | kind::SyntaxKind::FalseKw
+    | kind::SyntaxKind::NullKw
+    | kind::SyntaxKind::Number => 1,
     kind::SyntaxKind::Whitespace | kind::SyntaxKind::BlockComment | kind::SyntaxKind::Invalid => 0,
-    _ => 1,
+    _ => 2,
   }
 }
