@@ -605,14 +605,39 @@ impl lang_srv_state::State for St {
 
   fn completions<F>(
     &mut self,
-    _fs: &F,
-    _path: paths::CleanPathBuf,
-    _pos: text_pos::PositionUtf16,
+    fs: &F,
+    path: paths::CleanPathBuf,
+    pos: text_pos::PositionUtf16,
   ) -> Option<Vec<lang_srv_state::CompletionItem>>
   where
     F: Sync + paths::FileSystem,
   {
-    None
+    let path_id = self.path_id(path);
+    let arts = self.with_fs.get_file_artifacts(&mut self.file_artifacts, fs, path_id).ok()?;
+    let tok = {
+      let ts = arts.syntax.pos_db.text_size_utf16(pos)?;
+      let root = arts.syntax.root.clone().into_ast()?;
+      let mut tmp = jsonnet_syntax::node_token(root.syntax(), ts)?;
+      // TODO complete not just with dot
+      if tmp.kind() != jsonnet_syntax::kind::SyntaxKind::Dot {
+        return None;
+      }
+      while tmp.kind() != jsonnet_syntax::kind::SyntaxKind::Id {
+        tmp = tmp.prev_token()?;
+      }
+      tmp
+    };
+    let expr = {
+      let node = jsonnet_syntax::token_parent(&tok)?;
+      let ptr = jsonnet_syntax::ast::SyntaxNodePtr::new(&node);
+      arts.syntax.pointers.get_idx(ptr)?
+    };
+    let &ty = arts.expr_tys.get(&expr)?;
+    let fields = self.with_fs.artifacts.statics.object_fields(ty)?;
+    let field_names = fields.keys().map(|&k| lang_srv_state::CompletionItem {
+      label: self.with_fs.artifacts.syntax.strings.get(k).to_owned(),
+    });
+    Some(field_names.collect())
   }
 
   fn get_def<F>(

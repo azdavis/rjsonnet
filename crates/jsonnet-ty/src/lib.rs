@@ -416,6 +416,27 @@ impl Default for GlobalStore {
   }
 }
 
+impl GlobalStore {
+  /// Returns the known object fields underlying this type, if any.
+  #[must_use]
+  pub fn object_fields(&self, ty: Ty) -> Option<BTreeMap<&Str, Ty>> {
+    let mut ac = BTreeMap::<&Str, Ty>::new();
+    self.object_fields_(ty, &mut ac).then_some(ac)
+  }
+
+  fn object_fields_<'a>(&'a self, ty: Ty, ac: &mut BTreeMap<&'a Str, Ty>) -> bool {
+    let Some(data) = self.0.data(ty, false) else { return false };
+    match data {
+      Data::Prim(_) | Data::Array(_) | Data::Fn(_) => false,
+      Data::Object(object) => {
+        ac.extend(object.known.iter().map(|(k, &v)| (k, v)));
+        true
+      }
+      Data::Union(tys) => tys.iter().all(|&ty| self.object_fields_(ty, ac)),
+    }
+  }
+}
+
 /// A local store of types generated in one pass.
 #[derive(Debug)]
 pub struct LocalStore(Store);
