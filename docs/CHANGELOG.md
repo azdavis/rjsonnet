@@ -2,8 +2,9 @@
 
 ## main
 
-- Add type checking for some std functions.
-- Display types on hover for some std functions.
+- Add type checking for std functions.
+- Display types on hover for std functions.
+- Provide completions for object fields.
 
 ## v0.4.1
 
