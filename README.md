@@ -23,7 +23,7 @@ https://github.com/azdavis/rjsonnet/assets/6496454/8e2f5e46-f0ed-48b5-8811-ab05d
 
 ### VS Code
 
-The primary intended way to use this is via the [language server][lsp] and its official VS Code extension.
+The primary intended way to use this is via the [language server][lsp] and its [official VS Code extension][vs-code-marketplace].
 
 ### Language server
 
