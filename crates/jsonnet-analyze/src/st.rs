@@ -79,6 +79,8 @@ impl WithFs {
     }
   }
 
+  /// TODO there is no easy way to do this caching without repeatedly getting the same file if you
+  /// want BOTH the expr AND the artifacts
   fn get_file_artifacts<'fa, F>(
     &mut self,
     file_artifacts: &'fa mut PathMap<util::FileArtifacts>,
