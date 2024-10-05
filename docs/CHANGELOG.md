@@ -1,6 +1,6 @@
 # Changelog
 
-## main
+## v0.5.0
 
 - Add type checking for std functions.
 - Display types on hover for std functions.
