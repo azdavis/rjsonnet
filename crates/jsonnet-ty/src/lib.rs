@@ -345,11 +345,10 @@ impl<'a> MutStore<'a> {
         let mut work: Vec<_> = work.into_iter().collect();
         let mut parts = BTreeSet::<Ty>::new();
         while let Some(ty) = work.pop() {
-          match self.global.0.data(ty, false) {
-            Some(Data::Prim(Prim::Any)) => return Ty::ANY,
-            Some(Data::Union(parts)) => work.extend(parts),
-            None | Some(_) => {
-              // don't need special handling for the None case
+          match self.data(ty) {
+            Data::Prim(Prim::Any) => return Ty::ANY,
+            Data::Union(parts) => work.extend(parts),
+            _ => {
               parts.insert(ty);
             }
           }
@@ -394,7 +393,7 @@ impl<'a> MutStore<'a> {
     let store = if is_local { &self.local.0 } else { &self.global.0 };
     match store.idx_to_data.get(idx) {
       None => {
-        always!(false, "should be able to get data");
+        always!(false, "should be able to get data for {ty:?}");
         &Data::Prim(Prim::Any)
       }
       Some(x) => x,

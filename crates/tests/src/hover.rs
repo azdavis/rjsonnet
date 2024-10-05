@@ -17,7 +17,6 @@ fn arr_num() {
 }
 
 #[test]
-#[should_panic = "none of the lines were equal"]
 fn func_str_null() {
   JsonnetInput::manifest(
     r#"
