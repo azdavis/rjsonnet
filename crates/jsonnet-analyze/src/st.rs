@@ -554,7 +554,17 @@ impl lang_srv_state::State for St {
       let root = arts.syntax.root.clone().into_ast()?;
       jsonnet_syntax::node_token(root.syntax(), ts)?
     };
-    let expr = jsonnet_syntax::token_parent(&tok).and_then(|node| {
+    let node = tok.parent().and_then(|p| {
+      if jsonnet_syntax::ast::Object::can_cast(p.kind()) {
+        return p.parent();
+      }
+      if jsonnet_syntax::ast::Bind::can_cast(p.kind()) {
+        let e = jsonnet_syntax::ast::Bind::cast(p)?.expr()?;
+        return Some(e.syntax().clone());
+      }
+      Some(p)
+    });
+    let expr = node.and_then(|node| {
       let ptr = jsonnet_syntax::ast::SyntaxNodePtr::new(&node);
       arts.syntax.pointers.get_idx(ptr)
     });
