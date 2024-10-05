@@ -62,8 +62,10 @@ pub(crate) fn get_expr(st: &mut St, cx: Cx<'_>, expr: Option<ast::Expr>, in_obj:
     },
     ast::Expr::ExprFieldGet(expr) => {
       let on = get_expr(st, cx, expr.expr(), in_obj);
-      let idx = ExprData::Prim(Prim::String(st.str(expr.id()?.text())));
-      let idx = Some(st.expr(ptr, idx));
+      let idx = expr.id().map(|id| {
+        let s = ExprData::Prim(Prim::String(st.str(id.text())));
+        st.expr(ptr, s)
+      });
       ExprData::Subscript { on, idx }
     }
     ast::Expr::ExprSubscript(expr) => {
