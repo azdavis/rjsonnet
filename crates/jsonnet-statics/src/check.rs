@@ -386,8 +386,8 @@ fn refine_param_ty_cond(
   if !st.is_std(*std_id) {
     return;
   }
-  let ExprData::Prim(Prim::String(s)) = &ar[idx] else { return };
-  let ty = match *s {
+  let ExprData::Prim(Prim::String(func_name)) = &ar[idx] else { return };
+  let ty = match *func_name {
     jsonnet_expr::Str::isNumber => ty::Ty::NUMBER,
     jsonnet_expr::Str::isString => ty::Ty::STRING,
     jsonnet_expr::Str::isBoolean => ty::Ty::BOOL,
