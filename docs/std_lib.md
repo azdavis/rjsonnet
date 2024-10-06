@@ -116,11 +116,27 @@ Returns the minimum of the two arguments.
 
 ## `exponent`
 
-Returns TODO
+`std.exponent(x)` returns the exponent of the IEEE754 64-bit floating point number `x`.
+
+The following function returns `true` for all numbers `x`:
+
+```jsonnet
+local alwaysTrue(x) =
+  assert std.isNumber(x);
+  x == std.mantissa(x) * std.pow(2, std.exponent(x))
+```
 
 ## `mantissa`
 
-Returns TODO
+`std.mantissa(x)` returns the significand, also called the mantissa, of the IEEE754 64-bit floating point number `x`.
+
+The following function returns `true` for all numbers `x`:
+
+```jsonnet
+local alwaysTrue(x) =
+  assert std.isNumber(x);
+  x == std.mantissa(x) * std.pow(2, std.exponent(x))
+```
 
 ## `floor`
 
