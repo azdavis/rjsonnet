@@ -300,6 +300,12 @@ fn expr_def_range(
         Some(func.paren_params()?.params().nth(idx)?.id()?.text_range())
       })
       .or_else(|| {
+        // this helps with `local f(x) = ...` desugaring
+        let paren_params = node_ptr.cast::<jsonnet_syntax::ast::ParenParams>()?;
+        let paren_params = paren_params.try_to_node(root)?;
+        Some(paren_params.params().nth(idx)?.id()?.text_range())
+      })
+      .or_else(|| {
         log::warn!("func fallback: {node_ptr:?}");
         let node = node_ptr.try_to_node(root)?;
         log::warn!("node: {node:?}");

@@ -46,14 +46,13 @@ fn field() {
   .check();
 }
 
-/// TODO: error range isn't the best.
 #[test]
 fn param() {
   JsonnetInput::pre_eval_error(
     r"
 ##       vvvvvv diagnostic: duplicate binding: `x`
 local bad(x, x) = x;
-##       ^^^^^^ diagnostic: unused: `x`
+##        ^ diagnostic: unused: `x`
   bad(1)
 ##^^^ diagnostic: missing argument: `x` with type: `any`
 ",

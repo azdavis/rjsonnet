@@ -26,13 +26,12 @@ local y = 3;
   .check();
 }
 
-/// TODO tighten range
 #[test]
 fn local_param() {
   JsonnetInput::pre_eval_error(
     r"
 local f(x) = 3;
-##     ^^^ diagnostic: unused: `x`
+##      ^ diagnostic: unused: `x`
 f(0)
 ",
   )
