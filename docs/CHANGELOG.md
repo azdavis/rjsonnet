@@ -1,6 +1,6 @@
 # Changelog
 
-## main
+## v0.5.1
 
 - Fix types for `std.slice` params.
 - Improve hover for `local` binds.
