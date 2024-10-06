@@ -119,62 +119,10 @@ pub(crate) fn get(cx: Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
       }
       _ => Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes }),
     },
-    ExprData::Call { func, positional, named } => match get(cx, env, *func)? {
-      Val::Fn(Fn::Regular(mut func)) => {
-        if let Some(tma) = arg::TooMany::new(
-          func.params.iter().map(|&(id, _)| id),
-          positional.len(),
-          named.iter().map(|&(id, _)| id),
-        ) {
-          return Err(error::Error::Exec { expr, kind: arg::ErrorKind::TooMany(tma).into() });
-        }
-        let mut provided = FxHashSet::<Id>::default();
-        for ((id, param), &arg) in func.params.iter_mut().zip(positional) {
-          *param = Some(arg);
-          always!(provided.insert(*id), "duplicate function param should be forbidden by check");
-        }
-        for &(arg_name, arg) in named {
-          if !provided.insert(arg_name) {
-            return Err(error::Error::Exec {
-              expr: arg.unwrap_or(expr),
-              kind: arg::ErrorKind::Duplicate(arg_name).into(),
-            });
-          }
-          // we're getting a little fancy here. this iterates across the mutable params, and if we
-          // could find a param whose name matches the arg's name, then this sets the param to that
-          // arg and short circuits with true. note `==` with comparing the names and `=` with
-          // setting the actual exprs. note the usage of `bool::then` with `find_map` and `is_none`.
-          let arg_not_requested = func
-            .params
-            .iter_mut()
-            .find_map(|(param_name, param)| (*param_name == arg_name).then(|| *param = Some(arg)))
-            .is_none();
-          if arg_not_requested {
-            return Err(error::Error::Exec {
-              expr: arg.unwrap_or(expr),
-              kind: arg::ErrorKind::NotRequested(arg_name).into(),
-            });
-          }
-        }
-        let mut env = func.env.clone();
-        for (id, rhs) in func.params {
-          match rhs {
-            // from my (not super close) reading of the spec, it seems like for function parameters
-            // without default values, the default value should be set to `error "Parameter not
-            // bound"`, which will _lazily_ emit the error if the parameter is accessed. but the
-            // behavior of the impl on the website is to _eagerly_ error if a param is not defined.
-            // so we do that here.
-            None => {
-              return Err(error::Error::Exec { expr, kind: arg::ErrorKind::NotDefined(id).into() })
-            }
-            Some(rhs) => env.insert(id, func.env.clone(), rhs),
-          }
-        }
-        get(cx, &env, func.body)
-      }
-      Val::Fn(Fn::Std(std_fn)) => std_lib::get(cx, env, positional, named, expr, std_fn),
-      _ => Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes }),
-    },
+    ExprData::Call { func, positional, named } => {
+      let func = get(cx, env, *func)?;
+      get_call(cx, env, expr, func, positional, named)
+    }
     ExprData::Id(id) => match env.get(*id) {
       None => Err(error::Error::Exec { expr, kind: error::Kind::NotInScope(*id) }),
       Some(got) => match got {
@@ -314,6 +262,72 @@ pub(crate) fn get(cx: Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
         None => Err(mk_todo(expr, "no binary import")),
       },
     },
+  }
+}
+
+pub(crate) fn get_call(
+  cx: Cx<'_>,
+  env: &Env,
+  expr: ExprMust,
+  func_val: Val,
+  positional: &[Expr],
+  named: &[(Id, Expr)],
+) -> Result<Val> {
+  match func_val {
+    Val::Fn(Fn::Regular(mut func)) => {
+      if let Some(tma) = arg::TooMany::new(
+        func.params.iter().map(|&(id, _)| id),
+        positional.len(),
+        named.iter().map(|&(id, _)| id),
+      ) {
+        return Err(error::Error::Exec { expr, kind: arg::ErrorKind::TooMany(tma).into() });
+      }
+      let mut provided = FxHashSet::<Id>::default();
+      for ((id, param), &arg) in func.params.iter_mut().zip(positional) {
+        *param = Some(arg);
+        always!(provided.insert(*id), "duplicate function param should be forbidden by check");
+      }
+      for &(arg_name, arg) in named {
+        if !provided.insert(arg_name) {
+          return Err(error::Error::Exec {
+            expr: arg.unwrap_or(expr),
+            kind: arg::ErrorKind::Duplicate(arg_name).into(),
+          });
+        }
+        // we're getting a little fancy here. this iterates across the mutable params, and if we
+        // could find a param whose name matches the arg's name, then this sets the param to that
+        // arg and short circuits with true. note `==` with comparing the names and `=` with setting
+        // the actual exprs. note the usage of `bool::then` with `find_map` and `is_none`.
+        let arg_not_requested = func
+          .params
+          .iter_mut()
+          .find_map(|(param_name, param)| (*param_name == arg_name).then(|| *param = Some(arg)))
+          .is_none();
+        if arg_not_requested {
+          return Err(error::Error::Exec {
+            expr: arg.unwrap_or(expr),
+            kind: arg::ErrorKind::NotRequested(arg_name).into(),
+          });
+        }
+      }
+      let mut env = func.env.clone();
+      for (id, rhs) in func.params {
+        match rhs {
+          // from my (not super close) reading of the spec, it seems like for function parameters
+          // without default values, the default value should be set to `error "Parameter not
+          // bound"`, which will _lazily_ emit the error if the parameter is accessed. but the
+          // behavior of the impl on the website is to _eagerly_ error if a param is not defined. so
+          // we do that here.
+          None => {
+            return Err(error::Error::Exec { expr, kind: arg::ErrorKind::NotDefined(id).into() })
+          }
+          Some(rhs) => env.insert(id, func.env.clone(), rhs),
+        }
+      }
+      get(cx, &env, func.body)
+    }
+    Val::Fn(Fn::Std(std_fn)) => std_lib::get(cx, env, positional, named, expr, std_fn),
+    _ => Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes }),
   }
 }
 
