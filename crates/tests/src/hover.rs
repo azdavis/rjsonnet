@@ -37,3 +37,19 @@ xs[0]
   )
   .check();
 }
+
+#[test]
+fn assert_param_ty() {
+  JsonnetInput::manifest(
+    r"
+local addOne(foo) =
+  assert std.isNumber(foo);
+  foo + 1;
+
+addOne(3)
+## ^ hover: (foo: number) => number
+",
+    "4",
+  )
+  .check();
+}

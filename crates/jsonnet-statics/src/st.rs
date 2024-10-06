@@ -113,6 +113,12 @@ impl<'a> St<'a> {
     Some((in_scope.ty, in_scope.def))
   }
 
+  pub(crate) fn is_std(&self, id: Id) -> bool {
+    let Some(stack) = self.context.get(&id) else { return false };
+    let Some(in_scope) = stack.last() else { return false };
+    matches!(in_scope.def, Def::Std)
+  }
+
   pub(crate) fn data(&self, ty: ty::Ty) -> &ty::Data {
     self.tys.data(ty)
   }

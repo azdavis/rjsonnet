@@ -157,18 +157,22 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
       ty
     }
     ExprData::Function { params, body } => {
-      // TODO type "annotations" via asserts
       let m = def::ExprDefKindMulti::FnParam;
       let param_tys = {
         let mut tmp = FxHashMap::<Id, ty::Ty>::default();
         for (idx, &(id, rhs)) in params.iter().enumerate() {
-          st.define(id, ty::Ty::ANY, def::Def::Expr(expr, def::ExprDefKind::Multi(idx, m)));
           if tmp.insert(id, ty::Ty::ANY).is_some() {
             st.err(rhs.flatten().unwrap_or(expr), error::Kind::DuplicateBinding(id, idx, m));
           }
         }
+        refine_param_tys(st, ar, &mut tmp, *body);
         tmp
       };
+      for (idx, &(id, _)) in params.iter().enumerate() {
+        // unwrap_or should never happen, but if it does we'll notice with the always!(false) later
+        let ty = param_tys.get(&id).copied().unwrap_or(ty::Ty::ANY);
+        st.define(id, ty, def::Def::Expr(expr, def::ExprDefKind::Multi(idx, m)));
+      }
       for &(_, rhs) in params {
         let Some(rhs) = rhs else { continue };
         get(st, ar, rhs);
@@ -316,5 +320,77 @@ fn is_orderable(st: &st::St<'_>, ty: ty::Ty) -> bool {
     | ty::Data::Fn(_) => false,
     ty::Data::Array(ty) => is_orderable(st, *ty),
     ty::Data::Union(tys) => tys.iter().all(|&ty| is_orderable(st, ty)),
+  }
+}
+
+/// collects facts from `asserts`s at a beginning of a fn, to refine the types of its params.
+///
+/// note that this requires a very, very exact format for the asserts. each assert must be of the
+/// form:
+///
+/// ```jsonnet
+/// assert std.isTYPE(x);
+/// ```
+///
+/// where TYPE is one of
+///
+/// - Number
+/// - String
+/// - Boolean
+/// - Array
+/// - Object
+///
+/// notably:
+///
+/// - cannot use e.g. `std.type(x) == "number"`
+/// - cannot use `std.isFunction`, the type system cannot model a function with totally unknown
+///   params. this wouldn't be that helpful anyway i suppose - if you don't know how many params,
+///   how can you call it?
+/// - cannot chain the asserts with `&&` or `||` - must put them one after the other
+/// - asserts all be at the beginning of the fn, so cannot e.g. introduce new local variables
+/// - cannot do `local isNumber = std.isNumber` beforehand, must literally get the field off `std`
+/// - cannot use named arguments, only positional arguments
+///
+/// note also that since asserts are lowered to `if cond then ... else error ...`, we check for
+/// that. so if the user wrote that itself in the concrete syntax, that also works.
+///
+/// note also that checking we get from `std` is NOT syntactic, we do an env lookup.
+fn refine_param_tys(
+  st: &st::St<'_>,
+  ar: &ExprArena,
+  params: &mut FxHashMap<Id, ty::Ty>,
+  mut body: Expr,
+) {
+  while let Some(b) = body {
+    let &ExprData::If { cond, yes, no: Some(no) } = &ar[b] else { break };
+    let ExprData::Error(_) = &ar[no] else { break };
+    // once we advance the body, we can change the action on failure from `break` to `continue`, if
+    // perhaps this assert is not well-formed but the next one is.
+    body = yes;
+    let Some(cond) = cond else { continue };
+    let ExprData::Call { func: Some(func), positional, named } = &ar[cond] else { continue };
+    let &ExprData::Subscript { on: Some(on), idx: Some(idx) } = &ar[*func] else { continue };
+    let ExprData::Id(std_id) = &ar[on] else { continue };
+    if !st.is_std(*std_id) {
+      continue;
+    }
+    let ExprData::Prim(Prim::String(s)) = &ar[idx] else { continue };
+    let ty = match *s {
+      jsonnet_expr::Str::isNumber => ty::Ty::NUMBER,
+      jsonnet_expr::Str::isString => ty::Ty::STRING,
+      jsonnet_expr::Str::isBoolean => ty::Ty::BOOL,
+      jsonnet_expr::Str::isArray => ty::Ty::ARRAY_ANY,
+      jsonnet_expr::Str::isObject => ty::Ty::OBJECT,
+      _ => continue,
+    };
+    if !named.is_empty() {
+      continue;
+    }
+    let [Some(param)] = positional[..] else { continue };
+    let &ExprData::Id(param) = &ar[param] else { continue };
+    let Some(param_ty) = params.get_mut(&param) else { continue };
+    if *param_ty == ty::Ty::ANY {
+      *param_ty = ty;
+    }
   }
 }
