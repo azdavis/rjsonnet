@@ -284,6 +284,24 @@ fn obj_comp_local() {
 /// TODO tighten range
 #[test]
 #[should_panic = "not yet implemented: std.makeArray"]
+fn array_comp() {
+  JsonnetInput::manifest(
+    r#"
+[
+  1 + x
+##    ^ use: x
+  for x in [2, 4]
+##^^^^^^^^^^^^^^^ def: x
+]
+"#,
+    "[3, 5]",
+  )
+  .check();
+}
+
+/// TODO tighten range
+#[test]
+#[should_panic = "not yet implemented: std.makeArray"]
 fn obj_comp_key() {
   JsonnetInput::manifest(
     r#"
