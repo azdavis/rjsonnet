@@ -42,7 +42,7 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
         }
       }
       st.define_self_super();
-      define_binds(st, ar, expr, binds, def::ExprDefKind::ObjectLocal);
+      define_binds(st, ar, expr, binds, def::ExprDefKindMulti::ObjectLocalBind);
       for field in fields {
         let ty = get(st, ar, field.val);
         let Some(key) = field.key else { continue };
@@ -150,7 +150,7 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
       }
     }
     ExprData::Local { binds, body } => {
-      define_binds(st, ar, expr, binds, def::ExprDefKind::LocalBind);
+      define_binds(st, ar, expr, binds, def::ExprDefKindMulti::LocalBind);
       let ty = get(st, ar, *body);
       for &(bind, _) in binds {
         st.undefine(bind);
@@ -161,7 +161,8 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
       let mut param_tys = FxHashMap::<Id, ty::Ty>::default();
       // TODO type "annotations" via asserts
       for (idx, &(bind, rhs)) in params.iter().enumerate() {
-        st.define(bind, ty::Ty::ANY, Def::Expr(expr, def::ExprDefKind::FnParam(idx)));
+        let d = Def::Expr(expr, def::ExprDefKind::Multi(idx, def::ExprDefKindMulti::FnParam));
+        st.define(bind, ty::Ty::ANY, d);
         if param_tys.insert(bind, ty::Ty::ANY).is_some() {
           st.err(rhs.flatten().unwrap_or(expr), error::Kind::DuplicateBinding(bind));
         }
@@ -289,11 +290,11 @@ fn define_binds(
   ar: &ExprArena,
   expr: jsonnet_expr::ExprMust,
   binds: &[(Id, jsonnet_expr::Expr)],
-  f: fn(usize) -> def::ExprDefKind,
+  m: def::ExprDefKindMulti,
 ) {
   let mut bound_ids = FxHashSet::<Id>::default();
   for (idx, &(bind, rhs)) in binds.iter().enumerate() {
-    st.define(bind, ty::Ty::ANY, Def::Expr(expr, f(idx)));
+    st.define(bind, ty::Ty::ANY, Def::Expr(expr, def::ExprDefKind::Multi(idx, m)));
     if !bound_ids.insert(bind) {
       st.err(rhs.unwrap_or(expr), error::Kind::DuplicateBinding(bind));
     }

@@ -29,12 +29,19 @@ pub enum ExprDefKind {
   /// //                 ^ here
   /// ```
   ObjectCompId,
-  /// The nth binding in a `local`.
-  LocalBind(usize),
-  /// The nth function parameter.
-  FnParam(usize),
-  /// An object local.
-  ObjectLocal(usize),
+  /// The nth binding in a multi-def site.
+  Multi(usize, ExprDefKindMulti),
+}
+
+/// A definition site from one of the things that can introduce multiple bindings at once.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ExprDefKindMulti {
+  /// A binding in a `local`.
+  LocalBind,
+  /// A binding in a `local` inside of an object.
+  ObjectLocalBind,
+  /// A parameter in a function.
+  FnParam,
 }
 
 /// A map from expressions to defs.

@@ -70,7 +70,7 @@ where
 {
   match def {
     Def::Expr(expr, kind) => {
-      let local = if let def::ExprDefKind::LocalBind(idx) = kind {
+      let local = if let def::ExprDefKind::Multi(idx, def::ExprDefKindMulti::LocalBind) = kind {
         from_local(st, fs, path_id, Some(expr), idx)
       } else {
         None

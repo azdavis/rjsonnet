@@ -280,7 +280,7 @@ fn expr_def_range(
     }
     // NOTE because of desugaring, not all expr locals are actually from ast locals. we try to
     // get the exact location first and then fall back.
-    def::ExprDefKind::LocalBind(idx) => node_ptr
+    def::ExprDefKind::Multi(idx, def::ExprDefKindMulti::LocalBind) => node_ptr
       .cast::<jsonnet_syntax::ast::ExprLocal>()
       .and_then(|local| {
         let local = local.try_to_node(root)?;
@@ -293,7 +293,7 @@ fn expr_def_range(
         Some(node.text_range())
       }),
     // NOTE because of desugaring, possibly not all expr fns are actually from ast fns
-    def::ExprDefKind::FnParam(idx) => node_ptr
+    def::ExprDefKind::Multi(idx, def::ExprDefKindMulti::FnParam) => node_ptr
       .cast::<jsonnet_syntax::ast::ExprFunction>()
       .and_then(|func| {
         let func = func.try_to_node(root)?;
@@ -305,7 +305,7 @@ fn expr_def_range(
         log::warn!("node: {node:?}");
         Some(node.text_range())
       }),
-    def::ExprDefKind::ObjectLocal(idx) => node_ptr
+    def::ExprDefKind::Multi(idx, def::ExprDefKindMulti::ObjectLocalBind) => node_ptr
       .cast::<jsonnet_syntax::ast::ExprObject>()
       .and_then(|obj| {
         let obj = obj.try_to_node(root)?.object()?;
