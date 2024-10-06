@@ -287,6 +287,12 @@ fn expr_def_range(
         Some(local.bind_commas().nth(idx)?.bind()?.id()?.text_range())
       })
       .or_else(|| {
+        // this helps with `[... for x in xs]` desugaring
+        let for_spec = node_ptr.cast::<jsonnet_syntax::ast::ForSpec>()?;
+        let for_spec = for_spec.try_to_node(root)?;
+        Some(for_spec.id()?.text_range())
+      })
+      .or_else(|| {
         log::warn!("local fallback: {node_ptr:?}");
         let node = node_ptr.try_to_node(root)?;
         log::warn!("node: {node:?}");

@@ -66,13 +66,12 @@ fn no_field() {
   .check();
 }
 
-/// TODO tighten range
 #[test]
 fn array_comp() {
   JsonnetInput::pre_eval_error(
     r#"
 [3 for x in []]
-## ^^^^^^^^^^^ diagnostic: unused: `x`
+##     ^ diagnostic: unused: `x`
 "#,
   )
   .check();
