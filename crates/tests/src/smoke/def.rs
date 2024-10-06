@@ -281,7 +281,6 @@ fn obj_comp_local() {
   .check();
 }
 
-/// TODO tighten range
 #[test]
 #[should_panic = "not yet implemented: std.makeArray"]
 fn array_comp() {
@@ -291,7 +290,7 @@ fn array_comp() {
   1 + x
 ##    ^ use: x
   for x in [2, 4]
-##^^^^^^^^^^^^^^^ def: x
+##    ^ def: x
 ]
 "#,
     "[3, 5]",
@@ -299,7 +298,6 @@ fn array_comp() {
   .check();
 }
 
-/// TODO tighten range
 #[test]
 #[should_panic = "not yet implemented: std.makeArray"]
 fn obj_comp_key() {
@@ -310,7 +308,7 @@ fn obj_comp_key() {
   [k]: std.length(k),
 ##                ^ use: k
   for k in ["a", "bbb"]
-##^^^^^^^^^^^^^^^^^^^^^ def: k
+##    ^ def: k
 }
 "#,
     r#"

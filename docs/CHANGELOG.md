@@ -4,7 +4,7 @@
 
 - Fix types for `std.slice` params.
 - Improve hover for `local` binds.
-- Improve go-to-def, etc. locations for `local f(x) = ...` function parameters.
+- Improve go-to-def, etc. locations for `local f(x) = ...` function parameters and `for x in xs` object and array comprehensions.
 
 ## v0.5.0
 

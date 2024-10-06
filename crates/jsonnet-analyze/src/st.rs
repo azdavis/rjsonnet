@@ -679,7 +679,27 @@ impl lang_srv_state::State for St {
       ce
     };
     let arts = self.get_file_artifacts(fs, ce.path_id).ok()?;
-    let tr = util::expr_range(&arts.syntax.pointers, root.syntax(), ce.expr, ce.kind);
+    // HACK: this makes go-to-def for array and object comprehensions work better. there are a few
+    // reasons I can think of:
+    //
+    // - we desugar object comprehensions to stuff involving array comprehensions, which are then
+    //   themselves also desugared
+    // - we have to construct a bunch of stuff to desugar array (and object) comprehensions, and
+    //   when we do that desugaring, we attach various generated identifiers to the `for`
+    //   comprehension via syntax pointers.
+    // - in `expr_range`, we have some extra logic to narrow the text range for those `for`
+    //   comprehension variables when the def kind is a local bind, to "reverse" that desugaring
+    //
+    // this isn't the most elegant solution, but there are some tests that should break if this hack
+    // stops working. the "worst" thing that should happen if the hack breaks is that the text range
+    // reverts back to the entire comp-spec instead of the individual variable.
+    //
+    // or maybe something else bad that could happen is if this def kind somehow interferes with
+    // stuff that isn't involved in comprehensions or local binds at all, but that seems unlikely.
+    let for_comprehension_hack =
+      jsonnet_expr::def::ExprDefKind::Multi(0, jsonnet_expr::def::ExprDefKindMulti::LocalBind);
+    let kind = ce.kind.or(Some(for_comprehension_hack));
+    let tr = util::expr_range(&arts.syntax.pointers, root.syntax(), ce.expr, kind);
     let range = arts.syntax.pos_db.range_utf16(tr)?;
     Some((ce.path_id, range))
   }
