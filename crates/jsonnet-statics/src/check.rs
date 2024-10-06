@@ -388,11 +388,11 @@ fn refine_param_ty_cond(
   }
   let ExprData::Prim(Prim::String(func_name)) = &ar[idx] else { return };
   let ty = match *func_name {
-    Str::isNumber => ty::Ty::NUMBER,
-    Str::isString => ty::Ty::STRING,
-    Str::isBoolean => ty::Ty::BOOL,
     Str::isArray => ty::Ty::ARRAY_ANY,
+    Str::isBoolean => ty::Ty::BOOL,
+    Str::isNumber => ty::Ty::NUMBER,
     Str::isObject => ty::Ty::OBJECT,
+    Str::isString => ty::Ty::STRING,
     _ => return,
   };
   if !named.is_empty() {
