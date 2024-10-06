@@ -39,7 +39,7 @@ xs[0]
 }
 
 #[test]
-fn assert_param_ty() {
+fn assert_param_ty_1() {
   JsonnetInput::manifest(
     r"
 local addOne(foo) =
@@ -50,6 +50,24 @@ addOne(3)
 ## ^ hover: (foo: number) => number
 ",
     "4",
+  )
+  .check();
+}
+
+#[test]
+fn assert_param_type_2() {
+  JsonnetInput::manifest(
+    r"
+local greet(name) =
+  assert std.type(name) == 'string';
+  'hello, ' + name + '!';
+
+greet('fella')
+## ^ hover: (name: string) => string
+",
+    r#"
+"hello, fella!"
+"#,
   )
   .check();
 }
