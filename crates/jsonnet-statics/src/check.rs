@@ -352,9 +352,9 @@ fn is_orderable(st: &st::St<'_>, ty: ty::Ty) -> bool {
 ///
 /// on the bright side:
 ///
-/// - can chain the asserts with `&&` (or `if COND then COND else false`, which is what `&&`
-///   desugars to)
-/// - can also use `std.type(x) == TYPE` where TYPE is "number", "string", etc.
+/// - can chain the asserts with `a && b` (or `if a then b else false`, which is what `&&` desugars
+///   to)
+/// - can also use `std.type(x) == "TYPE"` where TYPE is number, string, etc.
 /// - since asserts are lowered to `if cond then ... else error ...`, we check for that. so if the
 ///   user wrote that itself in the concrete syntax, that also works.
 /// - checking we get from `std` is NOT syntactic, we do an env lookup. so we won't trick this by
@@ -417,7 +417,7 @@ fn refine_param_ty_cond(
     }
     &ExprData::BinaryOp { lhs: Some(lhs), op: jsonnet_expr::BinaryOp::Eq, rhs: Some(rhs) } => {
       // do both sides. if one works, the other won't, but we'll just return. this allows for both
-      // `std.type(x) == "foo"` and `"foo" == std.type(x)`.
+      // `std.type(x) == "TYPE"` and `"TYPE" == std.type(x)`.
       refine_param_ty_cond_type_equals(st, ar, params, lhs, rhs);
       refine_param_ty_cond_type_equals(st, ar, params, rhs, lhs);
     }
@@ -425,6 +425,7 @@ fn refine_param_ty_cond(
   }
 }
 
+/// refine from `std.type(x) == "TYPE"`, where TYPE is number, string, etc.
 fn refine_param_ty_cond_type_equals(
   st: &st::St<'_>,
   ar: &ExprArena,
