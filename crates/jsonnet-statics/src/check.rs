@@ -160,10 +160,10 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
       let mut param_tys = FxHashMap::<Id, ty::Ty>::default();
       // TODO type "annotations" via asserts
       let m = def::ExprDefKindMulti::FnParam;
-      for (idx, &(bind, rhs)) in params.iter().enumerate() {
-        st.define(bind, ty::Ty::ANY, def::Def::Expr(expr, def::ExprDefKind::Multi(idx, m)));
-        if param_tys.insert(bind, ty::Ty::ANY).is_some() {
-          st.err(rhs.flatten().unwrap_or(expr), error::Kind::DuplicateBinding(bind, idx, m));
+      for (idx, &(id, rhs)) in params.iter().enumerate() {
+        st.define(id, ty::Ty::ANY, def::Def::Expr(expr, def::ExprDefKind::Multi(idx, m)));
+        if param_tys.insert(id, ty::Ty::ANY).is_some() {
+          st.err(rhs.flatten().unwrap_or(expr), error::Kind::DuplicateBinding(id, idx, m));
         }
       }
       for &(_, rhs) in params {
