@@ -351,10 +351,13 @@ fn is_orderable(st: &st::St<'_>, ty: ty::Ty) -> bool {
 /// - cannot do `local isNumber = std.isNumber` beforehand, must literally get the field off `std`
 /// - cannot use named arguments, only positional arguments
 ///
-/// note also that since asserts are lowered to `if cond then ... else error ...`, we check for
-/// that. so if the user wrote that itself in the concrete syntax, that also works.
+/// on the bright side:
 ///
-/// note also that checking we get from `std` is NOT syntactic, we do an env lookup.
+/// - since asserts are lowered to `if cond then ... else error ...`, we check for that. so if the
+///   user wrote that itself in the concrete syntax, that also works.
+/// - checking we get from `std` is NOT syntactic, we do an env lookup. so we won't trick this by
+///   doing `local std = wtf` beforehand, and also it'll still work with `local foo = std` and then
+///   asserting with `foo.isTYPE` etc.
 fn refine_param_tys(
   st: &st::St<'_>,
   ar: &ExprArena,
