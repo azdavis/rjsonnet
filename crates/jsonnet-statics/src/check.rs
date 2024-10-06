@@ -380,28 +380,33 @@ fn refine_param_ty_cond(
   cond: Expr,
 ) {
   let Some(cond) = cond else { return };
-  let ExprData::Call { func: Some(func), positional, named } = &ar[cond] else { return };
-  let &ExprData::Subscript { on: Some(on), idx: Some(idx) } = &ar[*func] else { return };
-  let ExprData::Id(std_id) = &ar[on] else { return };
-  if !st.is_std(*std_id) {
-    return;
-  }
-  let ExprData::Prim(Prim::String(func_name)) = &ar[idx] else { return };
-  let ty = match *func_name {
-    Str::isArray => ty::Ty::ARRAY_ANY,
-    Str::isBoolean => ty::Ty::BOOL,
-    Str::isNumber => ty::Ty::NUMBER,
-    Str::isObject => ty::Ty::OBJECT,
-    Str::isString => ty::Ty::STRING,
-    _ => return,
-  };
-  if !named.is_empty() {
-    return;
-  }
-  let [Some(param)] = positional[..] else { return };
-  let &ExprData::Id(param) = &ar[param] else { return };
-  let Some(param_ty) = params.get_mut(&param) else { return };
-  if *param_ty == ty::Ty::ANY {
-    *param_ty = ty;
+  #[expect(clippy::single_match, reason = "will add more cases later")]
+  match &ar[cond] {
+    ExprData::Call { func: Some(func), positional, named } => {
+      let &ExprData::Subscript { on: Some(on), idx: Some(idx) } = &ar[*func] else { return };
+      let ExprData::Id(std_id) = &ar[on] else { return };
+      if !st.is_std(*std_id) {
+        return;
+      }
+      let ExprData::Prim(Prim::String(func_name)) = &ar[idx] else { return };
+      let ty = match *func_name {
+        Str::isArray => ty::Ty::ARRAY_ANY,
+        Str::isBoolean => ty::Ty::BOOL,
+        Str::isNumber => ty::Ty::NUMBER,
+        Str::isObject => ty::Ty::OBJECT,
+        Str::isString => ty::Ty::STRING,
+        _ => return,
+      };
+      if !named.is_empty() {
+        return;
+      }
+      let [Some(param)] = positional[..] else { return };
+      let &ExprData::Id(param) = &ar[param] else { return };
+      let Some(param_ty) = params.get_mut(&param) else { return };
+      if *param_ty == ty::Ty::ANY {
+        *param_ty = ty;
+      }
+    }
+    _ => {}
   }
 }
