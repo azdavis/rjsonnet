@@ -4,8 +4,7 @@ mod call;
 
 use crate::{error, st};
 use always::always;
-use jsonnet_expr::def::{self, Def};
-use jsonnet_expr::{BinaryOp, Expr, ExprArena, ExprData, Id, Prim, UnaryOp};
+use jsonnet_expr::{def, BinaryOp, Expr, ExprArena, ExprData, Id, Prim, UnaryOp};
 use jsonnet_ty as ty;
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::BTreeSet;
@@ -60,7 +59,7 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
     }
     ExprData::ObjectComp { name, body, id, ary } => {
       get(st, ar, *ary);
-      st.define(*id, ty::Ty::ANY, Def::Expr(expr, def::ExprDefKind::ObjectCompId));
+      st.define(*id, ty::Ty::ANY, def::Def::Expr(expr, def::ExprDefKind::ObjectCompId));
       get(st, ar, *name);
       st.define_self_super();
       get(st, ar, *body);
@@ -161,7 +160,7 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
       let mut param_tys = FxHashMap::<Id, ty::Ty>::default();
       // TODO type "annotations" via asserts
       for (idx, &(bind, rhs)) in params.iter().enumerate() {
-        let d = Def::Expr(expr, def::ExprDefKind::Multi(idx, def::ExprDefKindMulti::FnParam));
+        let d = def::Def::Expr(expr, def::ExprDefKind::Multi(idx, def::ExprDefKindMulti::FnParam));
         st.define(bind, ty::Ty::ANY, d);
         if param_tys.insert(bind, ty::Ty::ANY).is_some() {
           st.err(rhs.flatten().unwrap_or(expr), error::Kind::DuplicateBinding(bind));
@@ -271,7 +270,7 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
     }
     ExprData::Import { kind, path } => match kind {
       jsonnet_expr::ImportKind::Code => {
-        st.note_usage(expr, Def::Import(*path));
+        st.note_usage(expr, def::Def::Import(*path));
         st.import_ty(*path)
       }
       jsonnet_expr::ImportKind::String => ty::Ty::STRING,
@@ -294,7 +293,7 @@ fn define_binds(
 ) {
   let mut bound_ids = FxHashSet::<Id>::default();
   for (idx, &(bind, rhs)) in binds.iter().enumerate() {
-    st.define(bind, ty::Ty::ANY, Def::Expr(expr, def::ExprDefKind::Multi(idx, m)));
+    st.define(bind, ty::Ty::ANY, def::Def::Expr(expr, def::ExprDefKind::Multi(idx, m)));
     if !bound_ids.insert(bind) {
       st.err(rhs.unwrap_or(expr), error::Kind::DuplicateBinding(bind));
     }
