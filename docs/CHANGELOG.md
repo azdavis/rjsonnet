@@ -6,7 +6,7 @@
 - Improve hover for `local` binds.
 - Improve go-to-def, error, etc. locations for `local f(x) = ...` function parameters and `for x in xs` object and array comprehensions.
 - Improve error locations for duplicate binding errors.
-- Allow for type "annotations" via `assert std.isTYPE(x)` at the beginning of a function.
+- Allow for type "annotations" via `assert std.isTYPE(x)` or `std.type(x) == "TYPE"` at the beginning of a function.
 
 ## v0.5.0
 
