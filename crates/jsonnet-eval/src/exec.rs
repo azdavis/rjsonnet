@@ -16,7 +16,6 @@ const EPSILON: f64 = 0.0001;
 
 pub(crate) fn get(cx: Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
   let Some(expr) = expr else { return Err(error::Error::NoExpr) };
-  // TODO cache lookups across calls to this fn?
   let expr_ar = &cx.exprs[&env.path].ar;
   match &expr_ar[expr] {
     ExprData::Prim(p) => Ok(Val::Prim(p.clone())),

@@ -49,7 +49,6 @@ fn expr_prec(p: &mut Parser<'_>, min_prec: Prec) -> Option<Exited> {
       p.bump();
       SK::ExprSelf
     }
-    // TODO forbid super in many contexts
     SK::SuperKw => {
       p.bump();
       SK::ExprSuper

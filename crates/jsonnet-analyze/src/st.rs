@@ -316,7 +316,6 @@ impl St {
     if self.with_fs.has_errors.contains(&path_id) {
       return Err(jsonnet_eval::error::Error::HasErrors(path_id));
     }
-    // TODO more caching?
     let cx = jsonnet_eval::Cx {
       paths: &self.with_fs.artifacts.syntax.paths,
       str_ar: &self.with_fs.artifacts.syntax.strings,
@@ -574,7 +573,6 @@ impl lang_srv_state::State for St {
       let ty = ty.display(self.multi_line, &wa.statics, None, &wa.syntax.strings);
       Some(format!("type:\n```ts\n{ty}\n```"))
     });
-    // TODO expose any errors here?
     let from_std_field = match const_eval::get(self, fs, path_id, expr) {
       Some(const_eval::ConstEval::Std(Some(x))) => Some(x.doc()),
       Some(const_eval::ConstEval::Std(None)) => Some("std: The standard library."),
@@ -676,7 +674,6 @@ impl lang_srv_state::State for St {
       let node = jsonnet_syntax::token_parent(&tok)?;
       let ptr = jsonnet_syntax::ast::SyntaxNodePtr::new(&node);
       let expr = arts.syntax.pointers.get_idx(ptr);
-      // TODO expose any errors here?
       let ce = const_eval::get(self, fs, path_id, expr);
       let Some(const_eval::ConstEval::Real(ce)) = ce else { return None };
       ce
