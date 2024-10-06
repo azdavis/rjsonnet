@@ -345,13 +345,15 @@ fn is_orderable(st: &st::St<'_>, ty: ty::Ty) -> bool {
 /// - cannot use `std.isFunction`, the type system cannot model a function with totally unknown
 ///   params. this wouldn't be that helpful anyway i suppose - if you don't know how many params,
 ///   how can you call it?
-/// - cannot chain the asserts with `&&` or `||` - must put them one after the other
+/// - cannot chain the asserts with `||` - no complex logic with ors
 /// - asserts all be at the beginning of the fn, so cannot e.g. introduce new local variables
 /// - cannot do `local isNumber = std.isNumber` beforehand, must literally get the field off `std`
 /// - cannot use named arguments, only positional arguments
 ///
 /// on the bright side:
 ///
+/// - can chain the asserts with `&&` (or `if COND then COND else false`, which is what `&&`
+///   desugars to)
 /// - can also use `std.type(x) == TYPE` where TYPE is "number", "string", etc.
 /// - since asserts are lowered to `if cond then ... else error ...`, we check for that. so if the
 ///   user wrote that itself in the concrete syntax, that also works.
@@ -405,6 +407,13 @@ fn refine_param_ty_cond(
       if *param_ty == ty::Ty::ANY {
         *param_ty = ty;
       }
+    }
+    // the cond is itself another cond. if it looks like a desugared `&&`, then just do both in
+    // sequence.
+    &ExprData::If { cond, yes, no: Some(no) } => {
+      let ExprData::Prim(Prim::Bool(false)) = &ar[no] else { return };
+      refine_param_ty_cond(st, ar, params, cond);
+      refine_param_ty_cond(st, ar, params, yes);
     }
     &ExprData::BinaryOp { lhs: Some(lhs), op: jsonnet_expr::BinaryOp::Eq, rhs: Some(rhs) } => {
       // do both sides. if one works, the other won't, but we'll just return. this allows for both

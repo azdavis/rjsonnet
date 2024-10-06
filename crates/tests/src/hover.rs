@@ -73,6 +73,22 @@ greet('fella')
 }
 
 #[test]
+fn assert_param_type_3() {
+  JsonnetInput::manifest(
+    r"
+local maybe(a, b) =
+  assert std.isBoolean(a) && std.isString(b);
+  if a then b;
+
+maybe(false, 'hey')
+## ^ hover: (a: boolean, b: string) => null | string
+",
+    "null",
+  )
+  .check();
+}
+
+#[test]
 #[should_panic = "none of the lines were equal"]
 fn local_fn_ty() {
   JsonnetInput::manifest(
