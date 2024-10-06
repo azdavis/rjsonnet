@@ -411,7 +411,7 @@ fn refine_param_ty_cond(
     // the cond is itself another cond. if it looks like a desugared `&&`, then just do both in
     // sequence.
     &ExprData::If { cond, yes, no: Some(no) } => {
-      let ExprData::Prim(Prim::Bool(false)) = &ar[no] else { return };
+      let (ExprData::Prim(Prim::Bool(false)) | ExprData::Error(_)) = &ar[no] else { return };
       refine_param_ty_cond(st, ar, params, cond);
       refine_param_ty_cond(st, ar, params, yes);
     }
