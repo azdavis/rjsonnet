@@ -454,6 +454,7 @@ fn refine_param_ty_cond_type_equals(
     Str::number => ty::Ty::NUMBER,
     Str::object => ty::Ty::OBJECT,
     Str::string => ty::Ty::STRING,
+    // as a little bonus.
     Str::null => ty::Ty::NULL,
     _ => return,
   };
