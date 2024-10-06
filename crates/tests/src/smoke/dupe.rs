@@ -2,14 +2,13 @@
 
 use crate::check::JsonnetInput;
 
-/// TODO: error range isn't the best.
 #[test]
 fn local() {
   JsonnetInput::pre_eval_error(
     r"
 ##    v diagnostic: unused: `x`
 local x = 3, x = 3;
-##               ^ diagnostic: duplicate binding: `x`
+##           ^ diagnostic: duplicate binding: `x`
 x
 ",
   )
@@ -24,7 +23,7 @@ fn object_local() {
   local x = 3,
 ##      ^ diagnostic: unused: `x`
   local x = 3,
-##          ^ diagnostic: duplicate binding: `x`
+##      ^ diagnostic: duplicate binding: `x`
   a: x,
 }
 ",
@@ -50,7 +49,7 @@ fn field() {
 fn param() {
   JsonnetInput::pre_eval_error(
     r"
-##       vvvvvv diagnostic: duplicate binding: `x`
+##           v diagnostic: duplicate binding: `x`
 local bad(x, x) = x;
 ##        ^ diagnostic: unused: `x`
   bad(1)

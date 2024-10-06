@@ -26,7 +26,11 @@ impl Error {
   /// Returns the expr this error is for.
   #[must_use]
   pub fn expr_and_def(&self) -> (ExprMust, Option<def::ExprDefKind>) {
-    let with_expr = if let Kind::Unused(_, k) = self.kind { Some(k) } else { None };
+    let with_expr = match self.kind {
+      Kind::Unused(_, k) => Some(k),
+      Kind::DuplicateBinding(_, n, m) => Some(def::ExprDefKind::Multi(n, m)),
+      _ => None,
+    };
     (self.expr, with_expr)
   }
 
@@ -37,7 +41,7 @@ impl Error {
       Kind::NotInScope(_)
       | Kind::DuplicateFieldName(_)
       | Kind::DuplicateNamedArg(_)
-      | Kind::DuplicateBinding(_) => diagnostic::Severity::Error,
+      | Kind::DuplicateBinding(_, _, _) => diagnostic::Severity::Error,
       // TODO: make some/all type-checker warnings errors? (once we have more confidence)
       Kind::Unused(_, _)
       | Kind::Incompatible(_, _)
@@ -74,7 +78,7 @@ impl Error {
       }
       Kind::NotInScope(_)
       | Kind::DuplicateNamedArg(_)
-      | Kind::DuplicateBinding(_)
+      | Kind::DuplicateBinding(_, _, _)
       | Kind::Unused(_, _)
       | Kind::WantOptionalParamGotRequired(_)
       | Kind::ExtraRequiredParam(_)
@@ -93,7 +97,7 @@ pub(crate) enum Kind {
   NotInScope(Id),
   DuplicateFieldName(Str),
   DuplicateNamedArg(Id),
-  DuplicateBinding(Id),
+  DuplicateBinding(Id, usize, def::ExprDefKindMulti),
   Unused(Id, def::ExprDefKind),
   Incompatible(ty::Ty, ty::Ty),
   MissingField(Str),
@@ -125,7 +129,7 @@ impl fmt::Display for Display<'_> {
       Kind::DuplicateNamedArg(id) => {
         write!(f, "duplicate named argument: `{}`", id.display(self.str_ar))
       }
-      Kind::DuplicateBinding(id) => {
+      Kind::DuplicateBinding(id, _, _) => {
         write!(f, "duplicate binding: `{}`", id.display(self.str_ar))
       }
       Kind::Unused(id, _) => write!(f, "unused: `{}`", id.display(self.str_ar)),
