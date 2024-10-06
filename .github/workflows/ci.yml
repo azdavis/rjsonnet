@@ -84,13 +84,12 @@ jobs:
       - name: Upload binary artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: binary
-          path: |
-            binary/jsonnet-ls-${{ matrix.rust }}.gz
+          name: binary-${{ matrix.rust }}
+          path: binary/jsonnet-ls-${{ matrix.rust }}.gz
       - name: Upload VSIX artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: vsix
+          name: vsix-${{ matrix.vscode }}
           path: editors/vscode/vsix/jsonnet-${{ matrix.vscode }}.vsix
   release:
     needs: dist
@@ -111,13 +110,15 @@ jobs:
       - name: Download binary artifacts
         uses: actions/download-artifact@v4
         with:
-          name: binary
           path: binary
+          pattern: binary-*
+          merge-multiple: true
       - name: Download VSIX artifacts
         uses: actions/download-artifact@v4
         with:
-          name: vsix
           path: editors/vscode/vsix
+          pattern: vsix-*
+          merge-multiple: true
       - name: Make GitHub release
         uses: softprops/action-gh-release@v2
         with:
