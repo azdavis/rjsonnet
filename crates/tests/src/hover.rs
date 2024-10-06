@@ -53,3 +53,17 @@ addOne(3)
   )
   .check();
 }
+
+#[test]
+#[should_panic = "none of the lines were equal"]
+fn local_fn_ty() {
+  JsonnetInput::manifest(
+    r"
+local mkNull() = null;
+##    ^ hover: () => null
+mkNull()
+",
+    "null",
+  )
+  .check();
+}
