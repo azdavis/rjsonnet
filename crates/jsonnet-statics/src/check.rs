@@ -4,7 +4,7 @@ mod call;
 
 use crate::{error, st};
 use always::always;
-use jsonnet_expr::{def, BinaryOp, Expr, ExprArena, ExprData, Id, Prim, UnaryOp};
+use jsonnet_expr::{def, BinaryOp, Expr, ExprArena, ExprData, Id, Prim, Str, UnaryOp};
 use jsonnet_ty as ty;
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::BTreeSet;
@@ -388,11 +388,11 @@ fn refine_param_ty_cond(
   }
   let ExprData::Prim(Prim::String(func_name)) = &ar[idx] else { return };
   let ty = match *func_name {
-    jsonnet_expr::Str::isNumber => ty::Ty::NUMBER,
-    jsonnet_expr::Str::isString => ty::Ty::STRING,
-    jsonnet_expr::Str::isBoolean => ty::Ty::BOOL,
-    jsonnet_expr::Str::isArray => ty::Ty::ARRAY_ANY,
-    jsonnet_expr::Str::isObject => ty::Ty::OBJECT,
+    Str::isNumber => ty::Ty::NUMBER,
+    Str::isString => ty::Ty::STRING,
+    Str::isBoolean => ty::Ty::BOOL,
+    Str::isArray => ty::Ty::ARRAY_ANY,
+    Str::isObject => ty::Ty::OBJECT,
     _ => return,
   };
   if !named.is_empty() {
