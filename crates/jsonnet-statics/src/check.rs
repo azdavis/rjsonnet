@@ -364,33 +364,41 @@ fn refine_param_tys(
   while let Some(b) = body {
     let &ExprData::If { cond, yes, no: Some(no) } = &ar[b] else { break };
     let ExprData::Error(_) = &ar[no] else { break };
-    // once we advance the body, we can change the action on failure from `break` to `continue`, if
-    // perhaps this assert is not well-formed but the next one is.
     body = yes;
-    let Some(cond) = cond else { continue };
-    let ExprData::Call { func: Some(func), positional, named } = &ar[cond] else { continue };
-    let &ExprData::Subscript { on: Some(on), idx: Some(idx) } = &ar[*func] else { continue };
-    let ExprData::Id(std_id) = &ar[on] else { continue };
-    if !st.is_std(*std_id) {
-      continue;
-    }
-    let ExprData::Prim(Prim::String(s)) = &ar[idx] else { continue };
-    let ty = match *s {
-      jsonnet_expr::Str::isNumber => ty::Ty::NUMBER,
-      jsonnet_expr::Str::isString => ty::Ty::STRING,
-      jsonnet_expr::Str::isBoolean => ty::Ty::BOOL,
-      jsonnet_expr::Str::isArray => ty::Ty::ARRAY_ANY,
-      jsonnet_expr::Str::isObject => ty::Ty::OBJECT,
-      _ => continue,
-    };
-    if !named.is_empty() {
-      continue;
-    }
-    let [Some(param)] = positional[..] else { continue };
-    let &ExprData::Id(param) = &ar[param] else { continue };
-    let Some(param_ty) = params.get_mut(&param) else { continue };
-    if *param_ty == ty::Ty::ANY {
-      *param_ty = ty;
-    }
+    refine_param_ty_cond(st, ar, params, cond);
+  }
+}
+
+/// refine from a single if-cond.
+fn refine_param_ty_cond(
+  st: &st::St<'_>,
+  ar: &ExprArena,
+  params: &mut FxHashMap<Id, ty::Ty>,
+  cond: Expr,
+) {
+  let Some(cond) = cond else { return };
+  let ExprData::Call { func: Some(func), positional, named } = &ar[cond] else { return };
+  let &ExprData::Subscript { on: Some(on), idx: Some(idx) } = &ar[*func] else { return };
+  let ExprData::Id(std_id) = &ar[on] else { return };
+  if !st.is_std(*std_id) {
+    return;
+  }
+  let ExprData::Prim(Prim::String(s)) = &ar[idx] else { return };
+  let ty = match *s {
+    jsonnet_expr::Str::isNumber => ty::Ty::NUMBER,
+    jsonnet_expr::Str::isString => ty::Ty::STRING,
+    jsonnet_expr::Str::isBoolean => ty::Ty::BOOL,
+    jsonnet_expr::Str::isArray => ty::Ty::ARRAY_ANY,
+    jsonnet_expr::Str::isObject => ty::Ty::OBJECT,
+    _ => return,
+  };
+  if !named.is_empty() {
+    return;
+  }
+  let [Some(param)] = positional[..] else { return };
+  let &ExprData::Id(param) = &ar[param] else { return };
+  let Some(param_ty) = params.get_mut(&param) else { return };
+  if *param_ty == ty::Ty::ANY {
+    *param_ty = ty;
   }
 }
