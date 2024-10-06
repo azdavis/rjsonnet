@@ -91,3 +91,42 @@ fn object_comp() {
   )
   .check();
 }
+
+// TODO the var is used, but not in both places.
+#[test]
+#[should_panic = "unused: `x`"]
+fn object_comp_only_key() {
+  JsonnetInput::manifest(
+    r#"
+{
+  [x]: 0 for x in ["a", "b"]
+}
+"#,
+    r#"
+{
+  "a": 0,
+  "b": 0
+}
+"#,
+  )
+  .check();
+}
+
+// TODO the var is used, but not in both places.
+#[test]
+#[should_panic = "unused: `x`"]
+fn object_comp_only_val() {
+  JsonnetInput::manifest(
+    r#"
+{
+  ["foo"]: x for x in [0]
+}
+"#,
+    r#"
+{
+  "foo": 0,
+}
+"#,
+  )
+  .check();
+}
