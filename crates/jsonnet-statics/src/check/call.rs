@@ -139,6 +139,22 @@ fn maybe_extra_checks(
       st.unify(func_expr, elem, param.ty);
       Some(ret)
     }
+    StdFn::mod_ => {
+      let &(_, lhs_ty) = params.get(&Id::a)?;
+      let &(rhs_expr, rhs_ty) = params.get(&Id::b)?;
+      match st.data(lhs_ty) {
+        ty::Data::Prim(ty::Prim::String) => {
+          // NOTE: do NOT unify rhs_ty against `any[]`, because it is permitted to format just one
+          // argument without the wrapping array.
+          Some(ty::Ty::STRING)
+        }
+        ty::Data::Prim(ty::Prim::Number) => {
+          st.unify(rhs_expr, ty::Ty::NUMBER, rhs_ty);
+          Some(ty::Ty::NUMBER)
+        }
+        _ => None,
+      }
+    }
     _ => None,
   }
 }
