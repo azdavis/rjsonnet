@@ -4,6 +4,7 @@ use crate::st::St;
 use jsonnet_expr::def::{self, Def};
 use jsonnet_expr::{Expr, ExprData, ExprMust, Prim};
 use paths::PathId;
+use rustc_hash::FxHashSet;
 
 #[derive(Debug)]
 pub(crate) enum ConstEval {
@@ -32,19 +33,39 @@ pub(crate) fn get<F>(st: &mut St, fs: &F, path_id: PathId, expr: Expr) -> Option
 where
   F: Sync + paths::FileSystem,
 {
+  let mut seen = Seen::default();
+  from_expr(st, &mut seen, fs, path_id, expr)
+}
+
+type Seen = FxHashSet<(PathId, ExprMust)>;
+
+fn from_expr<F>(
+  st: &mut St,
+  seen: &mut Seen,
+  fs: &F,
+  path_id: PathId,
+  expr: Expr,
+) -> Option<ConstEval>
+where
+  F: Sync + paths::FileSystem,
+{
   let expr = expr?;
+  if !seen.insert((path_id, expr)) {
+    log::warn!("stop infinite recursion: {path_id:?} {expr:?}");
+    return None;
+  }
   let arts = st.get_file_artifacts(fs, path_id).ok()?;
   if let Some(&def) = arts.defs.get(&expr) {
-    return from_def(st, fs, path_id, def);
+    return from_def(st, seen, fs, path_id, def);
   }
   let ret = Real { path_id, expr, kind: None };
   let file = st.get_file_expr(fs, path_id).ok()?;
   match file.ar[expr] {
     ExprData::Subscript { on, idx } => {
-      let subscript = from_subscript(st, fs, path_id, on, idx);
+      let subscript = from_subscript(st, seen, fs, path_id, on, idx);
       Some(subscript.unwrap_or(ret.into()))
     }
-    ExprData::Local { body, .. } => get(st, fs, path_id, body),
+    ExprData::Local { body, .. } => from_expr(st, seen, fs, path_id, body),
     // Id, Import: would have been covered by defs.get above if we knew anything about them
     // Prim, Object, Array, Function: literals are values, they do not evaluate further
     // Error: errors do not evaluate to values
@@ -64,14 +85,14 @@ where
   }
 }
 
-fn from_def<F>(st: &mut St, fs: &F, path_id: PathId, def: Def) -> Option<ConstEval>
+fn from_def<F>(st: &mut St, seen: &mut Seen, fs: &F, path_id: PathId, def: Def) -> Option<ConstEval>
 where
   F: Sync + paths::FileSystem,
 {
   match def {
     Def::Expr(expr, kind) => {
       let local = if let def::ExprDefKind::Multi(idx, def::ExprDefKindMulti::LocalBind) = kind {
-        from_local(st, fs, path_id, Some(expr), idx)
+        from_local(st, seen, fs, path_id, Some(expr), idx)
       } else {
         None
       };
@@ -81,12 +102,19 @@ where
     Def::KwIdent => None,
     Def::Import(path_id) => {
       let top = st.get_file_expr(fs, path_id).ok()?.top;
-      get(st, fs, path_id, top)
+      from_expr(st, seen, fs, path_id, top)
     }
   }
 }
 
-fn from_local<F>(st: &mut St, fs: &F, path_id: PathId, expr: Expr, idx: usize) -> Option<ConstEval>
+fn from_local<F>(
+  st: &mut St,
+  seen: &mut Seen,
+  fs: &F,
+  path_id: PathId,
+  expr: Expr,
+  idx: usize,
+) -> Option<ConstEval>
 where
   F: Sync + paths::FileSystem,
 {
@@ -94,14 +122,21 @@ where
   let file = st.get_file_expr(fs, path_id).ok()?;
   let ExprData::Local { binds, .. } = &file.ar[expr] else { return None };
   let &(_, expr) = binds.get(idx)?;
-  get(st, fs, path_id, expr)
+  from_expr(st, seen, fs, path_id, expr)
 }
 
-fn from_subscript<F>(st: &mut St, fs: &F, path_id: PathId, on: Expr, idx: Expr) -> Option<ConstEval>
+fn from_subscript<F>(
+  st: &mut St,
+  seen: &mut Seen,
+  fs: &F,
+  path_id: PathId,
+  on: Expr,
+  idx: Expr,
+) -> Option<ConstEval>
 where
   F: Sync + paths::FileSystem,
 {
-  let ConstEval::Real(idx) = get(st, fs, path_id, idx)? else { return None };
+  let ConstEval::Real(idx) = from_expr(st, seen, fs, path_id, idx)? else { return None };
   if idx.kind.is_some() {
     return None;
   }
@@ -110,7 +145,7 @@ where
     let ExprData::Prim(Prim::String(idx)) = &file.ar[idx.expr] else { return None };
     idx.clone()
   };
-  let on = match get(st, fs, path_id, on)? {
+  let on = match from_expr(st, seen, fs, path_id, on)? {
     ConstEval::Std(None) => {
       let field = jsonnet_expr::StdField::try_from(&idx).ok()?;
       return Some(ConstEval::Std(Some(field)));
@@ -127,16 +162,15 @@ where
     fields.clone()
   };
   for field in fields {
-    let Some(ConstEval::Real(key)) = get(st, fs, on.path_id, field.key) else { continue };
+    let field_key = from_expr(st, seen, fs, on.path_id, field.key);
+    let Some(ConstEval::Real(key)) = field_key else { continue };
     if key.kind.is_some() {
       continue;
     }
     let Ok(file) = st.get_file_expr(fs, key.path_id) else { continue };
-    let ExprData::Prim(Prim::String(key)) = &file.ar[key.expr] else {
-      continue;
-    };
+    let ExprData::Prim(Prim::String(key)) = &file.ar[key.expr] else { continue };
     if *key == idx {
-      return get(st, fs, on.path_id, field.val);
+      return from_expr(st, seen, fs, on.path_id, field.val);
     }
   }
   None

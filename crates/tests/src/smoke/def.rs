@@ -385,3 +385,35 @@ b.foo
     .add("b.jsonnet")
     .check();
 }
+
+#[test]
+fn infinite_1() {
+  JsonnetInput::manifest(
+    r#"
+##    v def: x
+local x = x;
+##        ^ use: x
+0
+"#,
+    "0",
+  )
+  .check();
+}
+
+// NOTE: not the greatest, but kind of correct ish.
+#[test]
+fn infinite_2() {
+  JsonnetInput::manifest(
+    r#"
+##    v def: a
+local a = b
+##        ^ use: a
+##    v def: b
+    , b = a;
+##        ^ use: b
+0
+"#,
+    "0",
+  )
+  .check();
+}

@@ -1,5 +1,9 @@
 # Changelog
 
+## main
+
+- Avoid an issue with infinite recursion when jumping to def of recursive bindings like e.g. `local x = x`.
+
 ## v0.5.1
 
 - Fix types for `std.slice` params.
