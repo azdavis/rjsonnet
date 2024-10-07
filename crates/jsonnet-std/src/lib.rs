@@ -128,7 +128,7 @@ const OBJ_HAS: Sig = s(&[r("o", Ty::Obj), r("f", Ty::Str)], Ty::Bool);
 const OBJ_FIELDS: Sig = s(&[r("o", Ty::Obj)], Ty::ArrStr);
 const OBJ_VALUES: Sig = s(&[r("o", Ty::Obj)], Ty::ArrAny);
 const MANIFEST_JSON: Sig = s(&[r("value", Ty::Any)], Ty::Str);
-const MAP: Sig = s(&[r("func", Ty::Hof1), r("arr", Ty::ArrAny)], Ty::ArrAny);
+const ARR_HOF1: Sig = s(&[r("func", Ty::Hof1), r("arr", Ty::ArrAny)], Ty::ArrAny);
 const FOLD: Sig = s(&[r("func", Ty::Hof2), r("arr", Ty::ArrAny), r("init", Ty::Any)], Ty::Any);
 const ARR_KEY_F: Sig = s(&[r("arr", Ty::ArrAny), o("keyF", Ty::Hof1)], Ty::ArrAny);
 const BINARY_SET_FN: Sig =
@@ -265,14 +265,14 @@ pub const FNS: [Fn; 126] = [
   f("member", s(&[r("arr", Ty::Any), r("x", Ty::Any)], Ty::Bool)),
   f("count", s(&[r("arr", Ty::ArrAny), r("x", Ty::Any)], Ty::Num)),
   f("find", s(&[r("value", Ty::Any), r("arr", Ty::ArrAny)], Ty::ArrNum)),
-  f("map", MAP),
+  f("map", ARR_HOF1),
   f("mapWithIndex", s(&[r("func", Ty::Hof2), r("arr", Ty::ArrAny)], Ty::ArrAny)),
   f(
     "filterMap",
     s(&[r("filter_func", Ty::Hof1), r("map_func", Ty::Hof1), r("arr", Ty::ArrAny)], Ty::ArrAny),
   ),
-  f("flatMap", MAP),
-  f("filter", MAP),
+  f("flatMap", ARR_HOF1),
+  f("filter", ARR_HOF1),
   f("foldl", FOLD),
   f("foldr", FOLD),
   f("range", s(&[r("from", Ty::Num), r("to", Ty::Num)], Ty::Num)),

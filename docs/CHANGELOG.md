@@ -11,6 +11,7 @@
   - `std.sort`
   - `std.uniq`
   - `std.set`
+  - `std.filter`
 
 ## v0.5.1
 
