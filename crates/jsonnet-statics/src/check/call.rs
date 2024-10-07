@@ -164,6 +164,10 @@ fn maybe_extra_checks(
       st.unify(arr_expr, sep_ty, elem_ty);
       Some(elem_ty)
     }
+    StdFn::reverse | StdFn::sort | StdFn::uniq | StdFn::set => {
+      let &(_, arr_ty) = params.get(&Id::arr)?;
+      Some(arr_ty)
+    }
     _ => None,
   }
 }

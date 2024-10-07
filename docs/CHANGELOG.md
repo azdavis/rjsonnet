@@ -4,7 +4,13 @@
 
 - Avoid an issue with infinite recursion when jumping to def of recursive bindings like e.g. `local x = x`.
 - Fix the type of `std.stringChars`.
-- Add special-case typing for `%` (aka `std.mod`) and `std.join`.
+- Add special-case typing for:
+  - `%` (aka `std.mod`)
+  - `std.join`
+  - `std.reverse`
+  - `std.sort`
+  - `std.uniq`
+  - `std.set`
 
 ## v0.5.1
 
