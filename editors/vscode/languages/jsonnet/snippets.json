@@ -1,10 +1,10 @@
 {
-  "`local` exp": {
+  "`local` expr": {
     "prefix": "local",
-    "body": ["local ${1:var} = ${2:exp};", "${3:exp}"]
+    "body": ["local ${1:var} = ${2:expr};", "${3:expr}"]
   },
-  "`if` exp": {
+  "`if` expr": {
     "prefix": "if",
-    "body": ["if ${1:exp} then", "  ${2:exp}", "else", "  ${3:exp}"]
+    "body": ["if ${1:expr} then", "  ${2:expr}", "else", "  ${3:expr}"]
   }
 }
