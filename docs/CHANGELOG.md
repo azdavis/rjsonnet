@@ -3,6 +3,7 @@
 ## main
 
 - Avoid an issue with infinite recursion when jumping to def of recursive bindings like e.g. `local x = x`.
+- Fix the type of `std.stringChars`.
 
 ## v0.5.1
 

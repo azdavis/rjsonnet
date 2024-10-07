@@ -209,7 +209,7 @@ pub const FNS: [Fn; 126] = [
   f("isEmpty", s(&[r("str", Ty::Str)], Ty::Bool)),
   f("asciiUpper", STR_RET_STR),
   f("asciiLower", STR_RET_STR),
-  f("stringChars", STR_RET_STR),
+  f("stringChars", s(&[r("str", Ty::Str)], Ty::ArrStr)),
   f("format", s(&[r("str", Ty::Str), r("vals", Ty::ArrAny)], Ty::Str)),
   f("escapeStringBash", STR_RET_STR),
   f("escapeStringDollars", STR_RET_STR),
