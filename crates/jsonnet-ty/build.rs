@@ -20,6 +20,7 @@ fn main() {
     (i!("ARRAY_ANY"), q!(Data::Array(Ty::ANY))),
     (i!("ARRAY_OR_OBJECT"), q!(Data::Union(BTreeSet::from([Ty::ARRAY_ANY, Ty::OBJECT])))),
     (i!("STRING_OR_ARRAY_NUMBER"), q!(Data::Union(BTreeSet::from([Ty::STRING, Ty::ARRAY_NUMBER])))),
+    (i!("STRING_OR_ARRAY_ANY"), q!(Data::Union(BTreeSet::from([Ty::STRING, Ty::ARRAY_ANY])))),
     (i!("NUMBER_OR_NULL"), q!(Data::Union(BTreeSet::from([Ty::NUMBER, Ty::NULL])))),
     (i!("HOF_1"), q!(Data::Fn(super::Fn::Hof(super::HofParams::One)))),
     (i!("HOF_2"), q!(Data::Fn(super::Fn::Hof(super::HofParams::Two)))),

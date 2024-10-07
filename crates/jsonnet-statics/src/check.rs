@@ -73,7 +73,10 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
         let ty = get(st, ar, arg);
         tys.insert(ty);
       }
-      let elem_ty = st.get_ty(ty::Data::Union(tys));
+      // having `[]` have type `never[]` is technically right, but causes some strangeness, e.g.
+      // with the special-case typing of `std.join`. i suppose it might also be a bit jarring for
+      // users to see the `never`, which rarely comes up in user code.
+      let elem_ty = if tys.is_empty() { ty::Ty::ANY } else { st.get_ty(ty::Data::Union(tys)) };
       st.get_ty(ty::Data::Array(elem_ty))
     }
     ExprData::Subscript { on, idx } => {

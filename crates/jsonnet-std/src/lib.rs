@@ -289,7 +289,7 @@ pub const FNS: [Fn; 126] = [
       Ty::Any,
     ),
   ),
-  f("join", s(&[r("sep", Ty::Any), r("arr", Ty::Any)], Ty::Any)),
+  f("join", s(&[r("sep", Ty::Any), r("arr", Ty::ArrAny)], Ty::Any)),
   f("lines", s(&[r("arr", Ty::ArrStr)], Ty::Str)),
   f("flattenArrays", s(&[r("arr", Ty::ArrAny)], Ty::ArrAny)),
   f("reverse", s(&[r("arr", Ty::ArrAny)], Ty::ArrAny)),

@@ -155,6 +155,15 @@ fn maybe_extra_checks(
         _ => None,
       }
     }
+    StdFn::join => {
+      let &(_, sep_ty) = params.get(&Id::sep)?;
+      let &(arr_expr, arr_ty) = params.get(&Id::arr)?;
+      // TODO handle unions
+      let &ty::Data::Array(elem_ty) = st.data(arr_ty) else { return None };
+      st.unify(arr_expr, ty::Ty::STRING_OR_ARRAY_ANY, elem_ty);
+      st.unify(arr_expr, sep_ty, elem_ty);
+      Some(elem_ty)
+    }
     _ => None,
   }
 }
