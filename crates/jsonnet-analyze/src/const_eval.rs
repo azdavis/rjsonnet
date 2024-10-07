@@ -39,7 +39,7 @@ where
   }
   let ret = Real { path_id, expr, kind: None };
   let file = st.get_file_expr(fs, path_id).ok()?;
-  match file.ar[expr].clone() {
+  match file.ar[expr] {
     ExprData::Subscript { on, idx } => {
       let subscript = from_subscript(st, fs, path_id, on, idx);
       Some(subscript.unwrap_or(ret.into()))
