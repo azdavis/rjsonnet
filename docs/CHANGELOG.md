@@ -3,7 +3,9 @@
 ## main
 
 - Avoid an issue with infinite recursion when jumping to def of recursive bindings like e.g. `local x = x`.
-- Fix the type of `std.stringChars`.
+- Fix the type of:
+  - `std.stringChars`
+  - `std.range`
 - Add special-case typing for:
   - `%` (aka `std.mod`)
   - `std.join`

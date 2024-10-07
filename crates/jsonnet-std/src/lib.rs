@@ -275,7 +275,7 @@ pub const FNS: [Fn; 126] = [
   f("filter", ARR_HOF1),
   f("foldl", FOLD),
   f("foldr", FOLD),
-  f("range", s(&[r("from", Ty::Num), r("to", Ty::Num)], Ty::Num)),
+  f("range", s(&[r("from", Ty::Num), r("to", Ty::Num)], Ty::ArrNum)),
   f("repeat", s(&[r("what", Ty::Any), r("count", Ty::Num)], Ty::Any)),
   f(
     "slice",
