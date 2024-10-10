@@ -170,6 +170,13 @@ fn maybe_extra_checks(
       st.unify(rhs_expr, lhs_ty, rhs_ty);
       None
     }
+    StdFn::makeArray => {
+      let &(_, func_ty) = params.get(&Id::func)?;
+      // TODO handle unions
+      let ty::Data::Fn(func) = st.data(func_ty) else { return None };
+      let (_, ret) = func_parts(func)?;
+      Some(st.get_ty(ty::Data::Array(ret)))
+    }
     _ => None,
   }
 }

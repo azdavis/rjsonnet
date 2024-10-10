@@ -17,6 +17,7 @@
   - `std.uniq`
   - `std.set`
   - `std.filter`
+  - `std.makeArray`
 
 ## v0.5.1
 
