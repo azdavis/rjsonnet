@@ -9,17 +9,17 @@
 - Improve typing for `==` (require RHS type to be compatible with LHS).
 - Add special-case typing for:
   - `%` (aka `std.mod`)
-  - `std.equals`
   - `std.assertEqual`
-  - `std.join`
-  - `std.reverse`
-  - `std.sort`
-  - `std.uniq`
-  - `std.set`
+  - `std.equals`
   - `std.filter`
+  - `std.join`
   - `std.makeArray`
   - `std.objectKeysValues`
   - `std.objectKeysValuesAll`
+  - `std.reverse`
+  - `std.set`
+  - `std.sort`
+  - `std.uniq`
 
 ## v0.5.1
 
