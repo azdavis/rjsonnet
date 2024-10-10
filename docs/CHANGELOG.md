@@ -18,6 +18,7 @@
   - `std.objectKeysValuesAll`
   - `std.reverse`
   - `std.set`
+  - `std.slice`
   - `std.sort`
   - `std.uniq`
 

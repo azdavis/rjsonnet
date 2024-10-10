@@ -177,6 +177,11 @@ fn maybe_extra_checks(
       let (_, ret) = func_parts(func)?;
       Some(st.get_ty(ty::Data::Array(ret)))
     }
+    StdFn::slice => {
+      let &(_, indexable_ty) = params.get(&Id::indexable)?;
+      matches!(st.data(indexable_ty), ty::Data::Prim(ty::Prim::String) | ty::Data::Array(_))
+        .then_some(indexable_ty)
+    }
     _ => None,
   }
 }
