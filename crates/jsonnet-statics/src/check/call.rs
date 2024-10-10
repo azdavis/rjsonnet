@@ -122,17 +122,7 @@ fn maybe_extra_checks(
       // TODO handle unions
       let ty::Data::Fn(func) = st.data(func_ty) else { return None };
       let &ty::Data::Array(elem) = st.data(arr_ty) else { return None };
-      let (params, ret) = match func {
-        ty::Fn::Regular(func) => (func.params.as_slice(), func.ret),
-        ty::Fn::Std(func) => {
-          let sig = ty::StdFnSig::get(*func);
-          (sig.params, sig.ret)
-        }
-        ty::Fn::Hof(_) => {
-          always!(false, "should never get a hof as a fn arg");
-          return None;
-        }
-      };
+      let (params, ret) = func_parts(func)?;
       // NOTE no need to emit error when not 1 param, covered by unify with Hof
       let &[param] = params else { return None };
       let ret = st.get_ty(ty::Data::Array(ret));
@@ -220,6 +210,20 @@ fn object_values_inner(st: &st::St<'_>, ty: ty::Ty, ac: &mut BTreeSet<ty::Ty>) {
       for &ty in tys {
         object_values_inner(st, ty, ac);
       }
+    }
+  }
+}
+
+fn func_parts(func: &ty::Fn) -> Option<(&[ty::Param], ty::Ty)> {
+  match func {
+    ty::Fn::Regular(func) => Some((func.params.as_slice(), func.ret)),
+    ty::Fn::Std(func) => {
+      let sig = ty::StdFnSig::get(*func);
+      Some((sig.params, sig.ret))
+    }
+    ty::Fn::Hof(_) => {
+      always!(false, "should never get a hof as a fn arg");
+      None
     }
   }
 }
