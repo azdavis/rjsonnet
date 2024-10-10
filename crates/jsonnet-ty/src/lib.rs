@@ -154,6 +154,25 @@ impl Fn {
       Fn::Std(_) | Fn::Hof(_) => false,
     }
   }
+
+  /// Returns the params and return type for this.
+  #[must_use]
+  pub fn parts(&self) -> (&[Param], Ty) {
+    match self {
+      Fn::Regular(func) => (func.params.as_slice(), func.ret),
+      Fn::Std(func) => {
+        let sig = StdFnSig::get(*func);
+        (sig.params, sig.ret)
+      }
+      Fn::Hof(hof) => {
+        let params = match hof {
+          HofParams::One => [Param::X].as_slice(),
+          HofParams::Two => [Param::X, Param::Y].as_slice(),
+        };
+        (params, Ty::ANY)
+      }
+    }
+  }
 }
 
 /// A number of arguments a HOF can take.
@@ -210,6 +229,9 @@ pub struct Param {
 }
 
 impl Param {
+  const X: Self = Self { id: Id::x, ty: Ty::ANY, required: true };
+  const Y: Self = Self { id: Id::y, ty: Ty::ANY, required: true };
+
   fn apply(&mut self, subst: &Subst) {
     self.ty.apply(subst);
   }

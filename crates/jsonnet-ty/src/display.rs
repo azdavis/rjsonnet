@@ -1,8 +1,8 @@
 //! Display types.
 
-use super::{Data, Fn, GlobalStore, HofParams, LocalStore, Param, Prim, StdFnSig, Ty};
+use super::{Data, GlobalStore, LocalStore, Param, Prim, Ty};
 use always::always;
-use jsonnet_expr::{Id, StrArena};
+use jsonnet_expr::StrArena;
 use std::fmt;
 
 impl Ty {
@@ -77,9 +77,6 @@ impl<'a> TyDisplay<'a> {
   }
 }
 
-const X: Param = Param { id: Id::x, ty: Ty::ANY, required: true };
-const Y: Param = Param { id: Id::y, ty: Ty::ANY, required: true };
-
 impl<'a> fmt::Display for TyDisplay<'a> {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     let data =
@@ -132,19 +129,9 @@ impl<'a> fmt::Display for TyDisplay<'a> {
         }
         f.write_str("}")
       }
-      Data::Fn(Fn::Regular(func)) => {
-        FnDisplay { params: &func.params, ret: func.ret, prec: self.prec, stuff: self.stuff }.fmt(f)
-      }
-      Data::Fn(Fn::Std(func)) => {
-        let StdFnSig { params, ret } = StdFnSig::get(*func);
+      Data::Fn(func) => {
+        let (params, ret) = func.parts();
         FnDisplay { params, ret, prec: self.prec, stuff: self.stuff }.fmt(f)
-      }
-      Data::Fn(Fn::Hof(len)) => {
-        let params = match len {
-          HofParams::One => [X].as_slice(),
-          HofParams::Two => [X, Y].as_slice(),
-        };
-        FnDisplay { params, ret: Ty::ANY, prec: self.prec, stuff: self.stuff }.fmt(f)
       }
       Data::Union(tys) => {
         // special case
