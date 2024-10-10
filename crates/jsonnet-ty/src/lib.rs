@@ -140,6 +140,22 @@ pub enum Fn {
   Hof(HofParams),
 }
 
+impl Fn {
+  fn apply(&mut self, subst: &Subst) {
+    match self {
+      Fn::Regular(f) => f.apply(subst),
+      Fn::Std(_) | Fn::Hof(_) => {}
+    }
+  }
+
+  fn has_local(&self) -> bool {
+    match self {
+      Fn::Regular(f) => f.has_local(),
+      Fn::Std(_) | Fn::Hof(_) => false,
+    }
+  }
+}
+
 /// A number of arguments a HOF can take.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum HofParams {
@@ -156,22 +172,6 @@ impl HofParams {
     match self {
       HofParams::One => 1,
       HofParams::Two => 2,
-    }
-  }
-}
-
-impl Fn {
-  fn apply(&mut self, subst: &Subst) {
-    match self {
-      Fn::Regular(f) => f.apply(subst),
-      Fn::Std(_) | Fn::Hof(_) => {}
-    }
-  }
-
-  fn has_local(&self) -> bool {
-    match self {
-      Fn::Regular(f) => f.has_local(),
-      Fn::Std(_) | Fn::Hof(_) => false,
     }
   }
 }
