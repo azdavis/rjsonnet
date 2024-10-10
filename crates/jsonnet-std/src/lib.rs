@@ -83,6 +83,8 @@ pub enum Ty {
   ArrNum,
   /// An array of strings, like `["hi", "bye"]`.
   ArrStr,
+  /// An array of `{ key: string, value: any }`.
+  ArrKv,
   /// An array with any contents, like `["hi", 3, null, false]`.
   ArrAny,
   /// An object with arbitrary fields like `{ foo: 3 }` or `{}`.
@@ -127,6 +129,7 @@ const SPLIT_LIMIT: Sig =
 const OBJ_HAS: Sig = s(&[r("o", Ty::Obj), r("f", Ty::Str)], Ty::Bool);
 const OBJ_FIELDS: Sig = s(&[r("o", Ty::Obj)], Ty::ArrStr);
 const OBJ_VALUES: Sig = s(&[r("o", Ty::Obj)], Ty::ArrAny);
+const OBJ_KEYS_VALUES: Sig = s(&[r("o", Ty::Obj)], Ty::ArrKv);
 const MANIFEST_JSON: Sig = s(&[r("value", Ty::Any)], Ty::Str);
 const ARR_HOF1: Sig = s(&[r("func", Ty::Hof1), r("arr", Ty::ArrAny)], Ty::ArrAny);
 const FOLD: Sig = s(&[r("func", Ty::Hof2), r("arr", Ty::ArrAny), r("init", Ty::Any)], Ty::Any);
@@ -159,11 +162,11 @@ pub const FNS: [Fn; 126] = [
   f("objectHas", OBJ_HAS),
   f("objectFields", OBJ_FIELDS),
   f("objectValues", OBJ_VALUES),
-  f("objectKeysValues", OBJ_VALUES),
+  f("objectKeysValues", OBJ_KEYS_VALUES),
   f("objectHasAll", OBJ_HAS),
   f("objectFieldsAll", OBJ_FIELDS),
   f("objectValuesAll", OBJ_VALUES),
-  f("objectKeysValuesAll", OBJ_VALUES),
+  f("objectKeysValuesAll", OBJ_KEYS_VALUES),
   f("prune", s(&[r("a", Ty::Any)], Ty::Any)),
   f("mapWithKey", s(&[r("func", Ty::Hof1), r("obj", Ty::Obj)], Ty::Obj)),
   f("abs", N_NUM_RET_NUM),

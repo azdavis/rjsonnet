@@ -17,6 +17,7 @@ fn main() {
     (i!("ARRAY_BOOL"), q!(Data::Array(Ty::BOOL))),
     (i!("ARRAY_NUMBER"), q!(Data::Array(Ty::NUMBER))),
     (i!("ARRAY_STRING"), q!(Data::Array(Ty::STRING))),
+    (i!("ARRAY_KEY_VALUE"), q!(Data::Array(Ty::KEY_VALUE))),
     (i!("ARRAY_ANY"), q!(Data::Array(Ty::ANY))),
     (i!("ARRAY_OR_OBJECT"), q!(Data::Union(BTreeSet::from([Ty::ARRAY_ANY, Ty::OBJECT])))),
     (i!("STRING_OR_ARRAY_NUMBER"), q!(Data::Union(BTreeSet::from([Ty::STRING, Ty::ARRAY_NUMBER])))),
@@ -25,6 +26,13 @@ fn main() {
     (i!("HOF_1"), q!(Data::Fn(super::Fn::Hof(super::HofParams::One)))),
     (i!("HOF_2"), q!(Data::Fn(super::Fn::Hof(super::HofParams::Two)))),
     (i!("OBJECT"), q!(Data::Object(super::Object::unknown()))),
+    (
+      i!("KEY_VALUE"),
+      q!(Data::Object(super::Object {
+        known: BTreeMap::from([(Str::key, Ty::STRING), (Str::value, Ty::ANY)]),
+        has_unknown: false
+      })),
+    ),
     (i!("STD"), q!(Data::Object(super::Object::std()))),
   ];
   let std_fn_types = jsonnet_std::FNS.iter().map(|f| {
@@ -141,6 +149,7 @@ fn mk_ty(ty: jsonnet_std::Ty) -> proc_macro2::TokenStream {
     jsonnet_std::Ty::ArrBool => q!(Ty::ARRAY_BOOL),
     jsonnet_std::Ty::ArrNum => q!(Ty::ARRAY_NUMBER),
     jsonnet_std::Ty::ArrStr => q!(Ty::ARRAY_STRING),
+    jsonnet_std::Ty::ArrKv => q!(Ty::ARRAY_KEY_VALUE),
     jsonnet_std::Ty::ArrAny => q!(Ty::ARRAY_ANY),
     jsonnet_std::Ty::Obj => q!(Ty::OBJECT),
     jsonnet_std::Ty::StrOrArrNum => q!(Ty::STRING_OR_ARRAY_NUMBER),

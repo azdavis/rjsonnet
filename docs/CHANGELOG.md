@@ -18,6 +18,8 @@
   - `std.set`
   - `std.filter`
   - `std.makeArray`
+  - `std.objectKeysValues`
+  - `std.objectKeysValuesAll`
 
 ## v0.5.1
 
