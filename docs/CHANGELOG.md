@@ -6,8 +6,11 @@
 - Fix the type of:
   - `std.stringChars`
   - `std.range`
+- Improve typing for `==` (require RHS type to be compatible with LHS).
 - Add special-case typing for:
   - `%` (aka `std.mod`)
+  - `std.equals`
+  - `std.assertEqual`
   - `std.join`
   - `std.reverse`
   - `std.sort`

@@ -325,10 +325,13 @@ fn t4() {
 fn t5() {
   JsonnetInput::manifest(
     r"
+// silence type errors
+local blackBox(x) = x;
+
 {
   concat_array: [1, 2, 3] + [4],
   concat_string: '123' + 4,
-  equality1: 1 == '1',
+  equality1: 1 == blackBox('1'),
   equality2: [{}, { x: 3 - 1 }]
              == [{}, { x: 2 }],
   ex1: 1 + 2 * 3 / (4 + 5),

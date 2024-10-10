@@ -168,6 +168,18 @@ fn maybe_extra_checks(
       let &(_, arr_ty) = params.get(&Id::arr)?;
       Some(arr_ty)
     }
+    StdFn::assertEqual => {
+      let &(_, lhs_ty) = params.get(&Id::a)?;
+      let &(rhs_expr, rhs_ty) = params.get(&Id::b)?;
+      st.unify(rhs_expr, lhs_ty, rhs_ty);
+      None
+    }
+    StdFn::equals => {
+      let &(_, lhs_ty) = params.get(&Id::x)?;
+      let &(rhs_expr, rhs_ty) = params.get(&Id::y)?;
+      st.unify(rhs_expr, lhs_ty, rhs_ty);
+      None
+    }
     _ => None,
   }
 }

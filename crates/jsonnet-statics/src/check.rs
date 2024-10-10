@@ -250,7 +250,10 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
           st.unify(rhs.unwrap_or(expr), ty::Ty::NUMBER, rhs_ty);
           ty::Ty::NUMBER
         }
-        BinaryOp::Eq => ty::Ty::BOOL,
+        BinaryOp::Eq => {
+          st.unify(rhs.unwrap_or(expr), lhs_ty, rhs_ty);
+          ty::Ty::BOOL
+        }
         BinaryOp::Lt | BinaryOp::LtEq | BinaryOp::Gt | BinaryOp::GtEq => {
           // TODO something about how the lhs_ty and rhs_ty need to be "similar" somehow (both
           // numbers or both strings, etc)
