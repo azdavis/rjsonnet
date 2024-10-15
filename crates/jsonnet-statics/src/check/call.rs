@@ -218,6 +218,10 @@ fn maybe_extra_checks(
       }
       None
     }
+    StdFn::trace => {
+      let &(_, rest_ty) = params.get(&Id::rest)?;
+      Some(rest_ty)
+    }
     _ => None,
   }
 }

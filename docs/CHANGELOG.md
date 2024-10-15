@@ -9,6 +9,7 @@
   - `std.member`
   - `std.repeat`
   - `std.slice`
+  - `std.trace`
 
 ## v0.5.2
 
