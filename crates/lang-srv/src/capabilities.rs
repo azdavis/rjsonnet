@@ -2,6 +2,8 @@
 
 /// TODO make true and inline once implemented
 const DOC_FORMATTING: bool = false;
+/// TODO make true and inline once implemented
+const SIG_HELP: bool = false;
 
 pub(crate) fn get() -> lsp_types::ServerCapabilities {
   lsp_types::ServerCapabilities {
@@ -23,6 +25,11 @@ pub(crate) fn get() -> lsp_types::ServerCapabilities {
       ..lsp_types::CompletionOptions::default()
     }),
     document_formatting_provider: Some(lsp_types::OneOf::Left(DOC_FORMATTING)),
+    signature_help_provider: SIG_HELP.then(|| lsp_types::SignatureHelpOptions {
+      trigger_characters: Some(vec!["(".to_owned()]),
+      retrigger_characters: Some(vec![",".to_owned()]),
+      work_done_progress_options: lsp_types::WorkDoneProgressOptions { work_done_progress: None },
+    }),
     ..Default::default()
   }
 }

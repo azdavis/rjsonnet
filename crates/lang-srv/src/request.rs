@@ -67,6 +67,27 @@ fn go<S: lang_srv_state::State>(
     });
     Ok(mk_res::<lsp_types::request::Formatting>(id, result))
   })?;
+  req = try_req::<lsp_types::request::SignatureHelpRequest, _, _>(req, |id, params| {
+    let (path, pos) = convert::text_doc_position(&params.text_document_position_params)?;
+    let result = srv.st.signature_help(path, pos).map(|help| {
+      let params = help.params.into_iter().map(|param| lsp_types::ParameterInformation {
+        label: lsp_types::ParameterLabel::LabelOffsets([param.range.start, param.range.end]),
+        documentation: None,
+      });
+      let signature = lsp_types::SignatureInformation {
+        label: help.label,
+        documentation: None,
+        parameters: Some(params.collect()),
+        active_parameter: None,
+      };
+      lsp_types::SignatureHelp {
+        signatures: vec![signature],
+        active_signature: Some(0),
+        active_parameter: Some(help.active_param),
+      }
+    });
+    Ok(mk_res::<lsp_types::request::SignatureHelpRequest>(id, result))
+  })?;
   ControlFlow::Continue(req)
 }
 

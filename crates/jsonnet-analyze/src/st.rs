@@ -709,6 +709,15 @@ impl lang_srv_state::State for St {
     None
   }
 
+  fn signature_help(
+    &self,
+    _: paths::CleanPathBuf,
+    _: text_pos::PositionUtf16,
+  ) -> Option<lang_srv_state::SignatureHelp> {
+    // TODO provide signature help
+    None
+  }
+
   fn paths(&self) -> &paths::Store {
     &self.with_fs.artifacts.syntax.paths
   }

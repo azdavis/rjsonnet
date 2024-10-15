@@ -84,6 +84,13 @@ pub trait State {
     tab_size: u32,
   ) -> Option<(String, text_pos::PositionUtf16)>;
 
+  /// Gets signature help.
+  fn signature_help(
+    &self,
+    path: paths::CleanPathBuf,
+    pos: text_pos::PositionUtf16,
+  ) -> Option<SignatureHelp>;
+
   /// Returns the paths store for this.
   fn paths(&self) -> &paths::Store;
 
@@ -107,4 +114,22 @@ pub struct CompletionItem {
 pub enum CompletionItemKind {
   /// A field, like for a "struct" or "object".
   Field,
+}
+
+/// Signature help.
+#[derive(Debug, Clone)]
+pub struct SignatureHelp {
+  /// The label.
+  pub label: String,
+  /// Info about the params.
+  pub params: Vec<SignatureHelpParam>,
+  /// The active param.
+  pub active_param: u32,
+}
+
+/// A signature help param.
+#[derive(Debug, Clone)]
+pub struct SignatureHelpParam {
+  /// The range in the label of this param.
+  pub range: std::ops::Range<u32>,
 }
