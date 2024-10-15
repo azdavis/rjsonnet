@@ -122,6 +122,11 @@ fn maybe_extra_checks(
       let &(arr_expr, arr_ty) = params.get(&Id::arr)?;
       check_map(st, func_ty, arr_expr, arr_ty)
     }
+    StdFn::filterMap => {
+      let &(_, map_func_ty) = params.get(&Id::map_func)?;
+      let &(arr_expr, arr_ty) = params.get(&Id::arr)?;
+      check_map(st, map_func_ty, arr_expr, arr_ty)
+    }
     StdFn::mod_ => {
       let &(_, lhs_ty) = params.get(&Id::a)?;
       let &(rhs_expr, rhs_ty) = params.get(&Id::b)?;

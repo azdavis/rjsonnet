@@ -5,6 +5,7 @@
 - Improve typing for:
   - `%` (aka `std.mod`)
   - `std.count`
+  - `std.filterMap`
   - `std.find`
   - `std.foldl`
   - `std.foldr`
