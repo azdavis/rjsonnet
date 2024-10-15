@@ -118,15 +118,9 @@ fn maybe_extra_checks(
       Some(st.get_ty(ty::Data::Array(elem)))
     }
     StdFn::map => {
-      let &(func_expr, func_ty) = params.get(&Id::func)?;
-      let &(_, arr_ty) = params.get(&Id::arr)?;
-      // TODO handle unions
-      let ty::Data::Fn(func) = st.data(func_ty) else { return None };
-      // NOTE no need to emit error when not 1 param, covered by unify with Hof
-      let (&[func_param], func_ret_ty) = func.parts() else { return None };
-      let param_arr_ty = st.get_ty(ty::Data::Array(func_param.ty));
-      st.unify(func_expr, param_arr_ty, arr_ty);
-      Some(st.get_ty(ty::Data::Array(func_ret_ty)))
+      let &(_, func_ty) = params.get(&Id::func)?;
+      let &(arr_expr, arr_ty) = params.get(&Id::arr)?;
+      check_map(st, func_ty, arr_expr, arr_ty)
     }
     StdFn::mod_ => {
       let &(_, lhs_ty) = params.get(&Id::a)?;
@@ -235,6 +229,21 @@ fn maybe_extra_checks(
     }
     _ => None,
   }
+}
+
+fn check_map(
+  st: &mut st::St<'_>,
+  func_ty: ty::Ty,
+  arr_expr: ExprMust,
+  arr_ty: ty::Ty,
+) -> Option<ty::Ty> {
+  // TODO handle unions
+  let ty::Data::Fn(func) = st.data(func_ty) else { return None };
+  // NOTE no need to emit error when not 1 param, covered by unify with Hof
+  let (&[func_param], func_ret_ty) = func.parts() else { return None };
+  let param_arr_ty = st.get_ty(ty::Data::Array(func_param.ty));
+  st.unify(arr_expr, param_arr_ty, arr_ty);
+  Some(st.get_ty(ty::Data::Array(func_ret_ty)))
 }
 
 fn length_ok(st: &st::St<'_>, ty: ty::Ty) -> bool {
