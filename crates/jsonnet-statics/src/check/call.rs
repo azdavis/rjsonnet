@@ -122,13 +122,11 @@ fn maybe_extra_checks(
       let &(_, arr_ty) = params.get(&Id::arr)?;
       // TODO handle unions
       let ty::Data::Fn(func) = st.data(func_ty) else { return None };
-      let &ty::Data::Array(elem) = st.data(arr_ty) else { return None };
-      let (params, ret) = func.parts();
       // NOTE no need to emit error when not 1 param, covered by unify with Hof
-      let &[param] = params else { return None };
-      let ret = st.get_ty(ty::Data::Array(ret));
-      st.unify(func_expr, elem, param.ty);
-      Some(ret)
+      let (&[func_param], func_ret_ty) = func.parts() else { return None };
+      let param_arr_ty = st.get_ty(ty::Data::Array(func_param.ty));
+      st.unify(func_expr, param_arr_ty, arr_ty);
+      Some(st.get_ty(ty::Data::Array(func_ret_ty)))
     }
     StdFn::mod_ => {
       let &(_, lhs_ty) = params.get(&Id::a)?;
