@@ -1,6 +1,6 @@
 # Changelog
 
-## main
+## v0.5.3
 
 - Improve typing for:
   - `%` (aka `std.mod`)
