@@ -4,6 +4,7 @@
 
 - Improve typing for:
   - `std.count`
+  - `std.find`
   - `std.mapWithKey`
   - `std.member`
   - `std.repeat`

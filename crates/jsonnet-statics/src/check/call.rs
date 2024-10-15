@@ -210,6 +210,14 @@ fn maybe_extra_checks(
       }
       None
     }
+    StdFn::find => {
+      let &(value_expr, value_ty) = params.get(&Id::value)?;
+      let &(_, arr_ty) = params.get(&Id::arr)?;
+      if let ty::Data::Array(elem_ty) = st.data(arr_ty) {
+        st.unify(value_expr, *elem_ty, value_ty);
+      }
+      None
+    }
     _ => None,
   }
 }
