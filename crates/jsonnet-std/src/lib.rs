@@ -95,6 +95,8 @@ pub enum Ty {
   StrOrArrAny,
   /// A number or `null`.
   NumOrNull,
+  /// A number or a string.
+  NumOrStr,
   /// A HOF with 1 param.
   Hof1,
   /// A HOF with 2 params.
@@ -194,7 +196,7 @@ pub const FNS: [Fn; 126] = [
   f("isOdd", X_NUM_RET_BOOL),
   f("isInteger", X_NUM_RET_BOOL),
   f("isDecimal", X_NUM_RET_BOOL),
-  Fn { name: S::named("mod", "mod_"), sig: s(&[r("a", Ty::Any), r("b", Ty::Any)], Ty::Any) },
+  Fn { name: S::named("mod", "mod_"), sig: s(&[r("a", Ty::NumOrStr), r("b", Ty::Any)], Ty::Any) },
   f("clamp", s(&[r("x", Ty::Num), r("minVal", Ty::Num), r("maxVal", Ty::Num)], Ty::Num)),
   f("assertEqual", s(&[r("a", Ty::Any), r("b", Ty::Any)], Ty::True)),
   f("toString", s(&[r("a", Ty::Any)], Ty::Str)),

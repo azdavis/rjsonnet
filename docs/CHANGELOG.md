@@ -3,6 +3,7 @@
 ## main
 
 - Improve typing for:
+  - `%` (aka `std.mod`)
   - `std.count`
   - `std.find`
   - `std.foldl`

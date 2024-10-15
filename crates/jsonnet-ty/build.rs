@@ -23,6 +23,7 @@ fn main() {
     (i!("STRING_OR_ARRAY_NUMBER"), q!(Data::Union(BTreeSet::from([Ty::STRING, Ty::ARRAY_NUMBER])))),
     (i!("STRING_OR_ARRAY_ANY"), q!(Data::Union(BTreeSet::from([Ty::STRING, Ty::ARRAY_ANY])))),
     (i!("NUMBER_OR_NULL"), q!(Data::Union(BTreeSet::from([Ty::NUMBER, Ty::NULL])))),
+    (i!("NUMBER_OR_STRING"), q!(Data::Union(BTreeSet::from([Ty::NUMBER, Ty::STRING])))),
     (i!("HOF_1"), q!(Data::Fn(super::Fn::Hof(super::HofParams::One)))),
     (i!("HOF_2"), q!(Data::Fn(super::Fn::Hof(super::HofParams::Two)))),
     (i!("OBJECT"), q!(Data::Object(super::Object::unknown()))),
@@ -155,6 +156,7 @@ fn mk_ty(ty: jsonnet_std::Ty) -> proc_macro2::TokenStream {
     jsonnet_std::Ty::StrOrArrNum => q!(Ty::STRING_OR_ARRAY_NUMBER),
     jsonnet_std::Ty::StrOrArrAny => q!(Ty::STRING_OR_ARRAY_ANY),
     jsonnet_std::Ty::NumOrNull => q!(Ty::NUMBER_OR_NULL),
+    jsonnet_std::Ty::NumOrStr => q!(Ty::NUMBER_OR_STRING),
     jsonnet_std::Ty::Hof1 => q!(Ty::HOF_1),
     jsonnet_std::Ty::Hof2 => q!(Ty::HOF_2),
   }
