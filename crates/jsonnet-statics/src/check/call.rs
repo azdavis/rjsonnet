@@ -222,6 +222,20 @@ fn maybe_extra_checks(
       let &(_, rest_ty) = params.get(&Id::rest)?;
       Some(rest_ty)
     }
+    StdFn::foldl | StdFn::foldr => {
+      let &(_, func_ty) = params.get(&Id::func)?;
+      let &(arr_expr, arr_ty) = params.get(&Id::arr)?;
+      let &(init_expr, init_ty) = params.get(&Id::init)?;
+      // TODO handle unions
+      let ty::Data::Fn(func) = st.data(func_ty) else { return None };
+      let (func_params, func_ret) = func.parts();
+      let &[ac_param, x_param] = func_params else { return None };
+      st.unify(init_expr, ac_param.ty, init_ty);
+      st.unify(init_expr, func_ret, init_ty);
+      let want_arr_ty = st.get_ty(ty::Data::Array(x_param.ty));
+      st.unify(arr_expr, want_arr_ty, arr_ty);
+      Some(init_ty)
+    }
     _ => None,
   }
 }

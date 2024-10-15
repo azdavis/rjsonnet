@@ -5,6 +5,8 @@
 - Improve typing for:
   - `std.count`
   - `std.find`
+  - `std.foldl`
+  - `std.foldr`
   - `std.mapWithKey`
   - `std.member`
   - `std.repeat`
