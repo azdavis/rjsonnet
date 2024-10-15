@@ -24,9 +24,7 @@ fn go<S: lang_srv_state::State>(
   mut req: lsp_server::Request,
 ) -> ControlFlowResult<lsp_server::Response> {
   req = try_req::<lsp_types::request::HoverRequest, _, _>(req, |id, params| {
-    let td_params = params.text_document_position_params;
-    let path = convert::clean_path_buf(&td_params.text_document.uri)?;
-    let pos = convert::text_pos_position(td_params.position);
+    let (path, pos) = convert::text_doc_position(&params.text_document_position_params)?;
     let result = srv.st.hover(&srv.fs, path, pos).map(|text| lsp_types::Hover {
       contents: lsp_types::HoverContents::Markup(lsp_types::MarkupContent {
         kind: lsp_types::MarkupKind::Markdown,
@@ -37,18 +35,14 @@ fn go<S: lang_srv_state::State>(
     Ok(mk_res::<lsp_types::request::HoverRequest>(id, result))
   })?;
   req = try_req::<lsp_types::request::Completion, _, _>(req, |id, params| {
-    let td_params = params.text_document_position;
-    let path = convert::clean_path_buf(&td_params.text_document.uri)?;
-    let pos = convert::text_pos_position(td_params.position);
+    let (path, pos) = convert::text_doc_position(&params.text_document_position)?;
     let completions = srv.st.completions(&srv.fs, path, pos).map(|xs| {
       lsp_types::CompletionResponse::Array(xs.into_iter().map(convert::completion).collect())
     });
     Ok(mk_res::<lsp_types::request::Completion>(id, completions))
   })?;
   req = try_req::<lsp_types::request::GotoDefinition, _, _>(req, |id, params| {
-    let td_params = params.text_document_position_params;
-    let path = convert::clean_path_buf(&td_params.text_document.uri)?;
-    let pos = convert::text_pos_position(td_params.position);
+    let (path, pos) = convert::text_doc_position(&params.text_document_position_params)?;
     let result = srv.st.get_def(&srv.fs, path, pos).and_then(|(path_id, range)| {
       let uri = convert::url(srv.st.paths().get_path(path_id))?;
       Some(lsp_types::GotoDefinitionResponse::Scalar(lsp_types::Location {

@@ -102,3 +102,11 @@ pub(crate) fn completion(c: lang_srv_state::CompletionItem) -> lsp_types::Comple
     tags: None,
   }
 }
+
+pub(crate) fn text_doc_position(
+  p: &lsp_types::TextDocumentPositionParams,
+) -> Result<(paths::CleanPathBuf, text_pos::PositionUtf16)> {
+  let path = clean_path_buf(&p.text_document.uri)?;
+  let pos = text_pos_position(p.position);
+  Ok((path, pos))
+}
