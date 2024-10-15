@@ -226,8 +226,7 @@ fn maybe_extra_checks(
       let &(init_expr, init_ty) = params.get(&Id::init)?;
       // TODO handle unions
       let ty::Data::Fn(func) = st.data(func_ty) else { return None };
-      let (func_params, func_ret) = func.parts();
-      let &[ac_param, x_param] = func_params else { return None };
+      let (&[ac_param, x_param], func_ret) = func.parts() else { return None };
       st.unify(init_expr, ac_param.ty, init_ty);
       st.unify(init_expr, func_ret, init_ty);
       let want_arr_ty = st.get_ty(ty::Data::Array(x_param.ty));
