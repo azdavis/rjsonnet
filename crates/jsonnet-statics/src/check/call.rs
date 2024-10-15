@@ -202,6 +202,14 @@ fn maybe_extra_checks(
       }
       None
     }
+    StdFn::count => {
+      let &(_, arr_ty) = params.get(&Id::arr)?;
+      let &(x_expr, x_ty) = params.get(&Id::x)?;
+      if let ty::Data::Array(elem_ty) = st.data(arr_ty) {
+        st.unify(x_expr, *elem_ty, x_ty);
+      }
+      None
+    }
     _ => None,
   }
 }

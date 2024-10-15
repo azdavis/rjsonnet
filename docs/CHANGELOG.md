@@ -3,6 +3,7 @@
 ## main
 
 - Improve typing for:
+  - `std.count`
   - `std.mapWithKey`
   - `std.member`
   - `std.repeat`
