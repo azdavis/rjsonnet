@@ -182,6 +182,11 @@ fn maybe_extra_checks(
       matches!(st.data(indexable_ty), ty::Data::Prim(ty::Prim::String) | ty::Data::Array(_))
         .then_some(indexable_ty)
     }
+    StdFn::repeat => {
+      let &(_, what_ty) = params.get(&Id::what)?;
+      matches!(st.data(what_ty), ty::Data::Prim(ty::Prim::String) | ty::Data::Array(_))
+        .then_some(what_ty)
+    }
     _ => None,
   }
 }

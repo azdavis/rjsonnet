@@ -1,5 +1,10 @@
 # Changelog
 
+## main
+
+- Add special-case typing for:
+  - `std.repeat`
+
 ## v0.5.2
 
 - Avoid an issue with infinite recursion when jumping to def of recursive bindings like e.g. `local x = x`.
