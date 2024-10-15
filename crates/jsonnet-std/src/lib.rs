@@ -91,6 +91,8 @@ pub enum Ty {
   Obj,
   /// A string or an array of numbers.
   StrOrArrNum,
+  /// A string or an array of anything.
+  StrOrArrAny,
   /// A number or `null`.
   NumOrNull,
   /// A HOF with 1 param.
@@ -265,7 +267,7 @@ pub const FNS: [Fn; 126] = [
   f("manifestXmlJsonml", s(&[r("value", Ty::ArrAny)], Ty::Str)),
   f("manifestTomlEx", s(&[r("toml", Ty::Obj), r("indent", Ty::Str)], Ty::Str)),
   f("makeArray", s(&[r("sz", Ty::Num), r("func", Ty::Hof1)], Ty::ArrAny)),
-  f("member", s(&[r("arr", Ty::Any), r("x", Ty::Any)], Ty::Bool)),
+  f("member", s(&[r("arr", Ty::StrOrArrAny), r("x", Ty::Any)], Ty::Bool)),
   f("count", s(&[r("arr", Ty::ArrAny), r("x", Ty::Any)], Ty::Num)),
   f("find", s(&[r("value", Ty::Any), r("arr", Ty::ArrAny)], Ty::ArrNum)),
   f("map", ARR_HOF1),
@@ -284,7 +286,7 @@ pub const FNS: [Fn; 126] = [
     "slice",
     s(
       &[
-        r("indexable", Ty::Any),
+        r("indexable", Ty::StrOrArrAny),
         r("index", Ty::Num),
         r("end", Ty::NumOrNull),
         r("step", Ty::NumOrNull),

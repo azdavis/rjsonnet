@@ -6,6 +6,8 @@
   - `std.repeat`
 - Improve typing for:
   - `std.mapWithKey`
+  - `std.member`
+  - `std.slice`
 
 ## v0.5.2
 
