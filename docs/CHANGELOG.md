@@ -2,11 +2,10 @@
 
 ## main
 
-- Add special-case typing for:
-  - `std.repeat`
 - Improve typing for:
   - `std.mapWithKey`
   - `std.member`
+  - `std.repeat`
   - `std.slice`
 
 ## v0.5.2
