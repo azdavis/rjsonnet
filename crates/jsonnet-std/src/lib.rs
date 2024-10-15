@@ -168,7 +168,7 @@ pub const FNS: [Fn; 126] = [
   f("objectValuesAll", OBJ_VALUES),
   f("objectKeysValuesAll", OBJ_KEYS_VALUES),
   f("prune", s(&[r("a", Ty::Any)], Ty::Any)),
-  f("mapWithKey", s(&[r("func", Ty::Hof1), r("obj", Ty::Obj)], Ty::Obj)),
+  f("mapWithKey", s(&[r("func", Ty::Hof2), r("obj", Ty::Obj)], Ty::Obj)),
   f("abs", N_NUM_RET_NUM),
   f("sign", N_NUM_RET_NUM),
   f("max", s(&[r("a", Ty::Num), r("b", Ty::Num)], Ty::Num)),

@@ -4,6 +4,8 @@
 
 - Add special-case typing for:
   - `std.repeat`
+- Improve typing for:
+  - `std.mapWithKey`
 
 ## v0.5.2
 
