@@ -77,6 +77,13 @@ pub trait State {
   where
     F: Sync + paths::FileSystem;
 
+  /// Format a whole path.
+  fn format(
+    &self,
+    path: paths::CleanPathBuf,
+    tab_size: u32,
+  ) -> Option<(String, text_pos::PositionUtf16)>;
+
   /// Returns the paths store for this.
   fn paths(&self) -> &paths::Store;
 

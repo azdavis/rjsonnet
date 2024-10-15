@@ -19,6 +19,8 @@ pub(crate) fn get() -> lsp_types::ServerCapabilities {
       trigger_characters: Some(vec![".".to_owned()]),
       ..lsp_types::CompletionOptions::default()
     }),
+    // TODO make true once formatting is implemented
+    document_formatting_provider: Some(lsp_types::OneOf::Left(false)),
     ..Default::default()
   }
 }

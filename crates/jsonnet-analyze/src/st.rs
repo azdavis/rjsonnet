@@ -704,6 +704,11 @@ impl lang_srv_state::State for St {
     Some((ce.path_id, range))
   }
 
+  fn format(&self, _: paths::CleanPathBuf, _: u32) -> Option<(String, text_pos::PositionUtf16)> {
+    // TODO call the external formatter process
+    None
+  }
+
   fn paths(&self) -> &paths::Store {
     &self.with_fs.artifacts.syntax.paths
   }

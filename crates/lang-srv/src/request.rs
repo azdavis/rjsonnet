@@ -58,6 +58,21 @@ fn go<S: lang_srv_state::State>(
     });
     Ok(mk_res::<lsp_types::request::GotoDefinition>(id, result))
   })?;
+  req = try_req::<lsp_types::request::Formatting, _, _>(req, |id, params| {
+    let url = params.text_document.uri;
+    let path = convert::clean_path_buf(&url)?;
+    let result = srv.st.format(path, params.options.tab_size).map(|(new_text, end)| {
+      let edit = lsp_types::TextEdit {
+        range: lsp_types::Range {
+          start: lsp_types::Position { line: 0, character: 0 },
+          end: convert::lsp_position(end),
+        },
+        new_text,
+      };
+      vec![edit]
+    });
+    Ok(mk_res::<lsp_types::request::Formatting>(id, result))
+  })?;
   ControlFlow::Continue(req)
 }
 
