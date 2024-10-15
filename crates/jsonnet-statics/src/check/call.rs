@@ -90,6 +90,7 @@ fn get_regular<F>(
 
 fn ignore(_: Id, _: ExprMust, _: ty::Ty) {}
 
+#[expect(clippy::too_many_lines)]
 fn maybe_extra_checks(
   st: &mut st::St<'_>,
   std_fn: StdFn,
@@ -186,6 +187,20 @@ fn maybe_extra_checks(
       let &(_, what_ty) = params.get(&Id::what)?;
       matches!(st.data(what_ty), ty::Data::Prim(ty::Prim::String) | ty::Data::Array(_))
         .then_some(what_ty)
+    }
+    StdFn::member => {
+      let &(_, arr_ty) = params.get(&Id::arr)?;
+      let &(x_expr, x_ty) = params.get(&Id::x)?;
+      match st.data(arr_ty) {
+        ty::Data::Prim(ty::Prim::String) => {
+          st.unify(x_expr, ty::Ty::STRING, x_ty);
+        }
+        ty::Data::Array(elem_ty) => {
+          st.unify(x_expr, *elem_ty, x_ty);
+        }
+        _ => {}
+      }
+      None
     }
     _ => None,
   }
