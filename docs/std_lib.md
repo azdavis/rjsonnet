@@ -25,7 +25,7 @@ Note that this is a field. It contains the current Jsonnet filename as a string.
 
 _Available since version 0.10.0._
 
-Return a string that indicates the type of the value. The possible return values are
+Return a string that indicates the type of the value. The possible return values are:
 
 - `"array"`
 - `"boolean"`
