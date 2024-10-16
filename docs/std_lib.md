@@ -37,27 +37,27 @@ Return a string that indicates the type of the value. The possible return values
 
 ## `isArray`
 
-Returns `true` if the argument is an array, else `false`.
+Returns whether the argument is an array.
 
 ## `isBoolean`
 
-Returns `true` if the argument is a boolean, else `false`.
+Returns whether the argument is a boolean.
 
 ## `isFunction`
 
-Returns `true` if the argument is a function, else `false`.
+Returns whether the argument is a function.
 
 ## `isNumber`
 
-Returns `true` if the argument is a number, else `false`.
+Returns whether the argument is a number.
 
 ## `isObject`
 
-Returns `true` if the argument is an object, else `false`.
+Returns whether the argument is an object.
 
 ## `isString`
 
-Returns `true` if the argument is a string, else `false`.
+Returns whether the argument is a string.
 
 ## `length`
 
