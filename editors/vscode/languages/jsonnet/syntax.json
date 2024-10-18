@@ -9,6 +9,7 @@
     { "include": "#doubleQuotedString" },
     { "include": "#textBlock" },
     { "include": "#specialName" },
+    { "include": "#dollarSignName" },
     { "include": "#builtinLib" },
     { "include": "#controlKeyword" },
     { "include": "#otherKeyword" }
@@ -57,7 +58,11 @@
     },
     "specialName": {
       "name": "constant.language.jsonnet",
-      "match": "\\b(true|false|null|self|super|\\$)\\b"
+      "match": "\\b(true|false|null|self|super)\\b"
+    },
+    "dollarSignName": {
+      "name": "constant.language.jsonnet",
+      "match": "\\$"
     },
     "builtinLib": {
       "name": "entity.name.type.jsonnet",
