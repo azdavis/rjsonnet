@@ -3,7 +3,7 @@
 use always::always;
 use diagnostic::Diagnostic;
 use jsonnet_expr::def;
-use jsonnet_syntax::kind::SyntaxKind as SK;
+use jsonnet_syntax::{ast::AstNode as _, kind::SyntaxKind as SK};
 use std::fmt;
 use token::Triviable as _;
 
@@ -291,6 +291,13 @@ fn expr_def_range(
         let for_spec = node_ptr.cast::<jsonnet_syntax::ast::ForSpec>()?;
         let for_spec = for_spec.try_to_node(root)?;
         Some(for_spec.id()?.text_range())
+      })
+      .or_else(|| {
+        // this helps with `local f(x) = ...` desugaring
+        let paren_params = node_ptr.cast::<jsonnet_syntax::ast::ParenParams>()?;
+        let paren_params = paren_params.try_to_node(root)?;
+        let bind = jsonnet_syntax::ast::Bind::cast(paren_params.syntax().parent()?)?;
+        Some(bind.expr()?.syntax().text_range())
       })
       .or_else(|| {
         log::warn!("local fallback: {node_ptr:?}");

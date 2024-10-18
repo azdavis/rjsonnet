@@ -435,13 +435,11 @@ f(3)
 }
 
 #[test]
-#[should_panic = "nothing at def site"]
 fn local_fn() {
   JsonnetInput::manifest(
     r"
-local f(x) =
-##    ^ def: f
-  x + 1;
+local f(x) = x + 1;
+##           ^^^^^ def: f
 
     f(2)
 ##  ^ use: f
