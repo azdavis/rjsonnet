@@ -101,3 +101,21 @@ mkNull()
   )
   .check();
 }
+
+#[test]
+fn foldl() {
+  JsonnetInput::eval_error(
+    r"
+local objAdd(a, b) =
+  assert std.isObject(a);
+  assert std.isObject(b);
+  a + b;
+
+local result = std.foldl(objAdd, [{a: 1}, {b: 2}, {c: 3}], {d: 4});
+result
+## ^ hover: { ... } | { d: number }
+",
+    "not yet implemented: std.foldl",
+  )
+  .check();
+}
