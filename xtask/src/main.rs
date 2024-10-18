@@ -229,14 +229,13 @@ fn release(tag_arg: &str) {
   }
   let cargo_toml = "Cargo.toml";
   modify_each_line(cargo_toml, |out, _, line| {
-    match line.strip_prefix("version = \"").and_then(|x| x.strip_suffix('"')) {
-      None => out.push_str(line),
-      Some(_) => {
-        out.push_str("version = ");
-        out.push('"');
-        out.push_str(version);
-        out.push('"');
-      }
+    if line.strip_prefix("version = \"").and_then(|x| x.strip_suffix('"')).is_some() {
+      out.push_str("version = ");
+      out.push('"');
+      out.push_str(version);
+      out.push('"');
+    } else {
+      out.push_str(line);
     }
   });
   // to update Cargo.lock
