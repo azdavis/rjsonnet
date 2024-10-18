@@ -321,9 +321,8 @@ fn t4() {
 }
 
 #[test]
-#[should_panic = "not yet implemented: object-object equality"]
 fn t5() {
-  JsonnetInput::manifest(
+  JsonnetInput::eval_error(
     r"
 // silence type errors
 local blackBox(x) = x;
@@ -362,34 +361,35 @@ local blackBox(x) = x;
     ex2=%(ex2)0.2f
   ||| % self,
 }",
-    r#"
-{
-  "concat_array": [
-    1,
-    2,
-    3,
-    4
-  ],
-  "concat_string": "1234",
-  "equality1": false,
-  "equality2": true,
-  "ex1": 1.6666666666666665,
-  "ex2": 3,
-  "ex3": 1.6666666666666665,
-  "ex4": true,
-  "obj": {
-    "a": 1,
-    "b": 3,
-    "c": 4
-  },
-  "obj_member": true,
-  "str1": "The value of self.ex2 is 3.",
-  "str2": "The value of self.ex2 is 3.",
-  "str3": "ex1=1.67, ex2=3.00",
-  "str4": "ex1=1.67, ex2=3.00",
-  "str5": "ex1=1.67\nex2=3.00\n"
-}
-"#,
+    "not yet implemented: object-object equality",
   )
   .check();
+  /*
+  {
+    "concat_array": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "concat_string": "1234",
+    "equality1": false,
+    "equality2": true,
+    "ex1": 1.6666666666666665,
+    "ex2": 3,
+    "ex3": 1.6666666666666665,
+    "ex4": true,
+    "obj": {
+      "a": 1,
+      "b": 3,
+      "c": 4
+    },
+    "obj_member": true,
+    "str1": "The value of self.ex2 is 3.",
+    "str2": "The value of self.ex2 is 3.",
+    "str3": "ex1=1.67, ex2=3.00",
+    "str4": "ex1=1.67, ex2=3.00",
+    "str5": "ex1=1.67\nex2=3.00\n"
+  }
+   */
 }

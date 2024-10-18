@@ -18,23 +18,23 @@ func(obj.field, 4)
 }
 
 #[test]
-#[should_panic = "not yet implemented: std.makeArray"]
 fn for_comp_obj() {
-  JsonnetInput::manifest(
+  JsonnetInput::eval_error(
     r#"
 {
   [x]: std.length(x)
   for x in ["foo", "bar quz"]
 }
 "#,
-    r#"
-{
-  "a": 3,
-  "b": 7
-}
-"#,
+    "not yet implemented: std.makeArray",
   )
   .check();
+  /*
+  {
+    "a": 3,
+    "b": 7
+  }
+   */
 }
 
 #[test]
