@@ -417,3 +417,36 @@ local a = b
   )
   .check();
 }
+
+#[test]
+fn local_fn_param() {
+  JsonnetInput::manifest(
+    r"
+local f(x) =
+##      ^ def: x
+  x + 1;
+##^ use: x
+
+f(3)
+",
+    "4",
+  )
+  .check();
+}
+
+#[test]
+#[should_panic = "nothing at def site"]
+fn local_fn() {
+  JsonnetInput::manifest(
+    r"
+local f(x) =
+##    ^ def: f
+  x + 1;
+
+    f(2)
+##  ^ use: f
+",
+    "3",
+  )
+  .check();
+}
