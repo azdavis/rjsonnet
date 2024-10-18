@@ -1,5 +1,9 @@
 # Changelog
 
+## main
+
+- Weaken the typing for `std.foldl` and `std.foldr` to be more accurate.
+
 ## v0.5.3
 
 - Improve typing for:
