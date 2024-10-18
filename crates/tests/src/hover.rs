@@ -89,7 +89,6 @@ maybe(false, 'hey')
 }
 
 #[test]
-#[should_panic = "none of the lines were equal"]
 fn local_fn_ty() {
   JsonnetInput::manifest(
     r"

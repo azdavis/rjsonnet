@@ -558,8 +558,14 @@ impl lang_srv_state::State for St {
         return p.parent();
       }
       if jsonnet_syntax::ast::Bind::can_cast(p.kind()) {
-        let e = jsonnet_syntax::ast::Bind::cast(p)?.expr()?;
-        return Some(e.syntax().clone());
+        let bind = jsonnet_syntax::ast::Bind::cast(p)?;
+        return if let Some(p) = bind.paren_params() {
+          // NOTE: this depends on us knowing that when we have a local function with the syntax
+          // sugar like local f(x) = x + 1, we put the syntax node pointer on the paren params.
+          Some(p.syntax().clone())
+        } else {
+          Some(bind.expr()?.syntax().clone())
+        };
       }
       Some(p)
     });

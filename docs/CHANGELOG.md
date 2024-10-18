@@ -2,6 +2,7 @@
 
 ## main
 
+- Improve hover for type for local functions like `local func(x) = x + 1`.
 - Weaken the typing for `std.foldl` and `std.foldr` to be more accurate.
 
 ## v0.5.3
