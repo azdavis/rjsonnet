@@ -64,6 +64,23 @@ pub fn token_parent(tok: &kind::SyntaxToken) -> Option<kind::SyntaxNode> {
 /// Returns the best token in the node at the offset.
 #[must_use]
 pub fn node_token(syntax: &kind::SyntaxNode, offset: rowan::TextSize) -> Option<kind::SyntaxToken> {
+  node_token_inner(syntax, offset, priority)
+}
+
+/// Returns the best token in the node at the offset for arguments.
+#[must_use]
+pub fn node_token_for_arg(
+  syntax: &kind::SyntaxNode,
+  offset: rowan::TextSize,
+) -> Option<kind::SyntaxToken> {
+  node_token_inner(syntax, offset, priority_for_arg)
+}
+
+fn node_token_inner(
+  syntax: &kind::SyntaxNode,
+  offset: rowan::TextSize,
+  p: fn(kind::SyntaxKind) -> u8,
+) -> Option<kind::SyntaxToken> {
   let range = syntax.text_range();
   if range.start() > offset || offset > range.end() {
     // ensure precondition.
@@ -73,7 +90,7 @@ pub fn node_token(syntax: &kind::SyntaxNode, offset: rowan::TextSize) -> Option<
     rowan::TokenAtOffset::None => None,
     rowan::TokenAtOffset::Single(t) => Some(t),
     rowan::TokenAtOffset::Between(t1, t2) => {
-      Some(if priority(t1.kind()) >= priority(t2.kind()) { t1 } else { t2 })
+      Some(if p(t1.kind()) >= p(t2.kind()) { t1 } else { t2 })
     }
   }
 }
@@ -102,6 +119,36 @@ fn priority(kind: kind::SyntaxKind) -> u8 {
     | kind::SyntaxKind::NullKw
     | kind::SyntaxKind::Number => 1,
     kind::SyntaxKind::Whitespace | kind::SyntaxKind::BlockComment | kind::SyntaxKind::Invalid => 0,
+    _ => 2,
+  }
+}
+
+fn priority_for_arg(kind: kind::SyntaxKind) -> u8 {
+  match kind {
+    kind::SyntaxKind::Id => 6,
+    kind::SyntaxKind::Dot => 5,
+    kind::SyntaxKind::LCurly
+    | kind::SyntaxKind::RCurly
+    | kind::SyntaxKind::LSquare
+    | kind::SyntaxKind::RSquare => 4,
+    kind::SyntaxKind::Comma
+    | kind::SyntaxKind::Colon
+    | kind::SyntaxKind::Star
+    | kind::SyntaxKind::Plus
+    | kind::SyntaxKind::Eq => 3,
+    kind::SyntaxKind::SingleQuotedString
+    | kind::SyntaxKind::SingleQuotedVerbatimString
+    | kind::SyntaxKind::DoubleQuotedString
+    | kind::SyntaxKind::DoubleQuotedVerbatimString
+    | kind::SyntaxKind::TrueKw
+    | kind::SyntaxKind::FalseKw
+    | kind::SyntaxKind::NullKw
+    | kind::SyntaxKind::Number => 1,
+    kind::SyntaxKind::LRound
+    | kind::SyntaxKind::RRound
+    | kind::SyntaxKind::Whitespace
+    | kind::SyntaxKind::BlockComment
+    | kind::SyntaxKind::Invalid => 0,
     _ => 2,
   }
 }

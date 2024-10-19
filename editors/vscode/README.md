@@ -11,5 +11,6 @@
 - Hover for info
 - Type-checking
 - Auto-completions
+- Signature help
 
 [jsonnet]: https://jsonnet.org

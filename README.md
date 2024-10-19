@@ -14,6 +14,7 @@ An implementation of [Jsonnet][] in [Rust][], which aims to conform to the [spec
 - Hover for info
 - Type-checking
 - Auto-completions
+- Signature help
 
 ## Demo
 

@@ -459,6 +459,16 @@ impl GlobalStore {
       Data::Union(tys) => tys.iter().all(|&ty| self.object_fields_(ty, ac)),
     }
   }
+
+  /// Returns the known object fields underlying this type, if any.
+  #[must_use]
+  pub fn as_fn(&self, ty: Ty) -> Option<&Fn> {
+    if let Data::Fn(f) = self.0.data(ty, false)? {
+      Some(f)
+    } else {
+      None
+    }
+  }
 }
 
 /// A local store of types generated in one pass.

@@ -2,6 +2,7 @@
 
 ## main
 
+- Implement signature help.
 - Fix highlighting of `$`.
 - Improve hover for type and go to def for local functions like `local func(x) = x + 1`.
 - Weaken the typing for `std.foldl` and `std.foldr` to be more accurate.

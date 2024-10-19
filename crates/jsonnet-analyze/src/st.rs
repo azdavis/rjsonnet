@@ -725,15 +725,47 @@ impl lang_srv_state::State for St {
 
   fn signature_help<F>(
     &mut self,
-    _: &F,
-    _: paths::CleanPathBuf,
-    _: text_pos::PositionUtf16,
+    fs: &F,
+    path: paths::CleanPathBuf,
+    pos: text_pos::PositionUtf16,
   ) -> Option<lang_srv_state::SignatureHelp>
   where
     F: Sync + paths::FileSystem,
   {
-    // TODO provide signature help
-    None
+    let path_id = self.path_id(path);
+    let arts = self.with_fs.get_file_artifacts(&mut self.file_artifacts, fs, path_id).ok()?;
+    let tok = {
+      let ts = arts.syntax.pos_db.text_size_utf16(pos)?;
+      let root = arts.syntax.root.clone().into_ast()?;
+      jsonnet_syntax::node_token_for_arg(root.syntax(), ts)?
+    };
+    let node = jsonnet_syntax::token_parent(&tok)?;
+    let call = {
+      let mut tmp = node.clone();
+      loop {
+        match jsonnet_syntax::ast::ExprCall::cast(tmp.clone()) {
+          Some(x) => break x,
+          None => tmp = tmp.parent()?,
+        };
+      }
+    };
+    let func_expr = {
+      let func = call.expr()?;
+      let ptr = jsonnet_syntax::ast::SyntaxNodePtr::new(func.syntax());
+      arts.syntax.pointers.get_idx(ptr)?
+    };
+    let active_param = always::convert::usize_to_u32(get_arg_pos(&call, node, &tok)?);
+    let &func_ty = arts.expr_tys.get(&func_expr)?;
+    let wa = &self.with_fs.artifacts;
+    let func = wa.statics.as_fn(func_ty)?;
+    let (label, params) = match func.display_for_sig_help(&wa.statics, None, &wa.syntax.strings) {
+      Ok(x) => x,
+      Err(e) => {
+        always!(false, "couldn't fmt: {e}");
+        return None;
+      }
+    };
+    Some(lang_srv_state::SignatureHelp { label, params, active_param })
   }
 
   fn paths(&self) -> &paths::Store {
@@ -743,4 +775,25 @@ impl lang_srv_state::State for St {
   fn path_id(&mut self, path: paths::CleanPathBuf) -> PathId {
     self.with_fs.artifacts.syntax.paths.get_id_owned(path)
   }
+}
+
+fn get_arg_pos(
+  call: &jsonnet_syntax::ast::ExprCall,
+  mut tmp: jsonnet_syntax::kind::SyntaxNode,
+  tok: &jsonnet_syntax::kind::SyntaxToken,
+) -> Option<usize> {
+  let arg = loop {
+    match jsonnet_syntax::ast::Arg::cast(tmp.clone()) {
+      Some(x) => break x,
+      None => match tmp.parent() {
+        Some(x) => tmp = x,
+        None => return matches!(tok.kind(), jsonnet_syntax::kind::SyntaxKind::LRound).then_some(0),
+      },
+    };
+  };
+  let mut pos = call.args().position(|a| a.syntax().text_range() == arg.syntax().text_range())?;
+  if tok.kind() == jsonnet_syntax::kind::SyntaxKind::Comma {
+    pos += 1;
+  }
+  Some(pos)
 }

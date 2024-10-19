@@ -1,9 +1,9 @@
 //! Display types.
 
-use super::{Data, GlobalStore, LocalStore, Param, Prim, Ty};
+use super::{Data, Fn, GlobalStore, LocalStore, Param, Prim, Ty};
 use always::always;
 use jsonnet_expr::StrArena;
-use std::fmt;
+use std::fmt::{self, Write as _};
 
 impl Ty {
   /// Displays a type.
@@ -26,6 +26,43 @@ impl Ty {
       MultiLine::May => Some(0),
     };
     TyDisplay { ty: self, prec: Prec::Min, stuff: Stuff { global, local, str_ar, level } }
+  }
+}
+
+impl Fn {
+  /// Displays a function for signature help.
+  ///
+  /// # Errors
+  ///
+  /// When we couldn't display things (a bug).
+  pub fn display_for_sig_help<'a>(
+    &self,
+    global: &'a GlobalStore,
+    local: Option<&'a LocalStore>,
+    str_ar: &'a StrArena,
+  ) -> Result<(String, Vec<std::ops::Range<u32>>), fmt::Error> {
+    let (params, ret) = self.parts();
+    let mut param_ranges = Vec::<std::ops::Range<u32>>::new();
+    // NOTE: some duplication with `FnDisplay`.
+    let mut buf = "(".to_owned();
+    let mut first = true;
+    for &param in params {
+      if first {
+        first = false;
+      } else {
+        buf.push_str(", ");
+      }
+      let start = always::convert::usize_to_u32(buf.len());
+      let param_d = ParamDisplay { param, stuff: Stuff { global, local, str_ar, level: None } };
+      write!(&mut buf, "{param_d}")?;
+      let end = always::convert::usize_to_u32(buf.len());
+      param_ranges.push(start..end);
+    }
+    always!(params.len() == param_ranges.len());
+    buf.push_str(") => ");
+    let ret = ret.display(MultiLine::MustNot, global, local, str_ar);
+    write!(&mut buf, "{ret}")?;
+    Ok((buf, param_ranges))
   }
 }
 
