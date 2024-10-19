@@ -252,10 +252,12 @@ fn field_sep(f: &mut fmt::Formatter<'_>, level: Option<usize>) -> fmt::Result {
   }
 }
 
+const INDENT: &str = "  ";
+
 fn nl_indent(f: &mut fmt::Formatter<'_>, level: usize) -> fmt::Result {
   f.write_str("\n")?;
   for _ in 0..level {
-    f.write_str("  ")?;
+    f.write_str(INDENT)?;
   }
   Ok(())
 }
