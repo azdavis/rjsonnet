@@ -127,15 +127,8 @@ pub enum CompletionItemKind {
 pub struct SignatureHelp {
   /// The label.
   pub label: String,
-  /// Info about the params.
-  pub params: Vec<SignatureHelpParam>,
+  /// Ranges in the label of the params.
+  pub params: Vec<std::ops::Range<u32>>,
   /// The active param.
   pub active_param: u32,
-}
-
-/// A signature help param.
-#[derive(Debug, Clone)]
-pub struct SignatureHelpParam {
-  /// The range in the label of this param.
-  pub range: std::ops::Range<u32>,
 }

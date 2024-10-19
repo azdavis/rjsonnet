@@ -71,7 +71,7 @@ fn go<S: lang_srv_state::State>(
     let (path, pos) = convert::text_doc_position(&params.text_document_position_params)?;
     let result = srv.st.signature_help(&srv.fs, path, pos).map(|help| {
       let params = help.params.into_iter().map(|param| lsp_types::ParameterInformation {
-        label: lsp_types::ParameterLabel::LabelOffsets([param.range.start, param.range.end]),
+        label: lsp_types::ParameterLabel::LabelOffsets([param.start, param.end]),
         documentation: None,
       });
       let signature = lsp_types::SignatureInformation {
