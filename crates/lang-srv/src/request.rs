@@ -55,7 +55,7 @@ fn go<S: lang_srv_state::State>(
   req = try_req::<lsp_types::request::Formatting, _, _>(req, |id, params| {
     let url = params.text_document.uri;
     let path = convert::clean_path_buf(&url)?;
-    let result = srv.st.format(path, params.options.tab_size).map(|(new_text, end)| {
+    let result = srv.st.format(&srv.fs, path, params.options.tab_size).map(|(new_text, end)| {
       let edit = lsp_types::TextEdit {
         range: lsp_types::Range {
           start: lsp_types::Position { line: 0, character: 0 },
@@ -69,7 +69,7 @@ fn go<S: lang_srv_state::State>(
   })?;
   req = try_req::<lsp_types::request::SignatureHelpRequest, _, _>(req, |id, params| {
     let (path, pos) = convert::text_doc_position(&params.text_document_position_params)?;
-    let result = srv.st.signature_help(path, pos).map(|help| {
+    let result = srv.st.signature_help(&srv.fs, path, pos).map(|help| {
       let params = help.params.into_iter().map(|param| lsp_types::ParameterInformation {
         label: lsp_types::ParameterLabel::LabelOffsets([param.range.start, param.range.end]),
         documentation: None,

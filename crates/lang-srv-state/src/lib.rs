@@ -78,18 +78,24 @@ pub trait State {
     F: Sync + paths::FileSystem;
 
   /// Format a whole path.
-  fn format(
-    &self,
+  fn format<F>(
+    &mut self,
+    fs: &F,
     path: paths::CleanPathBuf,
     tab_size: u32,
-  ) -> Option<(String, text_pos::PositionUtf16)>;
+  ) -> Option<(String, text_pos::PositionUtf16)>
+  where
+    F: Sync + paths::FileSystem;
 
   /// Gets signature help.
-  fn signature_help(
-    &self,
+  fn signature_help<F>(
+    &mut self,
+    fs: &F,
     path: paths::CleanPathBuf,
     pos: text_pos::PositionUtf16,
-  ) -> Option<SignatureHelp>;
+  ) -> Option<SignatureHelp>
+  where
+    F: Sync + paths::FileSystem;
 
   /// Returns the paths store for this.
   fn paths(&self) -> &paths::Store;

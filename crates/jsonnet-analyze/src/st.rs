@@ -710,16 +710,28 @@ impl lang_srv_state::State for St {
     Some((ce.path_id, range))
   }
 
-  fn format(&self, _: paths::CleanPathBuf, _: u32) -> Option<(String, text_pos::PositionUtf16)> {
+  fn format<F>(
+    &mut self,
+    _: &F,
+    _: paths::CleanPathBuf,
+    _: u32,
+  ) -> Option<(String, text_pos::PositionUtf16)>
+  where
+    F: Sync + paths::FileSystem,
+  {
     // TODO call the external formatter process
     None
   }
 
-  fn signature_help(
-    &self,
+  fn signature_help<F>(
+    &mut self,
+    _: &F,
     _: paths::CleanPathBuf,
     _: text_pos::PositionUtf16,
-  ) -> Option<lang_srv_state::SignatureHelp> {
+  ) -> Option<lang_srv_state::SignatureHelp>
+  where
+    F: Sync + paths::FileSystem,
+  {
     // TODO provide signature help
     None
   }
