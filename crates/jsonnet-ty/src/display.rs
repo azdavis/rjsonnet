@@ -21,19 +21,11 @@ impl Ty {
     local: Option<&'a LocalStore>,
     str_ar: &'a StrArena,
   ) -> impl fmt::Display + 'a {
-    TyDisplay {
-      ty: self,
-      prec: Prec::Min,
-      stuff: Stuff {
-        global,
-        local,
-        str_ar,
-        level: match multi_line {
-          MultiLine::MustNot => None,
-          MultiLine::May => Some(0),
-        },
-      },
-    }
+    let level = match multi_line {
+      MultiLine::MustNot => None,
+      MultiLine::May => Some(0),
+    };
+    TyDisplay { ty: self, prec: Prec::Min, stuff: Stuff { global, local, str_ar, level } }
   }
 }
 
