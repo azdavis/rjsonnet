@@ -1,6 +1,6 @@
 # Changelog
 
-## main
+## v0.6.0
 
 - Implement signature help.
 - Fix highlighting of `$`.
