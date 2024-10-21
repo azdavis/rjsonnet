@@ -293,10 +293,11 @@ fn expr_def_range(
         Some(for_spec.id()?.text_range())
       })
       .or_else(|| {
-        // this helps with `local f(x) = ...` desugaring
         let paren_params = node_ptr.cast::<jsonnet_syntax::ast::ParenParams>()?;
         let paren_params = paren_params.try_to_node(root)?;
-        let bind = jsonnet_syntax::ast::Bind::cast(paren_params.syntax().parent()?)?;
+        let parent = paren_params.syntax().parent()?;
+        // this helps with `local f(x) = ...` desugaring
+        let bind = jsonnet_syntax::ast::Bind::cast(parent)?;
         Some(bind.expr()?.syntax().text_range())
       })
       .or_else(|| {
