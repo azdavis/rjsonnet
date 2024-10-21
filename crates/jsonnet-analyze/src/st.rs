@@ -673,9 +673,9 @@ impl lang_srv_state::State for St {
   {
     let path_id = self.path_id(path);
     let arts = self.get_file_artifacts(fs, path_id).ok()?;
-    let root = arts.syntax.root.clone().into_ast()?;
     let ce = {
       let ts = arts.syntax.pos_db.text_size_utf16(pos)?;
+      let root = arts.syntax.root.clone().into_ast()?;
       let tok = jsonnet_syntax::node_token(root.syntax(), ts)?;
       let node = jsonnet_syntax::token_parent(&tok)?;
       let ptr = jsonnet_syntax::ast::SyntaxNodePtr::new(&node);
@@ -705,7 +705,8 @@ impl lang_srv_state::State for St {
     let for_comprehension_hack =
       jsonnet_expr::def::ExprDefKind::Multi(0, jsonnet_expr::def::ExprDefKindMulti::LocalBind);
     let kind = ce.kind.or(Some(for_comprehension_hack));
-    let tr = util::expr_range(&arts.syntax.pointers, root.syntax(), ce.expr, kind);
+    let tr =
+      util::expr_range(&arts.syntax.pointers, &arts.syntax.root.clone().syntax(), ce.expr, kind);
     let range = arts.syntax.pos_db.range_utf16(tr)?;
     Some((ce.path_id, range))
   }

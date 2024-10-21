@@ -3,6 +3,7 @@
 ## main
 
 - Improve signature help with named arguments.
+- Improve go-to-def, etc across imported files.
 
 ## v0.6.0
 
