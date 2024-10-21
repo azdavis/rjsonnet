@@ -7,6 +7,8 @@
     { "include": "#number" },
     { "include": "#singleQuotedString" },
     { "include": "#doubleQuotedString" },
+    { "include": "#singleQuotedVerbatimString" },
+    { "include": "#doubleQuotedVerbatimString" },
     { "include": "#textBlock" },
     { "include": "#specialName" },
     { "include": "#dollarSignName" },
@@ -45,6 +47,16 @@
       "begin": "\"",
       "end": "\"",
       "patterns": [{ "include": "#escape" }]
+    },
+    "singleQuotedVerbatimString": {
+      "name": "string.quoted.single-verbatim.jsonnet",
+      "begin": "@'",
+      "end": "'"
+    },
+    "doubleQuotedVerbatimString": {
+      "name": "string.quoted.double-verbatim.jsonnet",
+      "begin": "@\"",
+      "end": "\""
     },
     "textBlock": {
       "name": "string.quoted.text-block.jsonnet",

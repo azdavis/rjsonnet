@@ -8,6 +8,7 @@ Things under "main" are not released yet.
   - `std.join`
   - `std.repeat`
   - `std.slice`
+- Improve syntax highlighting for verbatim strings.
 
 ## v0.6.1
 
