@@ -7,18 +7,27 @@ An implementation of [Jsonnet][] in [Rust][], which aims to conform to the [spec
 - [VS Code Marketplace][vs-code-marketplace]
 - [Open VSX][open-vsx]
 
-## Features
+## Screenshots
 
-- Inline diagnostics
-- Go-to-definition
-- Hover for info
-- Type-checking
-- Auto-completions
-- Signature help
+### Syntax highlighting, error tolerant parsing, and inline diagnostics
 
-## Demo
+![syntax-hl-err-tolerant-diagnostics](/img/1-syntax-hl-err-tolerant-diagnostics.png)
 
-https://github.com/azdavis/rjsonnet/assets/6496454/8e2f5e46-f0ed-48b5-8811-ab05d00d4fe8
+### Go to (or peek) definition
+
+![peek-def](/img/2-peek-def.png)
+
+### Hover for type and standard library documentation
+
+![std-lib](/img/3-std-lib-doc-hover.png)
+
+### Auto-complete object fields
+
+![auto-complete](/img/4-auto-complete.png)
+
+### Signature help
+
+![auto-complete](/img/5-sig-help.png)
 
 ## Ways to use
 

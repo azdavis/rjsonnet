@@ -131,6 +131,10 @@ Most of the code is contained in the Rust crates documented above, but some code
 
 Documentation, like this!
 
+### `img`
+
+Images for the README.
+
 ### `editors`
 
 Support for specific text editors via language client extensions/"glue code".
