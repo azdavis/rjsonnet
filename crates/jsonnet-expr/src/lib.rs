@@ -200,6 +200,12 @@ impl Prim {
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Str(StrRepr);
 
+impl From<Id> for Str {
+  fn from(id: Id) -> Self {
+    Self(StrRepr::Copy(id.0))
+  }
+}
+
 impl Str {
   pub fn apply(&mut self, subst: &Subst) {
     match &mut self.0 {

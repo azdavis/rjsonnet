@@ -1,5 +1,9 @@
 # Changelog
 
+## main
+
+- Improve signature help with named arguments.
+
 ## v0.6.0
 
 - Implement signature help.

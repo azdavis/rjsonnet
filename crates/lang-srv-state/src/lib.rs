@@ -130,5 +130,5 @@ pub struct SignatureHelp {
   /// Ranges in the label of the params.
   pub params: Vec<std::ops::Range<u32>>,
   /// The active param.
-  pub active_param: u32,
+  pub active_param: Option<u32>,
 }

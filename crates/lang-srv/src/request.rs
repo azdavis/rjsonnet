@@ -83,7 +83,7 @@ fn go<S: lang_srv_state::State>(
       lsp_types::SignatureHelp {
         signatures: vec![signature],
         active_signature: Some(0),
-        active_parameter: Some(help.active_param),
+        active_parameter: help.active_param,
       }
     });
     Ok(mk_res::<lsp_types::request::SignatureHelpRequest>(id, result))

@@ -754,7 +754,6 @@ impl lang_srv_state::State for St {
       let ptr = jsonnet_syntax::ast::SyntaxNodePtr::new(func.syntax());
       arts.syntax.pointers.get_idx(ptr)?
     };
-    let active_param = always::convert::usize_to_u32(get_arg_pos(&call, node, &tok)?);
     let &func_ty = arts.expr_tys.get(&func_expr)?;
     let wa = &self.with_fs.artifacts;
     let func = wa.statics.as_fn(func_ty)?;
@@ -765,7 +764,16 @@ impl lang_srv_state::State for St {
         return None;
       }
     };
-    Some(lang_srv_state::SignatureHelp { label, params, active_param })
+    // use params.len() (out of bounds) when we couldn't figure it out. it seems if we send None for
+    // the active param it defaults to highlighting the 0th one? but if we send out of bounds it
+    // highlights nothing, which seems better.
+    let active_param =
+      get_cur_param(node, &tok, &call, func, &wa.syntax.strings).unwrap_or(params.len());
+    Some(lang_srv_state::SignatureHelp {
+      label,
+      params,
+      active_param: Some(always::convert::usize_to_u32(active_param)),
+    })
   }
 
   fn paths(&self) -> &paths::Store {
@@ -777,10 +785,12 @@ impl lang_srv_state::State for St {
   }
 }
 
-fn get_arg_pos(
-  call: &jsonnet_syntax::ast::ExprCall,
+fn get_cur_param(
   mut tmp: jsonnet_syntax::kind::SyntaxNode,
   tok: &jsonnet_syntax::kind::SyntaxToken,
+  call: &jsonnet_syntax::ast::ExprCall,
+  func: &jsonnet_ty::Fn,
+  str_ar: &jsonnet_expr::StrArena,
 ) -> Option<usize> {
   let arg = loop {
     match jsonnet_syntax::ast::Arg::cast(tmp.clone()) {
@@ -791,9 +801,25 @@ fn get_arg_pos(
       },
     };
   };
-  let mut pos = call.args().position(|a| a.syntax().text_range() == arg.syntax().text_range())?;
-  if tok.kind() == jsonnet_syntax::kind::SyntaxKind::Comma {
-    pos += 1;
+  if let Some(x) = arg.id_eq() {
+    let id = x.id()?;
+    let text = id.text();
+    let (params, _) = func.parts();
+    let pos = params.iter().position(|p| {
+      let s = p.id.into();
+      str_ar.get(&s) == text
+    })?;
+    Some(pos)
+  } else {
+    for (idx, a) in call.args().enumerate() {
+      if a.id_eq().is_some() {
+        return None;
+      }
+      if a.syntax().text_range() == arg.syntax().text_range() {
+        let pos = if tok.kind() == jsonnet_syntax::kind::SyntaxKind::Comma { idx + 1 } else { idx };
+        return Some(pos);
+      }
+    }
+    None
   }
-  Some(pos)
 }
