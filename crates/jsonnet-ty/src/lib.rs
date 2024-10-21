@@ -482,7 +482,7 @@ impl Default for LocalStore {
 }
 
 /// A substitution between two [`Store`]s.
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Subst {
   /// INVARIANT: map from local to non-local tys
   old_to_new: FxHashMap<Ty, Ty>,
@@ -558,7 +558,7 @@ impl Subst {
     drop(work);
     drop(cur);
     drop(done);
-    let mut ret = Subst { old_to_new: FxHashMap::default() };
+    let mut ret = Subst::default();
     for old in order {
       let (idx, is_local) = old.to_data();
       always!(is_local);
