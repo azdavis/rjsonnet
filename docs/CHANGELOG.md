@@ -1,5 +1,14 @@
 # Changelog
 
+Things under "main" are not released yet.
+
+## main
+
+- Improve typing for:
+  - `std.join`
+  - `std.repeat`
+  - `std.slice`
+
 ## v0.6.1
 
 - Improve signature help with named arguments.
