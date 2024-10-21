@@ -4,6 +4,7 @@
 
 - Improve signature help with named arguments.
 - Improve go-to-def, etc across imported files.
+- Improve go-to-def for object field functions.
 
 ## v0.6.0
 

@@ -297,8 +297,14 @@ fn expr_def_range(
         let paren_params = paren_params.try_to_node(root)?;
         let parent = paren_params.syntax().parent()?;
         // this helps with `local f(x) = ...` desugaring
-        let bind = jsonnet_syntax::ast::Bind::cast(parent)?;
-        Some(bind.expr()?.syntax().text_range())
+        if let Some(bind) = jsonnet_syntax::ast::Bind::cast(parent.clone()) {
+          return Some(bind.expr()?.syntax().text_range());
+        }
+        // this helps with `{ f(x): ... }` desugaring
+        if let Some(field) = jsonnet_syntax::ast::Field::cast(parent) {
+          return Some(field.expr()?.syntax().text_range());
+        }
+        None
       })
       .or_else(|| {
         log::warn!("local fallback: {node_ptr:?}");
