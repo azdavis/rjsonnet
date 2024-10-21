@@ -1,6 +1,6 @@
 # Changelog
 
-## main
+## v0.6.1
 
 - Improve signature help with named arguments.
 - Improve go-to-def, etc across imported files.
