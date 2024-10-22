@@ -72,8 +72,23 @@ I took a lot of inspiration from the existing [Jsonnet LSP][carl] extension, but
 
 ## Alternatives
 
+### Jsonnet language servers
+
+Some prior art:
+
 - [Jsonnet LSP][carl], by Carl Verge
 - [Jsonnet Language Server][grafana], by Grafana
+
+These implementations are based off of the [Go implementation of Jsonnet][gojsonnet].
+
+### Rust implementations of Jsonnet
+
+- [jrsonnet](https://github.com/CertainLach/jrsonnet), by CertainLach
+- [rsjsonnet](https://github.com/eduardosm/rsjsonnet), by eduardosm
+
+Confusingly, the Python bindings for the former are called [rjsonnet](https://pypi.org/project/rjsonnet/).
+
+These implementations are more targeted at implementing the Jsonnet language for evaluating/manifesting it to JSON. This project has some evaluation functionality implemented, but it is mainly intended to be a language server. This makes evaluation of Jsonnet into JSON less of a project goal.
 
 ## License
 
@@ -91,3 +106,4 @@ Like Rust itself and many other projects in the Rust community, this project is 
 [millet]: https://github.com/azdavis/millet
 [vs-code-marketplace]: https://marketplace.visualstudio.com/items?itemName=azdavis.rjsonnet
 [open-vsx]: https://open-vsx.org/extension/azdavis/rjsonnet
+[gojsonnet]: https://github.com/google/go-jsonnet
