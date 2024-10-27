@@ -239,8 +239,8 @@ pub const FNS: [Fn; 126] = [
       &[
         r("value", Ty::Any),
         r("indent", Ty::Str),
-        r("newline", Ty::Str),
-        r("key_val_sep", Ty::Str),
+        o("newline", Ty::Str),
+        o("key_val_sep", Ty::Str),
       ],
       Ty::Str,
     ),

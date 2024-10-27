@@ -6,6 +6,7 @@ Things under "main" are not released yet.
 
 - Improve typing for:
   - `std.join`
+  - `std.manifestJsonEx`
   - `std.repeat`
   - `std.slice`
 - Improve syntax highlighting for verbatim strings.
