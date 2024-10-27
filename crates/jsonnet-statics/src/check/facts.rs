@@ -75,8 +75,8 @@ fn get_cond(st: &mut st::St<'_>, ar: &ExprArena, ac: &mut Facts, cond: Expr) {
         return;
       }
       let [Some(param)] = positional[..] else { return };
-      let ExprData::Id(param) = ar[param] else { return };
-      ac.entry(param).or_insert(ty);
+      let ExprData::Id(id) = ar[param] else { return };
+      add_fact(ac, id, ty);
     }
     // the cond is itself another if expression.
     &ExprData::If { cond, yes: Some(yes), no: Some(no) } => {
@@ -93,7 +93,7 @@ fn get_cond(st: &mut st::St<'_>, ar: &ExprArena, ac: &mut Facts, cond: Expr) {
         for (id, fst_ty) in fst {
           let Some(&snd_ty) = snd.get(&id) else { continue };
           let ty = st.get_ty(ty::Data::Union(ty::Union::from([fst_ty, snd_ty])));
-          ac.entry(id).or_insert(ty);
+          add_fact(ac, id, ty);
         }
       }
     }
@@ -126,7 +126,7 @@ fn get_ty_eq(st: &st::St<'_>, ar: &ExprArena, ac: &mut Facts, call: ExprMust, ty
     return;
   }
   let [Some(param)] = positional[..] else { return };
-  let ExprData::Id(param) = ar[param] else { return };
+  let ExprData::Id(id) = ar[param] else { return };
   let ExprData::Prim(Prim::String(type_str)) = &ar[type_str] else { return };
   let ty = match *type_str {
     Str::array => ty::Ty::ARRAY_ANY,
@@ -138,7 +138,7 @@ fn get_ty_eq(st: &st::St<'_>, ar: &ExprArena, ac: &mut Facts, call: ExprMust, ty
     Str::null => ty::Ty::NULL,
     _ => return,
   };
-  ac.entry(param).or_insert(ty);
+  add_fact(ac, id, ty);
 }
 
 /// Process `$var == LIT`, where LIT is some literal.
@@ -146,4 +146,8 @@ fn get_eq_lit(ar: &ExprArena, ac: &mut Facts, var: ExprMust, lit: ExprMust) {
   let ExprData::Id(param) = ar[var] else { return };
   let ExprData::Prim(Prim::Null) = &ar[lit] else { return };
   ac.entry(param).or_insert(ty::Ty::NULL);
+}
+
+fn add_fact(ac: &mut Facts, id: Id, ty: ty::Ty) {
+  ac.entry(id).or_insert(ty);
 }
