@@ -26,7 +26,6 @@
 //!   asserting with `foo.isTYPE` etc.
 
 use crate::scope::{Facts, Scope};
-use crate::ty_logic;
 use jsonnet_expr::{Expr, ExprArena, ExprData, ExprMust, Id, Prim, Str};
 use jsonnet_ty as ty;
 
@@ -164,5 +163,5 @@ fn get_eq_lit(ar: &ExprArena, ac: &mut Facts, var: ExprMust, lit: ExprMust) {
 
 fn add_fact(tys: &mut ty::MutStore<'_>, ac: &mut Facts, id: Id, ty: ty::Ty) {
   let entry = ac.entry(id).or_insert(ty::Ty::ANY);
-  *entry = ty_logic::and(tys, *entry, ty);
+  *entry = ty::logic::and(tys, *entry, ty);
 }

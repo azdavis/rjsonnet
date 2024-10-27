@@ -1,6 +1,7 @@
 //! A type system for Jsonnet.
 
 pub mod display;
+pub mod logic;
 
 mod generated {
   include!(concat!(env!("OUT_DIR"), "/generated.rs"));

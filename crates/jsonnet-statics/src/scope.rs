@@ -1,6 +1,5 @@
 //! See [`Scope`].
 
-use crate::ty_logic;
 use always::always;
 use jsonnet_expr::{def, ExprMust, Id};
 use jsonnet_ty as ty;
@@ -73,7 +72,7 @@ impl Scope {
         always!(false, "should not have empty ty stack");
         continue;
       };
-      let new = ty_logic::and(tys, cur, ty);
+      let new = ty::logic::and(tys, cur, ty);
       defined_id.tys.push(new);
     }
   }
@@ -86,7 +85,7 @@ impl Scope {
         always!(false, "should not have empty ty stack");
         continue;
       };
-      let new = ty_logic::minus(tys, cur, ty);
+      let new = ty::logic::minus(tys, cur, ty);
       defined_id.tys.push(new);
     }
   }

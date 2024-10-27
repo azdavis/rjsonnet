@@ -1,32 +1,32 @@
 //! Logical operations with types.
 
+use crate::{Data, MutStore, Object, Prim, Ty};
 use always::always;
-use jsonnet_ty as ty;
 use std::collections::BTreeSet;
 
 /// returns the type that is BOTH x AND Y. when such a type doesn't exist (like when e.g. x is
 /// string and y is number), return the empty union type (aka never, aka void).
 ///
 /// a bit similar to unification.
-pub(crate) fn and(tys: &mut ty::MutStore<'_>, x: ty::Ty, y: ty::Ty) -> ty::Ty {
+pub fn and(tys: &mut MutStore<'_>, x: Ty, y: Ty) -> Ty {
   // speed up a simple case
   if x == y {
     return x;
   }
   match (tys.data(x), tys.data(y)) {
-    (ty::Data::Prim(ty::Prim::Any), _) => y,
-    (_, ty::Data::Prim(ty::Prim::Any)) => x,
-    (ty::Data::Prim(x), ty::Data::Prim(y)) => {
+    (Data::Prim(Prim::Any), _) => y,
+    (_, Data::Prim(Prim::Any)) => x,
+    (Data::Prim(x), Data::Prim(y)) => {
       always!(x != y, "should have returned already if x == y");
-      ty::Ty::NEVER
+      Ty::NEVER
     }
-    (ty::Data::Array(x), ty::Data::Array(y)) => {
+    (Data::Array(x), Data::Array(y)) => {
       let elem = and(tys, *x, *y);
       // NOTE: see discussion of object fields for why we do not return never even if the elem is of
       // type never.
-      tys.get(ty::Data::Array(elem))
+      tys.get(Data::Array(elem))
     }
-    (ty::Data::Object(x), ty::Data::Object(y)) => {
+    (Data::Object(x), Data::Object(y)) => {
       let mut known = x.known.clone();
       let y_known = y.known.clone();
       let has_unknown = x.has_unknown && y.has_unknown;
@@ -37,24 +37,24 @@ pub(crate) fn and(tys: &mut ty::MutStore<'_>, x: ty::Ty, y: ty::Ty) -> ty::Ty {
         // is lazy - we can have a lazy field of type never and not witness the never-ness if we
         // don't access that field. it's a little wonky.
       }
-      tys.get(ty::Data::Object(ty::Object { known, has_unknown }))
+      tys.get(Data::Object(Object { known, has_unknown }))
     }
-    (ty::Data::Fn(_), ty::Data::Fn(_)) => {
+    (Data::Fn(_), Data::Fn(_)) => {
       // we could almost certainly be more permissive here, but this case is probably rare to run
       // into anyway.
-      ty::Ty::NEVER
+      Ty::NEVER
     }
-    (ty::Data::Union(xs), _) => union_and(tys, xs.clone(), y),
-    (_, ty::Data::Union(ys)) => union_and(tys, ys.clone(), x),
-    _ => ty::Ty::NEVER,
+    (Data::Union(xs), _) => union_and(tys, xs.clone(), y),
+    (_, Data::Union(ys)) => union_and(tys, ys.clone(), x),
+    _ => Ty::NEVER,
   }
 }
 
 /// and distributes across or:
 ///
 /// (a || b) && c == (a && c) || (b && c)
-fn union_and(tys: &mut ty::MutStore<'_>, xs: BTreeSet<ty::Ty>, y: ty::Ty) -> ty::Ty {
-  let u = ty::Data::Union(xs.into_iter().map(|x| and(tys, x, y)).collect());
+fn union_and(tys: &mut MutStore<'_>, xs: BTreeSet<Ty>, y: Ty) -> Ty {
+  let u = Data::Union(xs.into_iter().map(|x| and(tys, x, y)).collect());
   tys.get(u)
 }
 
@@ -65,24 +65,23 @@ fn union_and(tys: &mut ty::MutStore<'_>, xs: BTreeSet<ty::Ty>, y: ty::Ty) -> ty:
 ///
 /// note that we do NOT handle the case where x is any by returning a big union type of everything
 /// except y. this is "okay" because having any already makes the type system unsound.
-#[allow(dead_code)]
-pub(crate) fn minus(tys: &mut ty::MutStore<'_>, x: ty::Ty, y: ty::Ty) -> ty::Ty {
+pub fn minus(tys: &mut MutStore<'_>, x: Ty, y: Ty) -> Ty {
   // speed up a simple case
-  if x == y || x == ty::Ty::NEVER {
-    return ty::Ty::NEVER;
+  if x == y || x == Ty::NEVER {
+    return Ty::NEVER;
   }
   match (tys.data(x), tys.data(y)) {
-    (ty::Data::Prim(ty::Prim::Any), _) => ty::Ty::ANY,
-    (_, ty::Data::Prim(ty::Prim::Any)) => ty::Ty::NEVER,
-    (ty::Data::Prim(xp), ty::Data::Prim(yp)) => {
+    (Data::Prim(Prim::Any), _) => Ty::ANY,
+    (_, Data::Prim(Prim::Any)) => Ty::NEVER,
+    (Data::Prim(xp), Data::Prim(yp)) => {
       always!(xp != yp, "should have returned already if x == y");
       x
     }
-    (ty::Data::Array(x), ty::Data::Array(y)) => {
+    (Data::Array(x), Data::Array(y)) => {
       let elem = minus(tys, *x, *y);
-      tys.get(ty::Data::Array(elem))
+      tys.get(Data::Array(elem))
     }
-    (ty::Data::Object(x), ty::Data::Object(y)) => {
+    (Data::Object(x), Data::Object(y)) => {
       let mut known = x.known.clone();
       let y_known = y.known.clone();
       let has_unknown = x.has_unknown;
@@ -90,19 +89,19 @@ pub(crate) fn minus(tys: &mut ty::MutStore<'_>, x: ty::Ty, y: ty::Ty) -> ty::Ty 
         let Some(&y) = y_known.get(name) else { continue };
         *x = minus(tys, *x, y);
       }
-      tys.get(ty::Data::Object(ty::Object { known, has_unknown }))
+      tys.get(Data::Object(Object { known, has_unknown }))
     }
-    (ty::Data::Fn(_), ty::Data::Fn(_)) => {
+    (Data::Fn(_), Data::Fn(_)) => {
       // this might not be totally right, but this case should be rare anyway.
       x
     }
-    (ty::Data::Union(xs), _) => {
+    (Data::Union(xs), _) => {
       // (a || b) - y = (a - y) || (b - y)
       let xs = xs.clone();
-      let u = ty::Data::Union(xs.into_iter().map(|x| minus(tys, x, y)).collect());
+      let u = Data::Union(xs.into_iter().map(|x| minus(tys, x, y)).collect());
       tys.get(u)
     }
-    (_, ty::Data::Union(ys)) => {
+    (_, Data::Union(ys)) => {
       // x - (a || b) = x - a - b
       let mut ret = x;
       let ys = ys.clone();
