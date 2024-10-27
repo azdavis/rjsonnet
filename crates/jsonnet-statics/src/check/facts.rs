@@ -14,9 +14,6 @@
 //!   how can you call it?
 //! - cannot do `local isNumber = std.isNumber` beforehand, must literally get the field off `std`
 //! - cannot use named arguments, only positional arguments
-//! - isn't that clever with 'and'-ing facts about the same variable together: e.g. if we have two
-//!   facts, one that x is a string, the other, x is a boolean, we'll just say x is a string,
-//!   instead of noticing this is impossible.
 //!
 //! on the bright side:
 //!
@@ -28,7 +25,7 @@
 //!   doing `local std = wtf` beforehand, and also it'll still work with `local foo = std` and then
 //!   asserting with `foo.isTYPE` etc.
 
-use crate::st;
+use crate::{st, ty_logic};
 use jsonnet_expr::{Expr, ExprArena, ExprData, ExprMust, Id, Prim, Str};
 use jsonnet_ty as ty;
 
@@ -76,7 +73,7 @@ fn get_cond(st: &mut st::St<'_>, ar: &ExprArena, ac: &mut Facts, cond: Expr) {
       }
       let [Some(param)] = positional[..] else { return };
       let ExprData::Id(id) = ar[param] else { return };
-      add_fact(ac, id, ty);
+      add_fact(st, ac, id, ty);
     }
     // the cond is itself another if expression.
     &ExprData::If { cond, yes: Some(yes), no: Some(no) } => {
@@ -93,7 +90,7 @@ fn get_cond(st: &mut st::St<'_>, ar: &ExprArena, ac: &mut Facts, cond: Expr) {
         for (id, fst_ty) in fst {
           let Some(&snd_ty) = snd.get(&id) else { continue };
           let ty = st.get_ty(ty::Data::Union(ty::Union::from([fst_ty, snd_ty])));
-          add_fact(ac, id, ty);
+          add_fact(st, ac, id, ty);
         }
       }
     }
@@ -111,7 +108,13 @@ fn get_cond(st: &mut st::St<'_>, ar: &ExprArena, ac: &mut Facts, cond: Expr) {
 }
 
 /// Process `std.type($var) == "TYPE"`, where TYPE is number, string, etc.
-fn get_ty_eq(st: &st::St<'_>, ar: &ExprArena, ac: &mut Facts, call: ExprMust, type_str: ExprMust) {
+fn get_ty_eq(
+  st: &mut st::St<'_>,
+  ar: &ExprArena,
+  ac: &mut Facts,
+  call: ExprMust,
+  type_str: ExprMust,
+) {
   let ExprData::Call { func: Some(func), positional, named } = &ar[call] else { return };
   let ExprData::Subscript { on: Some(on), idx: Some(idx) } = ar[*func] else { return };
   let ExprData::Id(std_id) = &ar[on] else { return };
@@ -138,7 +141,7 @@ fn get_ty_eq(st: &st::St<'_>, ar: &ExprArena, ac: &mut Facts, call: ExprMust, ty
     Str::null => ty::Ty::NULL,
     _ => return,
   };
-  add_fact(ac, id, ty);
+  add_fact(st, ac, id, ty);
 }
 
 /// Process `$var == LIT`, where LIT is some literal.
@@ -148,6 +151,7 @@ fn get_eq_lit(ar: &ExprArena, ac: &mut Facts, var: ExprMust, lit: ExprMust) {
   ac.entry(param).or_insert(ty::Ty::NULL);
 }
 
-fn add_fact(ac: &mut Facts, id: Id, ty: ty::Ty) {
-  ac.entry(id).or_insert(ty);
+fn add_fact(st: &mut st::St<'_>, ac: &mut Facts, id: Id, ty: ty::Ty) {
+  let entry = ac.entry(id).or_insert(ty::Ty::ANY);
+  *entry = ty_logic::and(st, *entry, ty);
 }

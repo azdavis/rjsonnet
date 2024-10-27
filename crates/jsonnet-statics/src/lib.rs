@@ -1,6 +1,7 @@
 //! Static checking for jsonnet.
 
 mod check;
+mod ty_logic;
 mod unify;
 
 pub mod error;
