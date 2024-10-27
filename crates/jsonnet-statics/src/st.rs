@@ -124,8 +124,11 @@ impl<'a> St<'a> {
   }
 
   pub(crate) fn unify(&mut self, expr: ExprMust, want: ty::Ty, got: ty::Ty) {
-    let mut st = unify::St { expr, errors: &mut self.statics.errors };
+    let mut st = unify::St::default();
     unify::get(&mut st, &self.tys, want, got);
+    for u in st.finish() {
+      self.err(expr, error::Kind::Unify(u));
+    }
   }
 
   pub(crate) fn finish(self) -> (Statics, ty::LocalStore) {

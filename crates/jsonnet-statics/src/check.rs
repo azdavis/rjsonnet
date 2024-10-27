@@ -106,7 +106,7 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
                 // we don't know the type.
                 if !obj.has_unknown {
                   // this would result in a eval-time error if evaluated. warn statically.
-                  st.err(idx_expr, error::Kind::MissingField(s.clone()));
+                  st.err(idx_expr, error::Kind::Unify(error::Unify::MissingField(s.clone())));
                 }
                 ty::Ty::ANY
               }

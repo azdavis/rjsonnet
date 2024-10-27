@@ -44,12 +44,7 @@ impl Error {
       | Kind::DuplicateBinding(_, _, _) => diagnostic::Severity::Error,
       // TODO: make some/all type-checker warnings errors? (once we have more confidence)
       Kind::Unused(_, _)
-      | Kind::Incompatible(_, _)
-      | Kind::MissingField(_)
-      | Kind::NotEnoughParams(_, _)
-      | Kind::MismatchedParamNames(_, _)
-      | Kind::WantOptionalParamGotRequired(_)
-      | Kind::ExtraRequiredParam(_)
+      | Kind::Unify(_)
       | Kind::Incomparable(_)
       | Kind::MissingArgument(_, _)
       | Kind::ExtraPositionalArgument(_)
@@ -72,7 +67,7 @@ impl Error {
       | Kind::InvalidLength(ty) => {
         ty.apply(ty_subst);
       }
-      Kind::Incompatible(a, b) | Kind::InvalidPlus(a, b) => {
+      Kind::Unify(Unify::Incompatible(a, b)) | Kind::InvalidPlus(a, b) => {
         a.apply(ty_subst);
         b.apply(ty_subst);
       }
@@ -80,16 +75,29 @@ impl Error {
       | Kind::DuplicateNamedArg(_)
       | Kind::DuplicateBinding(_, _, _)
       | Kind::Unused(_, _)
-      | Kind::WantOptionalParamGotRequired(_)
-      | Kind::ExtraRequiredParam(_)
       | Kind::ExtraNamedArgument(_)
       | Kind::DuplicateFieldName(_)
-      | Kind::MissingField(_)
-      | Kind::MismatchedParamNames(_, _)
-      | Kind::NotEnoughParams(_, _)
-      | Kind::ExtraPositionalArgument(_) => {}
+      | Kind::ExtraPositionalArgument(_)
+      | Kind::Unify(
+        Unify::WantOptionalParamGotRequired(_)
+        | Unify::ExtraRequiredParam(_)
+        | Unify::MissingField(_)
+        | Unify::MismatchedParamNames(_, _)
+        | Unify::NotEnoughParams(_, _),
+      ) => {}
     }
   }
+}
+
+/// Errors specific to unification.
+#[derive(Debug)]
+pub(crate) enum Unify {
+  Incompatible(ty::Ty, ty::Ty),
+  MissingField(Str),
+  NotEnoughParams(usize, usize),
+  MismatchedParamNames(Id, Id),
+  WantOptionalParamGotRequired(Id),
+  ExtraRequiredParam(Id),
 }
 
 #[derive(Debug)]
@@ -99,12 +107,6 @@ pub(crate) enum Kind {
   DuplicateNamedArg(Id),
   DuplicateBinding(Id, usize, def::ExprDefKindMulti),
   Unused(Id, def::ExprDefKind),
-  Incompatible(ty::Ty, ty::Ty),
-  MissingField(Str),
-  NotEnoughParams(usize, usize),
-  MismatchedParamNames(Id, Id),
-  WantOptionalParamGotRequired(Id),
-  ExtraRequiredParam(Id),
   Incomparable(ty::Ty),
   MissingArgument(Id, ty::Ty),
   ExtraPositionalArgument(usize),
@@ -112,6 +114,7 @@ pub(crate) enum Kind {
   InvalidPlus(ty::Ty, ty::Ty),
   CallNonFn(ty::Ty),
   InvalidLength(ty::Ty),
+  Unify(Unify),
 }
 
 struct Display<'a> {
@@ -133,34 +136,6 @@ impl fmt::Display for Display<'_> {
         write!(f, "duplicate binding: `{}`", id.display(self.str_ar))
       }
       Kind::Unused(id, _) => write!(f, "unused: `{}`", id.display(self.str_ar)),
-      Kind::Incompatible(want, got) => {
-        let want = want.display(self.multi_line, self.store, None, self.str_ar);
-        let got = got.display(self.multi_line, self.store, None, self.str_ar);
-        f.write_str("incompatible types\n")?;
-        writeln!(f, "  expected `{want}`")?;
-        write!(f, "     found `{got}`")
-      }
-      Kind::MissingField(s) => write!(f, "missing field: `{}`", self.str_ar.get(s)),
-      Kind::NotEnoughParams(want, got) => {
-        f.write_str("not enough parameters\n")?;
-        writeln!(f, "  expected at least {want}")?;
-        write!(f, "   found only up to {got}")
-      }
-      Kind::MismatchedParamNames(want, got) => {
-        f.write_str("mismatched parameter names\n")?;
-        let want = want.display(self.str_ar);
-        let got = got.display(self.str_ar);
-        writeln!(f, "  expected `{want}`")?;
-        write!(f, "     found `{got}`")
-      }
-      Kind::WantOptionalParamGotRequired(id) => {
-        let id = id.display(self.str_ar);
-        write!(f, "wanted an optional parameter, got a required one: `{id}`")
-      }
-      Kind::ExtraRequiredParam(id) => {
-        let id = id.display(self.str_ar);
-        write!(f, "extra required parameter: `{id}`")
-      }
       Kind::Incomparable(ty) => {
         let ty = ty.display(self.multi_line, self.store, None, self.str_ar);
         write!(f, "not a comparable type: `{ty}`")
@@ -190,6 +165,36 @@ impl fmt::Display for Display<'_> {
         let ty = ty.display(self.multi_line, self.store, None, self.str_ar);
         write!(f, "not a type which has length: `{ty}`")
       }
+      Kind::Unify(u) => match u {
+        Unify::Incompatible(want, got) => {
+          let want = want.display(self.multi_line, self.store, None, self.str_ar);
+          let got = got.display(self.multi_line, self.store, None, self.str_ar);
+          f.write_str("incompatible types\n")?;
+          writeln!(f, "  expected `{want}`")?;
+          write!(f, "     found `{got}`")
+        }
+        Unify::MissingField(s) => write!(f, "missing field: `{}`", self.str_ar.get(s)),
+        Unify::NotEnoughParams(want, got) => {
+          f.write_str("not enough parameters\n")?;
+          writeln!(f, "  expected at least {want}")?;
+          write!(f, "   found only up to {got}")
+        }
+        Unify::MismatchedParamNames(want, got) => {
+          f.write_str("mismatched parameter names\n")?;
+          let want = want.display(self.str_ar);
+          let got = got.display(self.str_ar);
+          writeln!(f, "  expected `{want}`")?;
+          write!(f, "     found `{got}`")
+        }
+        Unify::WantOptionalParamGotRequired(id) => {
+          let id = id.display(self.str_ar);
+          write!(f, "wanted an optional parameter, got a required one: `{id}`")
+        }
+        Unify::ExtraRequiredParam(id) => {
+          let id = id.display(self.str_ar);
+          write!(f, "extra required parameter: `{id}`")
+        }
+      },
     }
   }
 }

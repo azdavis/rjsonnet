@@ -4,14 +4,18 @@ use crate::error;
 use drop_bomb::DebugDropBomb;
 use jsonnet_ty as ty;
 
-pub(crate) struct St<'a> {
-  pub(crate) expr: jsonnet_expr::ExprMust,
-  pub(crate) errors: &'a mut Vec<error::Error>,
+#[derive(Debug, Default)]
+pub(crate) struct St {
+  errors: Vec<error::Unify>,
 }
 
-impl<'a> St<'a> {
-  fn err(&mut self, kind: error::Kind) {
-    self.errors.push(error::Error { expr: self.expr, kind });
+impl St {
+  pub(crate) fn finish(self) -> Vec<error::Unify> {
+    self.errors
+  }
+
+  fn err(&mut self, e: error::Unify) {
+    self.errors.push(e);
   }
 
   fn mark(&self) -> Marker {
@@ -34,12 +38,12 @@ struct Marker {
 
 /// this checks and unifies `want` is compatible with `got`, but allows `got` to be more specific
 /// than `want`. aka, got should be a subtype of want, i suppose.
-pub(crate) fn get(st: &mut St<'_>, store: &ty::MutStore<'_>, want: ty::Ty, got: ty::Ty) {
+pub(crate) fn get(st: &mut St, store: &ty::MutStore<'_>, want: ty::Ty, got: ty::Ty) {
   match (store.data(want), store.data(got)) {
     (ty::Data::Prim(ty::Prim::Any), _) | (_, ty::Data::Prim(ty::Prim::Any)) => {}
     (ty::Data::Prim(w), ty::Data::Prim(g)) => {
       if w != g {
-        st.err(error::Kind::Incompatible(want, got));
+        st.err(error::Unify::Incompatible(want, got));
       }
     }
     (ty::Data::Array(want), ty::Data::Array(got)) => get(st, store, *want, *got),
@@ -47,7 +51,7 @@ pub(crate) fn get(st: &mut St<'_>, store: &ty::MutStore<'_>, want: ty::Ty, got: 
       for (name, w) in &want.known {
         let Some(g) = got.known.get(name) else {
           if !got.has_unknown {
-            st.err(error::Kind::MissingField(name.clone()));
+            st.err(error::Unify::MissingField(name.clone()));
           }
           continue;
         };
@@ -72,22 +76,22 @@ pub(crate) fn get(st: &mut St<'_>, store: &ty::MutStore<'_>, want: ty::Ty, got: 
     }
     (ty::Data::Fn(ty::Fn::Regular(want)), ty::Data::Fn(ty::Fn::Regular(got))) => {
       if want.params.len() > got.params.len() {
-        st.err(error::Kind::NotEnoughParams(want.params.len(), got.params.len()));
+        st.err(error::Unify::NotEnoughParams(want.params.len(), got.params.len()));
       }
       for (want, got) in want.params.iter().zip(got.params.iter()) {
         if want.id != got.id {
-          st.err(error::Kind::MismatchedParamNames(want.id, got.id));
+          st.err(error::Unify::MismatchedParamNames(want.id, got.id));
         }
         // if we wanted a required argument, we can get either a required or optional argument.
         if !want.required && got.required {
-          st.err(error::Kind::WantOptionalParamGotRequired(want.id));
+          st.err(error::Unify::WantOptionalParamGotRequired(want.id));
         }
         // ah yes, the famous contra-variance.
         get(st, store, got.ty, want.ty);
       }
       for got in got.params.iter().skip(want.params.len()) {
         if got.required {
-          st.err(error::Kind::ExtraRequiredParam(got.id));
+          st.err(error::Unify::ExtraRequiredParam(got.id));
         }
       }
       get(st, store, want.ret, got.ret);
@@ -95,7 +99,7 @@ pub(crate) fn get(st: &mut St<'_>, store: &ty::MutStore<'_>, want: ty::Ty, got: 
     (ty::Data::Fn(ty::Fn::Std(w)), ty::Data::Fn(ty::Fn::Std(g))) => {
       // NOTE this is overly strict
       if w != g {
-        st.err(error::Kind::Incompatible(want, got));
+        st.err(error::Unify::Incompatible(want, got));
       }
     }
     (ty::Data::Fn(ty::Fn::Hof(w)), ty::Data::Fn(g)) => {
@@ -105,7 +109,7 @@ pub(crate) fn get(st: &mut St<'_>, store: &ty::MutStore<'_>, want: ty::Ty, got: 
         ty::Fn::Hof(g) => g.to_usize(),
       };
       if w.to_usize() != got_required {
-        st.err(error::Kind::NotEnoughParams(w.to_usize(), got_required));
+        st.err(error::Unify::NotEnoughParams(w.to_usize(), got_required));
       }
     }
     (ty::Data::Fn(ty::Fn::Std(_)), ty::Data::Fn(ty::Fn::Regular(_)))
@@ -130,8 +134,8 @@ pub(crate) fn get(st: &mut St<'_>, store: &ty::MutStore<'_>, want: ty::Ty, got: 
           return;
         }
       }
-      st.err(error::Kind::Incompatible(want, got));
+      st.err(error::Unify::Incompatible(want, got));
     }
-    _ => st.err(error::Kind::Incompatible(want, got)),
+    _ => st.err(error::Unify::Incompatible(want, got)),
   }
 }
