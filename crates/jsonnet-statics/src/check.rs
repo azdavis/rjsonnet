@@ -1,9 +1,8 @@
 //! Check expressions for static validity: variables are in scope, types match up, etc.
 
 mod call;
-mod facts;
 
-use crate::{error, st};
+use crate::{error, facts, st};
 use always::always;
 use jsonnet_expr::{def, BinaryOp, Expr, ExprArena, ExprData, Id, Prim, UnaryOp};
 use jsonnet_ty as ty;
