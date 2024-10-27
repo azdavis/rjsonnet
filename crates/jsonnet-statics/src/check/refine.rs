@@ -3,7 +3,8 @@
 use crate::st;
 use jsonnet_expr::{Expr, ExprArena, ExprData, ExprMust, Id, Prim, Str};
 use jsonnet_ty as ty;
-use rustc_hash::FxHashMap;
+
+pub(crate) type Facts = rustc_hash::FxHashMap<Id, ty::Ty>;
 
 /// collects facts from `asserts`s at a beginning of a fn, to refine the types of its params.
 ///
@@ -42,22 +43,19 @@ use rustc_hash::FxHashMap;
 /// - checking we get from `std` is NOT syntactic, we do an env lookup. so we won't trick this by
 ///   doing `local std = wtf` beforehand, and also it'll still work with `local foo = std` and then
 ///   asserting with `foo.isTYPE` etc.
-pub(crate) fn get(
-  st: &st::St<'_>,
-  ar: &ExprArena,
-  params: &mut FxHashMap<Id, ty::Ty>,
-  mut body: Expr,
-) {
+pub(crate) fn get(st: &st::St<'_>, ar: &ExprArena, mut body: Expr) -> Facts {
+  let mut ac = Facts::default();
   while let Some(b) = body {
     let ExprData::If { cond, yes, no: Some(no) } = ar[b] else { break };
     let ExprData::Error(_) = &ar[no] else { break };
     body = yes;
-    get_cond(st, ar, params, cond);
+    get_cond(st, ar, &mut ac, cond);
   }
+  ac
 }
 
 /// refine from a single if-cond.
-fn get_cond(st: &st::St<'_>, ar: &ExprArena, ac: &mut FxHashMap<Id, ty::Ty>, cond: Expr) {
+fn get_cond(st: &st::St<'_>, ar: &ExprArena, ac: &mut Facts, cond: Expr) {
   let Some(cond) = cond else { return };
   match &ar[cond] {
     ExprData::Call { func: Some(func), positional, named } => {
@@ -80,10 +78,7 @@ fn get_cond(st: &st::St<'_>, ar: &ExprArena, ac: &mut FxHashMap<Id, ty::Ty>, con
       }
       let [Some(param)] = positional[..] else { return };
       let ExprData::Id(param) = ar[param] else { return };
-      let Some(cur) = ac.get_mut(&param) else { return };
-      if *cur == ty::Ty::ANY {
-        *cur = ty;
-      }
+      ac.entry(param).or_insert(ty);
     }
     // the cond is itself another cond.
     &ExprData::If { cond, yes: Some(yes), no: Some(no) } => {
@@ -107,13 +102,7 @@ fn get_cond(st: &st::St<'_>, ar: &ExprArena, ac: &mut FxHashMap<Id, ty::Ty>, con
 }
 
 /// refine from `std.type(x) == "TYPE"`, where TYPE is number, string, etc.
-fn get_ty_eq(
-  st: &st::St<'_>,
-  ar: &ExprArena,
-  ac: &mut FxHashMap<Id, ty::Ty>,
-  call: ExprMust,
-  type_str: ExprMust,
-) {
+fn get_ty_eq(st: &st::St<'_>, ar: &ExprArena, ac: &mut Facts, call: ExprMust, type_str: ExprMust) {
   let ExprData::Call { func: Some(func), positional, named } = &ar[call] else { return };
   let ExprData::Subscript { on: Some(on), idx: Some(idx) } = ar[*func] else { return };
   let ExprData::Id(std_id) = &ar[on] else { return };
@@ -140,18 +129,12 @@ fn get_ty_eq(
     Str::null => ty::Ty::NULL,
     _ => return,
   };
-  let Some(cur) = ac.get_mut(&param) else { return };
-  if *cur == ty::Ty::ANY {
-    *cur = ty;
-  }
+  ac.entry(param).or_insert(ty);
 }
 
 /// refine from `x == Y`, where Y is some literal.
-fn get_eq_lit(ar: &ExprArena, ac: &mut FxHashMap<Id, ty::Ty>, var: ExprMust, lit: ExprMust) {
+fn get_eq_lit(ar: &ExprArena, ac: &mut Facts, var: ExprMust, lit: ExprMust) {
   let ExprData::Id(param) = ar[var] else { return };
   let ExprData::Prim(Prim::Null) = &ar[lit] else { return };
-  let Some(cur) = ac.get_mut(&param) else { return };
-  if *cur == ty::Ty::ANY {
-    *cur = ty::Ty::NULL;
-  }
+  ac.entry(param).or_insert(ty::Ty::NULL);
 }

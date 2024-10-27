@@ -169,7 +169,13 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
             st.err(rhs.flatten().unwrap_or(expr), error::Kind::DuplicateBinding(id, idx, m));
           }
         }
-        refine::get(st, ar, &mut tmp, *body);
+        let facts = refine::get(st, ar, *body);
+        for (id, ty) in facts {
+          if let Some(cur) = tmp.get_mut(&id) {
+            *cur = ty;
+          }
+          // ignore facts about non-params.
+        }
         tmp
       };
       for (idx, &(id, _)) in params.iter().enumerate() {
