@@ -44,13 +44,12 @@ pub(crate) fn get_always(
 ) -> Facts {
   let mut ac = Facts::default();
   let Some(body) = body else { return ac };
-  // special case for object asserts with benign locals
   if let ExprData::Object { binds, asserts, .. } = &ar[body] {
-    if binds.iter().any(|&(id, _)| id != Id::dollar) {
-      return ac;
-    }
     for &a in asserts {
       get_assert(tys, scope, ar, &mut ac, a);
+    }
+    for &(id, _) in binds {
+      ac.remove(&id);
     }
   } else {
     get_assert(tys, scope, ar, &mut ac, Some(body));
