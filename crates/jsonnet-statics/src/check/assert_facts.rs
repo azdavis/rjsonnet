@@ -6,7 +6,7 @@ use jsonnet_ty as ty;
 
 pub(crate) type Facts = rustc_hash::FxHashMap<Id, ty::Ty>;
 
-/// collects facts from `asserts`s in an expression, to refine the types of identifiers.
+/// collects facts from `asserts`s in an expression, to determine the types of identifiers.
 ///
 /// note that this requires a very, very exact format for the asserts. each assert must be of the
 /// form:
@@ -57,7 +57,7 @@ pub(crate) fn get(st: &st::St<'_>, ar: &ExprArena, mut body: Expr) -> Facts {
   ac
 }
 
-/// refine from a single if-cond.
+/// process a single if-cond.
 fn get_cond(st: &st::St<'_>, ar: &ExprArena, ac: &mut Facts, cond: Expr) {
   let Some(cond) = cond else { return };
   match &ar[cond] {
@@ -104,7 +104,7 @@ fn get_cond(st: &st::St<'_>, ar: &ExprArena, ac: &mut Facts, cond: Expr) {
   }
 }
 
-/// refine from `std.type(x) == "TYPE"`, where TYPE is number, string, etc.
+/// process `std.type(x) == "TYPE"`, where TYPE is number, string, etc.
 fn get_ty_eq(st: &st::St<'_>, ar: &ExprArena, ac: &mut Facts, call: ExprMust, type_str: ExprMust) {
   let ExprData::Call { func: Some(func), positional, named } = &ar[call] else { return };
   let ExprData::Subscript { on: Some(on), idx: Some(idx) } = ar[*func] else { return };
@@ -135,7 +135,7 @@ fn get_ty_eq(st: &st::St<'_>, ar: &ExprArena, ac: &mut Facts, call: ExprMust, ty
   ac.entry(param).or_insert(ty);
 }
 
-/// refine from `x == Y`, where Y is some literal.
+/// process `x == Y`, where Y is some literal.
 fn get_eq_lit(ar: &ExprArena, ac: &mut Facts, var: ExprMust, lit: ExprMust) {
   let ExprData::Id(param) = ar[var] else { return };
   let ExprData::Prim(Prim::Null) = &ar[lit] else { return };
