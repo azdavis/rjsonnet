@@ -76,24 +76,24 @@ impl<'a> St<'a> {
 
   /// improve the type of an already defined id
   pub(crate) fn refine(&mut self, id: Id, ty: ty::Ty) {
-    let Some(in_scope) = self.context.entry(id).or_default().last_mut() else {
+    let Some(defined_id) = self.context.entry(id).or_default().last_mut() else {
       always!(false, "refine without previous define: {id:?}");
       return;
     };
-    // NOTE: we CANNOT assert in_scope.ty == ty::Ty::ANY before this, because of duplicate locals
+    // NOTE: we CANNOT assert defined_id.ty == ty::Ty::ANY before this, because of duplicate locals
     // like e.g. `local x = 1, x = "hi"; null`
-    in_scope.ty = ty;
+    defined_id.ty = ty;
   }
 
   pub(crate) fn undefine(&mut self, id: Id) {
-    let Some(in_scope) = self.context.entry(id).or_default().pop() else {
+    let Some(defined_id) = self.context.entry(id).or_default().pop() else {
       always!(false, "undefine without previous define: {id:?}");
       return;
     };
-    if in_scope.usages != 0 || id == Id::dollar {
+    if defined_id.usages != 0 || id == Id::dollar {
       return;
     }
-    let Def::Expr(e, k) = in_scope.def else { return };
+    let Def::Expr(e, k) = defined_id.def else { return };
     self.err(e, error::Kind::Unused(id, k));
   }
 
@@ -108,15 +108,15 @@ impl<'a> St<'a> {
   }
 
   pub(crate) fn get(&mut self, id: Id) -> Option<(ty::Ty, Def)> {
-    let in_scope = self.context.get_mut(&id)?.last_mut()?;
-    in_scope.usages += 1;
-    Some((in_scope.ty, in_scope.def))
+    let defined_id = self.context.get_mut(&id)?.last_mut()?;
+    defined_id.usages += 1;
+    Some((defined_id.ty, defined_id.def))
   }
 
   pub(crate) fn is_std(&self, id: Id) -> bool {
     let Some(stack) = self.context.get(&id) else { return false };
-    let Some(in_scope) = stack.last() else { return false };
-    matches!(in_scope.def, Def::Std)
+    let Some(defined_id) = stack.last() else { return false };
+    matches!(defined_id.def, Def::Std)
   }
 
   pub(crate) fn data(&self, ty: ty::Ty) -> &ty::Data {
