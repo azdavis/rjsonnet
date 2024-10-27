@@ -26,6 +26,9 @@ fn main() {
     S::named("self", "self_"),
     S::named("super", "super_"),
     S::named("$", "dollar"),
+    // these are used for hof params which are never called by name.
+    S::named("$x", "x_unutterable"),
+    S::named("$y", "y_unutterable"),
   ];
   let messages = [
     S::named("Assertion failed", "ASSERTION_FAILED"),

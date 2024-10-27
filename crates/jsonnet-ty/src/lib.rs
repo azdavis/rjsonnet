@@ -229,8 +229,8 @@ pub struct Param {
 }
 
 impl Param {
-  const X: Self = Self { id: Id::x, ty: Ty::ANY, required: true };
-  const Y: Self = Self { id: Id::y, ty: Ty::ANY, required: true };
+  const X: Self = Self { id: Id::x_unutterable, ty: Ty::ANY, required: true };
+  const Y: Self = Self { id: Id::y_unutterable, ty: Ty::ANY, required: true };
 
   fn apply(&mut self, subst: &Subst) {
     self.ty.apply(subst);

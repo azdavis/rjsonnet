@@ -74,12 +74,14 @@ pub(crate) fn get(st: &mut St, store: &ty::MutStore<'_>, want: ty::Ty, got: ty::
       //
       // also, ignore the fields that ARE in `got` but are NOT in `want`. kind of like sub-typing.
     }
-    (ty::Data::Fn(ty::Fn::Regular(want)), ty::Data::Fn(ty::Fn::Regular(got))) => {
-      if want.params.len() > got.params.len() {
-        st.err(error::Unify::NotEnoughParams(want.params.len(), got.params.len()));
+    (ty::Data::Fn(want), ty::Data::Fn(got)) => {
+      let (want_params, want_ret) = want.parts();
+      let (got_params, got_ret) = got.parts();
+      if want_params.len() > got_params.len() {
+        st.err(error::Unify::NotEnoughParams(want_params.len(), got_params.len()));
       }
-      for (want, got) in want.params.iter().zip(got.params.iter()) {
-        if want.id != got.id {
+      for (want, got) in want_params.iter().zip(got_params.iter()) {
+        if !want.id.is_builtin_unutterable() && want.id != got.id {
           st.err(error::Unify::MismatchedParamNames(want.id, got.id));
         }
         // if we wanted a required argument, we can get either a required or optional argument.
@@ -89,33 +91,12 @@ pub(crate) fn get(st: &mut St, store: &ty::MutStore<'_>, want: ty::Ty, got: ty::
         // ah yes, the famous contra-variance.
         get(st, store, got.ty, want.ty);
       }
-      for got in got.params.iter().skip(want.params.len()) {
+      for got in got_params.iter().skip(want_params.len()) {
         if got.required {
           st.err(error::Unify::ExtraRequiredParam(got.id));
         }
       }
-      get(st, store, want.ret, got.ret);
-    }
-    (ty::Data::Fn(ty::Fn::Std(w)), ty::Data::Fn(ty::Fn::Std(g))) => {
-      // NOTE this is overly strict
-      if w != g {
-        st.err(error::Unify::Incompatible(want, got));
-      }
-    }
-    (ty::Data::Fn(ty::Fn::Hof(w)), ty::Data::Fn(g)) => {
-      let got_required = match g {
-        ty::Fn::Regular(g) => g.params.iter().filter(|x| x.required).count(),
-        ty::Fn::Std(g) => ty::StdFnSig::get(*g).params.iter().filter(|x| x.required).count(),
-        ty::Fn::Hof(g) => g.to_usize(),
-      };
-      if w.to_usize() != got_required {
-        st.err(error::Unify::NotEnoughParams(w.to_usize(), got_required));
-      }
-    }
-    (ty::Data::Fn(ty::Fn::Std(_)), ty::Data::Fn(ty::Fn::Regular(_)))
-    | (ty::Data::Fn(ty::Fn::Regular(_)), ty::Data::Fn(ty::Fn::Std(_) | ty::Fn::Hof(_))) => {
-      // TODO do more here
-      log::warn!("unify various fn types");
+      get(st, store, want_ret, got_ret);
     }
     // need to put this (got-union) before the next (want-union)
     (_, ty::Data::Union(got)) => {

@@ -329,6 +329,18 @@ impl Id {
     self.0.apply(subst);
   }
 
+  /// NOTE: this does NOT return true for the fresh variables like $1, $2, etc, even though they are
+  /// meant to be (and are) unutterable.
+  #[must_use]
+  pub fn is_builtin_unutterable(&self) -> bool {
+    matches!(
+      self.0,
+      CopyStrRepr::Builtin(
+        BuiltinStr::std_unutterable | BuiltinStr::x_unutterable | BuiltinStr::y_unutterable
+      )
+    )
+  }
+
   pub(crate) const fn builtin(bs: BuiltinStr) -> Self {
     Self(CopyStrRepr::Builtin(bs))
   }
