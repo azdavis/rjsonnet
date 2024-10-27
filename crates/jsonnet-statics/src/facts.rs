@@ -5,7 +5,7 @@
 //! - `std.FUNC($var)` where FUNC is one of `isNumber`, `isString`, `isBoolean`, `isArray`, or
 //!   `isObject`
 //! - `std.type($var) == "S"` where S is one of number, string, boolean, array, object, or null
-//! - `$var == null`
+//! - `$var == LIT` where LIT is some literal (`null`, `3`, `"hi"`, `false`, etc)
 //!
 //! notably:
 //!
@@ -177,8 +177,20 @@ fn get_ty_eq(
 /// Process `$var == LIT`, where LIT is some literal.
 fn get_eq_lit(ar: &ExprArena, ac: &mut Facts, var: ExprMust, lit: ExprMust) {
   let ExprData::Id(param) = ar[var] else { return };
-  let ExprData::Prim(Prim::Null) = &ar[lit] else { return };
-  ac.entry(param).or_insert(ty::Ty::NULL);
+  let ExprData::Prim(prim) = &ar[lit] else { return };
+  let ty = match prim {
+    Prim::Null => ty::Ty::NULL,
+    Prim::Bool(b) => {
+      if *b {
+        ty::Ty::TRUE
+      } else {
+        ty::Ty::FALSE
+      }
+    }
+    Prim::String(_) => ty::Ty::STRING,
+    Prim::Number(_) => ty::Ty::NUMBER,
+  };
+  ac.entry(param).or_insert(ty);
 }
 
 fn add_fact(tys: &mut ty::MutStore<'_>, ac: &mut Facts, id: Id, ty: ty::Ty) {
