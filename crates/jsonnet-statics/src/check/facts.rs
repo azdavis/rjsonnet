@@ -56,7 +56,7 @@ fn get_cond(st: &mut st::St<'_>, ar: &ExprArena, ac: &mut Facts, cond: Expr) {
     ExprData::Call { func: Some(func), positional, named } => {
       let ExprData::Subscript { on: Some(on), idx: Some(idx) } = ar[*func] else { return };
       let ExprData::Id(std_id) = &ar[on] else { return };
-      if !st.is_std(*std_id) {
+      if !st.scope.is_std(*std_id) {
         return;
       }
       let ExprData::Prim(Prim::String(func_name)) = &ar[idx] else { return };
@@ -118,7 +118,7 @@ fn get_ty_eq(
   let ExprData::Call { func: Some(func), positional, named } = &ar[call] else { return };
   let ExprData::Subscript { on: Some(on), idx: Some(idx) } = ar[*func] else { return };
   let ExprData::Id(std_id) = &ar[on] else { return };
-  if !st.is_std(*std_id) {
+  if !st.scope.is_std(*std_id) {
     return;
   }
   let ExprData::Prim(Prim::String(func_name)) = &ar[idx] else { return };

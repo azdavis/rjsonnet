@@ -25,6 +25,42 @@ struct DefinedId {
   usages: usize,
 }
 
+/// The identifiers currently in scope.
+#[derive(Debug, Default)]
+pub(crate) struct Scope {
+  /// This is a vec because things go in and out of scope in stacks.
+  store: FxHashMap<Id, Vec<DefinedId>>,
+}
+
+impl Scope {
+  pub(crate) fn define(&mut self, id: Id, ty: ty::Ty, def: Def) {
+    self.store.entry(id).or_default().push(DefinedId { ty, def, usages: 0 });
+  }
+
+  /// improve the type of an already defined id
+  pub(crate) fn refine(&mut self, id: Id, ty: ty::Ty) {
+    let Some(defined_id) = self.store.entry(id).or_default().last_mut() else {
+      always!(false, "refine without previous define: {id:?}");
+      return;
+    };
+    // NOTE: we CANNOT assert defined_id.ty == ty::Ty::ANY before this, because of duplicate locals
+    // like e.g. `local x = 1, x = "hi"; null`
+    defined_id.ty = ty;
+  }
+
+  pub(crate) fn get(&mut self, id: Id) -> Option<(ty::Ty, Def)> {
+    let defined_id = self.store.get_mut(&id)?.last_mut()?;
+    defined_id.usages += 1;
+    Some((defined_id.ty, defined_id.def))
+  }
+
+  pub(crate) fn is_std(&self, id: Id) -> bool {
+    let Some(stack) = self.store.get(&id) else { return false };
+    let Some(defined_id) = stack.last() else { return false };
+    matches!(defined_id.def, Def::Std)
+  }
+}
+
 /// The state when checking statics.
 #[derive(Debug)]
 pub struct St<'a> {
@@ -32,10 +68,8 @@ pub struct St<'a> {
   statics: Statics,
   /// The types of other files.
   other_files: &'a PathMap<ty::Ty>,
-  /// Stores the identifiers currently in scope.
-  ///
-  /// This is a vec because things go in and out of scope in stacks.
-  context: FxHashMap<Id, Vec<DefinedId>>,
+  /// The things in scope.
+  pub(crate) scope: Scope,
   /// A store for all the types.
   pub(crate) tys: ty::MutStore<'a>,
 }
@@ -47,7 +81,7 @@ impl<'a> St<'a> {
     Self {
       statics: Statics::default(),
       other_files,
-      context: FxHashMap::default(),
+      scope: Scope::default(),
       tys: ty::MutStore::new(tys),
     }
   }
@@ -62,31 +96,8 @@ impl<'a> St<'a> {
     self.statics.defs.insert(expr, def);
   }
 
-  pub(crate) fn get_ty(&mut self, data: ty::Data) -> ty::Ty {
-    self.tys.get(data)
-  }
-
-  pub(crate) fn insert_expr_ty(&mut self, expr: ExprMust, ty: ty::Ty) {
-    self.statics.expr_tys.insert(expr, ty);
-  }
-
-  pub(crate) fn define(&mut self, id: Id, ty: ty::Ty, def: Def) {
-    self.context.entry(id).or_default().push(DefinedId { ty, def, usages: 0 });
-  }
-
-  /// improve the type of an already defined id
-  pub(crate) fn refine(&mut self, id: Id, ty: ty::Ty) {
-    let Some(defined_id) = self.context.entry(id).or_default().last_mut() else {
-      always!(false, "refine without previous define: {id:?}");
-      return;
-    };
-    // NOTE: we CANNOT assert defined_id.ty == ty::Ty::ANY before this, because of duplicate locals
-    // like e.g. `local x = 1, x = "hi"; null`
-    defined_id.ty = ty;
-  }
-
   pub(crate) fn undefine(&mut self, id: Id) {
-    let Some(defined_id) = self.context.entry(id).or_default().pop() else {
+    let Some(defined_id) = self.scope.store.entry(id).or_default().pop() else {
       always!(false, "undefine without previous define: {id:?}");
       return;
     };
@@ -98,8 +109,8 @@ impl<'a> St<'a> {
   }
 
   pub(crate) fn define_self_super(&mut self) {
-    self.define(Id::self_, ty::Ty::ANY, Def::KwIdent);
-    self.define(Id::super_, ty::Ty::ANY, Def::KwIdent);
+    self.scope.define(Id::self_, ty::Ty::ANY, Def::KwIdent);
+    self.scope.define(Id::super_, ty::Ty::ANY, Def::KwIdent);
   }
 
   pub(crate) fn undefine_self_super(&mut self) {
@@ -107,16 +118,12 @@ impl<'a> St<'a> {
     self.undefine(Id::super_);
   }
 
-  pub(crate) fn get(&mut self, id: Id) -> Option<(ty::Ty, Def)> {
-    let defined_id = self.context.get_mut(&id)?.last_mut()?;
-    defined_id.usages += 1;
-    Some((defined_id.ty, defined_id.def))
+  pub(crate) fn get_ty(&mut self, data: ty::Data) -> ty::Ty {
+    self.tys.get(data)
   }
 
-  pub(crate) fn is_std(&self, id: Id) -> bool {
-    let Some(stack) = self.context.get(&id) else { return false };
-    let Some(defined_id) = stack.last() else { return false };
-    matches!(defined_id.def, Def::Std)
+  pub(crate) fn insert_expr_ty(&mut self, expr: ExprMust, ty: ty::Ty) {
+    self.statics.expr_tys.insert(expr, ty);
   }
 
   pub(crate) fn data(&self, ty: ty::Ty) -> &ty::Data {
@@ -132,7 +139,7 @@ impl<'a> St<'a> {
   }
 
   pub(crate) fn finish(self) -> (Statics, ty::LocalStore) {
-    for (_, stack) in self.context {
+    for (_, stack) in self.scope.store {
       always!(stack.is_empty());
     }
     (self.statics, self.tys.into_local())

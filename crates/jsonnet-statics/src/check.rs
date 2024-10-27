@@ -60,7 +60,7 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
     }
     ExprData::ObjectComp { name, body, id, ary } => {
       get(st, ar, *ary);
-      st.define(*id, ty::Ty::ANY, def::Def::Expr(expr, def::ExprDefKind::ObjectCompId));
+      st.scope.define(*id, ty::Ty::ANY, def::Def::Expr(expr, def::ExprDefKind::ObjectCompId));
       get(st, ar, *name);
       st.define_self_super();
       get(st, ar, *body);
@@ -144,7 +144,7 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
       call::get(st, expr, *func, fn_ty, &pos_args, &named_args)
     }
     ExprData::Id(id) => {
-      if let Some((ty, def)) = st.get(*id) {
+      if let Some((ty, def)) = st.scope.get(*id) {
         st.note_usage(expr, def);
         ty
       } else {
@@ -181,7 +181,7 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
       for (idx, &(id, _)) in params.iter().enumerate() {
         // unwrap_or should never happen, but if it does we'll notice with the always!(false) later
         let ty = param_tys.get(&id).copied().unwrap_or(ty::Ty::ANY);
-        st.define(id, ty, def::Def::Expr(expr, def::ExprDefKind::Multi(idx, m)));
+        st.scope.define(id, ty, def::Def::Expr(expr, def::ExprDefKind::Multi(idx, m)));
       }
       for &(_, rhs) in params {
         let Some(rhs) = rhs else { continue };
@@ -313,7 +313,7 @@ fn define_binds(
 ) {
   let mut bound_ids = FxHashSet::<Id>::default();
   for (idx, &(bind, _)) in binds.iter().enumerate() {
-    st.define(bind, ty::Ty::ANY, def::Def::Expr(expr, def::ExprDefKind::Multi(idx, m)));
+    st.scope.define(bind, ty::Ty::ANY, def::Def::Expr(expr, def::ExprDefKind::Multi(idx, m)));
     if !bound_ids.insert(bind) {
       st.err(expr, error::Kind::DuplicateBinding(bind, idx, m));
     }
@@ -321,7 +321,7 @@ fn define_binds(
   for &(lhs, rhs) in binds {
     let ty = get(st, ar, rhs);
     always!(bound_ids.contains(&lhs), "should have just defined: {lhs:?}");
-    st.refine(lhs, ty);
+    st.scope.refine(lhs, ty);
   }
 }
 
