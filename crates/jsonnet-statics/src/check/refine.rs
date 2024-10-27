@@ -97,6 +97,9 @@ fn get_cond(st: &st::St<'_>, ar: &ExprArena, params: &mut FxHashMap<Id, ty::Ty>,
       // `std.type(x) == "TYPE"` and `"TYPE" == std.type(x)`.
       get_ty_eq(st, ar, params, lhs, rhs);
       get_ty_eq(st, ar, params, rhs, lhs);
+      // same with this one.
+      get_eq_lit(ar, params, lhs, rhs);
+      get_eq_lit(ar, params, rhs, lhs);
     }
     _ => {}
   }
@@ -139,5 +142,15 @@ fn get_ty_eq(
   let Some(param_ty) = params.get_mut(&param) else { return };
   if *param_ty == ty::Ty::ANY {
     *param_ty = ty;
+  }
+}
+
+/// refine from `x == Y`, where Y is some literal.
+fn get_eq_lit(ar: &ExprArena, params: &mut FxHashMap<Id, ty::Ty>, var: ExprMust, lit: ExprMust) {
+  let ExprData::Id(param) = ar[var] else { return };
+  let ExprData::Prim(Prim::Null) = &ar[lit] else { return };
+  let Some(param_ty) = params.get_mut(&param) else { return };
+  if *param_ty == ty::Ty::ANY {
+    *param_ty = ty::Ty::NULL;
   }
 }
