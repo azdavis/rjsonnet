@@ -85,12 +85,13 @@ fn get_cond(st: &st::St<'_>, ar: &ExprArena, params: &mut FxHashMap<Id, ty::Ty>,
         *param_ty = ty;
       }
     }
-    // the cond is itself another cond. if it looks like a desugared `&&`, then just do both in
-    // sequence.
-    &ExprData::If { cond, yes, no: Some(no) } => {
-      let (ExprData::Prim(Prim::Bool(false)) | ExprData::Error(_)) = &ar[no] else { return };
-      get_cond(st, ar, params, cond);
-      get_cond(st, ar, params, yes);
+    // the cond is itself another cond.
+    &ExprData::If { cond, yes: Some(yes), no: Some(no) } => {
+      if let ExprData::Prim(Prim::Bool(false)) | ExprData::Error(_) = &ar[no] {
+        // if it looks like a desugared `&&`, then just do both in sequence.
+        get_cond(st, ar, params, cond);
+        get_cond(st, ar, params, Some(yes));
+      }
     }
     &ExprData::BinaryOp { lhs: Some(lhs), op: jsonnet_expr::BinaryOp::Eq, rhs: Some(rhs) } => {
       // do both sides. if one works, the other won't, but we'll just return. this allows for both
