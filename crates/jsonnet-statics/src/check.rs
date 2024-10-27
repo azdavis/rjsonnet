@@ -169,7 +169,7 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
             st.err(rhs.flatten().unwrap_or(expr), error::Kind::DuplicateBinding(id, idx, m));
           }
         }
-        let fs = facts::get_always(st, ar, *body);
+        let fs = facts::get_always(&mut st.tys, &st.scope, ar, *body);
         for (id, ty) in fs {
           if let Some(cur) = tmp.get_mut(&id) {
             *cur = ty;

@@ -38,25 +38,36 @@ pub(crate) type Facts = rustc_hash::FxHashMap<Id, ty::Ty>;
 ///   variables
 /// - since asserts are lowered to `if cond then ... else error ...`, we check for that. so if the
 ///   user wrote that itself in the concrete syntax, that also works.
-pub(crate) fn get_always(st: &mut st::St<'_>, ar: &ExprArena, mut body: Expr) -> Facts {
+pub(crate) fn get_always(
+  tys: &mut ty::MutStore<'_>,
+  scope: &st::Scope,
+  ar: &ExprArena,
+  mut body: Expr,
+) -> Facts {
   let mut ac = Facts::default();
   while let Some(b) = body {
     let ExprData::If { cond, yes, no: Some(no) } = ar[b] else { break };
     let ExprData::Error(_) = &ar[no] else { break };
     body = yes;
-    get_cond(st, ar, &mut ac, cond);
+    get_cond(tys, scope, ar, &mut ac, cond);
   }
   ac
 }
 
 /// Process a fact from a single if-cond.
-fn get_cond(st: &mut st::St<'_>, ar: &ExprArena, ac: &mut Facts, cond: Expr) {
+fn get_cond(
+  tys: &mut ty::MutStore<'_>,
+  scope: &st::Scope,
+  ar: &ExprArena,
+  ac: &mut Facts,
+  cond: Expr,
+) {
   let Some(cond) = cond else { return };
   match &ar[cond] {
     ExprData::Call { func: Some(func), positional, named } => {
       let ExprData::Subscript { on: Some(on), idx: Some(idx) } = ar[*func] else { return };
       let ExprData::Id(std_id) = &ar[on] else { return };
-      if !st.scope.is_std(*std_id) {
+      if !scope.is_std(*std_id) {
         return;
       }
       let ExprData::Prim(Prim::String(func_name)) = &ar[idx] else { return };
@@ -73,32 +84,32 @@ fn get_cond(st: &mut st::St<'_>, ar: &ExprArena, ac: &mut Facts, cond: Expr) {
       }
       let [Some(param)] = positional[..] else { return };
       let ExprData::Id(id) = ar[param] else { return };
-      add_fact(st, ac, id, ty);
+      add_fact(tys, ac, id, ty);
     }
     // the cond is itself another if expression.
     &ExprData::If { cond, yes: Some(yes), no: Some(no) } => {
       if let ExprData::Prim(Prim::Bool(false)) | ExprData::Error(_) = &ar[no] {
         // if it looks like a desugared `&&`, then just do both in sequence.
-        get_cond(st, ar, ac, cond);
-        get_cond(st, ar, ac, Some(yes));
+        get_cond(tys, scope, ar, ac, cond);
+        get_cond(tys, scope, ar, ac, Some(yes));
       } else if let ExprData::Prim(Prim::Bool(true)) = &ar[yes] {
         // if it looks like a desugared `||`, then do the union.
         let mut fst = Facts::default();
         let mut snd = Facts::default();
-        get_cond(st, ar, &mut fst, cond);
-        get_cond(st, ar, &mut snd, Some(no));
+        get_cond(tys, scope, ar, &mut fst, cond);
+        get_cond(tys, scope, ar, &mut snd, Some(no));
         for (id, fst_ty) in fst {
           let Some(&snd_ty) = snd.get(&id) else { continue };
-          let ty = st.tys.get(ty::Data::Union(ty::Union::from([fst_ty, snd_ty])));
-          add_fact(st, ac, id, ty);
+          let ty = tys.get(ty::Data::Union(ty::Union::from([fst_ty, snd_ty])));
+          add_fact(tys, ac, id, ty);
         }
       }
     }
     &ExprData::BinaryOp { lhs: Some(lhs), op: jsonnet_expr::BinaryOp::Eq, rhs: Some(rhs) } => {
       // do both sides. if one works, the other won't, but we'll just return. this allows for both
       // `std.type(x) == "TYPE"` and `"TYPE" == std.type(x)`.
-      get_ty_eq(st, ar, ac, lhs, rhs);
-      get_ty_eq(st, ar, ac, rhs, lhs);
+      get_ty_eq(tys, scope, ar, ac, lhs, rhs);
+      get_ty_eq(tys, scope, ar, ac, rhs, lhs);
       // same with this one.
       get_eq_lit(ar, ac, lhs, rhs);
       get_eq_lit(ar, ac, rhs, lhs);
@@ -109,7 +120,8 @@ fn get_cond(st: &mut st::St<'_>, ar: &ExprArena, ac: &mut Facts, cond: Expr) {
 
 /// Process `std.type($var) == "TYPE"`, where TYPE is number, string, etc.
 fn get_ty_eq(
-  st: &mut st::St<'_>,
+  tys: &mut ty::MutStore<'_>,
+  scope: &st::Scope,
   ar: &ExprArena,
   ac: &mut Facts,
   call: ExprMust,
@@ -118,7 +130,7 @@ fn get_ty_eq(
   let ExprData::Call { func: Some(func), positional, named } = &ar[call] else { return };
   let ExprData::Subscript { on: Some(on), idx: Some(idx) } = ar[*func] else { return };
   let ExprData::Id(std_id) = &ar[on] else { return };
-  if !st.scope.is_std(*std_id) {
+  if !scope.is_std(*std_id) {
     return;
   }
   let ExprData::Prim(Prim::String(func_name)) = &ar[idx] else { return };
@@ -141,7 +153,7 @@ fn get_ty_eq(
     Str::null => ty::Ty::NULL,
     _ => return,
   };
-  add_fact(st, ac, id, ty);
+  add_fact(tys, ac, id, ty);
 }
 
 /// Process `$var == LIT`, where LIT is some literal.
@@ -151,7 +163,7 @@ fn get_eq_lit(ar: &ExprArena, ac: &mut Facts, var: ExprMust, lit: ExprMust) {
   ac.entry(param).or_insert(ty::Ty::NULL);
 }
 
-fn add_fact(st: &mut st::St<'_>, ac: &mut Facts, id: Id, ty: ty::Ty) {
+fn add_fact(tys: &mut ty::MutStore<'_>, ac: &mut Facts, id: Id, ty: ty::Ty) {
   let entry = ac.entry(id).or_insert(ty::Ty::ANY);
-  *entry = ty_logic::and(&mut st.tys, *entry, ty);
+  *entry = ty_logic::and(tys, *entry, ty);
 }
