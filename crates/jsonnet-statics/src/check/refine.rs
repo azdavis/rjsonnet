@@ -49,7 +49,7 @@ pub(crate) fn get(
   mut body: Expr,
 ) {
   while let Some(b) = body {
-    let &ExprData::If { cond, yes, no: Some(no) } = &ar[b] else { break };
+    let ExprData::If { cond, yes, no: Some(no) } = ar[b] else { break };
     let ExprData::Error(_) = &ar[no] else { break };
     body = yes;
     get_cond(st, ar, params, cond);
@@ -57,11 +57,11 @@ pub(crate) fn get(
 }
 
 /// refine from a single if-cond.
-fn get_cond(st: &st::St<'_>, ar: &ExprArena, params: &mut FxHashMap<Id, ty::Ty>, cond: Expr) {
+fn get_cond(st: &st::St<'_>, ar: &ExprArena, ac: &mut FxHashMap<Id, ty::Ty>, cond: Expr) {
   let Some(cond) = cond else { return };
   match &ar[cond] {
     ExprData::Call { func: Some(func), positional, named } => {
-      let &ExprData::Subscript { on: Some(on), idx: Some(idx) } = &ar[*func] else { return };
+      let ExprData::Subscript { on: Some(on), idx: Some(idx) } = ar[*func] else { return };
       let ExprData::Id(std_id) = &ar[on] else { return };
       if !st.is_std(*std_id) {
         return;
@@ -79,28 +79,28 @@ fn get_cond(st: &st::St<'_>, ar: &ExprArena, params: &mut FxHashMap<Id, ty::Ty>,
         return;
       }
       let [Some(param)] = positional[..] else { return };
-      let &ExprData::Id(param) = &ar[param] else { return };
-      let Some(param_ty) = params.get_mut(&param) else { return };
-      if *param_ty == ty::Ty::ANY {
-        *param_ty = ty;
+      let ExprData::Id(param) = ar[param] else { return };
+      let Some(cur) = ac.get_mut(&param) else { return };
+      if *cur == ty::Ty::ANY {
+        *cur = ty;
       }
     }
     // the cond is itself another cond.
     &ExprData::If { cond, yes: Some(yes), no: Some(no) } => {
       if let ExprData::Prim(Prim::Bool(false)) | ExprData::Error(_) = &ar[no] {
         // if it looks like a desugared `&&`, then just do both in sequence.
-        get_cond(st, ar, params, cond);
-        get_cond(st, ar, params, Some(yes));
+        get_cond(st, ar, ac, cond);
+        get_cond(st, ar, ac, Some(yes));
       }
     }
     &ExprData::BinaryOp { lhs: Some(lhs), op: jsonnet_expr::BinaryOp::Eq, rhs: Some(rhs) } => {
       // do both sides. if one works, the other won't, but we'll just return. this allows for both
       // `std.type(x) == "TYPE"` and `"TYPE" == std.type(x)`.
-      get_ty_eq(st, ar, params, lhs, rhs);
-      get_ty_eq(st, ar, params, rhs, lhs);
+      get_ty_eq(st, ar, ac, lhs, rhs);
+      get_ty_eq(st, ar, ac, rhs, lhs);
       // same with this one.
-      get_eq_lit(ar, params, lhs, rhs);
-      get_eq_lit(ar, params, rhs, lhs);
+      get_eq_lit(ar, ac, lhs, rhs);
+      get_eq_lit(ar, ac, rhs, lhs);
     }
     _ => {}
   }
@@ -110,12 +110,12 @@ fn get_cond(st: &st::St<'_>, ar: &ExprArena, params: &mut FxHashMap<Id, ty::Ty>,
 fn get_ty_eq(
   st: &st::St<'_>,
   ar: &ExprArena,
-  params: &mut FxHashMap<Id, ty::Ty>,
+  ac: &mut FxHashMap<Id, ty::Ty>,
   call: ExprMust,
   type_str: ExprMust,
 ) {
   let ExprData::Call { func: Some(func), positional, named } = &ar[call] else { return };
-  let &ExprData::Subscript { on: Some(on), idx: Some(idx) } = &ar[*func] else { return };
+  let ExprData::Subscript { on: Some(on), idx: Some(idx) } = ar[*func] else { return };
   let ExprData::Id(std_id) = &ar[on] else { return };
   if !st.is_std(*std_id) {
     return;
@@ -128,7 +128,7 @@ fn get_ty_eq(
     return;
   }
   let [Some(param)] = positional[..] else { return };
-  let &ExprData::Id(param) = &ar[param] else { return };
+  let ExprData::Id(param) = ar[param] else { return };
   let ExprData::Prim(Prim::String(type_str)) = &ar[type_str] else { return };
   let ty = match *type_str {
     Str::array => ty::Ty::ARRAY_ANY,
@@ -140,18 +140,18 @@ fn get_ty_eq(
     Str::null => ty::Ty::NULL,
     _ => return,
   };
-  let Some(param_ty) = params.get_mut(&param) else { return };
-  if *param_ty == ty::Ty::ANY {
-    *param_ty = ty;
+  let Some(cur) = ac.get_mut(&param) else { return };
+  if *cur == ty::Ty::ANY {
+    *cur = ty;
   }
 }
 
 /// refine from `x == Y`, where Y is some literal.
-fn get_eq_lit(ar: &ExprArena, params: &mut FxHashMap<Id, ty::Ty>, var: ExprMust, lit: ExprMust) {
+fn get_eq_lit(ar: &ExprArena, ac: &mut FxHashMap<Id, ty::Ty>, var: ExprMust, lit: ExprMust) {
   let ExprData::Id(param) = ar[var] else { return };
   let ExprData::Prim(Prim::Null) = &ar[lit] else { return };
-  let Some(param_ty) = params.get_mut(&param) else { return };
-  if *param_ty == ty::Ty::ANY {
-    *param_ty = ty::Ty::NULL;
+  let Some(cur) = ac.get_mut(&param) else { return };
+  if *cur == ty::Ty::ANY {
+    *cur = ty::Ty::NULL;
   }
 }
