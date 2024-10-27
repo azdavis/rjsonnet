@@ -2,6 +2,7 @@
 
 mod check;
 mod facts;
+mod scope;
 mod ty_logic;
 mod unify;
 

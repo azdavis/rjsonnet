@@ -25,7 +25,7 @@
 //!   doing `local std = wtf` beforehand, and also it'll still work with `local foo = std` and then
 //!   asserting with `foo.isTYPE` etc.
 
-use crate::{st, ty_logic};
+use crate::{scope::Scope, ty_logic};
 use jsonnet_expr::{Expr, ExprArena, ExprData, ExprMust, Id, Prim, Str};
 use jsonnet_ty as ty;
 
@@ -40,7 +40,7 @@ pub(crate) type Facts = rustc_hash::FxHashMap<Id, ty::Ty>;
 ///   user wrote that itself in the concrete syntax, that also works.
 pub(crate) fn get_always(
   tys: &mut ty::MutStore<'_>,
-  scope: &st::Scope,
+  scope: &Scope,
   ar: &ExprArena,
   mut body: Expr,
 ) -> Facts {
@@ -55,13 +55,7 @@ pub(crate) fn get_always(
 }
 
 /// Process a fact from a single if-cond.
-fn get_cond(
-  tys: &mut ty::MutStore<'_>,
-  scope: &st::Scope,
-  ar: &ExprArena,
-  ac: &mut Facts,
-  cond: Expr,
-) {
+fn get_cond(tys: &mut ty::MutStore<'_>, scope: &Scope, ar: &ExprArena, ac: &mut Facts, cond: Expr) {
   let Some(cond) = cond else { return };
   match &ar[cond] {
     ExprData::Call { func: Some(func), positional, named } => {
@@ -121,7 +115,7 @@ fn get_cond(
 /// Process `std.type($var) == "TYPE"`, where TYPE is number, string, etc.
 fn get_ty_eq(
   tys: &mut ty::MutStore<'_>,
-  scope: &st::Scope,
+  scope: &Scope,
   ar: &ExprArena,
   ac: &mut Facts,
   call: ExprMust,

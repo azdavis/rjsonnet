@@ -1,11 +1,9 @@
 //! The state of statics.
 
-use crate::{error, unify};
-use always::always;
+use crate::{error, scope::Scope, unify};
 use jsonnet_expr::{def::Def, ExprMust, Id};
 use jsonnet_ty as ty;
 use paths::PathMap;
-use rustc_hash::FxHashMap;
 
 /// Results after doing statics on one file.
 #[derive(Debug, Default)]
@@ -16,49 +14,6 @@ pub struct Statics {
   pub defs: jsonnet_expr::def::Map,
   /// Types of expressions.
   pub expr_tys: ty::Exprs,
-}
-
-#[derive(Debug)]
-struct DefinedId {
-  ty: ty::Ty,
-  def: Def,
-  usages: usize,
-}
-
-/// The identifiers currently in scope.
-#[derive(Debug, Default)]
-pub(crate) struct Scope {
-  /// This is a vec because things go in and out of scope in stacks.
-  store: FxHashMap<Id, Vec<DefinedId>>,
-}
-
-impl Scope {
-  pub(crate) fn define(&mut self, id: Id, ty: ty::Ty, def: Def) {
-    self.store.entry(id).or_default().push(DefinedId { ty, def, usages: 0 });
-  }
-
-  /// improve the type of an already defined id
-  pub(crate) fn refine(&mut self, id: Id, ty: ty::Ty) {
-    let Some(defined_id) = self.store.entry(id).or_default().last_mut() else {
-      always!(false, "refine without previous define: {id:?}");
-      return;
-    };
-    // NOTE: we CANNOT assert defined_id.ty == ty::Ty::ANY before this, because of duplicate locals
-    // like e.g. `local x = 1, x = "hi"; null`
-    defined_id.ty = ty;
-  }
-
-  pub(crate) fn get(&mut self, id: Id) -> Option<(ty::Ty, Def)> {
-    let defined_id = self.store.get_mut(&id)?.last_mut()?;
-    defined_id.usages += 1;
-    Some((defined_id.ty, defined_id.def))
-  }
-
-  pub(crate) fn is_std(&self, id: Id) -> bool {
-    let Some(stack) = self.store.get(&id) else { return false };
-    let Some(defined_id) = stack.last() else { return false };
-    matches!(defined_id.def, Def::Std)
-  }
 }
 
 /// The state when checking statics.
@@ -97,15 +52,9 @@ impl<'a> St<'a> {
   }
 
   pub(crate) fn undefine(&mut self, id: Id) {
-    let Some(defined_id) = self.scope.store.entry(id).or_default().pop() else {
-      always!(false, "undefine without previous define: {id:?}");
-      return;
-    };
-    if defined_id.usages != 0 || id == Id::dollar {
-      return;
+    if let Some((e, k)) = self.scope.undefine(id) {
+      self.err(e, error::Kind::Unused(id, k));
     }
-    let Def::Expr(e, k) = defined_id.def else { return };
-    self.err(e, error::Kind::Unused(id, k));
   }
 
   pub(crate) fn define_self_super(&mut self) {
@@ -131,9 +80,7 @@ impl<'a> St<'a> {
   }
 
   pub(crate) fn finish(self) -> (Statics, ty::LocalStore) {
-    for (_, stack) in self.scope.store {
-      always!(stack.is_empty());
-    }
+    self.scope.finish();
     (self.statics, self.tys.into_local())
   }
 
