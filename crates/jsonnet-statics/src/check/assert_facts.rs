@@ -28,7 +28,6 @@ pub(crate) type Facts = rustc_hash::FxHashMap<Id, ty::Ty>;
 /// - cannot use `std.isFunction`, the type system cannot model a function with totally unknown
 ///   params. this wouldn't be that helpful anyway i suppose - if you don't know how many params,
 ///   how can you call it?
-/// - cannot chain the asserts with `||` - no complex logic with ors
 /// - asserts all be at the beginning of the fn, so cannot e.g. introduce new local variables
 /// - cannot do `local isNumber = std.isNumber` beforehand, must literally get the field off `std`
 /// - cannot use named arguments, only positional arguments
@@ -39,14 +38,16 @@ pub(crate) type Facts = rustc_hash::FxHashMap<Id, ty::Ty>;
 /// on the bright side:
 ///
 /// - can chain the asserts with `a && b` (or `if a then b else false`, which is what `&&` desugars
-///   to)
+///   to); same as doing `assert a; assert b`
+/// - can chain the asserts with `a || b` (or `if a then true else b`, which is what `||`
+///   desugars to); when both a and b are about the same variable, will union the types
 /// - can also use `std.type(x) == "TYPE"` where TYPE is number, string, etc.
 /// - since asserts are lowered to `if cond then ... else error ...`, we check for that. so if the
 ///   user wrote that itself in the concrete syntax, that also works.
 /// - checking we get from `std` is NOT syntactic, we do an env lookup. so we won't trick this by
 ///   doing `local std = wtf` beforehand, and also it'll still work with `local foo = std` and then
 ///   asserting with `foo.isTYPE` etc.
-pub(crate) fn get(st: &st::St<'_>, ar: &ExprArena, mut body: Expr) -> Facts {
+pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, mut body: Expr) -> Facts {
   let mut ac = Facts::default();
   while let Some(b) = body {
     let ExprData::If { cond, yes, no: Some(no) } = ar[b] else { break };
@@ -58,7 +59,7 @@ pub(crate) fn get(st: &st::St<'_>, ar: &ExprArena, mut body: Expr) -> Facts {
 }
 
 /// process a single if-cond.
-fn get_cond(st: &st::St<'_>, ar: &ExprArena, ac: &mut Facts, cond: Expr) {
+fn get_cond(st: &mut st::St<'_>, ar: &ExprArena, ac: &mut Facts, cond: Expr) {
   let Some(cond) = cond else { return };
   match &ar[cond] {
     ExprData::Call { func: Some(func), positional, named } => {
@@ -89,6 +90,17 @@ fn get_cond(st: &st::St<'_>, ar: &ExprArena, ac: &mut Facts, cond: Expr) {
         // if it looks like a desugared `&&`, then just do both in sequence.
         get_cond(st, ar, ac, cond);
         get_cond(st, ar, ac, Some(yes));
+      } else if let ExprData::Prim(Prim::Bool(true)) = &ar[yes] {
+        // else if it looks like a desugared `||`, then do the union.
+        let mut fst = Facts::default();
+        let mut snd = Facts::default();
+        get_cond(st, ar, &mut fst, cond);
+        get_cond(st, ar, &mut snd, Some(no));
+        for (id, fst_ty) in fst {
+          let Some(&snd_ty) = snd.get(&id) else { continue };
+          let ty = st.get_ty(ty::Data::Union(ty::Union::from([fst_ty, snd_ty])));
+          ac.entry(id).or_insert(ty);
+        }
       }
     }
     &ExprData::BinaryOp { lhs: Some(lhs), op: jsonnet_expr::BinaryOp::Eq, rhs: Some(rhs) } => {

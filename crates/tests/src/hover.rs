@@ -118,3 +118,25 @@ result
   )
   .check();
 }
+
+#[test]
+fn assert_or() {
+  JsonnetInput::manifest(
+    r"
+local thing(a, b) =
+##    ^ hover: (a: null | number, b: true | false | string) => number
+  assert std.isNumber(a) || a == null;
+  assert std.isString(b) || std.isBoolean(b);
+  if a == null then
+    3
+  else if std.isString(b) then
+    4
+  else
+    6;
+
+thing(null, false)
+",
+    "3",
+  )
+  .check();
+}

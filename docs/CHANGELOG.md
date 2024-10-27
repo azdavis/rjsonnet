@@ -9,6 +9,7 @@ Things under "main" are not released yet.
   - `std.repeat`
   - `std.slice`
 - Improve syntax highlighting for verbatim strings.
+- Allow type asserts to be chained with `||` to make union types.
 
 ## v0.6.1
 
