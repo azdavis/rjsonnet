@@ -56,7 +56,7 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
       for &(lhs, _) in binds {
         st.undefine(lhs);
       }
-      st.get_ty(ty::Data::Object(obj))
+      st.tys.get(ty::Data::Object(obj))
     }
     ExprData::ObjectComp { name, body, id, ary } => {
       get(st, ar, *ary);
@@ -77,15 +77,15 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
       // having `[]` have type `never[]` is technically right, but causes some strangeness, e.g.
       // with the special-case typing of `std.join`. i suppose it might also be a bit jarring for
       // users to see the `never`, which rarely comes up in user code.
-      let elem_ty = if tys.is_empty() { ty::Ty::ANY } else { st.get_ty(ty::Data::Union(tys)) };
-      st.get_ty(ty::Data::Array(elem_ty))
+      let elem_ty = if tys.is_empty() { ty::Ty::ANY } else { st.tys.get(ty::Data::Union(tys)) };
+      st.tys.get(ty::Data::Array(elem_ty))
     }
     ExprData::Subscript { on, idx } => {
       let on_ty = get(st, ar, *on);
       let idx_ty = get(st, ar, *idx);
       let idx_expr = idx.unwrap_or(expr);
       // TODO handle unions
-      match st.data(on_ty).clone() {
+      match st.tys.data(on_ty).clone() {
         ty::Data::Array(elem_ty) => {
           st.unify(idx_expr, ty::Ty::NUMBER, idx_ty);
           elem_ty
@@ -118,7 +118,7 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
                 ty::Ty::ANY
               } else {
                 // we know it has to be one of the known fields, but we don't know which one.
-                st.get_ty(ty::Data::Union(obj.known.values().copied().collect()))
+                st.tys.get(ty::Data::Union(obj.known.values().copied().collect()))
               }
             }
           }
@@ -198,21 +198,21 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
         fn_params.push(ty::Param { id, ty, required: rhs.is_none() });
       }
       let fn_ty = ty::RegularFn { params: fn_params, ret: body_ty };
-      st.get_ty(ty::Data::Fn(ty::Fn::Regular(fn_ty)))
+      st.tys.get(ty::Data::Fn(ty::Fn::Regular(fn_ty)))
     }
     ExprData::If { cond, yes, no } => {
       let cond_ty = get(st, ar, *cond);
       st.unify(cond.unwrap_or(expr), ty::Ty::BOOL, cond_ty);
       let yes_ty = get(st, ar, *yes);
       let no_ty = get(st, ar, *no);
-      st.get_ty(ty::Data::Union(BTreeSet::from([yes_ty, no_ty])))
+      st.tys.get(ty::Data::Union(BTreeSet::from([yes_ty, no_ty])))
     }
     ExprData::BinaryOp { lhs, op, rhs } => {
       let lhs_ty = get(st, ar, *lhs);
       let rhs_ty = get(st, ar, *rhs);
       match op {
         BinaryOp::Add => {
-          match (st.data(lhs_ty), st.data(rhs_ty)) {
+          match (st.tys.data(lhs_ty), st.tys.data(rhs_ty)) {
             (ty::Data::Prim(ty::Prim::Any), _) | (_, ty::Data::Prim(ty::Prim::Any)) => ty::Ty::ANY,
             // add numbers.
             (ty::Data::Prim(ty::Prim::Number), ty::Data::Prim(ty::Prim::Number)) => ty::Ty::NUMBER,
@@ -222,8 +222,8 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
             }
             // concat arrays.
             (ty::Data::Array(lhs_elem), ty::Data::Array(rhs_elem)) => {
-              let elem = st.get_ty(ty::Data::Union(BTreeSet::from([*lhs_elem, *rhs_elem])));
-              st.get_ty(ty::Data::Array(elem))
+              let elem = st.tys.get(ty::Data::Union(BTreeSet::from([*lhs_elem, *rhs_elem])));
+              st.tys.get(ty::Data::Array(elem))
             }
             // add object fields.
             (ty::Data::Object(lhs_obj), ty::Data::Object(rhs_obj)) => {
@@ -233,7 +233,7 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
               obj.known.extend(rhs_known);
               // this has unknown if either has unknown.
               obj.has_unknown = obj.has_unknown || rhs_obj.has_unknown;
-              st.get_ty(ty::Data::Object(obj))
+              st.tys.get(ty::Data::Object(obj))
             }
             (ty::Data::Union(_), _) | (_, ty::Data::Union(_)) => {
               log::warn!("TODO: check unions for +");
@@ -326,7 +326,7 @@ fn define_binds(
 }
 
 fn is_orderable(st: &st::St<'_>, ty: ty::Ty) -> bool {
-  match st.data(ty) {
+  match st.tys.data(ty) {
     ty::Data::Prim(ty::Prim::Any | ty::Prim::Number | ty::Prim::String) => true,
     ty::Data::Prim(ty::Prim::True | ty::Prim::False | ty::Prim::Null)
     | ty::Data::Object(_)

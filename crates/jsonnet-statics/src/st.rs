@@ -118,16 +118,8 @@ impl<'a> St<'a> {
     self.undefine(Id::super_);
   }
 
-  pub(crate) fn get_ty(&mut self, data: ty::Data) -> ty::Ty {
-    self.tys.get(data)
-  }
-
   pub(crate) fn insert_expr_ty(&mut self, expr: ExprMust, ty: ty::Ty) {
     self.statics.expr_tys.insert(expr, ty);
-  }
-
-  pub(crate) fn data(&self, ty: ty::Ty) -> &ty::Data {
-    self.tys.data(ty)
   }
 
   pub(crate) fn unify(&mut self, expr: ExprMust, want: ty::Ty, got: ty::Ty) {

@@ -89,7 +89,7 @@ fn get_cond(st: &mut st::St<'_>, ar: &ExprArena, ac: &mut Facts, cond: Expr) {
         get_cond(st, ar, &mut snd, Some(no));
         for (id, fst_ty) in fst {
           let Some(&snd_ty) = snd.get(&id) else { continue };
-          let ty = st.get_ty(ty::Data::Union(ty::Union::from([fst_ty, snd_ty])));
+          let ty = st.tys.get(ty::Data::Union(ty::Union::from([fst_ty, snd_ty])));
           add_fact(st, ac, id, ty);
         }
       }
