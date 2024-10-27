@@ -1,4 +1,32 @@
-//! See [`get`].
+//! Processing facts to determine the types of identifiers.
+//!
+//! Each fact about a variable `$var` must be one of:
+//!
+//! - `std.FUNC($var)` where FUNC is one of `isNumber`, `isString`, `isBoolean`, `isArray`, or
+//!   `isObject`
+//! - `std.type($var) == "S"` where S is one of number, string, boolean, array, object, or null
+//! - `$var == null`
+//!
+//! notably:
+//!
+//! - cannot use `std.isFunction`, the type system cannot model a function with totally unknown
+//!   params. this wouldn't be that helpful anyway i suppose - if you don't know how many params,
+//!   how can you call it?
+//! - cannot do `local isNumber = std.isNumber` beforehand, must literally get the field off `std`
+//! - cannot use named arguments, only positional arguments
+//! - isn't that clever with 'and'-ing facts about the same variable together: e.g. if we have two
+//!   facts, one that x is a string, the other, x is a boolean, we'll just say x is a string,
+//!   instead of noticing this is impossible.
+//!
+//! on the bright side:
+//!
+//! - can chain the facts with `a && b` (or `if a then b else false`, which is what `&&` desugars
+//!   to)
+//! - can chain the facts with `a || b` (or `if a then true else b`, which is what `||`
+//!   desugars to); when both a and b are about the same variable, will union the types
+//! - checking we get from `std` is NOT syntactic, we do an env lookup. so we won't trick this by
+//!   doing `local std = wtf` beforehand, and also it'll still work with `local foo = std` and then
+//!   asserting with `foo.isTYPE` etc.
 
 use crate::st;
 use jsonnet_expr::{Expr, ExprArena, ExprData, ExprMust, Id, Prim, Str};
@@ -6,48 +34,14 @@ use jsonnet_ty as ty;
 
 pub(crate) type Facts = rustc_hash::FxHashMap<Id, ty::Ty>;
 
-/// collects facts from `asserts`s in an expression, to determine the types of identifiers.
+/// Collects facts that are always true in the expression because otherwise the expression diverges
+/// (i.e. it `error`s).
 ///
-/// note that this requires a very, very exact format for the asserts. each assert must be of the
-/// form:
-///
-/// ```jsonnet
-/// assert std.isTYPE(x);
-/// ```
-///
-/// where TYPE is one of
-///
-/// - Number
-/// - String
-/// - Boolean
-/// - Array
-/// - Object
-///
-/// notably:
-///
-/// - cannot use `std.isFunction`, the type system cannot model a function with totally unknown
-///   params. this wouldn't be that helpful anyway i suppose - if you don't know how many params,
-///   how can you call it?
-/// - asserts all be at the beginning of the fn, so cannot e.g. introduce new local variables
-/// - cannot do `local isNumber = std.isNumber` beforehand, must literally get the field off `std`
-/// - cannot use named arguments, only positional arguments
-/// - isn't that clever with 'and'-ing facts about the same variable together: e.g. if we assert x
-///   is a string, then x is a boolean, we'll just say x is a string, instead of noticing this will
-///   always raise.
-///
-/// on the bright side:
-///
-/// - can chain the asserts with `a && b` (or `if a then b else false`, which is what `&&` desugars
-///   to); same as doing `assert a; assert b`
-/// - can chain the asserts with `a || b` (or `if a then true else b`, which is what `||`
-///   desugars to); when both a and b are about the same variable, will union the types
-/// - can also use `std.type(x) == "TYPE"` where TYPE is number, string, etc.
+/// - asserts all be at the beginning of the expression, so cannot e.g. introduce new local
+///   variables
 /// - since asserts are lowered to `if cond then ... else error ...`, we check for that. so if the
 ///   user wrote that itself in the concrete syntax, that also works.
-/// - checking we get from `std` is NOT syntactic, we do an env lookup. so we won't trick this by
-///   doing `local std = wtf` beforehand, and also it'll still work with `local foo = std` and then
-///   asserting with `foo.isTYPE` etc.
-pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, mut body: Expr) -> Facts {
+pub(crate) fn get_always(st: &mut st::St<'_>, ar: &ExprArena, mut body: Expr) -> Facts {
   let mut ac = Facts::default();
   while let Some(b) = body {
     let ExprData::If { cond, yes, no: Some(no) } = ar[b] else { break };
@@ -58,7 +52,7 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, mut body: Expr) -> Facts 
   ac
 }
 
-/// process a single if-cond.
+/// Process a fact from a single if-cond.
 fn get_cond(st: &mut st::St<'_>, ar: &ExprArena, ac: &mut Facts, cond: Expr) {
   let Some(cond) = cond else { return };
   match &ar[cond] {
@@ -84,14 +78,14 @@ fn get_cond(st: &mut st::St<'_>, ar: &ExprArena, ac: &mut Facts, cond: Expr) {
       let ExprData::Id(param) = ar[param] else { return };
       ac.entry(param).or_insert(ty);
     }
-    // the cond is itself another cond.
+    // the cond is itself another if expression.
     &ExprData::If { cond, yes: Some(yes), no: Some(no) } => {
       if let ExprData::Prim(Prim::Bool(false)) | ExprData::Error(_) = &ar[no] {
         // if it looks like a desugared `&&`, then just do both in sequence.
         get_cond(st, ar, ac, cond);
         get_cond(st, ar, ac, Some(yes));
       } else if let ExprData::Prim(Prim::Bool(true)) = &ar[yes] {
-        // else if it looks like a desugared `||`, then do the union.
+        // if it looks like a desugared `||`, then do the union.
         let mut fst = Facts::default();
         let mut snd = Facts::default();
         get_cond(st, ar, &mut fst, cond);
@@ -116,7 +110,7 @@ fn get_cond(st: &mut st::St<'_>, ar: &ExprArena, ac: &mut Facts, cond: Expr) {
   }
 }
 
-/// process `std.type(x) == "TYPE"`, where TYPE is number, string, etc.
+/// Process `std.type($var) == "TYPE"`, where TYPE is number, string, etc.
 fn get_ty_eq(st: &st::St<'_>, ar: &ExprArena, ac: &mut Facts, call: ExprMust, type_str: ExprMust) {
   let ExprData::Call { func: Some(func), positional, named } = &ar[call] else { return };
   let ExprData::Subscript { on: Some(on), idx: Some(idx) } = ar[*func] else { return };
@@ -147,7 +141,7 @@ fn get_ty_eq(st: &st::St<'_>, ar: &ExprArena, ac: &mut Facts, call: ExprMust, ty
   ac.entry(param).or_insert(ty);
 }
 
-/// process `x == Y`, where Y is some literal.
+/// Process `$var == LIT`, where LIT is some literal.
 fn get_eq_lit(ar: &ExprArena, ac: &mut Facts, var: ExprMust, lit: ExprMust) {
   let ExprData::Id(param) = ar[var] else { return };
   let ExprData::Prim(Prim::Null) = &ar[lit] else { return };

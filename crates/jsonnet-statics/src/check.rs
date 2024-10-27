@@ -1,7 +1,7 @@
 //! Check expressions for static validity: variables are in scope, types match up, etc.
 
-mod assert_facts;
 mod call;
+mod facts;
 
 use crate::{error, st};
 use always::always;
@@ -169,7 +169,7 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
             st.err(rhs.flatten().unwrap_or(expr), error::Kind::DuplicateBinding(id, idx, m));
           }
         }
-        let fs = assert_facts::get(st, ar, *body);
+        let fs = facts::get_always(st, ar, *body);
         for (id, ty) in fs {
           if let Some(cur) = tmp.get_mut(&id) {
             *cur = ty;
