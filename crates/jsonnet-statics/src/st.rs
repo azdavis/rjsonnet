@@ -37,7 +37,7 @@ pub struct St<'a> {
   /// This is a vec because things go in and out of scope in stacks.
   context: FxHashMap<Id, Vec<DefinedId>>,
   /// A store for all the types.
-  tys: ty::MutStore<'a>,
+  pub(crate) tys: ty::MutStore<'a>,
 }
 
 impl<'a> St<'a> {

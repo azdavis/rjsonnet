@@ -1,6 +1,5 @@
 //! Logical operations with types.
 
-use crate::st;
 use always::always;
 use jsonnet_ty as ty;
 use std::collections::BTreeSet;
@@ -9,7 +8,7 @@ use std::collections::BTreeSet;
 /// string and y is number), return the empty union type (aka never, aka void).
 ///
 /// a bit similar to unification.
-pub(crate) fn and(st: &mut st::St<'_>, x: ty::Ty, y: ty::Ty) -> ty::Ty {
+pub(crate) fn and(st: &mut ty::MutStore<'_>, x: ty::Ty, y: ty::Ty) -> ty::Ty {
   // speed up a simple case
   if x == y {
     return x;
@@ -25,7 +24,7 @@ pub(crate) fn and(st: &mut st::St<'_>, x: ty::Ty, y: ty::Ty) -> ty::Ty {
       let elem = and(st, *x, *y);
       // NOTE: see discussion of object fields for why we do not return never even if the elem is of
       // type never.
-      st.get_ty(ty::Data::Array(elem))
+      st.get(ty::Data::Array(elem))
     }
     (ty::Data::Object(x), ty::Data::Object(y)) => {
       let mut known = x.known.clone();
@@ -38,7 +37,7 @@ pub(crate) fn and(st: &mut st::St<'_>, x: ty::Ty, y: ty::Ty) -> ty::Ty {
         // is lazy - we can have a lazy field of type never and not witness the never-ness if we
         // don't access that field. it's a little wonky.
       }
-      st.get_ty(ty::Data::Object(ty::Object { known, has_unknown }))
+      st.get(ty::Data::Object(ty::Object { known, has_unknown }))
     }
     (ty::Data::Fn(_), ty::Data::Fn(_)) => {
       // we could almost certainly be more permissive here, but this case is probably rare to run
@@ -54,9 +53,9 @@ pub(crate) fn and(st: &mut st::St<'_>, x: ty::Ty, y: ty::Ty) -> ty::Ty {
 /// and distributes across or:
 ///
 /// (a || b) && c == (a && c) || (b && c)
-fn union_and(st: &mut st::St<'_>, xs: BTreeSet<ty::Ty>, y: ty::Ty) -> ty::Ty {
+fn union_and(st: &mut ty::MutStore<'_>, xs: BTreeSet<ty::Ty>, y: ty::Ty) -> ty::Ty {
   let u = ty::Data::Union(xs.into_iter().map(|x| and(st, x, y)).collect());
-  st.get_ty(u)
+  st.get(u)
 }
 
 /// returns the type that is x minus anything in y. when such a type doesn't exist (like when x ==
@@ -67,7 +66,7 @@ fn union_and(st: &mut st::St<'_>, xs: BTreeSet<ty::Ty>, y: ty::Ty) -> ty::Ty {
 /// note that we do NOT handle the case where x is any by returning a big union type of everything
 /// except y. this is "okay" because having any already makes the type system unsound.
 #[allow(dead_code)]
-pub(crate) fn minus(st: &mut st::St<'_>, x: ty::Ty, y: ty::Ty) -> ty::Ty {
+pub(crate) fn minus(st: &mut ty::MutStore<'_>, x: ty::Ty, y: ty::Ty) -> ty::Ty {
   // speed up a simple case
   if x == y || x == ty::Ty::NEVER {
     return ty::Ty::NEVER;
@@ -81,7 +80,7 @@ pub(crate) fn minus(st: &mut st::St<'_>, x: ty::Ty, y: ty::Ty) -> ty::Ty {
     }
     (ty::Data::Array(x), ty::Data::Array(y)) => {
       let elem = minus(st, *x, *y);
-      st.get_ty(ty::Data::Array(elem))
+      st.get(ty::Data::Array(elem))
     }
     (ty::Data::Object(x), ty::Data::Object(y)) => {
       let mut known = x.known.clone();
@@ -91,7 +90,7 @@ pub(crate) fn minus(st: &mut st::St<'_>, x: ty::Ty, y: ty::Ty) -> ty::Ty {
         let Some(&y) = y_known.get(name) else { continue };
         *x = minus(st, *x, y);
       }
-      st.get_ty(ty::Data::Object(ty::Object { known, has_unknown }))
+      st.get(ty::Data::Object(ty::Object { known, has_unknown }))
     }
     (ty::Data::Fn(_), ty::Data::Fn(_)) => {
       // this might not be totally right, but this case should be rare anyway.
@@ -101,7 +100,7 @@ pub(crate) fn minus(st: &mut st::St<'_>, x: ty::Ty, y: ty::Ty) -> ty::Ty {
       // (a || b) - y = (a - y) || (b - y)
       let xs = xs.clone();
       let u = ty::Data::Union(xs.into_iter().map(|x| minus(st, x, y)).collect());
-      st.get_ty(u)
+      st.get(u)
     }
     (_, ty::Data::Union(ys)) => {
       // x - (a || b) = x - a - b

@@ -153,5 +153,5 @@ fn get_eq_lit(ar: &ExprArena, ac: &mut Facts, var: ExprMust, lit: ExprMust) {
 
 fn add_fact(st: &mut st::St<'_>, ac: &mut Facts, id: Id, ty: ty::Ty) {
   let entry = ac.entry(id).or_insert(ty::Ty::ANY);
-  *entry = ty_logic::and(st, *entry, ty);
+  *entry = ty_logic::and(&mut st.tys, *entry, ty);
 }
