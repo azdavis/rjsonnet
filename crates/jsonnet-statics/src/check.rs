@@ -2,7 +2,7 @@
 
 mod call;
 
-use crate::{error, facts, st};
+use crate::{error, facts, scope, st};
 use always::always;
 use jsonnet_expr::{def, BinaryOp, Expr, ExprArena, ExprData, Id, Prim, UnaryOp};
 use jsonnet_ty as ty;
@@ -202,8 +202,14 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
     ExprData::If { cond, yes, no } => {
       let cond_ty = get(st, ar, *cond);
       st.unify(cond.unwrap_or(expr), ty::Ty::BOOL, cond_ty);
+      let mut fs = scope::Facts::default();
+      facts::get_cond(&mut st.tys, &st.scope, ar, &mut fs, *cond);
+      st.scope.add_facts(&mut st.tys, &fs);
       let yes_ty = get(st, ar, *yes);
+      st.scope.remove_facts(&fs);
+      st.scope.negate_facts(&mut st.tys, &fs);
       let no_ty = get(st, ar, *no);
+      st.scope.remove_facts(&fs);
       st.tys.get(ty::Data::Union(BTreeSet::from([yes_ty, no_ty])))
     }
     ExprData::BinaryOp { lhs, op, rhs } => {

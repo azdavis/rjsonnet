@@ -1,5 +1,6 @@
 //! See [`Scope`].
 
+use crate::ty_logic;
 use always::always;
 use jsonnet_expr::{def, ExprMust, Id};
 use jsonnet_ty as ty;
@@ -7,10 +8,13 @@ use rustc_hash::FxHashMap;
 
 #[derive(Debug)]
 struct DefinedId {
-  ty: ty::Ty,
+  /// INVARIANT: non-empty.
+  tys: Vec<ty::Ty>,
   def: def::Def,
   usages: usize,
 }
+
+pub(crate) type Facts = rustc_hash::FxHashMap<Id, ty::Ty>;
 
 /// Info about the identifiers currently in scope.
 #[derive(Debug, Default)]
@@ -21,7 +25,7 @@ pub(crate) struct Scope {
 
 impl Scope {
   pub(crate) fn define(&mut self, id: Id, ty: ty::Ty, def: def::Def) {
-    self.store.entry(id).or_default().push(DefinedId { ty, def, usages: 0 });
+    self.store.entry(id).or_default().push(DefinedId { tys: vec![ty], def, usages: 0 });
   }
 
   /// improve the type of an already defined id
@@ -30,15 +34,21 @@ impl Scope {
       always!(false, "refine without previous define: {id:?}");
       return;
     };
-    // NOTE: we CANNOT assert defined_id.ty == ty::Ty::ANY before this, because of duplicate locals
-    // like e.g. `local x = 1, x = "hi"; null`
-    defined_id.ty = ty;
+    always!(defined_id.tys.len() == 1, "should only refine at start");
+    let Some(t) = defined_id.tys.last_mut() else { return };
+    // NOTE: we CANNOT assert *t == ty::Ty::ANY before this, because of duplicate locals like e.g.
+    // `local x = 1, x = "hi"; null`
+    *t = ty;
   }
 
   pub(crate) fn get(&mut self, id: Id) -> Option<(ty::Ty, def::Def)> {
     let defined_id = self.store.get_mut(&id)?.last_mut()?;
     defined_id.usages += 1;
-    Some((defined_id.ty, defined_id.def))
+    let Some(t) = defined_id.tys.last() else {
+      always!(false, "should not have empty ty stack");
+      return None;
+    };
+    Some((*t, defined_id.def))
   }
 
   /// returns Some(..) if the id was unused
@@ -53,6 +63,40 @@ impl Scope {
     }
     let def::Def::Expr(e, k) = defined_id.def else { return None };
     Some((e, k))
+  }
+
+  pub(crate) fn add_facts(&mut self, tys: &mut ty::MutStore<'_>, fs: &Facts) {
+    for (&id, &ty) in fs {
+      let Some(stack) = self.store.get_mut(&id) else { continue };
+      let Some(defined_id) = stack.last_mut() else { continue };
+      let Some(&cur) = defined_id.tys.last() else {
+        always!(false, "should not have empty ty stack");
+        continue;
+      };
+      let new = ty_logic::and(tys, cur, ty);
+      defined_id.tys.push(new);
+    }
+  }
+
+  pub(crate) fn negate_facts(&mut self, tys: &mut ty::MutStore<'_>, fs: &Facts) {
+    for (&id, &ty) in fs {
+      let Some(stack) = self.store.get_mut(&id) else { continue };
+      let Some(defined_id) = stack.last_mut() else { continue };
+      let Some(&cur) = defined_id.tys.last() else {
+        always!(false, "should not have empty ty stack");
+        continue;
+      };
+      let new = ty_logic::minus(tys, cur, ty);
+      defined_id.tys.push(new);
+    }
+  }
+
+  pub(crate) fn remove_facts(&mut self, fs: &Facts) {
+    for &id in fs.keys() {
+      let Some(stack) = self.store.get_mut(&id) else { continue };
+      let Some(defined_id) = stack.last_mut() else { continue };
+      always!(defined_id.tys.pop().is_some(), "should not have empty ty stack");
+    }
   }
 
   pub(crate) fn is_std(&self, id: Id) -> bool {

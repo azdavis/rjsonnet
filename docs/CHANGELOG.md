@@ -10,6 +10,7 @@ Things under "main" are not released yet.
   - `std.slice`
 - Improve syntax highlighting for verbatim strings.
 - Allow type asserts to be chained with `||` to make union types.
+- Support flow typing, where performing checks on a variable in an `if` condition affects the type of the variable in the `then` and `else` expressions.
 
 ## v0.6.1
 
