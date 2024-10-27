@@ -1,6 +1,7 @@
 //! Unification of types.
 
 use crate::error;
+use always::always;
 use drop_bomb::DebugDropBomb;
 use jsonnet_ty as ty;
 
@@ -39,10 +40,14 @@ struct Marker {
 /// this checks and unifies `want` is compatible with `got`, but allows `got` to be more specific
 /// than `want`. aka, got should be a subtype of want, i suppose.
 pub(crate) fn get(st: &mut St, store: &ty::MutStore<'_>, want: ty::Ty, got: ty::Ty) {
+  // speed up a simple case
+  if want == got {
+    return;
+  }
   match (store.data(want), store.data(got)) {
     (ty::Data::Prim(ty::Prim::Any), _) | (_, ty::Data::Prim(ty::Prim::Any)) => {}
     (ty::Data::Prim(w), ty::Data::Prim(g)) => {
-      if w != g {
+      if always!(w != g, "should have returned already if want == got") {
         st.err(error::Unify::Incompatible(want, got));
       }
     }
