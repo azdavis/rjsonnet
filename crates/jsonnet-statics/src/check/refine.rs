@@ -6,7 +6,7 @@ use jsonnet_ty as ty;
 
 pub(crate) type Facts = rustc_hash::FxHashMap<Id, ty::Ty>;
 
-/// collects facts from `asserts`s at a beginning of a fn, to refine the types of its params.
+/// collects facts from `asserts`s in an expression, to refine the types of identifiers.
 ///
 /// note that this requires a very, very exact format for the asserts. each assert must be of the
 /// form:
@@ -32,6 +32,9 @@ pub(crate) type Facts = rustc_hash::FxHashMap<Id, ty::Ty>;
 /// - asserts all be at the beginning of the fn, so cannot e.g. introduce new local variables
 /// - cannot do `local isNumber = std.isNumber` beforehand, must literally get the field off `std`
 /// - cannot use named arguments, only positional arguments
+/// - isn't that clever with 'and'-ing facts about the same variable together: e.g. if we assert x
+///   is a string, then x is a boolean, we'll just say x is a string, instead of noticing this will
+///   always raise.
 ///
 /// on the bright side:
 ///
