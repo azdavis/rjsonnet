@@ -40,16 +40,37 @@ pub(crate) fn get_always(
   tys: &mut ty::MutStore<'_>,
   scope: &Scope,
   ar: &ExprArena,
-  mut body: Expr,
+  body: Expr,
 ) -> Facts {
   let mut ac = Facts::default();
+  let Some(body) = body else { return ac };
+  // special case for object asserts with benign locals
+  if let ExprData::Object { binds, asserts, .. } = &ar[body] {
+    if binds.iter().any(|&(id, _)| id != Id::dollar) {
+      return ac;
+    }
+    for &a in asserts {
+      get_assert(tys, scope, ar, &mut ac, a);
+    }
+  } else {
+    get_assert(tys, scope, ar, &mut ac, Some(body));
+  }
+  ac
+}
+
+fn get_assert(
+  tys: &mut ty::MutStore<'_>,
+  scope: &Scope,
+  ar: &ExprArena,
+  ac: &mut Facts,
+  mut body: Expr,
+) {
   while let Some(b) = body {
     let ExprData::If { cond, yes, no: Some(no) } = ar[b] else { break };
     let ExprData::Error(_) = &ar[no] else { break };
     body = yes;
-    get_cond(tys, scope, ar, &mut ac, cond);
+    get_cond(tys, scope, ar, ac, cond);
   }
-  ac
 }
 
 /// Process a fact from a single if-cond.

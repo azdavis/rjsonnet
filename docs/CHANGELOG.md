@@ -10,8 +10,9 @@ Things under "main" are not released yet.
   - `std.repeat`
   - `std.slice`
 - Improve syntax highlighting for verbatim strings.
-- Allow type asserts to be chained with `||` to make union types.
+- Allow type annotation asserts to be chained with `||` to make union types.
 - Support flow typing, where performing checks on a variable in an `if` condition affects the type of the variable in the `then` and `else` expressions.
+- Allow type annotation asserts in objects with no locals.
 
 ## v0.6.1
 
