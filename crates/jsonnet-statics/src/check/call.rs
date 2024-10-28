@@ -5,7 +5,7 @@ use always::always;
 use jsonnet_expr::{Expr, ExprMust, Id, StdFn, Str};
 use jsonnet_ty as ty;
 use rustc_hash::FxHashMap;
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeMap;
 
 pub(crate) fn get(
   st: &mut st::St<'_>,
@@ -230,7 +230,7 @@ fn maybe_extra_checks(
       st.unify(init_expr, func_ret, init_ty);
       let want_arr_ty = st.tys.get(ty::Data::Array(x_param.ty));
       st.unify(arr_expr, want_arr_ty, arr_ty);
-      Some(st.tys.get(ty::Data::Union(BTreeSet::from([ac_param.ty, func_ret, init_ty]))))
+      Some(st.tys.get(ty::Data::Union(ty::Union::from([ac_param.ty, func_ret, init_ty]))))
     }
     _ => None,
   }
@@ -267,13 +267,13 @@ fn object_values(
   params: &FxHashMap<Id, (ExprMust, ty::Ty)>,
 ) -> Option<ty::Ty> {
   let &(_, ty) = params.get(&Id::o)?;
-  let mut ac = BTreeSet::<ty::Ty>::new();
+  let mut ac = ty::Union::new();
   object_values_inner(st, ty, &mut ac);
   Some(st.tys.get(ty::Data::Union(ac)))
 }
 
 /// TODO case on whether we are considering hidden fields?
-fn object_values_inner(st: &st::St<'_>, ty: ty::Ty, ac: &mut BTreeSet<ty::Ty>) {
+fn object_values_inner(st: &st::St<'_>, ty: ty::Ty, ac: &mut ty::Union) {
   match st.tys.data(ty) {
     ty::Data::Prim(_) | ty::Data::Array(_) | ty::Data::Fn(_) => {}
     ty::Data::Object(obj) => {

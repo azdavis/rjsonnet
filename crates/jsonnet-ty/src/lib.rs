@@ -366,7 +366,7 @@ impl<'a> MutStore<'a> {
       // the interesting case.
       Data::Union(work) => {
         let mut work: Vec<_> = work.into_iter().collect();
-        let mut parts = BTreeSet::<Ty>::new();
+        let mut parts = Union::new();
         while let Some(ty) = work.pop() {
           match self.data(ty) {
             Data::Prim(Prim::Any) => return Ty::ANY,

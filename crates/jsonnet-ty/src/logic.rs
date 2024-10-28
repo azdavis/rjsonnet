@@ -1,8 +1,7 @@
 //! Logical operations with types.
 
-use crate::{Data, MutStore, Object, Prim, Ty};
+use crate::{Data, MutStore, Object, Prim, Ty, Union};
 use always::always;
-use std::collections::BTreeSet;
 
 /// Returns the type that is BOTH x AND y.
 ///
@@ -55,7 +54,7 @@ pub fn and(tys: &mut MutStore<'_>, x: Ty, y: Ty) -> Ty {
 /// and distributes across or:
 ///
 /// (a || b) && c == (a && c) || (b && c)
-fn union_and(tys: &mut MutStore<'_>, xs: BTreeSet<Ty>, y: Ty) -> Ty {
+fn union_and(tys: &mut MutStore<'_>, xs: Union, y: Ty) -> Ty {
   let u = Data::Union(xs.into_iter().map(|x| and(tys, x, y)).collect());
   tys.get(u)
 }

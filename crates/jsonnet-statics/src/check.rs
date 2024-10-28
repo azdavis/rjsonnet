@@ -7,7 +7,6 @@ use always::always;
 use jsonnet_expr::{def, BinaryOp, Expr, ExprArena, ExprData, Id, Prim, UnaryOp};
 use jsonnet_ty as ty;
 use rustc_hash::{FxHashMap, FxHashSet};
-use std::collections::BTreeSet;
 
 /// NOTE: don't return early from this except in the degenerate case where the `expr` was `None`.
 /// This is so we can insert the expr's type into the `St` at the end.
@@ -68,7 +67,7 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
       ty::Ty::OBJECT
     }
     ExprData::Array(exprs) => {
-      let mut tys = BTreeSet::<ty::Ty>::new();
+      let mut tys = ty::Union::new();
       for &arg in exprs {
         let ty = get(st, ar, arg);
         tys.insert(ty);
@@ -210,7 +209,7 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
       st.scope.negate_facts(&mut st.tys, &fs);
       let no_ty = get(st, ar, *no);
       st.scope.remove_facts(&fs);
-      st.tys.get(ty::Data::Union(BTreeSet::from([yes_ty, no_ty])))
+      st.tys.get(ty::Data::Union(ty::Union::from([yes_ty, no_ty])))
     }
     ExprData::BinaryOp { lhs, op, rhs } => {
       let lhs_ty = get(st, ar, *lhs);
@@ -227,7 +226,7 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
             }
             // concat arrays.
             (ty::Data::Array(lhs_elem), ty::Data::Array(rhs_elem)) => {
-              let elem = st.tys.get(ty::Data::Union(BTreeSet::from([*lhs_elem, *rhs_elem])));
+              let elem = st.tys.get(ty::Data::Union(ty::Union::from([*lhs_elem, *rhs_elem])));
               st.tys.get(ty::Data::Array(elem))
             }
             // add object fields.
