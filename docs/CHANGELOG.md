@@ -2,7 +2,7 @@
 
 Things under "main" are not released yet.
 
-## main
+## v0.7.0
 
 - Improve typing for:
   - `std.join`
