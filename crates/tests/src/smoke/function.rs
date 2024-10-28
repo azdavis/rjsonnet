@@ -97,43 +97,46 @@ local sub(x, y) = x - y;
 
 #[test]
 fn args_positional_extra() {
-  JsonnetInput::pre_eval_error(
+  JsonnetInput::eval_error(
     r"
 local sub(x, y) = x - y;
   sub(3, 4, 5)
 ##          ^ diagnostic: extra positional argument: 3
 ",
+    "too many arguments",
   )
   .check();
 }
 
 #[test]
 fn args_named_extra() {
-  JsonnetInput::pre_eval_error(
+  JsonnetInput::eval_error(
     r"
 local sub(x, y) = x - y;
   sub(x=1, y=2, z=3)
 ##                ^ diagnostic: extra named argument: `z`
 ",
+    "too many arguments",
   )
   .check();
 }
 
 #[test]
 fn args_positional_missing() {
-  JsonnetInput::pre_eval_error(
+  JsonnetInput::eval_error(
     r"
 local sub(x, y) = x - y;
   sub(1)
 ##^^^ diagnostic: missing argument: `y` with type: `any`
 ",
+    "`y` was not defined",
   )
   .check();
 }
 
 #[test]
 fn args_named_missing_1() {
-  JsonnetInput::pre_eval_error(
+  JsonnetInput::eval_error(
     r"
 local sub(x, y) =
   assert std.isNumber(x);
@@ -143,13 +146,14 @@ local sub(x, y) =
   sub(x=1)
 ##^^^ diagnostic: missing argument: `y` with type: `number`
 ",
+    "`y` was not defined",
   )
   .check();
 }
 
 #[test]
 fn args_named_missing_2() {
-  JsonnetInput::pre_eval_error(
+  JsonnetInput::eval_error(
     r"
 local sub(x, y) =
   assert std.isNumber(x);
@@ -159,6 +163,7 @@ local sub(x, y) =
   sub(y=1)
 ##^^^ diagnostic: missing argument: `x` with type: `number`
 ",
+    "`x` was not defined",
   )
   .check();
 }
@@ -177,12 +182,13 @@ local sub(x, y) = x - y;
 
 #[test]
 fn args_named_positional_duplicate() {
-  JsonnetInput::pre_eval_error(
+  JsonnetInput::eval_error(
     r"
 local sub(x, y) = x - y;
   sub(1, y=2, x=3)
 ##              ^ diagnostic: extra named argument: `x`
 ",
+    "too many arguments",
   )
   .check();
 }

@@ -209,7 +209,7 @@ func(1)
 
 #[test]
 fn object_assert_3() {
-  JsonnetInput::pre_eval_error(
+  JsonnetInput::manifest(
     r#"
 ##         v diagnostic: unused: `x`
 local func(x) = {
@@ -220,6 +220,11 @@ local func(x) = {
 };
 
 func(3)
+"#,
+    r#"
+{
+  "thing": 124
+}
 "#,
   )
   .check();

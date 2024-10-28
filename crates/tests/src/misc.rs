@@ -214,9 +214,10 @@ fn obj_array_self() {
   .check();
 }
 
+// this is a reduced case of a weird bug a while ago.
 #[test]
 fn same_fn_ty() {
-  JsonnetInput::pre_eval_error(
+  JsonnetInput::manifest(
     r#"
 local foo() = null;
 ##    ^^^ diagnostic: unused: `foo`
@@ -226,17 +227,19 @@ local quz() = 2;
 
 quz()
 "#,
+    "2",
   )
   .check();
 }
 
 #[test]
 fn length_num() {
-  JsonnetInput::pre_eval_error(
+  JsonnetInput::eval_error(
     r#"
 std.length(3)
 ##         ^ diagnostic: not a type which has length: `number`
 "#,
+    "incompatible types",
   )
   .check();
 }

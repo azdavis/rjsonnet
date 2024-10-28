@@ -150,7 +150,8 @@ pub(crate) struct StaticsFile {
 impl StaticsFile {
   /// returns whether this has NO errors.
   pub(crate) fn is_clean(&self) -> bool {
-    self.syntax.errors.is_empty() && self.statics.errors.is_empty()
+    self.syntax.errors.is_empty()
+      && self.statics.errors.iter().all(|x| matches!(x.severity(), diagnostic::Severity::Warning))
   }
 
   pub(crate) fn diagnostics<'a>(

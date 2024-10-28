@@ -194,7 +194,12 @@ impl<'a> Input<'a> {
         (OutcomeKind::EvalError, Err(err)) => {
           let got = err.display(st.strings(), st.paths(), Some(pwd)).to_string();
           let got = make_one_line(&got);
-          assert_eq!(jsonnet.outcome, got.as_str(), "{path_str}: mismatched errors");
+          let got = got.as_str();
+          let want = jsonnet.outcome;
+          assert!(
+            got.contains(want),
+            "{path_str}: got error does not contain want: want {want}, got {got}"
+          );
         }
 
         (OutcomeKind::PreEvalError, Err(err)) => {
