@@ -162,3 +162,65 @@ f(3) + f("hi")
   )
   .check();
 }
+
+#[test]
+fn object_assert_1() {
+  JsonnetInput::manifest(
+    r#"
+local func(x) = {
+##    ^ hover: (x: any) => { thing: string }
+  local gunc(x) =
+    assert std.isNumber(x);
+    'hi',
+  thing: gunc(x),
+};
+
+func(1)
+"#,
+    r#"
+{
+  "thing": "hi"
+}
+"#,
+  )
+  .check();
+}
+
+#[test]
+fn object_assert_2() {
+  JsonnetInput::manifest(
+    r#"
+local func(x) = {
+##    ^ hover: (x: number) => { thing: number }
+  assert std.isNumber(x),
+  thing: x + 1,
+};
+
+func(1)
+"#,
+    r#"
+{
+  "thing": 2
+}
+"#,
+  )
+  .check();
+}
+
+#[test]
+fn object_assert_3() {
+  JsonnetInput::pre_eval_error(
+    r#"
+##         v diagnostic: unused: `x`
+local func(x) = {
+##    ^ hover: (x: any) => { thing: number }
+  local x = 123,
+  assert std.isNumber(x),
+  thing: x + 1,
+};
+
+func(3)
+"#,
+  )
+  .check();
+}
