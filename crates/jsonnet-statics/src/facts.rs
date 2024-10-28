@@ -134,8 +134,8 @@ pub(crate) fn get_cond(
       get_ty_eq(tys, scope, ar, ac, lhs, rhs);
       get_ty_eq(tys, scope, ar, ac, rhs, lhs);
       // same with this one.
-      get_eq_lit(ar, ac, lhs, rhs);
-      get_eq_lit(ar, ac, rhs, lhs);
+      get_eq_lit(tys, ar, ac, lhs, rhs);
+      get_eq_lit(tys, ar, ac, rhs, lhs);
     }
     _ => {}
   }
@@ -186,8 +186,14 @@ fn get_ty_eq(
 }
 
 /// Process `$var == LIT`, where LIT is some literal.
-fn get_eq_lit(ar: &ExprArena, ac: &mut Facts, var: ExprMust, lit: ExprMust) {
-  let ExprData::Id(param) = ar[var] else { return };
+fn get_eq_lit(
+  tys: &mut ty::MutStore<'_>,
+  ar: &ExprArena,
+  ac: &mut Facts,
+  var: ExprMust,
+  lit: ExprMust,
+) {
+  let ExprData::Id(id) = ar[var] else { return };
   let ty = match &ar[lit] {
     ExprData::Prim(prim) => match prim {
       Prim::Null => ty::Ty::NULL,
@@ -206,7 +212,7 @@ fn get_eq_lit(ar: &ExprArena, ac: &mut Facts, var: ExprMust, lit: ExprMust) {
     ExprData::Error(_) => ty::Ty::NEVER,
     _ => return,
   };
-  ac.entry(param).or_insert(ty);
+  add_fact(tys, ac, id, ty);
 }
 
 fn add_fact(tys: &mut ty::MutStore<'_>, ac: &mut Facts, id: Id, ty: ty::Ty) {
