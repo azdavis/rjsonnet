@@ -12,6 +12,7 @@ Things under "main" are not released yet.
 - Improve syntax highlighting for verbatim strings.
 - Allow type annotation asserts to be chained with `||` to make union types.
 - Support flow typing, where performing checks on a variable in an `if` condition affects the type of the variable in the `then` and `else` expressions.
+- Infer types for variables with comparing with `==` in some situations.
 - Allow type annotation asserts in objects.
 
 ## v0.6.1
