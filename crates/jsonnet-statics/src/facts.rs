@@ -177,18 +177,23 @@ fn get_ty_eq(
 /// Process `$var == LIT`, where LIT is some literal.
 fn get_eq_lit(ar: &ExprArena, ac: &mut Facts, var: ExprMust, lit: ExprMust) {
   let ExprData::Id(param) = ar[var] else { return };
-  let ExprData::Prim(prim) = &ar[lit] else { return };
-  let ty = match prim {
-    Prim::Null => ty::Ty::NULL,
-    Prim::Bool(b) => {
-      if *b {
-        ty::Ty::TRUE
-      } else {
-        ty::Ty::FALSE
+  let ty = match &ar[lit] {
+    ExprData::Prim(prim) => match prim {
+      Prim::Null => ty::Ty::NULL,
+      Prim::Bool(b) => {
+        if *b {
+          ty::Ty::TRUE
+        } else {
+          ty::Ty::FALSE
+        }
       }
-    }
-    Prim::String(_) => ty::Ty::STRING,
-    Prim::Number(_) => ty::Ty::NUMBER,
+      Prim::String(_) => ty::Ty::STRING,
+      Prim::Number(_) => ty::Ty::NUMBER,
+    },
+    ExprData::Object { .. } | ExprData::ObjectComp { .. } => ty::Ty::OBJECT,
+    ExprData::Array(_) => ty::Ty::ARRAY_ANY,
+    ExprData::Error(_) => ty::Ty::NEVER,
+    _ => return,
   };
   ac.entry(param).or_insert(ty);
 }
