@@ -56,4 +56,4 @@ pedantic = "deny"
 codegen-units = 1
 lto = "fat"
 panic = "abort"
-strip = true
+strip = "symbols"
