@@ -4,10 +4,12 @@ use crate::{Data, MutStore, Object, Prim, Ty};
 use always::always;
 use std::collections::BTreeSet;
 
-/// returns the type that is BOTH x AND Y. when such a type doesn't exist (like when e.g. x is
-/// string and y is number), return the empty union type (aka never, aka void).
+/// Returns the type that is BOTH x AND y.
 ///
-/// a bit similar to unification.
+/// When such a type doesn't exist (like when e.g. x is string and y is number), return the empty
+/// union type (aka never, aka void).
+///
+/// A bit similar to unification.
 pub fn and(tys: &mut MutStore<'_>, x: Ty, y: Ty) -> Ty {
   // speed up a simple case
   if x == y {
@@ -58,13 +60,15 @@ fn union_and(tys: &mut MutStore<'_>, xs: BTreeSet<Ty>, y: Ty) -> Ty {
   tys.get(u)
 }
 
-/// returns the type that is x minus anything in y. when such a type doesn't exist (like when x ==
-/// y), return the empty union type (aka never, aka void).
+/// Returns the type that is x minus anything in y.
 ///
-/// it's like x && !y, where !y is like the union type of everything except y.
+/// When such a type doesn't exist (like when x == y), return the empty union type (aka never, aka
+/// void).
 ///
-/// note that we do NOT handle the case where x is any by returning a big union type of everything
-/// except y. this is "okay" because having any already makes the type system unsound.
+/// It's like x && !y, where !y is like the union type of everything except y.
+///
+/// Note that we do NOT handle the case where x is any by returning a big union type of everything
+/// except y. This is "okay" because having any already makes the type system unsound.
 pub fn minus(tys: &mut MutStore<'_>, x: Ty, y: Ty) -> Ty {
   // speed up a simple case
   if x == y || x == Ty::NEVER {
