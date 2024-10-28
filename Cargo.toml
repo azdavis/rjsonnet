@@ -51,3 +51,9 @@ unused-extern-crates = "deny"
 
 [workspace.lints.clippy]
 pedantic = "deny"
+
+[profile.release]
+codegen-units = 1
+lto = "fat"
+panic = "abort"
+strip = true
