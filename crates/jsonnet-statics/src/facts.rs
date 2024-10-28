@@ -13,7 +13,6 @@
 //!   params. this wouldn't be that helpful anyway i suppose - if you don't know how many params,
 //!   how can you call it?
 //! - cannot do `local isNumber = std.isNumber` beforehand, must literally get the field off `std`
-//! - cannot use named arguments, only positional arguments
 //!
 //! on the bright side:
 //!
@@ -97,10 +96,16 @@ pub(crate) fn get_cond(
         Str::isString => ty::Ty::STRING,
         _ => return,
       };
-      if !named.is_empty() {
-        return;
-      }
-      let [Some(param)] = positional[..] else { return };
+      let param = match (&positional[..], &named[..]) {
+        (&[Some(x)], []) => x,
+        ([], &[(id, Some(x))]) => {
+          if id != Id::v {
+            return;
+          }
+          x
+        }
+        _ => return,
+      };
       let ExprData::Id(id) = ar[param] else { return };
       add_fact(tys, ac, id, ty);
     }
@@ -155,10 +160,16 @@ fn get_ty_eq(
   if *func_name != Str::type_ {
     return;
   }
-  if !named.is_empty() {
-    return;
-  }
-  let [Some(param)] = positional[..] else { return };
+  let param = match (&positional[..], &named[..]) {
+    (&[Some(x)], []) => x,
+    ([], &[(id, Some(x))]) => {
+      if id != Id::x {
+        return;
+      }
+      x
+    }
+    _ => return,
+  };
   let ExprData::Id(id) = ar[param] else { return };
   let ExprData::Prim(Prim::String(type_str)) = &ar[type_str] else { return };
   let ty = match *type_str {
