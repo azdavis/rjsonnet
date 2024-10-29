@@ -103,13 +103,6 @@ pub(crate) fn get(st: &mut St, store: &ty::MutStore<'_>, want: ty::Ty, got: ty::
       }
       get(st, store, want_ret, got_ret);
     }
-    // need to put this (got-union) before the next (want-union)
-    (_, ty::Data::Union(got)) => {
-      // want must be ALL of the things got may be.
-      for &g in got {
-        get(st, store, want, g);
-      }
-    }
     (ty::Data::Union(tys), _) => {
       // got may be ANY of the things want may be.
       for &w in tys {
@@ -121,6 +114,12 @@ pub(crate) fn get(st: &mut St, store: &ty::MutStore<'_>, want: ty::Ty, got: ty::
         }
       }
       st.err(error::Unify::Incompatible(want, got));
+    }
+    (_, ty::Data::Union(got)) => {
+      // want must be ALL of the things got may be.
+      for &g in got {
+        get(st, store, want, g);
+      }
     }
     _ => st.err(error::Unify::Incompatible(want, got)),
   }
