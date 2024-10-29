@@ -159,7 +159,7 @@ assert std.pow(99, 0) == 1;
 The following function returns `true` for all numbers `x`:
 
 ```jsonnet
-local alwaysTrue(x) =
+function(x)
   assert std.isNumber(x);
   x == std.mantissa(x) * std.pow(2, std.exponent(x))
 ```
@@ -171,7 +171,7 @@ local alwaysTrue(x) =
 The following function returns `true` for all numbers `x`:
 
 ```jsonnet
-local alwaysTrue(x) =
+function(x)
   assert std.isNumber(x);
   x == std.mantissa(x) * std.pow(2, std.exponent(x))
 ```
@@ -293,9 +293,9 @@ Equivalent to `std.max(minVal, std.min(x, maxVal))`.
 Examples:
 
 ```jsonnet
-std.clamp(-3, 0, 5) == 0
-std.clamp(4, 0, 5) == 4
-std.clamp(7, 0, 5) == 5
+assert std.clamp(-3, 0, 5) == 0;
+assert std.clamp(4, 0, 5) == 4;
+assert std.clamp(7, 0, 5) == 5;
 ```
 
 ## `assertEqual`
@@ -1367,7 +1367,7 @@ local choose(c, yes, no) =
 
 Prints:
 
-```
+```text
 TRACE: test.jsonnet:3 c is true, returning {"bar": 1}
 ```
 
