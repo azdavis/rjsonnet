@@ -86,25 +86,63 @@ Recursively remove all "empty" members of a. "Empty" is defined as
 
 The argument may have any type.
 
+```jsonnet
+assert std.prune([1, [], 2, {}, 3, null]) == [1, 2, 3];
+assert std.prune({a: 3}) == {a: 3};
+assert std.prune(null) == null;
+```
+
 ## `abs`
 
 Returns the absolute value of the number.
+
+```jsonnet
+assert std.abs(3) == 3;
+assert std.abs(-1.2) == 1.2;
+assert std.abs(0) == 0;
+```
 
 ## `sign`
 
 Returns `-1`, `0`, or `1` if the number is negative, zero, or positive respectively.
 
+```jsonnet
+assert std.sign(3) == 1;
+assert std.sign(-1.2) == -1;
+assert std.sign(0) == 0;
+```
+
 ## `max`
 
 Returns the maximum of the two arguments.
+
+```jsonnet
+assert std.max(3, 2) == 3;
+assert std.max(4, 4) == 4;
+assert std.max(-5, 1) == 1;
+```
 
 ## `min`
 
 Returns the minimum of the two arguments.
 
+```jsonnet
+assert std.min(3, 2) == 2;
+assert std.min(4, 4) == 4;
+assert std.min(-5, 1) == -5;
+```
+
 ## `pow`
 
 `std.pow(x, y)` returns $x^y$, i.e. $x$ to the $y$ power.
+
+```jsonnet
+assert std.pow(2, 3) == 8;
+assert std.pow(3, 2) == 9;
+assert std.pow(1, 99) == 1;
+assert std.pow(0, 2) == 0;
+assert std.pow(99, 0) == 1;
+```
 
 ## `exp`
 
@@ -142,13 +180,39 @@ local alwaysTrue(x) =
 
 Returns the smallest integer greater than or equal to the argument.
 
+```jsonnet
+assert std.floor(1) == 1;
+assert std.floor(1.99) == 1;
+assert std.floor(2.01) == 2;
+assert std.floor(-1) == -1;
+assert std.floor(-1.01) == -2;
+assert std.floor(-1.99) == -2;
+assert std.floor(-2.01) == -3;
+```
+
 ## `ceil`
 
 Returns the greatest integer smaller than or equal to the argument.
 
+```jsonnet
+assert std.ceil(1) == 1;
+assert std.ceil(1.99) == 2;
+assert std.ceil(2.01) == 3;
+assert std.ceil(-1) == -1;
+assert std.ceil(-1.01) == -1;
+assert std.ceil(-1.99) == -1;
+assert std.ceil(-2.01) == -2;
+```
+
 ## `sqrt`
 
 Returns the square root of the argument.
+
+```jsonnet
+assert std.sqrt(9) == 3;
+assert std.sqrt(4) == 2;
+assert std.sqrt(1) == 1;
+```
 
 ## `sin`
 
