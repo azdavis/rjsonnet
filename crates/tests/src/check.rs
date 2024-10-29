@@ -126,48 +126,7 @@ impl<'a> Input<'a> {
 
       let ex_file = &expects[&path_id];
       for (region, ex) in ex_file.iter() {
-        match ex.kind {
-          expect::Kind::Def => {}
-          expect::Kind::Use => {
-            let pos = text_pos::PositionUtf16 { line: region.line, col: region.col_start };
-            let (def_path, range) = st.get_def(fs, path.clone(), pos).expect("no def");
-            assert_eq!(range.start.line, range.end.line, "{path_str}: range spans many lines");
-            let region = expect::Region {
-              line: range.start.line,
-              col_start: range.start.col,
-              col_end: range.end.col,
-            };
-            let def_exs = expects[&def_path].get(region).expect("nothing at def site");
-            let msg = ex.msg.clone();
-            let def_ex = expect::Expect { kind: expect::Kind::Def, msg: msg.clone() };
-            assert!(def_exs.contains(&def_ex), "{path_str}: no def found for {msg}");
-          }
-          expect::Kind::Diagnostic => {
-            let range = text_pos::RangeUtf16 {
-              start: text_pos::PositionUtf16 { line: region.line, col: region.col_start },
-              end: text_pos::PositionUtf16 { line: region.line, col: region.col_end },
-            };
-            let Some(range_map) = ds_map.get_mut(&range) else {
-              panic!("{path_str}:{range}: no diagnostics at range")
-            };
-            let want = ex.msg.as_str();
-            assert!(range_map.remove(want), "{path_str}:{range}: no diagnostic matches: {want}");
-            if range_map.is_empty() {
-              assert!(ds_map.remove(&range).expect("just got it").is_empty());
-            }
-          }
-          expect::Kind::Hover => {
-            let pos = text_pos::PositionUtf16 { line: region.line, col: region.col_start };
-            let Some(got) = st.hover(fs, path.clone(), pos) else {
-              panic!("{path_str}:{pos}: no hover")
-            };
-            let want = ex.msg.as_str();
-            assert!(
-              got.lines().any(|line| line == want),
-              "{path_str}:{pos}: none of the lines were equal to '{want}':\n\n{got}"
-            );
-          }
-        }
+        ex.check(region, st, fs, path.as_clean_path(), path_str, &expects, &mut ds_map);
       }
 
       if let Some((range, ds)) = ds_map.iter().next() {

@@ -1,6 +1,7 @@
 //! Expectations.
 
-use rustc_hash::FxHashSet;
+use lang_srv_state::State as _;
+use rustc_hash::{FxHashMap, FxHashSet};
 use std::{collections::BTreeMap, fmt};
 
 /// A map from regions to expectations.
@@ -116,6 +117,60 @@ impl Expect {
       return Self { kind: Kind::Hover, msg: msg.to_owned() };
     }
     panic!("no prefix: {msg}")
+  }
+
+  #[expect(clippy::too_many_arguments)]
+  pub(crate) fn check<F>(
+    &self,
+    region: &Region,
+    st: &mut jsonnet_analyze::St,
+    fs: &F,
+    path: &paths::CleanPath,
+    path_str: &str,
+    expects: &paths::PathMap<File>,
+    ds_map: &mut FxHashMap<text_pos::RangeUtf16, FxHashSet<String>>,
+  ) where
+    F: Sync + paths::FileSystem,
+  {
+    match self.kind {
+      Kind::Def => {}
+      Kind::Use => {
+        let pos = text_pos::PositionUtf16 { line: region.line, col: region.col_start };
+        let (def_path, range) = st.get_def(fs, path.to_owned(), pos).expect("no def");
+        assert_eq!(range.start.line, range.end.line, "{path_str}: range spans many lines");
+        let region =
+          Region { line: range.start.line, col_start: range.start.col, col_end: range.end.col };
+        let def_exs = expects[&def_path].get(region).expect("nothing at def site");
+        let msg = self.msg.clone();
+        let def_ex = Expect { kind: Kind::Def, msg: msg.clone() };
+        assert!(def_exs.contains(&def_ex), "{path_str}: no def found for {msg}");
+      }
+      Kind::Diagnostic => {
+        let range = text_pos::RangeUtf16 {
+          start: text_pos::PositionUtf16 { line: region.line, col: region.col_start },
+          end: text_pos::PositionUtf16 { line: region.line, col: region.col_end },
+        };
+        let Some(range_map) = ds_map.get_mut(&range) else {
+          panic!("{path_str}:{range}: no diagnostics at range")
+        };
+        let want = self.msg.as_str();
+        assert!(range_map.remove(want), "{path_str}:{range}: no diagnostic matches: {want}");
+        if range_map.is_empty() {
+          assert!(ds_map.remove(&range).expect("just got it").is_empty());
+        }
+      }
+      Kind::Hover => {
+        let pos = text_pos::PositionUtf16 { line: region.line, col: region.col_start };
+        let Some(got) = st.hover(fs, path.to_owned(), pos) else {
+          panic!("{path_str}:{pos}: no hover")
+        };
+        let want = self.msg.as_str();
+        assert!(
+          got.lines().any(|line| line == want),
+          "{path_str}:{pos}: none of the lines were equal to '{want}':\n\n{got}"
+        );
+      }
+    }
   }
 }
 
