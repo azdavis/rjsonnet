@@ -4,7 +4,7 @@ mod call;
 
 use crate::{error, facts, scope, st};
 use always::always;
-use jsonnet_expr::{def, BinaryOp, Expr, ExprArena, ExprData, Id, Prim, UnaryOp};
+use jsonnet_expr::{def, BinaryOp, Expr, ExprArena, ExprData, ExprMust, Id, Prim, UnaryOp};
 use jsonnet_ty as ty;
 use rustc_hash::{FxHashMap, FxHashSet};
 
@@ -81,51 +81,7 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
     ExprData::Subscript { on, idx } => {
       let on_ty = get(st, ar, *on);
       let idx_ty = get(st, ar, *idx);
-      let idx_expr = idx.unwrap_or(expr);
-      // TODO handle unions
-      match st.tys.data(on_ty).clone() {
-        ty::Data::Array(elem_ty) => {
-          st.unify(idx_expr, ty::Ty::NUMBER, idx_ty);
-          elem_ty
-        }
-        ty::Data::Object(obj) => {
-          st.unify(idx_expr, ty::Ty::STRING, idx_ty);
-          let idx = idx.and_then(|x| match &ar[x] {
-            ExprData::Prim(Prim::String(s)) => Some(s),
-            _ => None,
-          });
-          match idx {
-            // we do know what field we're asking for.
-            Some(s) => {
-              if let Some(&ty) = obj.known.get(s) {
-                // we know the type of that field.
-                ty
-              } else {
-                // we don't know the type.
-                if !obj.has_unknown {
-                  // this would result in a eval-time error if evaluated. warn statically.
-                  st.err(idx_expr, error::Kind::Unify(error::Unify::MissingField(s.clone())));
-                }
-                ty::Ty::ANY
-              }
-            }
-            // we don't know what field we're asking for.
-            None => {
-              if obj.has_unknown {
-                // all bets are off.
-                ty::Ty::ANY
-              } else {
-                // we know it has to be one of the known fields, but we don't know which one.
-                st.tys.get(ty::Data::Union(obj.known.values().copied().collect()))
-              }
-            }
-          }
-        }
-        _ => {
-          st.unify(on.unwrap_or(expr), ty::Ty::ARRAY_OR_OBJECT, on_ty);
-          ty::Ty::ANY
-        }
-      }
+      get_subscript(st, ar, on_ty, idx_ty, expr, *on, *idx)
     }
     ExprData::Call { func, positional, named } => {
       let fn_ty = get(st, ar, *func);
@@ -306,6 +262,62 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
   // huge problem.
   st.insert_expr_ty(expr, ret);
   ret
+}
+
+fn get_subscript(
+  st: &mut st::St<'_>,
+  ar: &ExprArena,
+  on_ty: ty::Ty,
+  idx_ty: ty::Ty,
+  expr: ExprMust,
+  on: Expr,
+  idx: Expr,
+) -> ty::Ty {
+  let idx_expr = idx.unwrap_or(expr);
+  // TODO handle unions
+  match st.tys.data(on_ty).clone() {
+    ty::Data::Array(elem_ty) => {
+      st.unify(idx_expr, ty::Ty::NUMBER, idx_ty);
+      elem_ty
+    }
+    ty::Data::Object(obj) => {
+      st.unify(idx_expr, ty::Ty::STRING, idx_ty);
+      let idx = idx.and_then(|x| match &ar[x] {
+        ExprData::Prim(Prim::String(s)) => Some(s),
+        _ => None,
+      });
+      match idx {
+        // we do know what field we're asking for.
+        Some(s) => {
+          if let Some(&ty) = obj.known.get(s) {
+            // we know the type of that field.
+            ty
+          } else {
+            // we don't know the type.
+            if !obj.has_unknown {
+              // this would result in a eval-time error if evaluated. warn statically.
+              st.err(idx_expr, error::Kind::Unify(error::Unify::MissingField(s.clone())));
+            }
+            ty::Ty::ANY
+          }
+        }
+        // we don't know what field we're asking for.
+        None => {
+          if obj.has_unknown {
+            // all bets are off.
+            ty::Ty::ANY
+          } else {
+            // we know it has to be one of the known fields, but we don't know which one.
+            st.tys.get(ty::Data::Union(obj.known.values().copied().collect()))
+          }
+        }
+      }
+    }
+    _ => {
+      st.unify(on.unwrap_or(expr), ty::Ty::ARRAY_OR_OBJECT, on_ty);
+      ty::Ty::ANY
+    }
+  }
 }
 
 fn define_binds(
