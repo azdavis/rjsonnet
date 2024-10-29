@@ -264,7 +264,6 @@ f("hi")
 }
 
 #[test]
-#[should_panic = "none of the lines were equal"]
 fn eq_lit_assert() {
   JsonnetInput::manifest(
     r#"

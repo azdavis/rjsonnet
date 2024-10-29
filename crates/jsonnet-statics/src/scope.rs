@@ -13,7 +13,23 @@ struct DefinedId {
   usages: usize,
 }
 
-pub(crate) type Facts = rustc_hash::FxHashMap<Id, ty::Ty>;
+pub(crate) type Facts = rustc_hash::FxHashMap<Id, Fact>;
+
+#[derive(Debug)]
+pub(crate) struct Fact {
+  pub(crate) ty: ty::Ty,
+  pub(crate) partial: bool,
+}
+
+impl Fact {
+  pub(crate) const fn partial(ty: ty::Ty) -> Self {
+    Self { ty, partial: true }
+  }
+
+  pub(crate) const fn total(ty: ty::Ty) -> Self {
+    Self { ty, partial: false }
+  }
+}
 
 /// Info about the identifiers currently in scope.
 #[derive(Debug, Default)]
@@ -65,28 +81,33 @@ impl Scope {
   }
 
   pub(crate) fn add_facts(&mut self, tys: &mut ty::MutStore<'_>, fs: &Facts) {
-    for (&id, &ty) in fs {
+    for (&id, fact) in fs {
       let Some(stack) = self.store.get_mut(&id) else { continue };
       let Some(defined_id) = stack.last_mut() else { continue };
       let Some(&cur) = defined_id.tys.last() else {
         always!(false, "should not have empty ty stack");
         continue;
       };
-      let new = ty::logic::and(tys, cur, ty);
+      let new = ty::logic::and(tys, cur, fact.ty);
       defined_id.tys.push(new);
     }
   }
 
   pub(crate) fn negate_facts(&mut self, tys: &mut ty::MutStore<'_>, fs: &Facts) {
-    for (&id, &ty) in fs {
+    for (&id, fact) in fs {
       let Some(stack) = self.store.get_mut(&id) else { continue };
       let Some(defined_id) = stack.last_mut() else { continue };
       let Some(&cur) = defined_id.tys.last() else {
         always!(false, "should not have empty ty stack");
         continue;
       };
-      let new = ty::logic::minus(tys, cur, ty);
-      defined_id.tys.push(new);
+      if fact.partial {
+        // just push cur again so that we always have something to pop in remove
+        defined_id.tys.push(cur);
+      } else {
+        let new = ty::logic::minus(tys, cur, fact.ty);
+        defined_id.tys.push(new);
+      }
     }
   }
 

@@ -9,6 +9,7 @@ Things under "main" are not released yet.
   - `std.splitLimitR`
   - `std.format`
   - `std.flatMap`
+- Fix flow typing where e.g. in the `else` case after checking `if x == "hi"`, we thought that `x` could not be an arbitrary string.
 
 ## v0.7.0
 

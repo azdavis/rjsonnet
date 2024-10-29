@@ -24,9 +24,10 @@
 //!   doing `local std = wtf` beforehand, and also it'll still work with `local foo = std` and then
 //!   asserting with `foo.isTYPE` etc.
 
-use crate::scope::{Facts, Scope};
+use crate::scope::{Fact, Facts, Scope};
 use jsonnet_expr::{Expr, ExprArena, ExprData, ExprMust, Id, Prim, Str};
 use jsonnet_ty as ty;
+use std::collections::hash_map::Entry;
 
 /// Collects facts that are always true in the expression because otherwise the expression diverges
 /// (i.e. it `error`s).
@@ -107,7 +108,7 @@ pub(crate) fn get_cond(
         _ => return,
       };
       let ExprData::Id(id) = ar[param] else { return };
-      add_fact(tys, ac, id, ty);
+      add_fact(tys, ac, id, Fact::total(ty));
     }
     // the cond is itself another if expression.
     &ExprData::If { cond, yes: Some(yes), no: Some(no) } => {
@@ -121,10 +122,13 @@ pub(crate) fn get_cond(
         let mut snd = Facts::default();
         get_cond(tys, scope, ar, &mut fst, cond);
         get_cond(tys, scope, ar, &mut snd, Some(no));
-        for (id, fst_ty) in fst {
-          let Some(&snd_ty) = snd.get(&id) else { continue };
-          let ty = tys.get(ty::Data::Union(ty::Union::from([fst_ty, snd_ty])));
-          add_fact(tys, ac, id, ty);
+        for (id, fst) in fst {
+          let Some(snd) = snd.get(&id) else { continue };
+          let fact = Fact {
+            ty: tys.get(ty::Data::Union(ty::Union::from([fst.ty, snd.ty]))),
+            partial: fst.partial || snd.partial,
+          };
+          add_fact(tys, ac, id, fact);
         }
       }
     }
@@ -182,7 +186,7 @@ fn get_ty_eq(
     Str::null => ty::Ty::NULL,
     _ => return,
   };
-  add_fact(tys, ac, id, ty);
+  add_fact(tys, ac, id, Fact::total(ty));
 }
 
 /// Process `$var == LIT`, where LIT is some literal.
@@ -194,28 +198,31 @@ fn get_eq_lit(
   lit: ExprMust,
 ) {
   let ExprData::Id(id) = ar[var] else { return };
-  let ty = match &ar[lit] {
+  let fact = match &ar[lit] {
     ExprData::Prim(prim) => match prim {
-      Prim::Null => ty::Ty::NULL,
-      Prim::Bool(b) => {
-        if *b {
-          ty::Ty::TRUE
-        } else {
-          ty::Ty::FALSE
-        }
-      }
-      Prim::String(_) => ty::Ty::STRING,
-      Prim::Number(_) => ty::Ty::NUMBER,
+      Prim::Null => Fact::total(ty::Ty::NULL),
+      Prim::Bool(b) => Fact::total(if *b { ty::Ty::TRUE } else { ty::Ty::FALSE }),
+      Prim::String(_) => Fact::partial(ty::Ty::STRING),
+      Prim::Number(_) => Fact::partial(ty::Ty::NUMBER),
     },
-    ExprData::Object { .. } | ExprData::ObjectComp { .. } => ty::Ty::OBJECT,
-    ExprData::Array(_) => ty::Ty::ARRAY_ANY,
-    ExprData::Error(_) => ty::Ty::NEVER,
+    ExprData::Object { .. } | ExprData::ObjectComp { .. } => Fact::partial(ty::Ty::OBJECT),
+    ExprData::Array(_) => Fact::partial(ty::Ty::ARRAY_ANY),
+    ExprData::Error(_) => Fact::total(ty::Ty::NEVER),
     _ => return,
   };
-  add_fact(tys, ac, id, ty);
+  add_fact(tys, ac, id, fact);
 }
 
-fn add_fact(tys: &mut ty::MutStore<'_>, ac: &mut Facts, id: Id, ty: ty::Ty) {
-  let entry = ac.entry(id).or_insert(ty::Ty::ANY);
-  *entry = ty::logic::and(tys, *entry, ty);
+fn add_fact(tys: &mut ty::MutStore<'_>, ac: &mut Facts, id: Id, fact: Fact) {
+  match ac.entry(id) {
+    Entry::Occupied(mut entry) => {
+      let old = entry.get();
+      let new =
+        Fact { ty: ty::logic::and(tys, old.ty, fact.ty), partial: old.partial && fact.partial };
+      entry.insert(new);
+    }
+    Entry::Vacant(entry) => {
+      entry.insert(fact);
+    }
+  }
 }
