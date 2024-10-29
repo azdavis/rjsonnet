@@ -262,3 +262,27 @@ f("hi")
   )
   .check();
 }
+
+#[test]
+#[should_panic = "none of the lines were equal"]
+fn eq_lit_assert() {
+  JsonnetInput::manifest(
+    r#"
+local f(x) =
+##    ^ hover: (x: string) => number
+  assert std.isString(x);
+  if x == "hi" then
+    1
+  else if x == "bye" then
+    2
+  else
+    std.length(x)
+##             ^ hover: string
+;
+
+f("bye")
+"#,
+    "2",
+  )
+  .check();
+}
