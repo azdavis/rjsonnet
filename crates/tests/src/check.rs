@@ -78,7 +78,6 @@ impl<'a> Input<'a> {
     MultiInput::default().with_input(self).check();
   }
 
-  #[expect(clippy::too_many_lines)]
   #[track_caller]
   fn check_with(
     self,
@@ -177,53 +176,7 @@ impl<'a> Input<'a> {
         panic!("{path_str}:{range} still has {n} diagnostics, e.g.: {m}");
       }
 
-      match (jsonnet.kind, st.get_json(path_id)) {
-        (OutcomeKind::Manifest, Ok(got)) => {
-          let want: serde_json::Value =
-            serde_json::from_str(jsonnet.outcome).expect("test input json");
-          let want = jsonnet_eval::Json::from_serde(st.strings(), want);
-          if want != got {
-            let want = want.display(st.strings());
-            let got = got.display(st.strings());
-            panic!("{path_str}: mismatched manifest\nwant: {want}\ngot:  {got}");
-          }
-        }
-
-        (OutcomeKind::String, Ok(got)) => got.assert_is_str(st.strings(), jsonnet.outcome),
-
-        (OutcomeKind::EvalError, Err(err)) => {
-          let got = err.display(st.strings(), st.paths(), Some(pwd)).to_string();
-          let got = make_one_line(&got);
-          let got = got.as_str();
-          let want = jsonnet.outcome;
-          assert!(
-            got.contains(want),
-            "{path_str}: got error does not contain want: want {want}, got {got}"
-          );
-        }
-
-        (OutcomeKind::PreEvalError, Err(err)) => {
-          assert!(
-            jsonnet.outcome.is_empty(),
-            "{}: unexpected outcome for pre eval error: {}",
-            path_str,
-            jsonnet.outcome
-          );
-          let jsonnet_eval::error::Error::HasErrors(p) = err else {
-            panic!("{path_str}: unexpected error kind: {err:?}");
-          };
-          let p_display = st.paths().get_path(p).as_path().display();
-          assert_eq!(path_id, p, "{path_str}: mismatched no-path errors: got {p_display}");
-        }
-
-        (OutcomeKind::EvalError | OutcomeKind::PreEvalError, Ok(got)) => {
-          panic!("{path_str}: no error, got json: {got:?}")
-        }
-        (OutcomeKind::Manifest | OutcomeKind::String, Err(err)) => {
-          let got = err.display(st.strings(), st.paths(), Some(pwd));
-          panic!("{path_str}: failed to get json: {got}");
-        }
-      }
+      jsonnet.check_one(st, path_str, path_id, pwd);
     }
   }
 }
@@ -259,6 +212,57 @@ impl<'a> JsonnetInput<'a> {
   #[track_caller]
   pub(crate) fn check(self) {
     Input::default().with_jsonnet(DEFAULT_PATH, self).add_all().check();
+  }
+
+  #[track_caller]
+  fn check_one(
+    &self,
+    st: &mut jsonnet_analyze::St,
+    path_str: &str,
+    path_id: paths::PathId,
+    pwd: &paths::CleanPath,
+  ) {
+    let want = self.outcome;
+    match (self.kind, st.get_json(path_id)) {
+      (OutcomeKind::Manifest, Ok(got)) => {
+        let want: serde_json::Value = serde_json::from_str(want).expect("test input json");
+        let want = jsonnet_eval::Json::from_serde(st.strings(), want);
+        if want != got {
+          let want = want.display(st.strings());
+          let got = got.display(st.strings());
+          panic!("{path_str}: mismatched manifest\nwant: {want}\ngot:  {got}");
+        }
+      }
+
+      (OutcomeKind::String, Ok(got)) => got.assert_is_str(st.strings(), want),
+
+      (OutcomeKind::EvalError, Err(err)) => {
+        let got = err.display(st.strings(), st.paths(), Some(pwd)).to_string();
+        let got = make_one_line(&got);
+        let got = got.as_str();
+        assert!(
+          got.contains(want),
+          "{path_str}: got error does not contain want: want {want}, got {got}"
+        );
+      }
+
+      (OutcomeKind::PreEvalError, Err(err)) => {
+        assert!(want.is_empty(), "{path_str}: unexpected outcome for pre eval error: {want}");
+        let jsonnet_eval::error::Error::HasErrors(p) = err else {
+          panic!("{path_str}: unexpected error kind: {err:?}");
+        };
+        let p_display = st.paths().get_path(p).as_path().display();
+        assert_eq!(path_id, p, "{path_str}: mismatched no-path errors: got {p_display}");
+      }
+
+      (OutcomeKind::EvalError | OutcomeKind::PreEvalError, Ok(got)) => {
+        panic!("{path_str}: no error, got json: {got:?}")
+      }
+      (OutcomeKind::Manifest | OutcomeKind::String, Err(err)) => {
+        let got = err.display(st.strings(), st.paths(), Some(pwd));
+        panic!("{path_str}: failed to get json: {got}");
+      }
+    }
   }
 }
 
