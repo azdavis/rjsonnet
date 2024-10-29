@@ -86,6 +86,8 @@ Recursively remove all "empty" members of a. "Empty" is defined as
 
 The argument may have any type.
 
+<!-- @eval-error: not yet implemented: std.prune -->
+
 ```jsonnet
 assert std.prune([1, [], 2, {}, 3, null]) == [1, 2, 3];
 assert std.prune({a: 3}) == {a: 3};
@@ -158,6 +160,8 @@ assert std.pow(99, 0) == 1;
 
 The following function returns `true` for all numbers `x`:
 
+<!-- @eval-error: manifest function -->
+
 ```jsonnet
 function(x)
   assert std.isNumber(x);
@@ -169,6 +173,8 @@ function(x)
 `std.mantissa(x)` returns the significand, also called the mantissa, of the IEEE754 64-bit floating point number `x`.
 
 The following function returns `true` for all numbers `x`:
+
+<!-- @eval-error: manifest function -->
 
 ```jsonnet
 function(x)
@@ -292,6 +298,8 @@ Equivalent to `std.max(minVal, std.min(x, maxVal))`.
 
 Examples:
 
+<!-- @eval-error: not yet implemented -->
+
 ```jsonnet
 assert std.clamp(-3, 0, 5) == 0;
 assert std.clamp(4, 0, 5) == 4;
@@ -356,6 +364,8 @@ _Available since version 0.15.0._
 
 Examples:
 
+<!-- @eval-error: not yet implemented -->
+
 ```jsonnet
 assert std.stripChars(" test test test ", " ") == "test test test";
 assert std.stripChars("aaabbbbcccc", "ac") == "bbbb";
@@ -370,6 +380,8 @@ _Available since version 0.15.0._
 
 Examples:
 
+<!-- @eval-error: not yet implemented -->
+
 ```jsonnet
 assert std.lstripChars(" test test test ", " ") == "test test test ";
 assert std.lstripChars("aaabbbbcccc", "ac") == "bbbbcccc";
@@ -381,6 +393,10 @@ assert std.lstripChars("cacabbbbaacc", "ac") == "bbbbaacc";
 _Available since version 0.15.0._
 
 `std.rstripChars(str, chars)` removes characters `chars` from the end of `str`.
+
+Examples:
+
+<!-- @eval-error: not yet implemented -->
 
 ```jsonnet
 assert std.rstripChars(" test test test ", " ") == " test test test";
@@ -398,9 +414,11 @@ Note: Versions up to and including 0.18.0 require `c` to be a single character.
 
 Examples:
 
+<!-- @eval-error: not yet implemented -->
+
 ```jsonnet
 assert std.split("foo/_bar", "/_") == [ "foo", "bar" ];
-assert std.split("/_foo/\_bar", "/_") == [ "", "foo", "bar" ];
+assert std.split("/_foo/_bar", "/_") == [ "", "foo", "bar" ];
 ```
 
 ## `splitLimit`
@@ -413,9 +431,11 @@ Note: Versions up to and including 0.18.0 require `c` to be a single character.
 
 Examples:
 
+<!-- @eval-error: not yet implemented -->
+
 ```jsonnet
-assert splitLimit("foo/_bar", "/_", 1) == [ "foo", "bar" ];
-assert splitLimit("/_foo/\_bar", "/_", 1) == [ "", "foo/_bar" ];
+assert std.splitLimit("foo/_bar", "/_", 1) == [ "foo", "bar" ];
+assert std.splitLimit("/_foo/_bar", "/_", 1) == [ "", "foo/_bar" ];
 ```
 
 ## `splitLimitR`
@@ -426,8 +446,10 @@ _Available since version 0.19.0._
 
 Example:
 
+<!-- @eval-error: not yet implemented -->
+
 ```jsonnet
-assert splitLimitR("/_foo/\_bar", "/_", 1) == [ "/_foo", "bar" ];
+assert std.splitLimitR("/_foo/_bar", "/_", 1) == [ "/_foo", "bar" ];
 ```
 
 ## `strReplace`
@@ -437,6 +459,8 @@ _Available since version 0.10.0._
 `std.strReplace(str, from, to)` returns a copy of the string `str` in which all occurrences of string `from` have been replaced with string `to`.
 
 Example:
+
+<!-- @eval-error: not yet implemented -->
 
 ```jsonnet
 assert std.strReplace('I like to skate with my skateboard', 'skate', 'surf')
@@ -457,6 +481,8 @@ Returns a copy of the string in which all ASCII letters are capitalized.
 
 Example:
 
+<!-- @eval-error: not yet implemented -->
+
 ```jsonnet
 assert std.asciiUpper('100 Cats!') == "100 CATS!";
 ```
@@ -469,6 +495,8 @@ Returns a copy of the string in which all ASCII letters are lower cased.
 
 Example:
 
+<!-- @eval-error: not yet implemented -->
+
 ```jsonnet
 assert std.asciiLower('100 Cats!') == "100 cats!";
 ```
@@ -480,6 +508,8 @@ _Available since version 0.10.0._
 Split the string into an array of strings, each containing a single codepoint.
 
 Example:
+
+<!-- @eval-error: not yet implemented -->
 
 ```jsonnet
 assert std.stringChars("foo") == [ "f", "o", "o" ];
@@ -498,6 +528,8 @@ The string formatting follows the same rules as Python.
 The `%` operator can be used as a shorthand for this function.
 
 Examples:
+
+<!-- @eval-error: not yet implemented -->
 
 ```jsonnet
 assert std.format("Hello %03d", 12) == "Hello 012";
@@ -532,6 +564,8 @@ Converts the string to allow it to be embedded in a JSON representation, within 
 This adds quotes, escapes backslashes, and escapes unprintable characters.
 
 Example:
+
+<!-- @eval-error: not yet implemented -->
 
 ```jsonnet
 assert "{name: %s}" % std.escapeStringJson("Multiline\nc:\\path")
@@ -568,6 +602,8 @@ Parses a signed decimal integer from the input string.
 
 Examples:
 
+<!-- @eval-error: not yet implemented -->
+
 ```jsonnet
 assert std.parseInt("123") == 123;
 assert std.parseInt("-123") == -123;
@@ -581,6 +617,8 @@ Parses an unsigned octal integer from the input string. Initial zeroes are toler
 
 Example:
 
+<!-- @eval-error: not yet implemented -->
+
 ```jsonnet
 assert std.parseOctal("755") == 493;
 ```
@@ -593,6 +631,8 @@ Parses an unsigned hexadecimal integer, from the input string. Case insensitive.
 
 Example:
 
+<!-- @eval-error: not yet implemented -->
+
 ```jsonnet
 assert std.parseHex("ff") == 255;
 ```
@@ -604,6 +644,8 @@ _Available since version 0.13.0._
 Parses a JSON string.
 
 Example:
+
+<!-- @eval-error: not yet implemented -->
 
 ```jsonnet
 assert std.parseJson('{"foo": "bar"}') == { "foo": "bar" };
@@ -622,6 +664,8 @@ YAML is a superset of JSON, consequently "downcasting" or manifestation of YAML 
 The parser does not support YAML documents with scalar values at the root. The root node of a YAML document must start with either a YAML sequence or map to be successfully parsed.
 
 Example:
+
+<!-- @eval-error: not yet implemented -->
 
 ```jsonnet
 assert std.parseYaml('foo: bar') == { "foo": "bar" };
@@ -648,6 +692,8 @@ Convert the given structure to a string in INI format.
 This allows using Jsonnet's object model to build a configuration to be consumed by an application expecting an INI file. The data is in the form of a set of sections, each containing a key/value mapping.
 
 This example:
+
+<!-- @eval-error: not yet implemented -->
 
 ```jsonnet
 std.manifestIni({
@@ -689,6 +735,8 @@ Convert the given value to a JSON-like form that is compatible with Python. The 
 
 This example:
 
+<!-- @eval-error: not yet implemented -->
+
 ```jsonnet
 std.manifestPython({
   b: ["foo", "bar"],
@@ -716,6 +764,8 @@ _Available since version 0.10.0._
 Convert the given object to a JSON-like form that is compatible with Python. The key difference to `std.manifestPython` is that the top level is represented as a list of Python global variables.
 
 This example:
+
+<!-- @eval-error: not yet implemented -->
 
 ```jsonnet
 std.manifestPythonVars({
@@ -777,6 +827,9 @@ The `quote_keys` parameter controls whether YAML identifiers are always quoted o
 
 This example:
 
+<!-- TODO this is a bug with optional args -->
+<!-- @eval-error: parameter `quote_keys` was not defined -->
+
 ```jsonnet
 std.manifestYamlDoc(
   {
@@ -820,6 +873,9 @@ The `c_document_end` param adds the optional terminating `...`.
 
 This example:
 
+<!-- TODO this is a bug with optional args -->
+<!-- @eval-error: parameter `quote_keys` was not defined -->
+
 ```jsonnet
 std.manifestYamlStream( ['a', 1, []], indent_array_in_object=false, c_document_end=true)
 ```
@@ -842,6 +898,8 @@ _Available since version 0.10.0._
 Convert the given [JsonML](http://www.jsonml.org)-encoded value to a string containing the XML.
 
 This example:
+
+<!-- @eval-error: not yet implemented -->
 
 ```jsonnet
 std.manifestXmlJsonml([
@@ -867,6 +925,8 @@ Yields a string containing this XML (all on one line):
 ```
 
 JsonML is designed to preserve "mixed-mode content" (i.e., textual data outside of or next to elements). This includes the whitespace needed to avoid having all the XML on one line, which is meaningful in XML. In order to have whitespace in the XML output, it must be present in the JsonML input:
+
+<!-- @eval-error: not yet implemented -->
 
 ```jsonnet
 std.manifestXmlJsonml([
@@ -898,6 +958,8 @@ _Available since version 0.10.0._
 `func` is a function that takes a single parameter, the index of the element it should initialize.
 
 Example:
+
+<!-- @eval-error: not yet implemented -->
 
 ```jsonnet
 assert std.makeArray(3,function(x) x * x) == [ 0, 1, 4 ];
@@ -956,6 +1018,8 @@ The argument `arr` must be an array or a string.
 
 Examples:
 
+<!-- @eval-error: not yet implemented -->
+
 ```jsonnet
 assert std.flatMap(function(x) [x, x], [1, 2, 3])
   == [ 1, 1, 2, 2, 3, 3 ];
@@ -981,6 +1045,8 @@ _Available since version 0.10.0._
 
 Example:
 
+<!-- @eval-error: not yet implemented -->
+
 ```jsonnet
 local cmb(ac, x) = "(%s %s)" % [ac, x];
 assert std.foldl(cmb, ["a", "b", "c"], "_")
@@ -994,6 +1060,8 @@ _Available since version 0.10.0._
 `std.foldr(func, arr, init)` calls the function `func` on the result of the previous function call and each array element of `arr`, or `init` in the case of the initial element. Traverses `arr` from right to left.
 
 Example:
+
+<!-- @eval-error: not yet implemented -->
 
 ```jsonnet
 local cmb(ac, x) = "(%s %s)" % [ac, x];
@@ -1009,6 +1077,8 @@ _Available since version 0.10.0._
 
 Example:
 
+<!-- @eval-error: not yet implemented -->
+
 ```jsonnet
 assert std.range(2, 6) == [2, 3, 4, 5, 6];
 ```
@@ -1020,6 +1090,8 @@ _Available since version 0.15.0._
 `std.repeat(what, count)` repeats an array or a string `what` a number of times specified by an integer `count`.
 
 Examples:
+
+<!-- @eval-error: not yet implemented -->
 
 ```jsonnet
 assert std.repeat([1, 2, 3], 3)
@@ -1037,6 +1109,8 @@ _Available since version 0.10.0._
 Note that it's recommended to use dedicated slicing syntax both for arrays and strings (e.g. `arr[0:4:1]` instead of `slice(arr, 0, 4, 1)`).
 
 Examples:
+
+<!-- @eval-error: not yet implemented -->
 
 ```jsonnet
 assert std.slice([1, 2, 3, 4, 5, 6], 0, 4, 1) == [ 1, 2, 3, 4 ];
@@ -1074,6 +1148,8 @@ Concatenate an array of arrays into a single array.
 
 Example:
 
+<!-- @eval-error: not yet implemented -->
+
 ```jsonnet
 assert std.flattenArrays([[1, 2], [3, 4], [[5, 6], [7, 8]]])
   == [ 1, 2, 3, 4, [ 5, 6 ], [ 7, 8 ] ];
@@ -1086,6 +1162,8 @@ _Available since version 0.13.0._
 Returns the argument array reversed.
 
 Examples:
+
+<!-- @eval-error: not yet implemented -->
 
 ```jsonnet
 assert std.reverse([2, 4, 6]) == [6, 4, 2];
@@ -1103,6 +1181,9 @@ The optional argument `keyF` is a single argument function used to extract compa
 
 Examples:
 
+<!-- TODO this is a bug with optional args -->
+<!-- @eval-error: parameter `keyF` was not defined -->
+
 ```jsonnet
 assert std.sort([5, 2, 9]) == [2, 5, 9];
 
@@ -1116,7 +1197,7 @@ assert std.sort(fellas, keyF=getAge) == [
   { name: "ringo", age: 3 },
   { name: "fred", age: 5 },
   { name: "george", age: 8 },
-]
+];
 ```
 
 ## `uniq`
@@ -1128,6 +1209,9 @@ _Available since version 0.10.0._
 The optional argument `keyF` is a single argument function used to extract comparison key from each array element.
 
 Examples:
+
+<!-- TODO this is a bug with optional args -->
+<!-- @eval-error: parameter `keyF` was not defined -->
 
 ```jsonnet
 assert std.uniq([1, 1, 1]) == [1];
@@ -1187,6 +1271,9 @@ _Available since version 0.10.0._
 Note that `+` on sets will simply concatenate the arrays, possibly forming an array that is not a set (due to not being ordered without duplicates).
 
 Examples:
+
+<!-- TODO this is a bug with optional args -->
+<!-- @eval-error: parameter `keyF` was not defined -->
 
 ```jsonnet
 assert std.setUnion([1, 2], [2, 3]) == [ 1, 2, 3 ];
@@ -1352,6 +1439,8 @@ _Available since version 0.11.0._
 `std.trace(str, rest)` outputs the given string `str` to stderr and returns `rest` as the result.
 
 Example:
+
+<!-- @eval-error: not yet implemented -->
 
 ```jsonnet
 local choose(c, yes, no) =

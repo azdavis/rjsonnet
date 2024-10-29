@@ -132,25 +132,86 @@ pub(crate) fn get(
     }
     StdFn::abs => math_op(cx, env, positional, named, expr, f64::abs),
     StdFn::sign => {
-      let _ = std_fn::args::sign(positional, named, expr)?;
-      Err(mk_todo(expr, "std.sign"))
+      let arguments = std_fn::args::sign(positional, named, expr)?;
+      let n = exec::get(cx, env, arguments.n)?;
+      let Val::Prim(Prim::Number(n)) = n else {
+        return Err(error::Error::Exec {
+          expr: arguments.n.unwrap_or(expr),
+          kind: error::Kind::IncompatibleTypes,
+        });
+      };
+      let val = n.value();
+      let res = if val == 0.0 {
+        Float::positive_zero()
+      } else if val.is_sign_positive() {
+        Float::positive_one()
+      } else {
+        Float::negative_one()
+      };
+      Ok(Val::Prim(Prim::Number(res)))
     }
     StdFn::max => {
-      let _ = std_fn::args::max(positional, named, expr)?;
-      Err(mk_todo(expr, "std.max"))
+      let arguments = std_fn::args::max(positional, named, expr)?;
+      let a = exec::get(cx, env, arguments.a)?;
+      let b = exec::get(cx, env, arguments.b)?;
+      let Val::Prim(Prim::Number(a)) = a else {
+        return Err(error::Error::Exec {
+          expr: arguments.a.unwrap_or(expr),
+          kind: error::Kind::IncompatibleTypes,
+        });
+      };
+      let Val::Prim(Prim::Number(b)) = b else {
+        return Err(error::Error::Exec {
+          expr: arguments.b.unwrap_or(expr),
+          kind: error::Kind::IncompatibleTypes,
+        });
+      };
+      Ok(Val::Prim(Prim::Number(a.max(b))))
     }
     StdFn::min => {
-      let _ = std_fn::args::min(positional, named, expr)?;
-      Err(mk_todo(expr, "std.min"))
+      let arguments = std_fn::args::min(positional, named, expr)?;
+      let a = exec::get(cx, env, arguments.a)?;
+      let b = exec::get(cx, env, arguments.b)?;
+      let Val::Prim(Prim::Number(a)) = a else {
+        return Err(error::Error::Exec {
+          expr: arguments.a.unwrap_or(expr),
+          kind: error::Kind::IncompatibleTypes,
+        });
+      };
+      let Val::Prim(Prim::Number(b)) = b else {
+        return Err(error::Error::Exec {
+          expr: arguments.b.unwrap_or(expr),
+          kind: error::Kind::IncompatibleTypes,
+        });
+      };
+      Ok(Val::Prim(Prim::Number(a.min(b))))
     }
     StdFn::pow => {
-      let _ = std_fn::args::pow(positional, named, expr)?;
-      Err(mk_todo(expr, "std.pow"))
+      let arguments = std_fn::args::pow(positional, named, expr)?;
+      let x = exec::get(cx, env, arguments.x)?;
+      let n = exec::get(cx, env, arguments.n)?;
+      let Val::Prim(Prim::Number(x)) = x else {
+        return Err(error::Error::Exec {
+          expr: arguments.x.unwrap_or(expr),
+          kind: error::Kind::IncompatibleTypes,
+        });
+      };
+      let Val::Prim(Prim::Number(n)) = n else {
+        return Err(error::Error::Exec {
+          expr: arguments.n.unwrap_or(expr),
+          kind: error::Kind::IncompatibleTypes,
+        });
+      };
+      let v = x.value().powf(n.value());
+      match Float::try_from(v) {
+        Ok(x) => Ok(Val::Prim(Prim::Number(x))),
+        Err(e) => Err(error::Error::Exec {
+          expr: arguments.x.unwrap_or(expr),
+          kind: error::Kind::Infinite(e),
+        }),
+      }
     }
-    StdFn::exp => {
-      let _ = std_fn::args::exp(positional, named, expr)?;
-      Err(mk_todo(expr, "std.exp"))
-    }
+    StdFn::exp => math_op(cx, env, positional, named, expr, f64::exp),
     // TODO is it log2 or log10?
     StdFn::log => math_op(cx, env, positional, named, expr, f64::log2),
     StdFn::exponent => {

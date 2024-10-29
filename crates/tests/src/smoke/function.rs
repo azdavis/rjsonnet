@@ -232,3 +232,24 @@ hm(b=5) + hm(3, 4)
   )
   .check();
 }
+
+// TODO fix this bug (something with mutual recursion in the envs)
+#[test]
+fn mutual_recur() {
+  JsonnetInput::eval_error(
+    r#"
+local
+  isOdd(x) =
+    if x == 0 then false
+    else x == 1 || isEven(x - 1)
+, isEven(x) =
+    assert x >= 0 : "cannot figure out negative numbers";
+    x == 0 || isOdd(x - 1)
+;
+
+isOdd(4)
+"#,
+    "not in scope: `isEven`",
+  )
+  .check();
+}

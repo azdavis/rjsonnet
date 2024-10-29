@@ -129,7 +129,7 @@ const STR_CHARS_STR_RET_STR: Sig = s(&[r("str", Ty::Str), r("chars", Ty::Str)], 
 const STR_RET_NUM: Sig = s(&[r("str", Ty::Str)], Ty::Num);
 const STR_RET_ANY: Sig = s(&[r("str", Ty::Str)], Ty::Any);
 const SPLIT_LIMIT: Sig =
-  s(&[r("str", Ty::Str), r("c", Ty::Str), r("maxsplits", Ty::Str)], Ty::ArrStr);
+  s(&[r("str", Ty::Str), r("c", Ty::Str), r("maxsplits", Ty::Num)], Ty::ArrStr);
 const OBJ_HAS: Sig = s(&[r("o", Ty::Obj), r("f", Ty::Str)], Ty::Bool);
 const OBJ_FIELDS: Sig = s(&[r("o", Ty::Obj)], Ty::ArrStr);
 const OBJ_VALUES: Sig = s(&[r("o", Ty::Obj)], Ty::ArrAny);
@@ -217,7 +217,7 @@ pub const FNS: [Fn; 126] = [
   f("asciiUpper", STR_RET_STR),
   f("asciiLower", STR_RET_STR),
   f("stringChars", s(&[r("str", Ty::Str)], Ty::ArrStr)),
-  f("format", s(&[r("str", Ty::Str), r("vals", Ty::ArrAny)], Ty::Str)),
+  f("format", s(&[r("str", Ty::Str), r("vals", Ty::Any)], Ty::Str)),
   f("escapeStringBash", STR_RET_STR),
   f("escapeStringDollars", STR_RET_STR),
   f("escapeStringJson", STR_RET_STR),
@@ -278,7 +278,7 @@ pub const FNS: [Fn; 126] = [
     "filterMap",
     s(&[r("filter_func", Ty::Hof1), r("map_func", Ty::Hof1), r("arr", Ty::ArrAny)], Ty::ArrAny),
   ),
-  f("flatMap", ARR_HOF1),
+  f("flatMap", s(&[r("func", Ty::Hof1), r("arr", Ty::StrOrArrAny)], Ty::StrOrArrAny)),
   f("filter", ARR_HOF1),
   f("foldl", FOLD),
   f("foldr", FOLD),

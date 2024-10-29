@@ -126,11 +126,15 @@ A variable that refers to the root object.
 
 1. Compute numerical modulus.
 
+    <!-- @eval-error: not yet implemented: std.mod -->
+
    ```jsonnet
    assert 10 % 3 == 1;
    ```
 
 2. Format things into a string.
+
+    <!-- @eval-error: not yet implemented: std.mod -->
 
    ```jsonnet
    assert "hi %s, how are you doing %s?" % ["there", "today"]
@@ -142,7 +146,7 @@ A variable that refers to the root object.
 Bitwise and.
 
 ```jsonnet
-assert 4 & 5 == 4;
+assert (4 & 5) == 4;
 ```
 
 ## `(`
@@ -158,7 +162,7 @@ assert 4 & 5 == 4;
 
    ```jsonnet
    local foo(x, y) = if x then y;
-   local four = foo(true, 4);
+   assert foo(true, 4) == 4;
    ```
 
 ## `)`
@@ -177,6 +181,8 @@ assert 3 * 5 == 15;
 
 Addition, for numbers, strings, arrays, or objects.
 
+<!-- @eval-error: not yet implemented: object-object equality -->
+
 ```jsonnet
 local num = 1 + 2;
 local str = "hello, " + "world";
@@ -191,7 +197,9 @@ Separate elements in a parameter list, argument list, array, object, etc.
 
 ```jsonnet
 local xs = [1, 2, 3];
-local ys = { a: 4, b; 6 };
+local ys = { a: 4, b: 6 };
+local f(a, b) = [a, b];
+f(ys, xs)
 ```
 
 ## `-`
@@ -299,14 +307,18 @@ Bitwise not.
 
 Import a file as raw bytes.
 
+<!-- @pre-eval-error: path not found: foo.zip -->
+
 ```jsonnet
-local f = importbin "foo.o";
+local f = importbin "foo.zip";
 assert std.length(f) == 123;
 ```
 
 ## `importstr`
 
 Import a file as a string.
+
+<!-- @pre-eval-error: path not found: hi.txt -->
 
 ```jsonnet
 local f = importstr "hi.txt";
@@ -357,23 +369,33 @@ Can appear inside objects too.
 
 Import a Jsonnet file.
 
-```jsonnet
-// a.jsonnet
-1 + 2
+If `a.jsonnet` contains:
 
-// b.jsonnet
-local a = import "a.jsonnet";
-a + 4 // 7
+```jsonnet
+1 + 2
 ```
+
+And in the same folder `b.jsonnet` contains:
+
+<!-- @pre-eval-error: path not found: a.jsonnet -->
+
+```jsonnet
+local a = import "a.jsonnet";
+a + 4
+```
+
+Then `b.jsonnet` will evaluate to `7`.
 
 ## `error`
 
 Emit an error.
 
+<!-- @eval-error: oops -->
+
 ```jsonnet
 local hm(x) = if x > 2 then x + 4 else error "oops";
-local seven = hm(3);
-hm(0) // error: oops
+assert hm(3) == 7;
+hm(0)
 ```
 
 ## `false`
@@ -399,6 +421,9 @@ local hm(a, b) =
 assert hm(1, 2) == 9;
 ```
 
+<!-- TODO fix this bug (something with mutual recursion in the envs) -->
+<!-- @eval-error: not in scope: `isEven` -->
+
 The bindings, separated by `,`, may be mutually recursive.
 
 ```jsonnet
@@ -419,6 +444,8 @@ assert isEven(6);
 ## `super`
 
 The parent (left) object in a chain of objects connected together with `+`.
+
+<!-- @eval-error: not yet implemented: object-object equality -->
 
 ```jsonnet
 assert { a: 3 } + { b: super.a + 1 }
@@ -457,6 +484,8 @@ The "yes" boolean. Opposite of `false`.
 
 Loop over an array to create an array or object via a comprehension.
 
+<!-- @eval-error: not yet implemented: std.makeArray -->
+
 ```jsonnet
 local addOne(xs) = [x + 1 for x in xs];
 assert addOne([2, 5]) == [3, 6];
@@ -488,6 +517,8 @@ assert hm(false) == null;
 
 1. Denotes the thing to loop over in a `for`.
 
+    <!-- @eval-error: not yet implemented: std.makeArray -->
+
    ```jsonnet
    local xs = [1, 3];
    assert [x + 1 for x in xs]
@@ -495,6 +526,8 @@ assert hm(false) == null;
    ```
 
 1. Tests for field membership in objects.
+
+    <!-- @eval-error: not yet implemented: std.objectHasAll -->
 
    ```jsonnet
    assert "foo" in { foo: 3 };

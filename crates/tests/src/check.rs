@@ -2,6 +2,8 @@
 
 mod expect;
 
+pub(crate) mod markdown;
+
 use lang_srv_state::State as _;
 use paths::FileSystem as _;
 use rustc_hash::{FxHashMap, FxHashSet};
@@ -22,7 +24,7 @@ impl<'a> MultiInput<'a> {
 
   #[track_caller]
   pub(crate) fn check(self) {
-    _ = env_logger::builder().is_test(true).filter_level(log::LevelFilter::Debug).try_init();
+    _ = env_logger::builder().is_test(true).filter_level(log::LevelFilter::Error).try_init();
     let mut fs = paths::MemoryFileSystem::default();
     let pwd = fs.current_dir().expect("no current dir for in-mem fs");
     let init = jsonnet_analyze::Init {
@@ -132,7 +134,16 @@ impl<'a> Input<'a> {
       if let Some((range, ds)) = ds_map.iter().next() {
         let n = ds.len();
         let m = ds.iter().next().expect("didn't clear out empty sets");
-        panic!("{path_str}:{range} still has {n} diagnostics, e.g.: {m}");
+        let is_ok = matches!(jsonnet.kind, OutcomeKind::PreEvalError)
+          && !jsonnet.outcome.is_empty()
+          && n == 1
+          && ds_map.len() == 1
+          && m.contains(jsonnet.outcome);
+        if is_ok {
+          ds_map.clear();
+        } else {
+          panic!("{path_str}:{range} still has {n} diagnostics, e.g.: {m}");
+        }
       }
 
       jsonnet.check_one(st, path_str, path_id, pwd);
@@ -148,6 +159,7 @@ pub(crate) struct JsonnetInput<'a> {
 }
 
 impl<'a> JsonnetInput<'a> {
+  /// when json is the empty string, allow anything as the manifested value
   pub(crate) fn manifest(text: &'a str, json: &'a str) -> Self {
     Self { text, outcome: json, kind: OutcomeKind::Manifest }
   }
@@ -168,6 +180,12 @@ impl<'a> JsonnetInput<'a> {
     Self { text, outcome: "", kind: OutcomeKind::PreEvalError }
   }
 
+  /// only do this if we expect one pre eval error and don't want to specify the range. useful in
+  /// doc tests.
+  pub(crate) fn pre_eval_error_one(text: &'a str, outcome: &'a str) -> Self {
+    Self { text, outcome, kind: OutcomeKind::PreEvalError }
+  }
+
   #[track_caller]
   pub(crate) fn check(self) {
     Input::default().with_jsonnet(DEFAULT_PATH, self).add_all().check();
@@ -184,6 +202,10 @@ impl<'a> JsonnetInput<'a> {
     let want = self.outcome;
     match (self.kind, st.get_json(path_id)) {
       (OutcomeKind::Manifest, Ok(got)) => {
+        if want.is_empty() {
+          // allow manifesting to anything at all
+          return;
+        }
         let want: serde_json::Value = serde_json::from_str(want).expect("test input json");
         let want = jsonnet_eval::Json::from_serde(st.strings(), want);
         if want != got {
@@ -206,7 +228,6 @@ impl<'a> JsonnetInput<'a> {
       }
 
       (OutcomeKind::PreEvalError, Err(err)) => {
-        assert!(want.is_empty(), "{path_str}: unexpected outcome for pre eval error: {want}");
         let jsonnet_eval::error::Error::HasErrors(p) = err else {
           panic!("{path_str}: unexpected error kind: {err:?}");
         };

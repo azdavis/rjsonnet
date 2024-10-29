@@ -2,6 +2,14 @@
 
 Things under "main" are not released yet.
 
+## main
+
+- Improve typing for:
+  - `std.splitLimit`
+  - `std.splitLimitR`
+  - `std.format`
+  - `std.flatMap`
+
 ## v0.7.0
 
 - Improve typing for:

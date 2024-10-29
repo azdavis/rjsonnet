@@ -16,6 +16,7 @@ env_logger.workspace = true
 log.workspace = true
 paths.workspace = true
 pretty_assertions.workspace = true
+pulldown-cmark.workspace = true
 rustc-hash.workspace = true
 serde_json.workspace = true
 text-pos.workspace = true
