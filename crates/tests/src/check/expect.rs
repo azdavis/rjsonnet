@@ -141,8 +141,8 @@ impl Expect {
         let region =
           Region { line: range.start.line, col_start: range.start.col, col_end: range.end.col };
         let def_exs = expects[&def_path].get(region).expect("nothing at def site");
-        let msg = self.msg.clone();
-        let def_ex = Expect { kind: Kind::Def, msg: msg.clone() };
+        let def_ex = Expect { kind: Kind::Def, msg: self.msg.clone() };
+        let msg = self.msg.as_str();
         assert!(def_exs.contains(&def_ex), "{path_str}: no def found for {msg}");
       }
       Kind::Diagnostic => {
