@@ -108,7 +108,7 @@ assert !false;
 
 ## `$`
 
-A variable that refers to the root object.
+The root object.
 
 ```jsonnet
 {
@@ -467,6 +467,13 @@ A value representing "nothing".
 ## `self`
 
 The current object.
+
+```jsonnet
+{
+  a: 3,
+  b: self.a + 1,
+}
+```
 
 ## `then`
 
