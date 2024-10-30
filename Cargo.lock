@@ -28,7 +28,7 @@ dependencies = [
 
 [[package]]
 name = "always"
-version = "0.7.0"
+version = "0.7.1"
 dependencies = [
  "log",
 ]
@@ -221,7 +221,7 @@ checksum = "22ec99545bb0ed0ea7bb9b8e1e9122ea386ff8a48c0922e43f36d45ab09e0e80"
 
 [[package]]
 name = "diagnostic"
-version = "0.7.0"
+version = "0.7.1"
 dependencies = [
  "text-pos",
 ]
@@ -293,7 +293,7 @@ dependencies = [
 
 [[package]]
 name = "finite-float"
-version = "0.7.0"
+version = "0.7.1"
 dependencies = [
  "always",
 ]
@@ -381,7 +381,7 @@ checksum = "49f1f14873335454500d59611f1cf4a4b0f786f9ac11f4312a78e4cf2566695b"
 
 [[package]]
 name = "jsonnet-analyze"
-version = "0.7.0"
+version = "0.7.1"
 dependencies = [
  "always",
  "apply-changes",
@@ -411,7 +411,7 @@ dependencies = [
 
 [[package]]
 name = "jsonnet-ast-escape"
-version = "0.7.0"
+version = "0.7.1"
 dependencies = [
  "always",
  "jsonnet-escape",
@@ -421,7 +421,7 @@ dependencies = [
 
 [[package]]
 name = "jsonnet-desugar"
-version = "0.7.0"
+version = "0.7.1"
 dependencies = [
  "always",
  "finite-float",
@@ -438,7 +438,7 @@ dependencies = [
 
 [[package]]
 name = "jsonnet-escape"
-version = "0.7.0"
+version = "0.7.1"
 dependencies = [
  "drop_bomb",
  "str-process",
@@ -446,7 +446,7 @@ dependencies = [
 
 [[package]]
 name = "jsonnet-eval"
-version = "0.7.0"
+version = "0.7.1"
 dependencies = [
  "always",
  "finite-float",
@@ -458,7 +458,7 @@ dependencies = [
 
 [[package]]
 name = "jsonnet-expr"
-version = "0.7.0"
+version = "0.7.1"
 dependencies = [
  "always",
  "code-h2-md-map",
@@ -474,7 +474,7 @@ dependencies = [
 
 [[package]]
 name = "jsonnet-lex"
-version = "0.7.0"
+version = "0.7.1"
 dependencies = [
  "always",
  "jsonnet-escape",
@@ -486,7 +486,7 @@ dependencies = [
 
 [[package]]
 name = "jsonnet-ls"
-version = "0.7.0"
+version = "0.7.1"
 dependencies = [
  "jsonnet-analyze",
  "lang-srv",
@@ -494,7 +494,7 @@ dependencies = [
 
 [[package]]
 name = "jsonnet-parse"
-version = "0.7.0"
+version = "0.7.1"
 dependencies = [
  "always",
  "event-parse",
@@ -505,14 +505,14 @@ dependencies = [
 
 [[package]]
 name = "jsonnet-resolve-import"
-version = "0.7.0"
+version = "0.7.1"
 dependencies = [
  "paths",
 ]
 
 [[package]]
 name = "jsonnet-statics"
-version = "0.7.0"
+version = "0.7.1"
 dependencies = [
  "always",
  "diagnostic",
@@ -527,11 +527,11 @@ dependencies = [
 
 [[package]]
 name = "jsonnet-std"
-version = "0.7.0"
+version = "0.7.1"
 
 [[package]]
 name = "jsonnet-syntax"
-version = "0.7.0"
+version = "0.7.1"
 dependencies = [
  "code-h2-md-map",
  "rowan",
@@ -542,7 +542,7 @@ dependencies = [
 
 [[package]]
 name = "jsonnet-ty"
-version = "0.7.0"
+version = "0.7.1"
 dependencies = [
  "always",
  "jsonnet-expr",
@@ -561,7 +561,7 @@ checksum = "3752f229dcc5a481d60f385fa479ff46818033d881d2d801aa27dffcfb5e8306"
 
 [[package]]
 name = "lang-srv"
-version = "0.7.0"
+version = "0.7.1"
 dependencies = [
  "always",
  "anyhow",
@@ -579,7 +579,7 @@ dependencies = [
 
 [[package]]
 name = "lang-srv-state"
-version = "0.7.0"
+version = "0.7.1"
 dependencies = [
  "apply-changes",
  "diagnostic",
@@ -925,7 +925,7 @@ dependencies = [
 
 [[package]]
 name = "tests"
-version = "0.7.0"
+version = "0.7.1"
 dependencies = [
  "env_logger",
  "jsonnet-analyze",
@@ -1140,7 +1140,7 @@ dependencies = [
 
 [[package]]
 name = "xtask"
-version = "0.7.0"
+version = "0.7.1"
 dependencies = [
  "flate2",
  "pico-args",

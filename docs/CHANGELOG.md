@@ -2,7 +2,7 @@
 
 Things under "main" are not released yet.
 
-## main
+## v0.7.1
 
 - Improve typing for:
   - `std.splitLimit`
