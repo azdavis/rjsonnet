@@ -253,3 +253,20 @@ isOdd(4)
   )
   .check();
 }
+
+#[test]
+#[should_panic = "no diagnostics at range"]
+fn ty_check_default() {
+  JsonnetInput::manifest(
+    r#"
+local f(a=null) =
+##        ^^^^ diagnostic: incompatible types; expected `number`; found `null`
+  assert std.isNumber(a);
+  a;
+
+f(3)
+"#,
+    "3",
+  )
+  .check();
+}
