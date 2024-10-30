@@ -29,6 +29,10 @@ An implementation of [Jsonnet][] in [Rust][], which aims to conform to the [spec
 
 ![auto-complete](/img/5-sig-help.png)
 
+### Flow typing
+
+![flow typing](/img/6-flow-typing.png)
+
 ## Ways to use
 
 ### VS Code
