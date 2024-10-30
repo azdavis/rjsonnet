@@ -24,7 +24,7 @@ impl<'a> MultiInput<'a> {
 
   #[track_caller]
   pub(crate) fn check(self) {
-    _ = env_logger::builder().is_test(true).filter_level(log::LevelFilter::Error).try_init();
+    _ = env_logger::builder().is_test(true).filter_level(log::LevelFilter::Warn).try_init();
     let mut fs = paths::MemoryFileSystem::default();
     let pwd = fs.current_dir().expect("no current dir for in-mem fs");
     let init = jsonnet_analyze::Init {
