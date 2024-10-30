@@ -24,6 +24,7 @@ f(3) + f("hi")
   .check();
 }
 
+// TODO fix, need to get info from !=
 #[test]
 #[should_panic = "none of the lines were equal"]
 fn not() {
