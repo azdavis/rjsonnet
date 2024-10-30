@@ -181,7 +181,6 @@ fn root() {
 }
 
 #[test]
-#[should_panic = "none of the lines"]
 fn union_field_get_all_have() {
   JsonnetInput::manifest(
     r#"
@@ -202,7 +201,6 @@ f(true)
 }
 
 #[test]
-#[should_panic = "no diagnostics at range"]
 fn union_field_get_some_missing() {
   JsonnetInput::manifest(
     r#"
