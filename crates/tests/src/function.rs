@@ -258,10 +258,10 @@ isOdd(4)
 fn ty_check_default() {
   JsonnetInput::manifest(
     r#"
-local f(a=null) =
+local f(x=null) =
 ##        ^^^^ diagnostic: incompatible types; expected `number`; found `null`
-  assert std.isNumber(a);
-  a;
+  assert std.isNumber(x);
+  x;
 
 f(3)
 "#,
