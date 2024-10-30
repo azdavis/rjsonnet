@@ -449,14 +449,12 @@ local f(x) = x + 1;
   .check();
 }
 
-// TODO fix, or at least set the def site to the whole +, maybe not the specific rhs.
 #[test]
-#[should_panic = "nothing at def site"]
 fn obj_plus() {
   JsonnetInput::manifest(
     r#"
 local foo = {} + { quz: 3 };
-##                      ^ def: quz
+##          ^^^^^^^^^^^^^^^ def: quz
 foo.quz
 ##  ^^^ use: quz
 "#,

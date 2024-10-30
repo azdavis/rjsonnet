@@ -154,11 +154,11 @@ where
     ConstEval::Real(on) => on,
   };
   if on.kind.is_some() {
-    return None;
+    return Some(on.into());
   }
   let fields = {
     let file = st.get_file_expr(fs, on.path_id).ok()?;
-    let ExprData::Object { fields, .. } = &file.ar[on.expr] else { return None };
+    let ExprData::Object { fields, .. } = &file.ar[on.expr] else { return Some(on.into()) };
     fields.clone()
   };
   for field in fields {
@@ -173,5 +173,5 @@ where
       return from_expr(st, seen, fs, on.path_id, field.val);
     }
   }
-  None
+  Some(on.into())
 }
