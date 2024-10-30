@@ -9,6 +9,7 @@ mod comment;
 mod def;
 mod docs;
 mod dupe;
+mod flow;
 mod function;
 mod hover;
 mod keyword_lit;
