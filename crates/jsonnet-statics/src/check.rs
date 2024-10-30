@@ -227,10 +227,10 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
           // TODO something about how the lhs_ty and rhs_ty need to be "similar" somehow (both
           // numbers or both strings, etc)
           if !is_orderable(st, lhs_ty) {
-            st.err(lhs.unwrap_or(expr), error::Kind::Incomparable(lhs_ty));
+            st.err(lhs.unwrap_or(expr), error::Kind::InvalidCompare(lhs_ty));
           }
           if !is_orderable(st, rhs_ty) {
-            st.err(rhs.unwrap_or(expr), error::Kind::Incomparable(rhs_ty));
+            st.err(rhs.unwrap_or(expr), error::Kind::InvalidCompare(rhs_ty));
           }
           ty::Ty::BOOL
         }

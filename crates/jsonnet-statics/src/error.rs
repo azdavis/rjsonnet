@@ -45,12 +45,12 @@ impl Error {
       // TODO: make some/all type-checker warnings errors? (once we have more confidence)
       Kind::Unused(_, _)
       | Kind::Unify(_)
-      | Kind::Incomparable(_)
+      | Kind::InvalidCompare(_)
       | Kind::MissingArgument(_, _)
       | Kind::ExtraPositionalArgument(_)
       | Kind::ExtraNamedArgument(_)
       | Kind::InvalidPlus(_, _)
-      | Kind::CallNonFn(_)
+      | Kind::InvalidCall(_)
       | Kind::InvalidLength(_)
       | Kind::InvalidSubscript(_) => diagnostic::Severity::Warning,
     }
@@ -63,8 +63,8 @@ impl Error {
   pub fn apply(&mut self, ty_subst: &ty::Subst) {
     match &mut self.kind {
       Kind::MissingArgument(_, ty)
-      | Kind::Incomparable(ty)
-      | Kind::CallNonFn(ty)
+      | Kind::InvalidCompare(ty)
+      | Kind::InvalidCall(ty)
       | Kind::InvalidLength(ty)
       | Kind::InvalidSubscript(ty) => {
         ty.apply(ty_subst);
@@ -109,12 +109,12 @@ pub(crate) enum Kind {
   DuplicateNamedArg(Id),
   DuplicateBinding(Id, usize, def::ExprDefKindMulti),
   Unused(Id, def::ExprDefKind),
-  Incomparable(ty::Ty),
+  InvalidCompare(ty::Ty),
   MissingArgument(Id, ty::Ty),
   ExtraPositionalArgument(usize),
   ExtraNamedArgument(Id),
   InvalidPlus(ty::Ty, ty::Ty),
-  CallNonFn(ty::Ty),
+  InvalidCall(ty::Ty),
   InvalidLength(ty::Ty),
   Unify(Unify),
   InvalidSubscript(ty::Ty),
@@ -139,9 +139,9 @@ impl fmt::Display for Display<'_> {
         write!(f, "duplicate binding: `{}`", id.display(self.str_ar))
       }
       Kind::Unused(id, _) => write!(f, "unused: `{}`", id.display(self.str_ar)),
-      Kind::Incomparable(ty) => {
+      Kind::InvalidCompare(ty) => {
         let ty = ty.display(self.multi_line, self.store, None, self.str_ar);
-        write!(f, "not a comparable type: `{ty}`")
+        write!(f, "not a type that can be compared with <, >=, etc: `{ty}`")
       }
       Kind::MissingArgument(id, ty) => {
         let id = id.display(self.str_ar);
@@ -156,11 +156,11 @@ impl fmt::Display for Display<'_> {
       Kind::InvalidPlus(lhs, rhs) => {
         let lhs = lhs.display(self.multi_line, self.store, None, self.str_ar);
         let rhs = rhs.display(self.multi_line, self.store, None, self.str_ar);
-        f.write_str("invalid `+`\n")?;
+        f.write_str("not a pair of types that can be added with `+`\n")?;
         writeln!(f, "  left:  `{lhs}`")?;
         write!(f, "  right: `{rhs}`")
       }
-      Kind::CallNonFn(got) => {
+      Kind::InvalidCall(got) => {
         let got = got.display(self.multi_line, self.store, None, self.str_ar);
         write!(f, "expected a function type, found `{got}`")
       }

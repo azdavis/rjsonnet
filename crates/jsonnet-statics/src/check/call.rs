@@ -43,7 +43,7 @@ pub(crate) fn get(
     }
     ty::Data::Prim(ty::Prim::Any) => ty::Ty::ANY,
     ty::Data::Prim(_) | ty::Data::Array(_) | ty::Data::Object(_) => {
-      st.err(expr, error::Kind::CallNonFn(fn_ty));
+      st.err(expr, error::Kind::InvalidCall(fn_ty));
       ty::Ty::ANY
     }
   }
