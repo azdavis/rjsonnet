@@ -353,16 +353,16 @@ b.foo
     .check();
 }
 
+// TODO not the greatest.
 #[test]
-#[should_panic = "nothing at def site"]
 fn field_import_assert() {
   Input::default()
     .with_jsonnet(
       "a.libsonnet",
       JsonnetInput::manifest(
         r"
-assert true; { foo: 3 }
-##                  ^ def: foo
+  assert true; { foo: 3 }
+##^^^^^^^^^^^^^^^^^^^^^^^ def: foo
 ",
         r#"
 {
