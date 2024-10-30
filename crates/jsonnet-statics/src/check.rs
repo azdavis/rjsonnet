@@ -278,6 +278,11 @@ fn get_subscript(
   let idx_expr = idx.unwrap_or(expr);
   // TODO handle unions
   match st.tys.data(on_ty).clone() {
+    ty::Data::Prim(ty::Prim::Any) => ty::Ty::ANY,
+    ty::Data::Prim(_) | ty::Data::Fn(_) => {
+      st.err(on.unwrap_or(expr), error::Kind::InvalidSubscript(on_ty));
+      ty::Ty::ANY
+    }
     ty::Data::Array(elem_ty) => {
       st.unify(idx_expr, ty::Ty::NUMBER, idx_ty);
       elem_ty
@@ -315,7 +320,7 @@ fn get_subscript(
         }
       }
     }
-    _ => {
+    ty::Data::Union(_) => {
       st.unify(on.unwrap_or(expr), ty::Ty::ARRAY_OR_OBJECT, on_ty);
       ty::Ty::ANY
     }

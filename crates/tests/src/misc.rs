@@ -243,3 +243,15 @@ std.length(3)
   )
   .check();
 }
+
+#[test]
+fn invalid_subscript() {
+  JsonnetInput::eval_error(
+    r#"
+  null[1]
+##^^^^ diagnostic: not a type which can be subscripted with `[]` or `.`: `null`
+"#,
+    "incompatible types",
+  )
+  .check();
+}

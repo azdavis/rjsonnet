@@ -51,7 +51,8 @@ impl Error {
       | Kind::ExtraNamedArgument(_)
       | Kind::InvalidPlus(_, _)
       | Kind::CallNonFn(_)
-      | Kind::InvalidLength(_) => diagnostic::Severity::Warning,
+      | Kind::InvalidLength(_)
+      | Kind::InvalidSubscript(_) => diagnostic::Severity::Warning,
     }
   }
 
@@ -64,7 +65,8 @@ impl Error {
       Kind::MissingArgument(_, ty)
       | Kind::Incomparable(ty)
       | Kind::CallNonFn(ty)
-      | Kind::InvalidLength(ty) => {
+      | Kind::InvalidLength(ty)
+      | Kind::InvalidSubscript(ty) => {
         ty.apply(ty_subst);
       }
       Kind::Unify(Unify::Incompatible(a, b)) | Kind::InvalidPlus(a, b) => {
@@ -115,6 +117,7 @@ pub(crate) enum Kind {
   CallNonFn(ty::Ty),
   InvalidLength(ty::Ty),
   Unify(Unify),
+  InvalidSubscript(ty::Ty),
 }
 
 struct Display<'a> {
@@ -195,6 +198,10 @@ impl fmt::Display for Display<'_> {
           write!(f, "extra required parameter: `{id}`")
         }
       },
+      Kind::InvalidSubscript(ty) => {
+        let ty = ty.display(self.multi_line, self.store, None, self.str_ar);
+        write!(f, "not a type which can be subscripted with `[]` or `.`: `{ty}`")
+      }
     }
   }
 }
