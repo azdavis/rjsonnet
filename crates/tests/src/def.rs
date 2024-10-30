@@ -449,35 +449,20 @@ local f(x) = x + 1;
   .check();
 }
 
-// TODO fix, or at least set the def site to the whole +, maybe not the specific rhs. may also need
-// to implement infra to have def and use across files in tests
+// TODO fix, or at least set the def site to the whole +, maybe not the specific rhs.
 #[test]
 #[should_panic = "nothing at def site"]
 fn across_file() {
-  Input::default()
-    .with_jsonnet(
-      "foo.jsonnet",
-      JsonnetInput::manifest(
-        r#"
-{} + { quz: 3 }
-"#,
-        r#"
-{ "quz": 3 }
-##       ^ def: quz
-"#,
-      ),
-    )
-    .with_jsonnet(
-      "bar.jsonnet",
-      JsonnetInput::manifest(
-        r#"
-local foo = import 'foo.jsonnet';
+  JsonnetInput::manifest(
+    r#"
+local foo = {} + { quz: 3 };
+##                      ^ def: quz
 foo.quz
 ##  ^^^ use: quz
 "#,
-        "3",
-      ),
-    )
-    .add_all()
-    .check();
+    r#"
+3
+"#,
+  )
+  .check();
 }
