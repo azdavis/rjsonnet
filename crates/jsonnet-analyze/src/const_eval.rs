@@ -66,6 +66,16 @@ where
       Some(subscript.unwrap_or(ret.into()))
     }
     ExprData::Local { body, .. } => from_expr(st, seen, fs, path_id, body),
+    // if one of the branches diverges, can choose the other one
+    ExprData::If { cond: _, yes: Some(yes), no: Some(no) } => {
+      if matches!(&file.ar[yes], ExprData::Error(_)) {
+        from_expr(st, seen, fs, path_id, Some(no))
+      } else if matches!(&file.ar[no], ExprData::Error(_)) {
+        from_expr(st, seen, fs, path_id, Some(yes))
+      } else {
+        Some(ret.into())
+      }
+    }
     // Id, Import: would have been covered by defs.get above if we knew anything about them
     // Prim, Object, Array, Function: literals are values, they do not evaluate further
     // Error: errors do not evaluate to values

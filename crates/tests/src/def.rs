@@ -353,7 +353,6 @@ b.foo
     .check();
 }
 
-// TODO not the greatest.
 #[test]
 fn field_import_assert() {
   Input::default()
@@ -362,7 +361,7 @@ fn field_import_assert() {
       JsonnetInput::manifest(
         r"
   assert true; { foo: 3 }
-##^^^^^^^^^^^^^^^^^^^^^^^ def: foo
+##                    ^ def: foo
 ",
         r#"
 {
