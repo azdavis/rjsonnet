@@ -179,3 +179,45 @@ fn root() {
   )
   .check();
 }
+
+#[test]
+#[should_panic = "none of the lines"]
+fn union_field_get_all_have() {
+  JsonnetInput::manifest(
+    r#"
+local f(x) =
+  local obj =
+    if x then
+      { foo: 3 }
+    else
+      { foo: "hi" };
+  obj.foo;
+##    ^^^ hover: string | number
+
+f(true)
+"#,
+    "3",
+  )
+  .check();
+}
+
+#[test]
+#[should_panic = "no diagnostics at range"]
+fn union_field_get_some_missing() {
+  JsonnetInput::manifest(
+    r#"
+local f(x) =
+  local obj =
+    if x then
+      { foo: 3 }
+    else
+      {};
+  obj.foo;
+##^^^^^^^ diagnostic: missing field: `foo`
+
+f(true)
+"#,
+    "3",
+  )
+  .check();
+}
