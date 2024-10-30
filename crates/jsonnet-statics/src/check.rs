@@ -277,15 +277,19 @@ fn get_subscript(
 ) -> ty::Ty {
   let idx_expr = idx.unwrap_or(expr);
   match st.tys.data(on_ty).clone() {
+    // degenerate case
     ty::Data::Prim(ty::Prim::Any) => ty::Ty::ANY,
+    // invalid
     ty::Data::Prim(_) | ty::Data::Fn(_) => {
       st.err(on.unwrap_or(expr), error::Kind::Invalid(on_ty, error::Invalid::Subscript));
       ty::Ty::ANY
     }
+    // array indexing
     ty::Data::Array(elem_ty) => {
       st.unify(idx_expr, ty::Ty::NUMBER, idx_ty);
       elem_ty
     }
+    // object field get
     ty::Data::Object(obj) => {
       st.unify(idx_expr, ty::Ty::STRING, idx_ty);
       let idx = idx.and_then(|x| match &ar[x] {
@@ -319,6 +323,7 @@ fn get_subscript(
         }
       }
     }
+    // recursive
     ty::Data::Union(tys) => {
       let iter = tys.into_iter().map(|on_ty| get_subscript(st, ar, on_ty, idx_ty, expr, on, idx));
       let res = ty::Data::Union(iter.collect());
