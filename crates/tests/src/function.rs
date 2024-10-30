@@ -255,7 +255,6 @@ isOdd(4)
 }
 
 #[test]
-#[should_panic = "no diagnostics at range"]
 fn ty_check_default() {
   JsonnetInput::manifest(
     r#"

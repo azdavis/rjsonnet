@@ -137,9 +137,11 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
         let ty = param_tys.get(&id).copied().unwrap_or(ty::Ty::ANY);
         st.scope.define(id, ty, def::Def::Expr(expr, def::ExprDefKind::Multi(idx, m)));
       }
-      for &(_, rhs) in params {
+      for &(id, rhs) in params {
         let Some(rhs) = rhs else { continue };
-        get(st, ar, rhs);
+        let ty = param_tys.get(&id).copied().unwrap_or(ty::Ty::ANY);
+        let rhs_ty = get(st, ar, rhs);
+        st.unify(rhs.unwrap_or(expr), ty, rhs_ty);
       }
       let body_ty = get(st, ar, *body);
       let mut fn_params = Vec::<ty::Param>::with_capacity(params.len());

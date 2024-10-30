@@ -10,6 +10,7 @@ Things under "main" are not released yet.
   - `std.format`
   - `std.flatMap`
 - Fix flow typing where e.g. in the `else` case after checking `if x == "hi"`, we thought that `x` could not be an arbitrary string.
+- Check types of function default arguments against their asserted types.
 
 ## v0.7.0
 
