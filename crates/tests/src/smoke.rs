@@ -1,7 +1,5 @@
 //! Smoke tests, intended to be the smallest possible test for a given feature.
 
-mod def;
-
 use crate::check::{Input, JsonnetInput};
 
 #[test]
