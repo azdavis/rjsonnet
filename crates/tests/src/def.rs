@@ -386,6 +386,22 @@ b.foo
 }
 
 #[test]
+fn field_local() {
+  JsonnetInput::manifest(
+    r#"
+local foo =
+  local bar = 3;
+  { quz: bar + 1 };
+##       ^^^^^^^ def: quz
+foo.quz
+##  ^^^ use: quz
+"#,
+    "4",
+  )
+  .check();
+}
+
+#[test]
 fn infinite_1() {
   JsonnetInput::manifest(
     r#"
