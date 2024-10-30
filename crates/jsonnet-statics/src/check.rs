@@ -202,7 +202,7 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
               ty::Ty::ANY
             }
             _ => {
-              st.err(expr, error::Kind::InvalidPlus(lhs_ty, rhs_ty));
+              st.err(expr, error::Kind::Invalid(lhs_ty, error::Invalid::Plus(rhs_ty)));
               ty::Ty::ANY
             }
           }
@@ -227,10 +227,10 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
           // TODO something about how the lhs_ty and rhs_ty need to be "similar" somehow (both
           // numbers or both strings, etc)
           if !is_orderable(st, lhs_ty) {
-            st.err(lhs.unwrap_or(expr), error::Kind::InvalidCompare(lhs_ty));
+            st.err(lhs.unwrap_or(expr), error::Kind::Invalid(lhs_ty, error::Invalid::OrdCmp));
           }
           if !is_orderable(st, rhs_ty) {
-            st.err(rhs.unwrap_or(expr), error::Kind::InvalidCompare(rhs_ty));
+            st.err(rhs.unwrap_or(expr), error::Kind::Invalid(rhs_ty, error::Invalid::OrdCmp));
           }
           ty::Ty::BOOL
         }
@@ -280,7 +280,7 @@ fn get_subscript(
   match st.tys.data(on_ty).clone() {
     ty::Data::Prim(ty::Prim::Any) => ty::Ty::ANY,
     ty::Data::Prim(_) | ty::Data::Fn(_) => {
-      st.err(on.unwrap_or(expr), error::Kind::InvalidSubscript(on_ty));
+      st.err(on.unwrap_or(expr), error::Kind::Invalid(on_ty, error::Invalid::Subscript));
       ty::Ty::ANY
     }
     ty::Data::Array(elem_ty) => {

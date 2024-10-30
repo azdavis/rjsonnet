@@ -43,7 +43,7 @@ pub(crate) fn get(
     }
     ty::Data::Prim(ty::Prim::Any) => ty::Ty::ANY,
     ty::Data::Prim(_) | ty::Data::Array(_) | ty::Data::Object(_) => {
-      st.err(expr, error::Kind::InvalidCall(fn_ty));
+      st.err(expr, error::Kind::Invalid(fn_ty, error::Invalid::Call));
       ty::Ty::ANY
     }
   }
@@ -100,7 +100,7 @@ fn maybe_extra_checks(
     StdFn::length => {
       let &(expr, ty) = params.get(&Id::x)?;
       if !length_ok(st, ty) {
-        st.err(expr, error::Kind::InvalidLength(ty));
+        st.err(expr, error::Kind::Invalid(ty, error::Invalid::Length));
       }
       None
     }

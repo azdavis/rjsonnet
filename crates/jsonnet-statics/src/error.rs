@@ -45,14 +45,10 @@ impl Error {
       // TODO: make some/all type-checker warnings errors? (once we have more confidence)
       Kind::Unused(_, _)
       | Kind::Unify(_)
-      | Kind::InvalidCompare(_)
       | Kind::MissingArgument(_, _)
       | Kind::ExtraPositionalArgument(_)
       | Kind::ExtraNamedArgument(_)
-      | Kind::InvalidPlus(_, _)
-      | Kind::InvalidCall(_)
-      | Kind::InvalidLength(_)
-      | Kind::InvalidSubscript(_) => diagnostic::Severity::Warning,
+      | Kind::Invalid(_, _) => diagnostic::Severity::Warning,
     }
   }
 
@@ -63,13 +59,11 @@ impl Error {
   pub fn apply(&mut self, ty_subst: &ty::Subst) {
     match &mut self.kind {
       Kind::MissingArgument(_, ty)
-      | Kind::InvalidCompare(ty)
-      | Kind::InvalidCall(ty)
-      | Kind::InvalidLength(ty)
-      | Kind::InvalidSubscript(ty) => {
+      | Kind::Invalid(ty, Invalid::Call | Invalid::Length | Invalid::OrdCmp | Invalid::Subscript) =>
+      {
         ty.apply(ty_subst);
       }
-      Kind::Unify(Unify::Incompatible(a, b)) | Kind::InvalidPlus(a, b) => {
+      Kind::Unify(Unify::Incompatible(a, b)) | Kind::Invalid(a, Invalid::Plus(b)) => {
         a.apply(ty_subst);
         b.apply(ty_subst);
       }
@@ -109,15 +103,20 @@ pub(crate) enum Kind {
   DuplicateNamedArg(Id),
   DuplicateBinding(Id, usize, def::ExprDefKindMulti),
   Unused(Id, def::ExprDefKind),
-  InvalidCompare(ty::Ty),
   MissingArgument(Id, ty::Ty),
   ExtraPositionalArgument(usize),
   ExtraNamedArgument(Id),
-  InvalidPlus(ty::Ty, ty::Ty),
-  InvalidCall(ty::Ty),
-  InvalidLength(ty::Ty),
   Unify(Unify),
-  InvalidSubscript(ty::Ty),
+  Invalid(ty::Ty, Invalid),
+}
+
+#[derive(Debug)]
+pub(crate) enum Invalid {
+  OrdCmp,
+  Call,
+  Subscript,
+  Length,
+  Plus(ty::Ty),
 }
 
 struct Display<'a> {
@@ -139,10 +138,6 @@ impl fmt::Display for Display<'_> {
         write!(f, "duplicate binding: `{}`", id.display(self.str_ar))
       }
       Kind::Unused(id, _) => write!(f, "unused: `{}`", id.display(self.str_ar)),
-      Kind::InvalidCompare(ty) => {
-        let ty = ty.display(self.multi_line, self.store, None, self.str_ar);
-        write!(f, "not a type that can be compared with <, >=, etc: `{ty}`")
-      }
       Kind::MissingArgument(id, ty) => {
         let id = id.display(self.str_ar);
         let ty = ty.display(self.multi_line, self.store, None, self.str_ar);
@@ -152,21 +147,6 @@ impl fmt::Display for Display<'_> {
       Kind::ExtraNamedArgument(id) => {
         let id = id.display(self.str_ar);
         write!(f, "extra named argument: `{id}`")
-      }
-      Kind::InvalidPlus(lhs, rhs) => {
-        let lhs = lhs.display(self.multi_line, self.store, None, self.str_ar);
-        let rhs = rhs.display(self.multi_line, self.store, None, self.str_ar);
-        f.write_str("not a pair of types that can be added with `+`\n")?;
-        writeln!(f, "  left:  `{lhs}`")?;
-        write!(f, "  right: `{rhs}`")
-      }
-      Kind::InvalidCall(got) => {
-        let got = got.display(self.multi_line, self.store, None, self.str_ar);
-        write!(f, "expected a function type, found `{got}`")
-      }
-      Kind::InvalidLength(ty) => {
-        let ty = ty.display(self.multi_line, self.store, None, self.str_ar);
-        write!(f, "not a type which has length: `{ty}`")
       }
       Kind::Unify(u) => match u {
         Unify::Incompatible(want, got) => {
@@ -198,10 +178,31 @@ impl fmt::Display for Display<'_> {
           write!(f, "extra required parameter: `{id}`")
         }
       },
-      Kind::InvalidSubscript(ty) => {
-        let ty = ty.display(self.multi_line, self.store, None, self.str_ar);
-        write!(f, "not a type which can be subscripted with `[]` or `.`: `{ty}`")
-      }
+      Kind::Invalid(ty, inv) => match inv {
+        Invalid::OrdCmp => {
+          let ty = ty.display(self.multi_line, self.store, None, self.str_ar);
+          write!(f, "not a type that can be compared with <, >=, etc: `{ty}`")
+        }
+        Invalid::Call => {
+          let ty = ty.display(self.multi_line, self.store, None, self.str_ar);
+          write!(f, "not a type that can be called: `{ty}`")
+        }
+        Invalid::Subscript => {
+          let ty = ty.display(self.multi_line, self.store, None, self.str_ar);
+          write!(f, "not a type which can be subscripted with `[]` or `.`: `{ty}`")
+        }
+        Invalid::Length => {
+          let ty = ty.display(self.multi_line, self.store, None, self.str_ar);
+          write!(f, "not a type which has length: `{ty}`")
+        }
+        Invalid::Plus(rhs) => {
+          let ty = ty.display(self.multi_line, self.store, None, self.str_ar);
+          let rhs = rhs.display(self.multi_line, self.store, None, self.str_ar);
+          f.write_str("not a pair of types that can be added with `+`\n")?;
+          writeln!(f, "  left:  `{ty}`")?;
+          write!(f, "  right: `{rhs}`")
+        }
+      },
     }
   }
 }
