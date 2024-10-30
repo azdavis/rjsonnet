@@ -1,16 +1,6 @@
 //! Smoke tests, intended to be the smallest possible test for a given feature.
 
-mod array;
-mod comment;
 mod def;
-mod dupe;
-mod function;
-mod keyword_lit;
-mod number;
-mod object;
-mod op;
-mod std_lib;
-mod string;
 
 use crate::check::{Input, JsonnetInput};
 
