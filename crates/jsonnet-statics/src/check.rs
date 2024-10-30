@@ -266,6 +266,7 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
   ret
 }
 
+#[allow(clippy::single_match_else)]
 fn get_subscript(
   st: &mut st::St<'_>,
   ar: &ExprArena,
@@ -299,16 +300,17 @@ fn get_subscript(
       match idx {
         // we do know what field we're asking for.
         Some(s) => {
-          if let Some(&ty) = obj.known.get(s) {
+          match obj.known.get(s) {
             // we know the type of that field.
-            ty
-          } else {
+            Some(&ty) => ty,
             // we don't know the type.
-            if !obj.has_unknown {
-              // this would result in a eval-time error if evaluated. warn statically.
-              st.err(idx_expr, error::Kind::Unify(error::Unify::MissingField(s.clone())));
+            None => {
+              if !obj.has_unknown {
+                // this would result in a eval-time error if evaluated.
+                st.err(idx_expr, error::Kind::Unify(error::Unify::MissingField(s.clone())));
+              }
+              ty::Ty::ANY
             }
-            ty::Ty::ANY
           }
         }
         // we don't know what field we're asking for.
