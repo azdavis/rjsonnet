@@ -44,3 +44,32 @@ f(null)
   )
   .check();
 }
+
+#[test]
+#[should_panic = "none of the lines were equal"]
+fn not_2() {
+  JsonnetInput::manifest(
+    r#"
+local f(x) =
+##    ^ hover: (x: null | number) => number
+  assert x == null || std.isNumber(x);
+  if x != null then
+##   ^ hover: null | number
+    x
+##  ^ hover: number
+  else
+    assert x == null;
+##         ^ hover: null | number
+#            ... not great, but `if !c then a else b` is bad style anyway.
+    assert x == null;
+##         ^ hover: null
+    0;
+
+[f(null), f(3)]
+"#,
+    r#"
+[0, 3]
+"#,
+  )
+  .check();
+}
