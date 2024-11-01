@@ -40,7 +40,9 @@ local f(x) =
 
 f(null)
 "#,
-    "Hi",
+    r#"
+"Hi"
+"#,
   )
   .check();
 }
