@@ -27,7 +27,6 @@
 use crate::scope::{Fact, Facts, Scope};
 use jsonnet_expr::{Expr, ExprArena, ExprData, ExprMust, Id, Prim, Str};
 use jsonnet_ty as ty;
-use std::collections::hash_map::Entry;
 
 /// Collects facts that are always true in the expression because otherwise the expression diverges
 /// (i.e. it `error`s).
@@ -49,7 +48,7 @@ pub(crate) fn get_always(
       get_assert(tys, scope, ar, &mut ac, a);
     }
     for &(id, _) in binds {
-      ac.remove(&id);
+      ac.remove(id);
     }
   } else {
     get_assert(tys, scope, ar, &mut ac, Some(body));
@@ -108,7 +107,7 @@ pub(crate) fn get_cond(
         _ => return,
       };
       let ExprData::Id(id) = ar[param] else { return };
-      add_fact(tys, ac, id, Fact::total(ty));
+      ac.add(tys, id, Fact::total(ty));
     }
     // the cond is itself another if expression.
     &ExprData::If { cond, yes: Some(yes), no: Some(no) } => {
@@ -122,10 +121,10 @@ pub(crate) fn get_cond(
         let mut snd = Facts::default();
         get_cond(tys, scope, ar, &mut fst, cond);
         get_cond(tys, scope, ar, &mut snd, Some(no));
-        for (id, fst) in fst {
-          let Some(&snd) = snd.get(&id) else { continue };
+        for (id, fst) in fst.into_iter() {
+          let Some(&snd) = snd.get(id) else { continue };
           let fact = fst.or(tys, snd);
-          add_fact(tys, ac, id, fact);
+          ac.add(tys, id, fact);
         }
       }
     }
@@ -141,8 +140,8 @@ pub(crate) fn get_cond(
     &ExprData::UnaryOp { op: jsonnet_expr::UnaryOp::LogicalNot, inner } => {
       let mut neg = Facts::default();
       get_cond(tys, scope, ar, &mut neg, inner);
-      for (id, fact) in neg {
-        add_fact(tys, ac, id, fact.negate());
+      for (id, fact) in neg.into_iter() {
+        ac.add(tys, id, fact.negate());
       }
     }
     _ => {}
@@ -190,7 +189,7 @@ fn get_ty_eq(
     Str::null => ty::Ty::NULL,
     _ => return,
   };
-  add_fact(tys, ac, id, Fact::total(ty));
+  ac.add(tys, id, Fact::total(ty));
 }
 
 /// Process `$var == LIT`, where LIT is some literal.
@@ -214,18 +213,5 @@ fn get_eq_lit(
     ExprData::Error(_) => Fact::total(ty::Ty::NEVER),
     _ => return,
   };
-  add_fact(tys, ac, id, fact);
-}
-
-fn add_fact(tys: &mut ty::MutStore<'_>, ac: &mut Facts, id: Id, fact: Fact) {
-  match ac.entry(id) {
-    Entry::Occupied(mut entry) => {
-      let old = entry.get();
-      let new = old.and(tys, fact);
-      entry.insert(new);
-    }
-    Entry::Vacant(entry) => {
-      entry.insert(fact);
-    }
-  }
+  ac.add(tys, id, fact);
 }

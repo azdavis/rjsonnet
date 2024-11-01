@@ -4,6 +4,7 @@ use always::always;
 use jsonnet_expr::{def, ExprMust, Id};
 use jsonnet_ty as ty;
 use rustc_hash::FxHashMap;
+use std::collections::hash_map::Entry;
 
 #[derive(Debug)]
 struct DefinedId {
@@ -13,7 +14,43 @@ struct DefinedId {
   usages: usize,
 }
 
-pub(crate) type Facts = rustc_hash::FxHashMap<Id, Fact>;
+#[derive(Debug, Default)]
+pub(crate) struct Facts {
+  store: rustc_hash::FxHashMap<Id, Fact>,
+}
+
+impl Facts {
+  pub(crate) fn add(&mut self, tys: &mut ty::MutStore<'_>, id: Id, fact: Fact) {
+    match self.store.entry(id) {
+      Entry::Occupied(mut entry) => {
+        let old = entry.get();
+        let new = old.and(tys, fact);
+        entry.insert(new);
+      }
+      Entry::Vacant(entry) => {
+        entry.insert(fact);
+      }
+    }
+  }
+
+  pub(crate) fn into_iter(self) -> impl Iterator<Item = (Id, Fact)> {
+    self.store.into_iter()
+  }
+
+  pub(crate) fn get(&self, id: Id) -> Option<&Fact> {
+    self.store.get(&id)
+  }
+
+  pub(crate) fn remove(&mut self, id: Id) {
+    self.store.remove(&id);
+  }
+
+  pub(crate) fn negate(&mut self) {
+    for f in self.store.values_mut() {
+      *f = f.negate();
+    }
+  }
+}
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct Fact {
@@ -115,7 +152,7 @@ impl Scope {
   }
 
   pub(crate) fn add_facts(&mut self, tys: &mut ty::MutStore<'_>, fs: &Facts) {
-    for (&id, fact) in fs {
+    for (&id, fact) in &fs.store {
       let Some(stack) = self.store.get_mut(&id) else { continue };
       let Some(defined_id) = stack.last_mut() else { continue };
       let Some(&ty) = defined_id.tys.last() else {
@@ -129,7 +166,7 @@ impl Scope {
   }
 
   pub(crate) fn remove_facts(&mut self, fs: &Facts) {
-    for &id in fs.keys() {
+    for &id in fs.store.keys() {
       let Some(stack) = self.store.get_mut(&id) else { continue };
       let Some(defined_id) = stack.last_mut() else { continue };
       always!(defined_id.tys.pop().is_some(), "should not have empty ty stack");

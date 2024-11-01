@@ -124,7 +124,7 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
           }
         }
         let fs = facts::get_always(&mut st.tys, &st.scope, ar, *body);
-        for (id, fact) in fs {
+        for (id, fact) in fs.into_iter() {
           if let Some(cur) = tmp.get_mut(&id) {
             *cur = fact.into_ty(&mut st.tys);
           }
@@ -164,9 +164,7 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
       st.scope.add_facts(&mut st.tys, &fs);
       let yes_ty = get(st, ar, *yes);
       st.scope.remove_facts(&fs);
-      for f in fs.values_mut() {
-        *f = f.negate();
-      }
+      fs.negate();
       st.scope.add_facts(&mut st.tys, &fs);
       let no_ty = get(st, ar, *no);
       st.scope.remove_facts(&fs);
