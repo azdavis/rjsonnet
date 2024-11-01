@@ -17,34 +17,51 @@ pub(crate) type Facts = rustc_hash::FxHashMap<Id, Fact>;
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct Fact {
-  ty: ty::Ty,
+  and: ty::Ty,
+  minus: ty::Ty,
   partial: bool,
 }
 
 impl Fact {
   pub(crate) const fn partial(ty: ty::Ty) -> Self {
-    Self { ty, partial: true }
+    Self { and: ty, minus: ty::Ty::NEVER, partial: true }
   }
 
   pub(crate) const fn total(ty: ty::Ty) -> Self {
-    Self { ty, partial: false }
+    Self { and: ty, minus: ty::Ty::NEVER, partial: false }
   }
 
   pub(crate) fn and(self, tys: &mut ty::MutStore<'_>, other: Self) -> Self {
-    Self { ty: ty::logic::and(tys, self.ty, other.ty), partial: self.partial && other.partial }
+    Self {
+      and: ty::logic::and(tys, self.and, other.and),
+      // de morgan's laws
+      minus: tys.get(ty::Data::mk_union([self.minus, other.minus])),
+      partial: self.partial && other.partial,
+    }
   }
 
   pub(crate) fn or(self, tys: &mut ty::MutStore<'_>, other: Self) -> Self {
     Self {
-      ty: tys.get(ty::Data::mk_union([self.ty, other.ty])),
+      and: tys.get(ty::Data::mk_union([self.and, other.and])),
+      // de morgan's laws
+      minus: ty::logic::and(tys, self.minus, other.minus),
       partial: self.partial || other.partial,
+    }
+  }
+
+  pub(crate) fn negate(self) -> Self {
+    if self.partial {
+      Self::partial(ty::Ty::ANY)
+    } else {
+      // we don't do self.and = minus(ANY, self.minus) because we don't support minus(ANY, ...).
+      Self { and: ty::Ty::ANY, minus: self.and, partial: false }
     }
   }
 
   /// for when we don't need to do ty logic with the fact, we know it's straight-up the whole truth,
   /// as in [`crate::facts::get_always`].
-  pub(crate) fn into_ty(self) -> ty::Ty {
-    self.ty
+  pub(crate) fn into_ty(self, tys: &mut ty::MutStore<'_>) -> ty::Ty {
+    ty::logic::minus(tys, self.and, self.minus)
   }
 }
 
@@ -101,30 +118,13 @@ impl Scope {
     for (&id, fact) in fs {
       let Some(stack) = self.store.get_mut(&id) else { continue };
       let Some(defined_id) = stack.last_mut() else { continue };
-      let Some(&cur) = defined_id.tys.last() else {
+      let Some(&ty) = defined_id.tys.last() else {
         always!(false, "should not have empty ty stack");
         continue;
       };
-      let new = ty::logic::and(tys, cur, fact.ty);
-      defined_id.tys.push(new);
-    }
-  }
-
-  pub(crate) fn negate_facts(&mut self, tys: &mut ty::MutStore<'_>, fs: &Facts) {
-    for (&id, fact) in fs {
-      let Some(stack) = self.store.get_mut(&id) else { continue };
-      let Some(defined_id) = stack.last_mut() else { continue };
-      let Some(&cur) = defined_id.tys.last() else {
-        always!(false, "should not have empty ty stack");
-        continue;
-      };
-      if fact.partial {
-        // just push cur again so that we always have something to pop in remove
-        defined_id.tys.push(cur);
-      } else {
-        let new = ty::logic::minus(tys, cur, fact.ty);
-        defined_id.tys.push(new);
-      }
+      let ty = ty::logic::and(tys, ty, fact.and);
+      let ty = ty::logic::minus(tys, ty, fact.minus);
+      defined_id.tys.push(ty);
     }
   }
 
