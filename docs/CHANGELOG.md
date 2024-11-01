@@ -2,6 +2,10 @@
 
 Things under "main" are not released yet.
 
+## main
+
+- Improve go-to-def, etc through asserts.
+
 ## v0.7.1
 
 - Improve typing for:
