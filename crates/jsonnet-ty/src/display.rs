@@ -128,7 +128,6 @@ impl<'a> fmt::Display for TyDisplay<'a> {
         f.write_str("[]")
       }
       Data::Object(obj) => {
-        f.write_str("{")?;
         let [cur_level, new_level, rec_level] = increase_level(obj.known.len(), self.stuff.level);
         let mut iter = obj.known.iter().map(|(key, ty)| FieldDisplay {
           key,
@@ -136,6 +135,7 @@ impl<'a> fmt::Display for TyDisplay<'a> {
           stuff: Stuff { level: rec_level, ..self.stuff },
         });
         if let Some(field) = iter.next() {
+          f.write_str("{")?;
           field_sep(f, new_level)?;
           field.fmt(f)?;
           for field in iter {
@@ -153,10 +153,12 @@ impl<'a> fmt::Display for TyDisplay<'a> {
             f.write_str(",")?;
           }
           field_sep(f, cur_level)?;
+          f.write_str("}")
         } else if obj.has_unknown {
-          f.write_str(" ... ")?;
+          f.write_str("object")
+        } else {
+          f.write_str("{}")
         }
-        f.write_str("}")
       }
       Data::Fn(func) => {
         let (params, ret) = func.parts();

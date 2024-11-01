@@ -112,7 +112,7 @@ local objAdd(a, b) =
 
 local result = std.foldl(objAdd, [{a: 1}, {b: 2}, {c: 3}], {d: 4});
 result
-## ^ hover: { ... } | { d: number }
+## ^ hover: object | { d: number }
 ",
     "not yet implemented: std.foldl",
   )
