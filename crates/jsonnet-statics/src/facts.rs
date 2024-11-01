@@ -125,7 +125,7 @@ pub(crate) fn get_cond(
         for (id, fst) in fst {
           let Some(snd) = snd.get(&id) else { continue };
           let fact = Fact {
-            ty: tys.get(ty::Data::Union(ty::Union::from([fst.ty, snd.ty]))),
+            ty: tys.get(ty::Data::mk_union([fst.ty, snd.ty])),
             partial: fst.partial || snd.partial,
           };
           add_fact(tys, ac, id, fact);

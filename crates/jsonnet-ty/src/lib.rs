@@ -66,6 +66,12 @@ impl Data {
       Data::Union(parts) => parts.iter().any(|x| x.is_local()),
     }
   }
+
+  /// Helper function to make a union type.
+  #[must_use]
+  pub fn mk_union<const N: usize>(tys: [Ty; N]) -> Self {
+    Self::Union(Union::from(tys))
+  }
 }
 
 /// A primitive type, containing no recursive data inside.

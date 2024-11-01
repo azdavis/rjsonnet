@@ -167,7 +167,7 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
       st.scope.negate_facts(&mut st.tys, &fs);
       let no_ty = get(st, ar, *no);
       st.scope.remove_facts(&fs);
-      st.tys.get(ty::Data::Union(ty::Union::from([yes_ty, no_ty])))
+      st.tys.get(ty::Data::mk_union([yes_ty, no_ty]))
     }
     ExprData::BinaryOp { lhs, op, rhs } => {
       let lhs_ty = get(st, ar, *lhs);
@@ -184,7 +184,7 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
             }
             // concat arrays.
             (ty::Data::Array(lhs_elem), ty::Data::Array(rhs_elem)) => {
-              let elem = st.tys.get(ty::Data::Union(ty::Union::from([*lhs_elem, *rhs_elem])));
+              let elem = st.tys.get(ty::Data::mk_union([*lhs_elem, *rhs_elem]));
               st.tys.get(ty::Data::Array(elem))
             }
             // add object fields.

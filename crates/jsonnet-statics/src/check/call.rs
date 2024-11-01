@@ -230,7 +230,7 @@ fn maybe_extra_checks(
       st.unify(init_expr, func_ret, init_ty);
       let want_arr_ty = st.tys.get(ty::Data::Array(x_param.ty));
       st.unify(arr_expr, want_arr_ty, arr_ty);
-      Some(st.tys.get(ty::Data::Union(ty::Union::from([ac_param.ty, func_ret, init_ty]))))
+      Some(st.tys.get(ty::Data::mk_union([ac_param.ty, func_ret, init_ty])))
     }
     _ => None,
   }

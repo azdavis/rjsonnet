@@ -12,18 +12,18 @@ fn main() {
     (i!("NULL"), q!(Data::Prim(super::Prim::Null))),
     (i!("STRING"), q!(Data::Prim(super::Prim::String))),
     (i!("NUMBER"), q!(Data::Prim(super::Prim::Number))),
-    (i!("NEVER"), q!(Data::Union(Union::new()))),
-    (i!("BOOL"), q!(Data::Union(Union::from([Ty::TRUE, Ty::FALSE])))),
+    (i!("NEVER"), q!(Data::mk_union([]))),
+    (i!("BOOL"), q!(Data::mk_union([Ty::TRUE, Ty::FALSE]))),
     (i!("ARRAY_BOOL"), q!(Data::Array(Ty::BOOL))),
     (i!("ARRAY_NUMBER"), q!(Data::Array(Ty::NUMBER))),
     (i!("ARRAY_STRING"), q!(Data::Array(Ty::STRING))),
     (i!("ARRAY_KEY_VALUE"), q!(Data::Array(Ty::KEY_VALUE))),
     (i!("ARRAY_ANY"), q!(Data::Array(Ty::ANY))),
-    (i!("ARRAY_OR_OBJECT"), q!(Data::Union(Union::from([Ty::ARRAY_ANY, Ty::OBJECT])))),
-    (i!("STRING_OR_ARRAY_NUMBER"), q!(Data::Union(Union::from([Ty::STRING, Ty::ARRAY_NUMBER])))),
-    (i!("STRING_OR_ARRAY_ANY"), q!(Data::Union(Union::from([Ty::STRING, Ty::ARRAY_ANY])))),
-    (i!("NUMBER_OR_NULL"), q!(Data::Union(Union::from([Ty::NUMBER, Ty::NULL])))),
-    (i!("NUMBER_OR_STRING"), q!(Data::Union(Union::from([Ty::NUMBER, Ty::STRING])))),
+    (i!("ARRAY_OR_OBJECT"), q!(Data::mk_union([Ty::ARRAY_ANY, Ty::OBJECT]))),
+    (i!("STRING_OR_ARRAY_NUMBER"), q!(Data::mk_union([Ty::STRING, Ty::ARRAY_NUMBER]))),
+    (i!("STRING_OR_ARRAY_ANY"), q!(Data::mk_union([Ty::STRING, Ty::ARRAY_ANY]))),
+    (i!("NUMBER_OR_NULL"), q!(Data::mk_union([Ty::NUMBER, Ty::NULL]))),
+    (i!("NUMBER_OR_STRING"), q!(Data::mk_union([Ty::NUMBER, Ty::STRING]))),
     (i!("HOF_1"), q!(Data::Fn(super::Fn::Hof(super::HofParams::One)))),
     (i!("HOF_2"), q!(Data::Fn(super::Fn::Hof(super::HofParams::Two)))),
     (i!("OBJECT"), q!(Data::Object(super::Object::unknown()))),
@@ -83,7 +83,7 @@ fn main() {
   let all = q! {
     use std::collections::BTreeMap;
     use jsonnet_expr::{StdFn, Str, Id};
-    use super::{Ty, Data, StdFnSig, Param, Union};
+    use super::{Ty, Data, StdFnSig, Param};
 
     pub const _GENERATED_BY: &str = #file;
 
