@@ -15,10 +15,10 @@ struct DefinedId {
 
 pub(crate) type Facts = rustc_hash::FxHashMap<Id, Fact>;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub(crate) struct Fact {
-  pub(crate) ty: ty::Ty,
-  pub(crate) partial: bool,
+  ty: ty::Ty,
+  partial: bool,
 }
 
 impl Fact {
@@ -28,6 +28,23 @@ impl Fact {
 
   pub(crate) const fn total(ty: ty::Ty) -> Self {
     Self { ty, partial: false }
+  }
+
+  pub(crate) fn and(self, tys: &mut ty::MutStore<'_>, other: Self) -> Self {
+    Self { ty: ty::logic::and(tys, self.ty, other.ty), partial: self.partial && other.partial }
+  }
+
+  pub(crate) fn or(self, tys: &mut ty::MutStore<'_>, other: Self) -> Self {
+    Self {
+      ty: tys.get(ty::Data::mk_union([self.ty, other.ty])),
+      partial: self.partial || other.partial,
+    }
+  }
+
+  /// for when we don't need to do ty logic with the fact, we know it's straight-up the whole truth,
+  /// as in [`crate::facts::get_always`].
+  pub(crate) fn into_ty(self) -> ty::Ty {
+    self.ty
   }
 }
 

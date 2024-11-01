@@ -126,7 +126,7 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
         let fs = facts::get_always(&mut st.tys, &st.scope, ar, *body);
         for (id, fact) in fs {
           if let Some(cur) = tmp.get_mut(&id) {
-            *cur = fact.ty;
+            *cur = fact.into_ty();
           }
           // ignore facts about non-params.
         }

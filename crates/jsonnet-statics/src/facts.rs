@@ -123,11 +123,8 @@ pub(crate) fn get_cond(
         get_cond(tys, scope, ar, &mut fst, cond);
         get_cond(tys, scope, ar, &mut snd, Some(no));
         for (id, fst) in fst {
-          let Some(snd) = snd.get(&id) else { continue };
-          let fact = Fact {
-            ty: tys.get(ty::Data::mk_union([fst.ty, snd.ty])),
-            partial: fst.partial || snd.partial,
-          };
+          let Some(&snd) = snd.get(&id) else { continue };
+          let fact = fst.or(tys, snd);
           add_fact(tys, ac, id, fact);
         }
       }
@@ -217,8 +214,7 @@ fn add_fact(tys: &mut ty::MutStore<'_>, ac: &mut Facts, id: Id, fact: Fact) {
   match ac.entry(id) {
     Entry::Occupied(mut entry) => {
       let old = entry.get();
-      let new =
-        Fact { ty: ty::logic::and(tys, old.ty, fact.ty), partial: old.partial && fact.partial };
+      let new = old.and(tys, fact);
       entry.insert(new);
     }
     Entry::Vacant(entry) => {
