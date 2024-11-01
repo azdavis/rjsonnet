@@ -10,8 +10,8 @@ use always::always;
 ///
 /// A bit similar to unification.
 pub fn and(tys: &mut MutStore<'_>, x: Ty, y: Ty) -> Ty {
-  // speed up a simple case
-  if x == y {
+  // speed up simple cases (correctness is maintained if these are removed)
+  if x == y || y == Ty::ANY {
     return x;
   }
   match (tys.data(x), tys.data(y)) {
@@ -69,9 +69,12 @@ fn union_and(tys: &mut MutStore<'_>, xs: Union, y: Ty) -> Ty {
 /// Note that we do NOT handle the case where x is any by returning a big union type of everything
 /// except y. This is "okay" because having any already makes the type system unsound.
 pub fn minus(tys: &mut MutStore<'_>, x: Ty, y: Ty) -> Ty {
-  // speed up a simple case
+  // speed up simple cases (correctness is maintained if these are removed)
   if x == y || x == Ty::NEVER {
     return Ty::NEVER;
+  }
+  if y == Ty::NEVER {
+    return x;
   }
   match (tys.data(x), tys.data(y)) {
     (Data::Prim(Prim::Any), _) => Ty::ANY,
