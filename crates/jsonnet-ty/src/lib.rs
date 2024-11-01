@@ -80,8 +80,26 @@ pub enum Prim {
   /// Anything at all.
   ///
   /// This is like `any` in TypeScript and `T.untyped` in Sorbet (Ruby type-checker). It is BOTH a
-  /// "top type" and a "bottom type". That is, anything can be coerced to it, and it can be coerced
-  /// to anything. In that sense, it is the ultimate escape-hatch type.
+  /// "top type" and a "bottom type":
+  ///
+  /// - Anything can be coerced to it (top type)
+  /// - It can be coerced to anything (bottom type)
+  ///
+  /// In that sense, it is the ultimate escape-hatch type. Its presence in the type system means the
+  /// type system is not sound.
+  ///
+  /// But that's ok: the goal of the type system is mainly to show useful information **when we have
+  /// that information** (from inference, etc), and give up and fall back to this "type" when we
+  /// don't know.
+  ///
+  /// If the goal was to ensure soundness, we'd probably have to do at least one of:
+  ///
+  /// - Demand way more type annotations from the source language. This is more disruptive to the
+  ///   user and thus not amenable to incremental adoption.
+  /// - Have a much more sophisticated inference algorithm. This would be more burden on
+  ///   implementors. It is also impossible by Rice's theorem to completely analyze arbitrary
+  ///   jsonnet (or any language) and emit type errors **if and only if** a type error would happen
+  ///   at runtime.
   Any,
   /// The type of `true`.
   True,
