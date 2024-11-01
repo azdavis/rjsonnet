@@ -90,8 +90,13 @@ impl Fact {
     if self.partial {
       Self::partial(ty::Ty::ANY)
     } else {
-      // we don't do self.and = minus(ANY, self.minus) because we don't support minus(ANY, ...).
-      Self { and: ty::Ty::ANY, minus: self.and, partial: false }
+      Self {
+        // we don't do self.and = minus(ANY, self.minus) because we don't support minus(ANY, ...).
+        and: ty::Ty::ANY,
+        // need to make sure not to minus everything, leaving nothing aka never.
+        minus: if self.and == ty::Ty::ANY { ty::Ty::NEVER } else { self.and },
+        partial: false,
+      }
     }
   }
 

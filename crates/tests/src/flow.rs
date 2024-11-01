@@ -46,7 +46,6 @@ f(null)
 }
 
 #[test]
-#[should_panic = "none of the lines were equal"]
 fn not_2() {
   JsonnetInput::manifest(
     r#"
