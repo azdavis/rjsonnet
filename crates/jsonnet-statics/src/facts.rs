@@ -72,7 +72,7 @@ fn get_assert(
   }
 }
 
-/// Process a fact from a single if-cond.
+/// Process facts from a single if-cond.
 pub(crate) fn get_cond(
   tys: &mut ty::MutStore<'_>,
   scope: &Scope,
