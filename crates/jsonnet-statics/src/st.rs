@@ -58,8 +58,8 @@ impl<'a> St<'a> {
   }
 
   pub(crate) fn define_self_super(&mut self) {
-    self.scope.define(Id::self_, ty::Ty::ANY, Def::KwIdent);
-    self.scope.define(Id::super_, ty::Ty::ANY, Def::KwIdent);
+    self.scope.define(Id::self_, ty::Ty::OBJECT, Def::KwIdent);
+    self.scope.define(Id::super_, ty::Ty::OBJECT, Def::KwIdent);
   }
 
   pub(crate) fn undefine_self_super(&mut self) {

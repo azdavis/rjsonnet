@@ -5,6 +5,7 @@ Things under "main" are not released yet.
 ## main
 
 - Improve go-to-def, etc through asserts.
+- Improve typing for `self`, `super`, and `$`.
 
 ## v0.7.1
 
