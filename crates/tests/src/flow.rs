@@ -36,7 +36,7 @@ local f(x) =
   if x != null && std.length(x) >= 10 then
     x
   else
-    "Hi"
+    "Hi";
 
 f(null)
 "#,
