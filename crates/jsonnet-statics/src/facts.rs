@@ -138,6 +138,13 @@ pub(crate) fn get_cond(
       get_eq_lit(tys, ar, ac, lhs, rhs);
       get_eq_lit(tys, ar, ac, rhs, lhs);
     }
+    &ExprData::UnaryOp { op: jsonnet_expr::UnaryOp::LogicalNot, inner } => {
+      let mut neg = Facts::default();
+      get_cond(tys, scope, ar, &mut neg, inner);
+      for (id, fact) in neg {
+        add_fact(tys, ac, id, fact.negate());
+      }
+    }
     _ => {}
   }
 }

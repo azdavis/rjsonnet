@@ -7,6 +7,7 @@ Things under "main" are not released yet.
 - Improve go-to-def, etc through asserts.
 - Improve typing for `self`, `super`, and `$`.
 - Show type of fully unknown object as `object` instead of `{ ... }`.
+- Support flow typing for negated conditionals.
 
 ## v0.7.1
 
