@@ -124,7 +124,7 @@ fn assert_or() {
   JsonnetInput::manifest(
     r"
 local thing(a, b) =
-##    ^ hover: (a: null | number, b: true | false | string) => number
+##    ^ hover: (a: null | number, b: boolean | string) => number
   assert std.isNumber(a) || a == null;
   assert std.isString(b) || std.isBoolean(b);
   if a == null then

@@ -165,16 +165,23 @@ impl<'a> fmt::Display for TyDisplay<'a> {
         FnDisplay { params, ret, prec: self.prec, stuff: self.stuff }.fmt(f)
       }
       Data::Union(tys) => {
-        // special case
-        // TODO: make this better: e.g. `true | false | number` should show as `boolean | number`
-        if self.ty == Ty::BOOL {
-          return f.write_str("boolean");
-        }
-        let mut iter = tys.iter().map(|&ty| self.with(ty, Prec::Union));
-        let Some(ty) = iter.next() else { return f.write_str("never") };
+        let has_bool = tys.contains(&Ty::TRUE) && tys.contains(&Ty::FALSE);
+        let mut iter = tys.iter().filter_map(|&ty| {
+          if has_bool && (ty == Ty::TRUE || ty == Ty::FALSE) {
+            None
+          } else {
+            Some(self.with(ty, Prec::Union))
+          }
+        });
+        let Some(ty) = iter.next() else {
+          return f.write_str(if has_bool { "boolean" } else { "never" });
+        };
         let needs_paren = self.prec > Prec::Union;
         if needs_paren {
           f.write_str("(")?;
+        }
+        if has_bool {
+          f.write_str("boolean | ")?;
         }
         ty.fmt(f)?;
         for ty in iter {
