@@ -8,6 +8,8 @@ Things under "main" are not released yet.
 - Improve typing for `self`, `super`, and `$`.
 - Show type of fully unknown object as `object` instead of `{ ... }`.
 - Support flow typing for negated conditionals. This helps when e.g. narrowing a type that might be `null` to be not `null`.
+- Improve type checking of `+` with union types.
+- Improve formatting of union types with `boolean`.
 
 ## v0.7.1
 
