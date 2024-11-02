@@ -104,19 +104,8 @@ pub(crate) struct Expect {
 
 impl Expect {
   fn new(msg: &str) -> Self {
-    if let Some(msg) = msg.strip_prefix("def: ") {
-      return Self { kind: Kind::Def, msg: msg.to_owned() };
-    }
-    if let Some(msg) = msg.strip_prefix("use: ") {
-      return Self { kind: Kind::Use, msg: msg.to_owned() };
-    }
-    if let Some(msg) = msg.strip_prefix("diagnostic: ") {
-      return Self { kind: Kind::Diagnostic, msg: msg.to_owned() };
-    }
-    if let Some(msg) = msg.strip_prefix("hover: ") {
-      return Self { kind: Kind::Hover, msg: msg.to_owned() };
-    }
-    panic!("no prefix: {msg}")
+    let Some((lhs, rhs)) = msg.split_once(':') else { panic!("no prefix: {msg}") };
+    Expect { kind: lhs.parse().expect("not a kind"), msg: rhs.trim().to_owned() }
   }
 
   #[expect(clippy::too_many_arguments)]
@@ -193,13 +182,34 @@ pub(crate) enum Kind {
   Hover,
 }
 
+impl Kind {
+  fn as_str(self) -> &'static str {
+    match self {
+      Kind::Def => "def",
+      Kind::Use => "use",
+      Kind::Diagnostic => "diagnostic",
+      Kind::Hover => "hover",
+    }
+  }
+}
+
+impl std::str::FromStr for Kind {
+  type Err = ();
+
+  fn from_str(s: &str) -> Result<Self, Self::Err> {
+    let ret = match s {
+      "def" => Kind::Def,
+      "use" => Kind::Use,
+      "diagnostic" => Kind::Diagnostic,
+      "hover" => Kind::Hover,
+      _ => return Err(()),
+    };
+    Ok(ret)
+  }
+}
+
 impl fmt::Display for Kind {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    match self {
-      Kind::Def => f.write_str("def"),
-      Kind::Use => f.write_str("use"),
-      Kind::Diagnostic => f.write_str("diagnostic"),
-      Kind::Hover => f.write_str("hover"),
-    }
+    f.write_str(self.as_str())
   }
 }
