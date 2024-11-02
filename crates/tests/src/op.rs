@@ -48,7 +48,6 @@ local f(x) =
 }
 
 #[test]
-#[should_panic = "no diagnostics at range"]
 fn add_union_err() {
   JsonnetInput::manifest(
     r#"

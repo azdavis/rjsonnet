@@ -256,9 +256,15 @@ fn get_add(st: &mut st::St<'_>, expr: ExprMust, lhs_ty: ty::Ty, rhs_ty: ty::Ty) 
       obj.has_unknown = obj.has_unknown || rhs_obj.has_unknown;
       st.tys.get(ty::Data::Object(obj))
     }
-    (ty::Data::Union(_), _) | (_, ty::Data::Union(_)) => {
-      log::warn!("TODO: check unions for +");
-      ty::Ty::ANY
+    (ty::Data::Union(lhs_tys), _) => {
+      let iter = lhs_tys.clone().into_iter().map(|lhs_ty| get_add(st, expr, lhs_ty, rhs_ty));
+      let u = ty::Data::Union(iter.collect());
+      st.tys.get(u)
+    }
+    (_, ty::Data::Union(rhs_tys)) => {
+      let iter = rhs_tys.clone().into_iter().map(|rhs_ty| get_add(st, expr, lhs_ty, rhs_ty));
+      let u = ty::Data::Union(iter.collect());
+      st.tys.get(u)
     }
     _ => {
       st.err(expr, error::Kind::Invalid(lhs_ty, error::Invalid::Plus(rhs_ty)));
