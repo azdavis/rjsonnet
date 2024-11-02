@@ -36,21 +36,21 @@ fn main() {
     ),
     (i!("STD"), q!(Data::Object(super::Object::std()))),
   ];
-  let std_fn_types = jsonnet_std::FNS.iter().map(|f| {
+  let std_fn_types = jsonnet_std_sig::FNS.iter().map(|f| {
     let name = i!("{}", f.name.ident());
     (name.clone(), q!(Data::Fn(super::Fn::Std(StdFn::#name))), false)
   });
-  let std_fn_match_arms = jsonnet_std::FNS.iter().map(|f| {
+  let std_fn_match_arms = jsonnet_std_sig::FNS.iter().map(|f| {
     let name = i!("{}", f.name.ident());
     q! { StdFn::#name => Ty::#name, }
   });
-  let std_map_entries = jsonnet_std::FNS.iter().map(|f| {
+  let std_map_entries = jsonnet_std_sig::FNS.iter().map(|f| {
     let name = i!("{}", f.name.ident());
     q! { (Str::#name, Ty::#name) }
   });
   let all_std_sigs = {
-    let mut tmp = BTreeMap::<jsonnet_std::Sig, BTreeSet<jsonnet_std::S>>::new();
-    for f in &jsonnet_std::FNS {
+    let mut tmp = BTreeMap::<jsonnet_std_sig::Sig, BTreeSet<jsonnet_std_sig::S>>::new();
+    for f in &jsonnet_std_sig::FNS {
       assert!(tmp.entry(f.sig).or_default().insert(f.name));
     }
     tmp
@@ -140,29 +140,29 @@ fn main() {
   write_rs_tokens::go(all, "generated.rs");
 }
 
-fn mk_ty(ty: jsonnet_std::Ty) -> proc_macro2::TokenStream {
+fn mk_ty(ty: jsonnet_std_sig::Ty) -> proc_macro2::TokenStream {
   match ty {
-    jsonnet_std::Ty::Any => q!(Ty::ANY),
-    jsonnet_std::Ty::True => q!(Ty::TRUE),
-    jsonnet_std::Ty::Bool => q!(Ty::BOOL),
-    jsonnet_std::Ty::Num => q!(Ty::NUMBER),
-    jsonnet_std::Ty::Str => q!(Ty::STRING),
-    jsonnet_std::Ty::ArrBool => q!(Ty::ARRAY_BOOL),
-    jsonnet_std::Ty::ArrNum => q!(Ty::ARRAY_NUMBER),
-    jsonnet_std::Ty::ArrStr => q!(Ty::ARRAY_STRING),
-    jsonnet_std::Ty::ArrKv => q!(Ty::ARRAY_KEY_VALUE),
-    jsonnet_std::Ty::ArrAny => q!(Ty::ARRAY_ANY),
-    jsonnet_std::Ty::Obj => q!(Ty::OBJECT),
-    jsonnet_std::Ty::StrOrArrNum => q!(Ty::STRING_OR_ARRAY_NUMBER),
-    jsonnet_std::Ty::StrOrArrAny => q!(Ty::STRING_OR_ARRAY_ANY),
-    jsonnet_std::Ty::NumOrNull => q!(Ty::NUMBER_OR_NULL),
-    jsonnet_std::Ty::NumOrStr => q!(Ty::NUMBER_OR_STRING),
-    jsonnet_std::Ty::Hof1 => q!(Ty::HOF_1),
-    jsonnet_std::Ty::Hof2 => q!(Ty::HOF_2),
+    jsonnet_std_sig::Ty::Any => q!(Ty::ANY),
+    jsonnet_std_sig::Ty::True => q!(Ty::TRUE),
+    jsonnet_std_sig::Ty::Bool => q!(Ty::BOOL),
+    jsonnet_std_sig::Ty::Num => q!(Ty::NUMBER),
+    jsonnet_std_sig::Ty::Str => q!(Ty::STRING),
+    jsonnet_std_sig::Ty::ArrBool => q!(Ty::ARRAY_BOOL),
+    jsonnet_std_sig::Ty::ArrNum => q!(Ty::ARRAY_NUMBER),
+    jsonnet_std_sig::Ty::ArrStr => q!(Ty::ARRAY_STRING),
+    jsonnet_std_sig::Ty::ArrKv => q!(Ty::ARRAY_KEY_VALUE),
+    jsonnet_std_sig::Ty::ArrAny => q!(Ty::ARRAY_ANY),
+    jsonnet_std_sig::Ty::Obj => q!(Ty::OBJECT),
+    jsonnet_std_sig::Ty::StrOrArrNum => q!(Ty::STRING_OR_ARRAY_NUMBER),
+    jsonnet_std_sig::Ty::StrOrArrAny => q!(Ty::STRING_OR_ARRAY_ANY),
+    jsonnet_std_sig::Ty::NumOrNull => q!(Ty::NUMBER_OR_NULL),
+    jsonnet_std_sig::Ty::NumOrStr => q!(Ty::NUMBER_OR_STRING),
+    jsonnet_std_sig::Ty::Hof1 => q!(Ty::HOF_1),
+    jsonnet_std_sig::Ty::Hof2 => q!(Ty::HOF_2),
   }
 }
 
-fn mk_param(param: jsonnet_std::Param) -> proc_macro2::TokenStream {
+fn mk_param(param: jsonnet_std_sig::Param) -> proc_macro2::TokenStream {
   let id = i!("{}", param.name);
   let ty = mk_ty(param.ty);
   let required = param.required;

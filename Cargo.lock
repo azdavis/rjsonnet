@@ -463,7 +463,7 @@ dependencies = [
  "always",
  "code-h2-md-map",
  "finite-float",
- "jsonnet-std",
+ "jsonnet-std-sig",
  "la-arena",
  "paths",
  "proc-macro2",
@@ -526,7 +526,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "jsonnet-std"
+name = "jsonnet-std-sig"
 version = "0.7.1"
 
 [[package]]
@@ -546,7 +546,7 @@ version = "0.7.1"
 dependencies = [
  "always",
  "jsonnet-expr",
- "jsonnet-std",
+ "jsonnet-std-sig",
  "proc-macro2",
  "quote",
  "rustc-hash",

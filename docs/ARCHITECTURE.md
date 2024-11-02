@@ -66,9 +66,9 @@ A thin wrapper over jsonnet-escape, integrating it with the types from jsonnet-s
 
 A resolver for import paths.
 
-### `crates/jsonnet-std`
+### `crates/jsonnet-std-sig`
 
-Rust code describing some important things about the std fns.
+Rust code describing the signatures of the std fns.
 
 ## Overall crates
 

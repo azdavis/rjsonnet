@@ -26,4 +26,4 @@ proc-macro2.workspace = true
 quote.workspace = true
 write-rs-tokens.workspace = true
 
-jsonnet-std.path = "../jsonnet-std"
+jsonnet-std-sig.path = "../jsonnet-std-sig"
