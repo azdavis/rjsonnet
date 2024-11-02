@@ -174,40 +174,7 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
       let lhs_ty = get(st, ar, *lhs);
       let rhs_ty = get(st, ar, *rhs);
       match op {
-        BinaryOp::Add => {
-          match (st.tys.data(lhs_ty), st.tys.data(rhs_ty)) {
-            (ty::Data::Prim(ty::Prim::Any), _) | (_, ty::Data::Prim(ty::Prim::Any)) => ty::Ty::ANY,
-            // add numbers.
-            (ty::Data::Prim(ty::Prim::Number), ty::Data::Prim(ty::Prim::Number)) => ty::Ty::NUMBER,
-            // if any operand is string, coerce the other to string.
-            (ty::Data::Prim(ty::Prim::String), _) | (_, ty::Data::Prim(ty::Prim::String)) => {
-              ty::Ty::STRING
-            }
-            // concat arrays.
-            (ty::Data::Array(lhs_elem), ty::Data::Array(rhs_elem)) => {
-              let elem = st.tys.get(ty::Data::mk_union([*lhs_elem, *rhs_elem]));
-              st.tys.get(ty::Data::Array(elem))
-            }
-            // add object fields.
-            (ty::Data::Object(lhs_obj), ty::Data::Object(rhs_obj)) => {
-              let mut obj = lhs_obj.clone();
-              // right overrides left.
-              let rhs_known = rhs_obj.known.iter().map(|(k, &v)| (k.clone(), v));
-              obj.known.extend(rhs_known);
-              // this has unknown if either has unknown.
-              obj.has_unknown = obj.has_unknown || rhs_obj.has_unknown;
-              st.tys.get(ty::Data::Object(obj))
-            }
-            (ty::Data::Union(_), _) | (_, ty::Data::Union(_)) => {
-              log::warn!("TODO: check unions for +");
-              ty::Ty::ANY
-            }
-            _ => {
-              st.err(expr, error::Kind::Invalid(lhs_ty, error::Invalid::Plus(rhs_ty)));
-              ty::Ty::ANY
-            }
-          }
-        }
+        BinaryOp::Add => get_add(st, expr, lhs_ty, rhs_ty),
         BinaryOp::Mul
         | BinaryOp::Div
         | BinaryOp::Sub
@@ -265,6 +232,39 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
   // huge problem.
   st.insert_expr_ty(expr, ret);
   ret
+}
+
+fn get_add(st: &mut st::St<'_>, expr: ExprMust, lhs_ty: ty::Ty, rhs_ty: ty::Ty) -> ty::Ty {
+  match (st.tys.data(lhs_ty), st.tys.data(rhs_ty)) {
+    (ty::Data::Prim(ty::Prim::Any), _) | (_, ty::Data::Prim(ty::Prim::Any)) => ty::Ty::ANY,
+    // add numbers.
+    (ty::Data::Prim(ty::Prim::Number), ty::Data::Prim(ty::Prim::Number)) => ty::Ty::NUMBER,
+    // if any operand is string, coerce the other to string.
+    (ty::Data::Prim(ty::Prim::String), _) | (_, ty::Data::Prim(ty::Prim::String)) => ty::Ty::STRING,
+    // concat arrays.
+    (ty::Data::Array(lhs_elem), ty::Data::Array(rhs_elem)) => {
+      let elem = st.tys.get(ty::Data::mk_union([*lhs_elem, *rhs_elem]));
+      st.tys.get(ty::Data::Array(elem))
+    }
+    // add object fields.
+    (ty::Data::Object(lhs_obj), ty::Data::Object(rhs_obj)) => {
+      let mut obj = lhs_obj.clone();
+      // right overrides left.
+      let rhs_known = rhs_obj.known.iter().map(|(k, &v)| (k.clone(), v));
+      obj.known.extend(rhs_known);
+      // this has unknown if either has unknown.
+      obj.has_unknown = obj.has_unknown || rhs_obj.has_unknown;
+      st.tys.get(ty::Data::Object(obj))
+    }
+    (ty::Data::Union(_), _) | (_, ty::Data::Union(_)) => {
+      log::warn!("TODO: check unions for +");
+      ty::Ty::ANY
+    }
+    _ => {
+      st.err(expr, error::Kind::Invalid(lhs_ty, error::Invalid::Plus(rhs_ty)));
+      ty::Ty::ANY
+    }
+  }
 }
 
 #[allow(clippy::single_match_else)]
