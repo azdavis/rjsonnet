@@ -29,3 +29,37 @@ fn add_str() {
     .add_all()
     .check();
 }
+
+#[test]
+fn add_union_ok() {
+  JsonnetInput::manifest(
+    r#"
+local f(x) =
+  assert std.isNumber(x) || std.isString(x);
+  x + 3;
+
+[f(2), f("hi")]
+"#,
+    r#"
+[5, "hi3"]
+"#,
+  )
+  .check();
+}
+
+#[test]
+#[should_panic = "no diagnostics at range"]
+fn add_union_err() {
+  JsonnetInput::manifest(
+    r#"
+local f(x) =
+  assert std.isNumber(x) || std.isObject(x);
+  x + 3;
+##^^^^^ diagnostic: not a pair of types that can be added with `+`; left:  `object`; right: `number`
+
+f(4)
+"#,
+    "7",
+  )
+  .check();
+}
