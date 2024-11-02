@@ -143,7 +143,10 @@ impl Expect {
           panic!("{path_str}:{range}: no diagnostics at range")
         };
         let want = self.msg.as_str();
-        assert!(range_map.remove(want), "{path_str}:{range}: no diagnostic matches: {want}");
+        assert!(
+          range_map.remove(want),
+          "{path_str}:{range}: no diagnostic matches: {want}; available: {range_map:?}"
+        );
         if range_map.is_empty() {
           assert!(ds_map.remove(&range).expect("just got it").is_empty());
         }
