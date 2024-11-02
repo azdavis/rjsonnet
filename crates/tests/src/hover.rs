@@ -263,3 +263,22 @@ f("bye")
   )
   .check();
 }
+
+#[test]
+fn take_bool() {
+  JsonnetInput::manifest(
+    r#"
+local f(x) =
+##    ^ hover: (x: boolean) => number
+  assert std.isBoolean(x);
+  if x then 1 else 0
+;
+
+[f(true), f(false)]
+"#,
+    r#"
+[1, 0]
+"#,
+  )
+  .check();
+}
