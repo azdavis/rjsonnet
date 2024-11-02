@@ -147,10 +147,10 @@ fn object_assert_1() {
     r#"
 local func(x) = {
 ##    ^ hover: (x: any) => { thing: string }
-  local gunc(x) =
+  local thunk(x) =
     assert std.isNumber(x);
     'hi',
-  thing: gunc(x),
+  thing: thunk(x),
 };
 
 func(1)
