@@ -1,5 +1,6 @@
 //! Build some ty-related things.
 
+use jsonnet_std_sig::Ty;
 use quote::{format_ident as i, quote as q};
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -140,25 +141,25 @@ fn main() {
   write_rs_tokens::go(all, "generated.rs");
 }
 
-fn mk_ty(ty: jsonnet_std_sig::Ty) -> proc_macro2::TokenStream {
+fn mk_ty(ty: Ty) -> proc_macro2::TokenStream {
   match ty {
-    jsonnet_std_sig::Ty::Any => q!(Ty::ANY),
-    jsonnet_std_sig::Ty::True => q!(Ty::TRUE),
-    jsonnet_std_sig::Ty::Bool => q!(Ty::BOOL),
-    jsonnet_std_sig::Ty::Num => q!(Ty::NUMBER),
-    jsonnet_std_sig::Ty::Str => q!(Ty::STRING),
-    jsonnet_std_sig::Ty::ArrBool => q!(Ty::ARRAY_BOOL),
-    jsonnet_std_sig::Ty::ArrNum => q!(Ty::ARRAY_NUMBER),
-    jsonnet_std_sig::Ty::ArrStr => q!(Ty::ARRAY_STRING),
-    jsonnet_std_sig::Ty::ArrKv => q!(Ty::ARRAY_KEY_VALUE),
-    jsonnet_std_sig::Ty::ArrAny => q!(Ty::ARRAY_ANY),
-    jsonnet_std_sig::Ty::Obj => q!(Ty::OBJECT),
-    jsonnet_std_sig::Ty::StrOrArrNum => q!(Ty::STRING_OR_ARRAY_NUMBER),
-    jsonnet_std_sig::Ty::StrOrArrAny => q!(Ty::STRING_OR_ARRAY_ANY),
-    jsonnet_std_sig::Ty::NumOrNull => q!(Ty::NUMBER_OR_NULL),
-    jsonnet_std_sig::Ty::NumOrStr => q!(Ty::NUMBER_OR_STRING),
-    jsonnet_std_sig::Ty::Hof1 => q!(Ty::HOF_1),
-    jsonnet_std_sig::Ty::Hof2 => q!(Ty::HOF_2),
+    Ty::Any => q!(Ty::ANY),
+    Ty::True => q!(Ty::TRUE),
+    Ty::Bool => q!(Ty::BOOL),
+    Ty::Num => q!(Ty::NUMBER),
+    Ty::Str => q!(Ty::STRING),
+    Ty::ArrBool => q!(Ty::ARRAY_BOOL),
+    Ty::ArrNum => q!(Ty::ARRAY_NUMBER),
+    Ty::ArrStr => q!(Ty::ARRAY_STRING),
+    Ty::ArrKv => q!(Ty::ARRAY_KEY_VALUE),
+    Ty::ArrAny => q!(Ty::ARRAY_ANY),
+    Ty::Obj => q!(Ty::OBJECT),
+    Ty::StrOrArrNum => q!(Ty::STRING_OR_ARRAY_NUMBER),
+    Ty::StrOrArrAny => q!(Ty::STRING_OR_ARRAY_ANY),
+    Ty::NumOrNull => q!(Ty::NUMBER_OR_NULL),
+    Ty::NumOrStr => q!(Ty::NUMBER_OR_STRING),
+    Ty::Hof1 => q!(Ty::HOF_1),
+    Ty::Hof2 => q!(Ty::HOF_2),
   }
 }
 

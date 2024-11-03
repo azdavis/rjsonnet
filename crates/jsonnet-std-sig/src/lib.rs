@@ -1,4 +1,4 @@
-//! The names and parameter names of the std lib fns.
+//! The names and parameter names of the standard library functions.
 
 /// A name-content string pair.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
