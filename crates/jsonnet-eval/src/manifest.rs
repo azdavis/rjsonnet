@@ -1,8 +1,8 @@
 //! Manifesting Jsonnet values into JSON values.
 
-use crate::val::{json, jsonnet};
 use crate::{error, exec, Cx};
 use always::always;
+use jsonnet_val::{json, jsonnet};
 use std::collections::BTreeMap;
 
 /// Manifests the Jsonnet value into a JSON value.

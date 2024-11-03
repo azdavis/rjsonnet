@@ -33,12 +33,6 @@ impl From<arg::Error> for Error {
 }
 
 #[derive(Debug, Clone)]
-pub struct Cycle {
-  pub first_and_last: paths::PathId,
-  pub intervening: Vec<paths::PathId>,
-}
-
-#[derive(Debug, Clone)]
 pub enum Kind {
   Todo(&'static str),
   ArrayIdxNotInteger,
@@ -51,7 +45,7 @@ pub enum Kind {
   User(Str),
   /// should be caught in statics
   NotInScope(Id),
-  Cycle(Cycle),
+  Cycle(jsonnet_val::jsonnet::Cycle),
 }
 
 impl From<arg::ErrorKind> for Kind {

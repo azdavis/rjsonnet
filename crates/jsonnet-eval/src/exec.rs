@@ -1,13 +1,13 @@
 //! Executing Jsonnet expression to produce Jsonnet values.
 
 use crate::error::{self, Result};
-use crate::val::jsonnet::{Array, Env, Field, Fn, Get, Object, RegularFn, Val};
 use crate::{manifest, mk_todo, std_lib, Cx};
 use always::always;
 use finite_float::Float;
 use jsonnet_expr::{
   arg, BinaryOp, Expr, ExprData, ExprMust, Id, Prim, StdField, Str, StrArena, Visibility,
 };
+use jsonnet_val::jsonnet::{Array, Env, Field, Fn, Get, Object, RegularFn, Val};
 use rustc_hash::FxHashSet;
 use std::cmp::Ordering;
 use std::collections::BTreeMap;
@@ -16,7 +16,7 @@ const EPSILON: f64 = 0.0001;
 
 pub(crate) fn get(cx: Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
   let Some(expr) = expr else { return Err(error::Error::NoExpr) };
-  let expr_ar = &cx.exprs[&env.path].ar;
+  let expr_ar = &cx.exprs[&env.path()].ar;
   match &expr_ar[expr] {
     ExprData::Prim(p) => Ok(Val::Prim(p.clone())),
     ExprData::Object { binds, asserts, fields } => {
@@ -82,7 +82,7 @@ pub(crate) fn get(cx: Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
             StdField::ThisFile => {
               let s = cx
                 .paths
-                .get_path(env.path)
+                .get_path(env.path())
                 .as_path()
                 .to_string_lossy()
                 .into_owned()
@@ -455,7 +455,7 @@ fn str_conv(cx: Cx<'_>, val: Val) -> Result<Str> {
     Ok(s)
   } else {
     let json = manifest::get(cx, val)?;
-    let string = json.display(cx.str_ar, 0).to_string();
+    let string = json.display(cx.str_ar).to_string();
     Ok(cx.str_ar.str_shared(string.into_boxed_str()))
   }
 }

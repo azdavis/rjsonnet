@@ -21,7 +21,9 @@ rustc-hash.workspace = true
 serde_json.workspace = true
 text-pos.workspace = true
 
-jsonnet-analyze = { path = "../jsonnet-analyze", features = ["testing"] } # @ignore
-jsonnet-eval = { path = "../jsonnet-eval", features = ["testing"] } # @ignore
+jsonnet-analyze.path = "../jsonnet-analyze"
+jsonnet-eval.path = "../jsonnet-eval"
+jsonnet-expr.path = "../jsonnet-expr"
 jsonnet-ty.path = "../jsonnet-ty"
+jsonnet-val.path = "../jsonnet-val"
 lang-srv-state.path = "../lang-srv-state"

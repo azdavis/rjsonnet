@@ -1,10 +1,10 @@
 //! The standard library for Jsonnet, implemented in Rust.
 
 use crate::error::Result;
-use crate::val::jsonnet::{Array, Env, Fn, Val};
 use crate::{error, exec, mk_todo, Cx};
 use finite_float::Float;
 use jsonnet_expr::{std_fn, Expr, ExprMust, Id, Prim, StdFn, Str};
+use jsonnet_val::jsonnet::{Array, Env, Fn, Val};
 
 pub(crate) fn get(
   cx: Cx<'_>,

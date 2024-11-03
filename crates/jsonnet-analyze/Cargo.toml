@@ -37,7 +37,5 @@ jsonnet-resolve-import.path = "../jsonnet-resolve-import"
 jsonnet-statics.path = "../jsonnet-statics"
 jsonnet-syntax.path = "../jsonnet-syntax"
 jsonnet-ty.path = "../jsonnet-ty"
+jsonnet-val.path = "../jsonnet-val"
 lang-srv-state.path = "../lang-srv-state"
-
-[features]
-testing = ["jsonnet-eval/testing"]

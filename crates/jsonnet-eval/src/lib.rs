@@ -18,7 +18,6 @@ pub mod error;
 mod exec;
 mod manifest;
 mod std_lib;
-mod val;
 
 #[derive(Debug, Clone, Copy)]
 pub struct Cx<'a> {
@@ -54,48 +53,15 @@ impl Exprs {
   }
 }
 
-#[derive(Debug)]
-pub struct Jsonnet(val::jsonnet::Val);
-
 /// Executes the Jsonnet expression to produce a Jsonnet value.
 ///
 /// # Errors
 ///
 /// If execution failed.
-pub fn get_exec(cx: Cx<'_>, path: paths::PathId) -> error::Result<Jsonnet> {
+pub fn get_exec(cx: Cx<'_>, path: paths::PathId) -> error::Result<jsonnet_val::jsonnet::Val> {
   let Some(file) = cx.exprs.get(&path) else { return Err(error::Error::NoPath(path)) };
-  let env = val::jsonnet::Env::empty(path);
-  exec::get(cx, &env, file.top).map(Jsonnet)
-}
-
-#[derive(Debug, PartialEq, Eq)]
-pub struct Json(val::json::Val);
-
-impl Json {
-  /// Convert from serde.
-  #[must_use]
-  pub fn from_serde(ar: &jsonnet_expr::StrArena, serde: serde_json::Value) -> Self {
-    Json(val::json::Val::from_serde(ar, serde))
-  }
-
-  #[must_use]
-  pub fn display<'a>(&'a self, ar: &'a jsonnet_expr::StrArena) -> impl std::fmt::Display + 'a {
-    self.0.display(ar, 0)
-  }
-
-  /// Asserts this is a string.
-  ///
-  /// # Panics
-  ///
-  /// If it wasn't.
-  #[cfg(feature = "testing")]
-  pub fn assert_is_str(&self, ar: &jsonnet_expr::StrArena, want: &str) {
-    let val::json::Val::Prim(jsonnet_expr::Prim::String(got)) = &self.0 else {
-      panic!("did not get a String")
-    };
-    let got = ar.get(got);
-    assert_eq!(want, got);
-  }
+  let env = jsonnet_val::jsonnet::Env::empty(path);
+  exec::get(cx, &env, file.top)
 }
 
 /// Manifests the Jsonnet value into a JSON value.
@@ -103,8 +69,11 @@ impl Json {
 /// # Errors
 ///
 /// If manifestation failed.
-pub fn get_manifest(cx: Cx<'_>, val: Jsonnet) -> error::Result<Json> {
-  manifest::get(cx, val.0).map(Json)
+pub fn get_manifest(
+  cx: Cx<'_>,
+  val: jsonnet_val::jsonnet::Val,
+) -> error::Result<jsonnet_val::json::Val> {
+  manifest::get(cx, val)
 }
 
 pub(crate) fn mk_todo(expr: jsonnet_expr::ExprMust, msg: &'static str) -> error::Error {

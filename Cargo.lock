@@ -398,6 +398,7 @@ dependencies = [
  "jsonnet-statics",
  "jsonnet-syntax",
  "jsonnet-ty",
+ "jsonnet-val",
  "lang-srv-state",
  "log",
  "paths",
@@ -451,6 +452,7 @@ dependencies = [
  "always",
  "finite-float",
  "jsonnet-expr",
+ "jsonnet-val",
  "paths",
  "rustc-hash",
  "serde_json",
@@ -551,6 +553,18 @@ dependencies = [
  "quote",
  "rustc-hash",
  "write-rs-tokens",
+]
+
+[[package]]
+name = "jsonnet-val"
+version = "0.7.1"
+dependencies = [
+ "always",
+ "finite-float",
+ "jsonnet-expr",
+ "paths",
+ "rustc-hash",
+ "serde_json",
 ]
 
 [[package]]
@@ -930,7 +944,9 @@ dependencies = [
  "env_logger",
  "jsonnet-analyze",
  "jsonnet-eval",
+ "jsonnet-expr",
  "jsonnet-ty",
+ "jsonnet-val",
  "lang-srv-state",
  "log",
  "paths",

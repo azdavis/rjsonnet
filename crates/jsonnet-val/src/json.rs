@@ -7,14 +7,19 @@ use std::{collections::BTreeMap, fmt};
 
 /// A JSON value.
 #[derive(Debug, PartialEq, Eq)]
-pub(crate) enum Val {
+pub enum Val {
+  /// A primitive.
   Prim(Prim),
+  /// An object.
   Object(BTreeMap<Str, Val>),
+  /// An array.
   Array(Vec<Val>),
 }
 
 impl Val {
-  pub(crate) fn from_serde(ar: &jsonnet_expr::StrArena, serde: serde_json::Value) -> Self {
+  /// Turn a [`serde_json::Value`] into one of these.
+  #[must_use]
+  pub fn from_serde(ar: &jsonnet_expr::StrArena, serde: serde_json::Value) -> Self {
     match serde {
       serde_json::Value::Null => Self::Prim(Prim::Null),
       serde_json::Value::Bool(b) => Self::Prim(Prim::Bool(b)),
@@ -47,13 +52,10 @@ impl Val {
     }
   }
 
+  /// Display the value.
   #[must_use]
-  pub(crate) fn display<'a>(
-    &'a self,
-    ar: &'a jsonnet_expr::StrArena,
-    indent: usize,
-  ) -> impl fmt::Display + 'a {
-    DisplayVal { val: self, ar, indent }
+  pub fn display<'a>(&'a self, ar: &'a jsonnet_expr::StrArena) -> impl fmt::Display + 'a {
+    DisplayVal { val: self, ar, indent: 0 }
   }
 }
 
@@ -76,7 +78,7 @@ impl fmt::Display for DisplayVal<'_> {
       }
       Val::Array(vs) => {
         f.write_str("[")?;
-        let iter = vs.iter().map(|v| v.display(self.ar, self.indent + 1));
+        let iter = vs.iter().map(|val| DisplayVal { val, ar: self.ar, indent: self.indent + 1 });
         write_comma_sep(iter, self.indent, f)?;
         f.write_str("]")
       }
@@ -97,7 +99,7 @@ impl fmt::Display for DisplayKv<'_> {
     f.write_str("\"")?;
     self.ar.get(self.k).fmt(f)?;
     f.write_str("\": ")?;
-    self.v.display(self.ar, self.indent).fmt(f)
+    DisplayVal { val: self.v, ar: self.ar, indent: self.indent }.fmt(f)
   }
 }
 

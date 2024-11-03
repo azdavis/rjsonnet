@@ -26,6 +26,10 @@ For expressions, not so. This means syntactically identical expressions at diffe
 
 A type system for Jsonnet.
 
+### `crates/jsonnet-val`
+
+Jsonnet (and JSON) values.
+
 ## Stages crates
 
 These are the separate stages of analysis.

@@ -207,7 +207,7 @@ impl<'a> JsonnetInput<'a> {
           return;
         }
         let want: serde_json::Value = serde_json::from_str(want).expect("test input json");
-        let want = jsonnet_eval::Json::from_serde(st.strings(), want);
+        let want = jsonnet_val::json::Val::from_serde(st.strings(), want);
         if want != got {
           let want = want.display(st.strings());
           let got = got.display(st.strings());
@@ -215,7 +215,13 @@ impl<'a> JsonnetInput<'a> {
         }
       }
 
-      (OutcomeKind::String, Ok(got)) => got.assert_is_str(st.strings(), want),
+      (OutcomeKind::String, Ok(got)) => {
+        let jsonnet_val::json::Val::Prim(jsonnet_expr::Prim::String(got)) = &got else {
+          panic!("did not get a String")
+        };
+        let got = st.strings().get(got);
+        assert_eq!(want, got);
+      }
 
       (OutcomeKind::EvalError, Err(err)) => {
         let got = err.display(st.strings(), st.paths(), Some(pwd)).to_string();
