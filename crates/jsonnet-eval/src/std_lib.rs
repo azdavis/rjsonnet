@@ -134,13 +134,7 @@ pub(crate) fn get(
     StdFn::sign => {
       let arguments = std_fn::args::sign(positional, named, expr)?;
       let n = exec::get(cx, env, arguments.n)?;
-      let Val::Prim(Prim::Number(n)) = n else {
-        return Err(error::Error::Exec {
-          expr: arguments.n.unwrap_or(expr),
-          kind: error::Kind::IncompatibleTypes,
-        });
-      };
-      let val = n.value();
+      let val = get_num(&n, arguments.n.unwrap_or(expr))?;
       let res = if val == 0.0 {
         Float::positive_zero()
       } else if val.is_sign_positive() {
@@ -154,62 +148,28 @@ pub(crate) fn get(
       let arguments = std_fn::args::max(positional, named, expr)?;
       let a = exec::get(cx, env, arguments.a)?;
       let b = exec::get(cx, env, arguments.b)?;
-      let Val::Prim(Prim::Number(a)) = a else {
-        return Err(error::Error::Exec {
-          expr: arguments.a.unwrap_or(expr),
-          kind: error::Kind::IncompatibleTypes,
-        });
-      };
-      let Val::Prim(Prim::Number(b)) = b else {
-        return Err(error::Error::Exec {
-          expr: arguments.b.unwrap_or(expr),
-          kind: error::Kind::IncompatibleTypes,
-        });
-      };
-      Ok(Val::Prim(Prim::Number(a.max(b))))
+      let a = get_num(&a, arguments.a.unwrap_or(expr))?;
+      let b = get_num(&b, arguments.b.unwrap_or(expr))?;
+      let res = a.max(b);
+      mk_num(res, expr)
     }
     StdFn::min => {
       let arguments = std_fn::args::min(positional, named, expr)?;
       let a = exec::get(cx, env, arguments.a)?;
       let b = exec::get(cx, env, arguments.b)?;
-      let Val::Prim(Prim::Number(a)) = a else {
-        return Err(error::Error::Exec {
-          expr: arguments.a.unwrap_or(expr),
-          kind: error::Kind::IncompatibleTypes,
-        });
-      };
-      let Val::Prim(Prim::Number(b)) = b else {
-        return Err(error::Error::Exec {
-          expr: arguments.b.unwrap_or(expr),
-          kind: error::Kind::IncompatibleTypes,
-        });
-      };
-      Ok(Val::Prim(Prim::Number(a.min(b))))
+      let a = get_num(&a, arguments.a.unwrap_or(expr))?;
+      let b = get_num(&b, arguments.b.unwrap_or(expr))?;
+      let res = a.min(b);
+      mk_num(res, expr)
     }
     StdFn::pow => {
       let arguments = std_fn::args::pow(positional, named, expr)?;
       let x = exec::get(cx, env, arguments.x)?;
       let n = exec::get(cx, env, arguments.n)?;
-      let Val::Prim(Prim::Number(x)) = x else {
-        return Err(error::Error::Exec {
-          expr: arguments.x.unwrap_or(expr),
-          kind: error::Kind::IncompatibleTypes,
-        });
-      };
-      let Val::Prim(Prim::Number(n)) = n else {
-        return Err(error::Error::Exec {
-          expr: arguments.n.unwrap_or(expr),
-          kind: error::Kind::IncompatibleTypes,
-        });
-      };
-      let v = x.value().powf(n.value());
-      match Float::try_from(v) {
-        Ok(x) => Ok(Val::Prim(Prim::Number(x))),
-        Err(e) => Err(error::Error::Exec {
-          expr: arguments.x.unwrap_or(expr),
-          kind: error::Kind::Infinite(e),
-        }),
-      }
+      let x = get_num(&x, arguments.x.unwrap_or(expr))?;
+      let n = get_num(&n, arguments.n.unwrap_or(expr))?;
+      let res = x.powf(n);
+      mk_num(res, expr)
     }
     StdFn::exp => math_op(cx, env, positional, named, expr, f64::exp),
     // TODO is it log2 or log10?
@@ -643,16 +603,20 @@ fn math_op(
 ) -> Result<Val> {
   let arguments = std_fn::params::x::get(positional, named, expr)?;
   let x = exec::get(cx, env, arguments.x)?;
-  let Val::Prim(Prim::Number(x)) = x else {
-    return Err(error::Error::Exec {
-      expr: arguments.x.unwrap_or(expr),
-      kind: error::Kind::IncompatibleTypes,
-    });
-  };
-  match Float::try_from(f(x.value())) {
+  let x = get_num(&x, arguments.x.unwrap_or(expr))?;
+  mk_num(f(x), expr)
+}
+
+fn get_num(v: &Val, expr: ExprMust) -> Result<f64> {
+  match v {
+    Val::Prim(Prim::Number(x)) => Ok(x.value()),
+    _ => Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes }),
+  }
+}
+
+fn mk_num(n: f64, expr: ExprMust) -> Result<Val> {
+  match Float::try_from(n) {
     Ok(x) => Ok(Val::Prim(Prim::Number(x))),
-    Err(e) => {
-      Err(error::Error::Exec { expr: arguments.x.unwrap_or(expr), kind: error::Kind::Infinite(e) })
-    }
+    Err(e) => Err(error::Error::Exec { expr, kind: error::Kind::Infinite(e) }),
   }
 }
