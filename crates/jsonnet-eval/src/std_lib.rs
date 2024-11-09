@@ -4,7 +4,7 @@ use crate::error::Result;
 use crate::{error, exec, mk_todo, std_lib_impl, Cx};
 use finite_float::Float;
 use jsonnet_expr::{std_fn, Expr, ExprMust, Id, Prim, StdFn};
-use jsonnet_val::jsonnet::{Array, Env, Fn, Val};
+use jsonnet_val::jsonnet::{Array, Env, Val};
 
 pub(crate) fn get(
   cx: Cx<'_>,
@@ -64,22 +64,7 @@ pub(crate) fn get(
     StdFn::length => {
       let arguments = std_fn::args::length(positional, named, expr)?;
       let x = exec::get(cx, env, arguments.x)?;
-      let ret = match x {
-        Val::Prim(prim) => match prim {
-          Prim::Null | Prim::Bool(_) | Prim::Number(_) => {
-            return Err(error::Error::Exec {
-              expr: arguments.x.unwrap_or(expr),
-              kind: error::Kind::IncompatibleTypes,
-            });
-          }
-          // we want "number of codepoints", NOT byte length.
-          Prim::String(s) => cx.str_ar.get(&s).chars().count(),
-        },
-        Val::Object(obj) => obj.fields().len(),
-        Val::Array(arr) => arr.len(),
-        Val::Fn(Fn::Regular(func)) => func.params.iter().filter(|(_, d)| d.is_none()).count(),
-        Val::Fn(Fn::Std(func)) => func.required_params_count(),
-      };
+      let ret = std_lib_impl::length(&x, arguments.x.unwrap_or(expr), cx)?;
       Ok(Val::Prim(Prim::Number(Float::from(ret))))
     }
     StdFn::get => {
