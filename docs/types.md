@@ -74,15 +74,15 @@ There is some ambiguity in the type syntax that can be resolved by specifying th
 
 Union types bind stronger than function types. This means 1 and 2 below are equivalent, and distinct from 3.
 
-1. `(x: number) => string | boolean`
-2. `(x: number) => (string | boolean)`
-3. `((x: number) => string) | boolean`
+1. `(x: boolean) => number | string`
+2. `(x: boolean) => (number | string)`
+3. `((x: boolean) => number) | string`
 
 Array types bind stronger than union types. This means 1 and 2 below are equivalent, and distinct from 3.
 
-1. `string | boolean[]`
-2. `string | (boolean[])`
-3. `(string | boolean)[]`
+1. `number | string[]`
+2. `number | (string[])`
+3. `(number | string)[]`
 
 ## Annotations
 
