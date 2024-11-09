@@ -1,52 +1,52 @@
 //! Build some ty-related things.
 
 use jsonnet_std_sig::Ty;
-use quote::{format_ident as i, quote as q};
+use quote::quote as q;
 use std::collections::{BTreeMap, BTreeSet};
 
 #[expect(clippy::too_many_lines)]
 fn main() {
   let things = [
-    (i!("ANY"), q!(Data::Prim(super::Prim::Any))),
-    (i!("TRUE"), q!(Data::Prim(super::Prim::True))),
-    (i!("FALSE"), q!(Data::Prim(super::Prim::False))),
-    (i!("NULL"), q!(Data::Prim(super::Prim::Null))),
-    (i!("STRING"), q!(Data::Prim(super::Prim::String))),
-    (i!("NUMBER"), q!(Data::Prim(super::Prim::Number))),
-    (i!("NEVER"), q!(Data::mk_union([]))),
-    (i!("BOOL"), q!(Data::mk_union([Ty::TRUE, Ty::FALSE]))),
-    (i!("ARRAY_BOOL"), q!(Data::Array(Ty::BOOL))),
-    (i!("ARRAY_NUMBER"), q!(Data::Array(Ty::NUMBER))),
-    (i!("ARRAY_STRING"), q!(Data::Array(Ty::STRING))),
-    (i!("ARRAY_KEY_VALUE"), q!(Data::Array(Ty::KEY_VALUE))),
-    (i!("ARRAY_ANY"), q!(Data::Array(Ty::ANY))),
-    (i!("ARRAY_OR_OBJECT"), q!(Data::mk_union([Ty::ARRAY_ANY, Ty::OBJECT]))),
-    (i!("STRING_OR_ARRAY_NUMBER"), q!(Data::mk_union([Ty::STRING, Ty::ARRAY_NUMBER]))),
-    (i!("STRING_OR_ARRAY_ANY"), q!(Data::mk_union([Ty::STRING, Ty::ARRAY_ANY]))),
-    (i!("NUMBER_OR_NULL"), q!(Data::mk_union([Ty::NUMBER, Ty::NULL]))),
-    (i!("NUMBER_OR_STRING"), q!(Data::mk_union([Ty::NUMBER, Ty::STRING]))),
-    (i!("HOF_1"), q!(Data::Fn(super::Fn::Hof(super::HofParams::One)))),
-    (i!("HOF_2"), q!(Data::Fn(super::Fn::Hof(super::HofParams::Two)))),
-    (i!("OBJECT"), q!(Data::Object(super::Object::unknown()))),
+    (ident("ANY"), q!(Data::Prim(super::Prim::Any))),
+    (ident("TRUE"), q!(Data::Prim(super::Prim::True))),
+    (ident("FALSE"), q!(Data::Prim(super::Prim::False))),
+    (ident("NULL"), q!(Data::Prim(super::Prim::Null))),
+    (ident("STRING"), q!(Data::Prim(super::Prim::String))),
+    (ident("NUMBER"), q!(Data::Prim(super::Prim::Number))),
+    (ident("NEVER"), q!(Data::mk_union([]))),
+    (ident("BOOL"), q!(Data::mk_union([Ty::TRUE, Ty::FALSE]))),
+    (ident("ARRAY_BOOL"), q!(Data::Array(Ty::BOOL))),
+    (ident("ARRAY_NUMBER"), q!(Data::Array(Ty::NUMBER))),
+    (ident("ARRAY_STRING"), q!(Data::Array(Ty::STRING))),
+    (ident("ARRAY_KEY_VALUE"), q!(Data::Array(Ty::KEY_VALUE))),
+    (ident("ARRAY_ANY"), q!(Data::Array(Ty::ANY))),
+    (ident("ARRAY_OR_OBJECT"), q!(Data::mk_union([Ty::ARRAY_ANY, Ty::OBJECT]))),
+    (ident("STRING_OR_ARRAY_NUMBER"), q!(Data::mk_union([Ty::STRING, Ty::ARRAY_NUMBER]))),
+    (ident("STRING_OR_ARRAY_ANY"), q!(Data::mk_union([Ty::STRING, Ty::ARRAY_ANY]))),
+    (ident("NUMBER_OR_NULL"), q!(Data::mk_union([Ty::NUMBER, Ty::NULL]))),
+    (ident("NUMBER_OR_STRING"), q!(Data::mk_union([Ty::NUMBER, Ty::STRING]))),
+    (ident("HOF_1"), q!(Data::Fn(super::Fn::Hof(super::HofParams::One)))),
+    (ident("HOF_2"), q!(Data::Fn(super::Fn::Hof(super::HofParams::Two)))),
+    (ident("OBJECT"), q!(Data::Object(super::Object::unknown()))),
     (
-      i!("KEY_VALUE"),
+      ident("KEY_VALUE"),
       q!(Data::Object(super::Object {
         known: BTreeMap::from([(Str::key, Ty::STRING), (Str::value, Ty::ANY)]),
         has_unknown: false
       })),
     ),
-    (i!("STD"), q!(Data::Object(super::Object::std()))),
+    (ident("STD"), q!(Data::Object(super::Object::std()))),
   ];
   let std_fn_types = jsonnet_std_sig::FNS.iter().map(|f| {
-    let name = i!("{}", f.name.ident());
+    let name = ident(f.name.ident());
     (name.clone(), q!(Data::Fn(super::Fn::Std(StdFn::#name))), false)
   });
   let std_fn_match_arms = jsonnet_std_sig::FNS.iter().map(|f| {
-    let name = i!("{}", f.name.ident());
+    let name = ident(f.name.ident());
     q! { StdFn::#name => Ty::#name, }
   });
   let std_map_entries = jsonnet_std_sig::FNS.iter().map(|f| {
-    let name = i!("{}", f.name.ident());
+    let name = ident(f.name.ident());
     q! { (Str::#name, Ty::#name) }
   });
   let all_std_sigs = {
@@ -58,7 +58,7 @@ fn main() {
   };
   let std_fn_sig_arms = all_std_sigs.iter().map(|(sig, names)| {
     let names = names.iter().map(|x| {
-      let name = i!("{}", x.ident());
+      let name = ident(x.ident());
       q! { StdFn::#name }
     });
     let params = sig.params.iter().map(|p| mk_param(*p));
@@ -164,7 +164,7 @@ fn mk_ty(ty: Ty) -> proc_macro2::TokenStream {
 }
 
 fn mk_param(param: jsonnet_std_sig::Param) -> proc_macro2::TokenStream {
-  let id = i!("{}", param.name);
+  let id = ident(param.name);
   let ty = mk_ty(param.ty);
   let required = param.required;
   q! {
@@ -174,4 +174,8 @@ fn mk_param(param: jsonnet_std_sig::Param) -> proc_macro2::TokenStream {
       required: #required,
     }
   }
+}
+
+fn ident(s: &str) -> proc_macro2::Ident {
+  quote::format_ident!("{s}")
 }

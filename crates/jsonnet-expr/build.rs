@@ -3,7 +3,7 @@
 #![expect(clippy::disallowed_methods, reason = "can panic in build script")]
 
 use jsonnet_std_sig::S;
-use quote::{format_ident, quote};
+use quote::quote as q;
 use std::collections::{BTreeMap, BTreeSet, HashSet};
 
 const JOINER: &str = "__";
@@ -72,21 +72,21 @@ fn main() {
 
   let builtin_str = {
     let variants = all().map(|s| {
-      let name = format_ident!("{}", s.ident());
-      quote! { #name, }
+      let name = ident(s.ident());
+      q! { #name, }
     });
     let as_static_str_arms = all().map(|s| {
-      let name = format_ident!("{}", s.ident());
+      let name = ident(s.ident());
       let content = s.content();
-      quote! { Self::#name => #content, }
+      q! { Self::#name => #content, }
     });
     let from_str_arms = all().map(|s| {
-      let name = format_ident!("{}", s.ident());
+      let name = ident(s.ident());
       let content = s.content();
-      quote! { #content => Self::#name, }
+      q! { #content => Self::#name, }
     });
 
-    quote! {
+    q! {
       #[expect(non_camel_case_types)]
       #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
       pub(crate) enum BuiltinStr {
@@ -134,11 +134,11 @@ fn main() {
       .chain(builtin_identifiers.iter().copied())
       .chain(arg_names.iter().map(|&x| S::new(x)))
       .map(|s| {
-        let name = format_ident!("{}", s.ident());
-        quote! { pub const #name: Self = Self::builtin(BuiltinStr::#name); }
+        let name = ident(s.ident());
+        q! { pub const #name: Self = Self::builtin(BuiltinStr::#name); }
       });
 
-    quote! {
+    q! {
       #[expect(non_upper_case_globals)]
       impl Id {
         #(#constants)*
@@ -148,11 +148,11 @@ fn main() {
 
   let impl_str = {
     let constants = strings().chain(std::iter::once(value)).map(|s| {
-      let name = format_ident!("{}", s.ident());
-      quote! { pub const #name: Self = Self::builtin(BuiltinStr::#name); }
+      let name = ident(s.ident());
+      q! { pub const #name: Self = Self::builtin(BuiltinStr::#name); }
     });
 
-    quote! {
+    q! {
       #[expect(non_upper_case_globals)]
       impl Str {
         #(#constants)*
@@ -173,25 +173,25 @@ fn main() {
       assert!(in_fns.is_empty(), "got in_fns: {in_fns:?}");
       (tmp, tf)
     };
-    let variants = jsonnet_std_sig::FNS.iter().map(|f| format_ident!("{}", f.name.ident()));
+    let variants = jsonnet_std_sig::FNS.iter().map(|f| ident(f.name.ident()));
     let count = jsonnet_std_sig::FNS.len();
     let str_variant_tuples = jsonnet_std_sig::FNS.iter().map(|f| {
-      let name = format_ident!("{}", f.name.ident());
-      quote! { (Str::#name, Self::#name) }
+      let name = ident(f.name.ident());
+      q! { (Str::#name, Self::#name) }
     });
     let from_str_arms = jsonnet_std_sig::FNS.iter().map(|f| {
-      let name = format_ident!("{}", f.name.ident());
-      quote! { Str::#name => Self::#name, }
+      let name = ident(f.name.ident());
+      q! { Str::#name => Self::#name, }
     });
     let as_static_str_arms = jsonnet_std_sig::FNS.iter().map(|f| {
-      let name = format_ident!("{}", f.name.ident());
+      let name = ident(f.name.ident());
       let content = f.name.content();
-      quote! { Self::#name => #content, }
+      q! { Self::#name => #content, }
     });
     let doc_arms = jsonnet_std_sig::FNS.iter().map(|f| {
-      let name = format_ident!("{}", f.name.ident());
+      let name = ident(f.name.ident());
       let content = fn_doc.get(f.name.content()).expect("should have doc");
-      quote! { Self::#name => #content, }
+      q! { Self::#name => #content, }
     });
     let mut tmp = BTreeMap::<usize, BTreeSet<&str>>::new();
     for f in jsonnet_std_sig::FNS {
@@ -200,12 +200,12 @@ fn main() {
     }
     let required_params_count_arms = tmp.iter().map(|(&n, s)| {
       let pats = s.iter().map(|x| {
-        let id = format_ident!("{x}");
-        quote! { StdFn::#id }
+        let id = ident(x);
+        q! { StdFn::#id }
       });
-      quote! { #(#pats)|* => #n, }
+      q! { #(#pats)|* => #n, }
     });
-    quote! {
+    q! {
       pub const THIS_FILE_DOC: &str = #this_file_doc;
 
       #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -262,7 +262,7 @@ fn main() {
 
   let file = file!();
 
-  let contents = quote! {
+  let contents = q! {
     pub const _GENERATED_BY: &str = #file;
 
     use crate::{Id, Str};
@@ -276,4 +276,8 @@ fn main() {
     #std_fn
   };
   write_rs_tokens::go(contents, "generated.rs");
+}
+
+fn ident(s: &str) -> proc_macro2::Ident {
+  quote::format_ident!("{s}")
 }
