@@ -1,9 +1,10 @@
 //! The standard library for Jsonnet, implemented in Rust.
 
 use crate::error::Result;
+use crate::generated::{args, params};
 use crate::{error, exec, mk_todo, std_lib_impl, Cx};
 use finite_float::Float;
-use jsonnet_expr::{std_fn, Expr, ExprMust, Id, Prim, StdFn};
+use jsonnet_expr::{Expr, ExprMust, Id, Prim, StdFn};
 use jsonnet_val::jsonnet::{Array, Env, Val};
 
 pub(crate) fn get(
@@ -16,60 +17,60 @@ pub(crate) fn get(
 ) -> Result<Val> {
   match std_fn {
     StdFn::extVar => {
-      let _ = std_fn::args::extVar(positional, named, expr)?;
+      let _ = args::extVar(positional, named, expr)?;
       Err(mk_todo(expr, "std.extVar"))
     }
     StdFn::type_ => {
-      let arguments = std_fn::args::type_(positional, named, expr)?;
+      let arguments = args::type_(positional, named, expr)?;
       let x = exec::get(cx, env, arguments.x)?;
       let ret = std_lib_impl::type_(&x);
       Ok(Val::Prim(Prim::String(ret)))
     }
     StdFn::isArray => {
-      let arguments = std_fn::args::isArray(positional, named, expr)?;
+      let arguments = args::isArray(positional, named, expr)?;
       let v = exec::get(cx, env, arguments.v)?;
       let res = std_lib_impl::isArray(&v);
       Ok(Val::Prim(Prim::Bool(res)))
     }
     StdFn::isBoolean => {
-      let arguments = std_fn::args::isBoolean(positional, named, expr)?;
+      let arguments = args::isBoolean(positional, named, expr)?;
       let v = exec::get(cx, env, arguments.v)?;
       let res = std_lib_impl::isBoolean(&v);
       Ok(Val::Prim(Prim::Bool(res)))
     }
     StdFn::isFunction => {
-      let arguments = std_fn::args::isFunction(positional, named, expr)?;
+      let arguments = args::isFunction(positional, named, expr)?;
       let v = exec::get(cx, env, arguments.v)?;
       let res = std_lib_impl::isFunction(&v);
       Ok(Val::Prim(Prim::Bool(res)))
     }
     StdFn::isNumber => {
-      let arguments = std_fn::args::isNumber(positional, named, expr)?;
+      let arguments = args::isNumber(positional, named, expr)?;
       let v = exec::get(cx, env, arguments.v)?;
       let res = std_lib_impl::isNumber(&v);
       Ok(Val::Prim(Prim::Bool(res)))
     }
     StdFn::isObject => {
-      let arguments = std_fn::args::isObject(positional, named, expr)?;
+      let arguments = args::isObject(positional, named, expr)?;
       let v = exec::get(cx, env, arguments.v)?;
       let res = std_lib_impl::isObject(&v);
       Ok(Val::Prim(Prim::Bool(res)))
     }
     StdFn::isString => {
-      let arguments = std_fn::args::isString(positional, named, expr)?;
+      let arguments = args::isString(positional, named, expr)?;
       let v = exec::get(cx, env, arguments.v)?;
       let res = std_lib_impl::isString(&v);
       Ok(Val::Prim(Prim::Bool(res)))
     }
     StdFn::length => {
-      let arguments = std_fn::args::length(positional, named, expr)?;
+      let arguments = args::length(positional, named, expr)?;
       let x = exec::get(cx, env, arguments.x)?;
       let ret = std_lib_impl::length(&x, arguments.x.unwrap_or(expr), cx)?;
       Ok(Val::Prim(Prim::Number(Float::from(ret))))
     }
     StdFn::abs => math_op(cx, env, positional, named, expr, f64::abs),
     StdFn::sign => {
-      let arguments = std_fn::args::sign(positional, named, expr)?;
+      let arguments = args::sign(positional, named, expr)?;
       let n = exec::get(cx, env, arguments.n)?;
       let val = get_num(&n, arguments.n.unwrap_or(expr))?;
       let res = if val == 0.0 {
@@ -82,7 +83,7 @@ pub(crate) fn get(
       Ok(Val::Prim(Prim::Number(res)))
     }
     StdFn::max => {
-      let arguments = std_fn::args::max(positional, named, expr)?;
+      let arguments = args::max(positional, named, expr)?;
       let a = exec::get(cx, env, arguments.a)?;
       let b = exec::get(cx, env, arguments.b)?;
       let a = get_num(&a, arguments.a.unwrap_or(expr))?;
@@ -91,7 +92,7 @@ pub(crate) fn get(
       mk_num(res, expr)
     }
     StdFn::min => {
-      let arguments = std_fn::args::min(positional, named, expr)?;
+      let arguments = args::min(positional, named, expr)?;
       let a = exec::get(cx, env, arguments.a)?;
       let b = exec::get(cx, env, arguments.b)?;
       let a = get_num(&a, arguments.a.unwrap_or(expr))?;
@@ -100,7 +101,7 @@ pub(crate) fn get(
       mk_num(res, expr)
     }
     StdFn::pow => {
-      let arguments = std_fn::args::pow(positional, named, expr)?;
+      let arguments = args::pow(positional, named, expr)?;
       let x = exec::get(cx, env, arguments.x)?;
       let n = exec::get(cx, env, arguments.n)?;
       let x = get_num(&x, arguments.x.unwrap_or(expr))?;
@@ -122,7 +123,7 @@ pub(crate) fn get(
     StdFn::atan => math_op(cx, env, positional, named, expr, f64::atan),
     StdFn::round => math_op(cx, env, positional, named, expr, f64::round),
     StdFn::join => {
-      let arguments = std_fn::args::join(positional, named, expr)?;
+      let arguments = args::join(positional, named, expr)?;
       let sep = exec::get(cx, env, arguments.sep)?;
       let Val::Array(arr) = exec::get(cx, env, arguments.arr)? else {
         return Err(error::Error::Exec {
@@ -174,7 +175,7 @@ pub(crate) fn get(
       }
     }
     StdFn::equals => {
-      let arguments = std_fn::args::equals(positional, named, expr)?;
+      let arguments = args::equals(positional, named, expr)?;
       let lhs = exec::get(cx, env, arguments.x)?;
       let rhs = exec::get(cx, env, arguments.y)?;
       Ok(Val::Prim(Prim::Bool(exec::eq_val(expr, cx, &lhs, &rhs)?)))
@@ -191,7 +192,7 @@ fn math_op(
   expr: ExprMust,
   f: fn(f64) -> f64,
 ) -> Result<Val> {
-  let arguments = std_fn::params::x::get(positional, named, expr)?;
+  let arguments = params::x::get(positional, named, expr)?;
   let x = exec::get(cx, env, arguments.x)?;
   let x = get_num(&x, arguments.x.unwrap_or(expr))?;
   mk_num(f(x), expr)

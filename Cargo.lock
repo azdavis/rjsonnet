@@ -452,10 +452,14 @@ dependencies = [
  "always",
  "finite-float",
  "jsonnet-expr",
+ "jsonnet-std-sig",
  "jsonnet-val",
  "paths",
+ "proc-macro2",
+ "quote",
  "rustc-hash",
  "serde_json",
+ "write-rs-tokens",
 ]
 
 [[package]]

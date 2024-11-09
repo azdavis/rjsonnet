@@ -13,6 +13,10 @@
 
 #![allow(missing_docs, clippy::too_many_lines)]
 
+mod generated {
+  include!(concat!(env!("OUT_DIR"), "/generated.rs"));
+}
+
 pub mod error;
 
 mod exec;

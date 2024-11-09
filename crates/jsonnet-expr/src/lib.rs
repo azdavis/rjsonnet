@@ -11,7 +11,7 @@ pub mod def;
 pub mod display;
 mod subst;
 
-pub use generated::{std_fn, StdFn};
+pub use generated::StdFn;
 pub use la_arena::{Arena, ArenaMap, Idx};
 pub use subst::Subst;
 

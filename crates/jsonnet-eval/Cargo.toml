@@ -21,3 +21,10 @@ always.path = "../always"
 finite-float.path = "../finite-float"
 jsonnet-expr.path = "../jsonnet-expr"
 jsonnet-val.path = "../jsonnet-val"
+
+[build-dependencies]
+proc-macro2.workspace = true
+quote.workspace = true
+write-rs-tokens.workspace = true
+
+jsonnet-std-sig.path = "../jsonnet-std-sig"
