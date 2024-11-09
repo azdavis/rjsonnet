@@ -126,7 +126,7 @@ The root object.
 
 1. Compute numerical modulus.
 
-    <!-- @eval-error: not yet implemented: std.mod -->
+    <!-- @eval-error: not yet implemented: mod -->
 
    ```jsonnet
    assert 10 % 3 == 1;
@@ -134,7 +134,7 @@ The root object.
 
 2. Format things into a string.
 
-    <!-- @eval-error: not yet implemented: std.mod -->
+    <!-- @eval-error: not yet implemented: mod -->
 
    ```jsonnet
    assert "hi %s, how are you doing %s?" % ["there", "today"]
@@ -491,7 +491,7 @@ The "yes" boolean. Opposite of `false`.
 
 Loop over an array to create an array or object via a comprehension.
 
-<!-- @eval-error: not yet implemented: std.makeArray -->
+<!-- @eval-error: not yet implemented: makeArray -->
 
 ```jsonnet
 local addOne(xs) = [x + 1 for x in xs];
@@ -524,7 +524,7 @@ assert hm(false) == null;
 
 1. Denotes the thing to loop over in a `for`.
 
-    <!-- @eval-error: not yet implemented: std.makeArray -->
+    <!-- @eval-error: not yet implemented: makeArray -->
 
    ```jsonnet
    local xs = [1, 3];
@@ -534,7 +534,7 @@ assert hm(false) == null;
 
 1. Tests for field membership in objects.
 
-    <!-- @eval-error: not yet implemented: std.objectHasAll -->
+    <!-- @eval-error: not yet implemented: objectHasAll -->
 
    ```jsonnet
    assert "foo" in { foo: 3 };

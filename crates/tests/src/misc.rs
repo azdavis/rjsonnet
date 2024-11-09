@@ -26,7 +26,7 @@ fn for_comp_obj() {
   for x in ["foo", "bar quz"]
 }
 "#,
-    "not yet implemented: std.makeArray",
+    "not yet implemented: makeArray",
   )
   .check();
   /*

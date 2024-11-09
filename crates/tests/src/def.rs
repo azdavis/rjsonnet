@@ -270,7 +270,7 @@ fn obj_comp_local() {
   for k in ["f", "gg"]
 }
 "#,
-    "not yet implemented: std.makeArray",
+    "not yet implemented: makeArray",
   )
   /*
   {
@@ -292,7 +292,7 @@ fn array_comp() {
 ##    ^ def: x
 ]
 "#,
-    "not yet implemented: std.makeArray",
+    "not yet implemented: makeArray",
   )
   .check();
   // [3, 5]
@@ -310,7 +310,7 @@ fn obj_comp_key() {
 ##    ^ def: k
 }
 "#,
-    "not yet implemented: std.makeArray",
+    "not yet implemented: makeArray",
   )
   .check();
   /*

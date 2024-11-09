@@ -83,7 +83,7 @@ fn array_comp() {
 [3 for x in []]
 ##     ^ diagnostic: unused: `x`
 "#,
-    "not yet implemented: std.makeArray",
+    "not yet implemented: makeArray",
   )
   .check();
 }
@@ -99,7 +99,7 @@ fn object_comp() {
   for k in ["a", "b"]
 }
 "#,
-    "not yet implemented: std.makeArray",
+    "not yet implemented: makeArray",
   )
   .check();
 }

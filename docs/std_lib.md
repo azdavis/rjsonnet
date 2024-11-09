@@ -86,7 +86,7 @@ Recursively remove all "empty" members of a. "Empty" is defined as
 
 The argument may have any type.
 
-<!-- @eval-error: not yet implemented: std.prune -->
+<!-- @eval-error: not yet implemented: prune -->
 
 ```jsonnet
 assert std.prune([1, [], 2, {}, 3, null]) == [1, 2, 3];
@@ -827,8 +827,7 @@ The `quote_keys` parameter controls whether YAML identifiers are always quoted o
 
 This example:
 
-<!-- TODO this is a bug with optional args -->
-<!-- @eval-error: parameter `quote_keys` was not defined -->
+<!-- @eval-error: not yet implemented: manifestYamlDoc -->
 
 ```jsonnet
 std.manifestYamlDoc(
@@ -873,8 +872,7 @@ The `c_document_end` param adds the optional terminating `...`.
 
 This example:
 
-<!-- TODO this is a bug with optional args -->
-<!-- @eval-error: parameter `quote_keys` was not defined -->
+<!-- @eval-error: not yet implemented: manifestYamlStream -->
 
 ```jsonnet
 std.manifestYamlStream( ['a', 1, []], indent_array_in_object=false, c_document_end=true)
@@ -1181,8 +1179,7 @@ The optional argument `keyF` is a single argument function used to extract compa
 
 Examples:
 
-<!-- TODO this is a bug with optional args -->
-<!-- @eval-error: parameter `keyF` was not defined -->
+<!-- @eval-error: not yet implemented: sort -->
 
 ```jsonnet
 assert std.sort([5, 2, 9]) == [2, 5, 9];
@@ -1210,8 +1207,7 @@ The optional argument `keyF` is a single argument function used to extract compa
 
 Examples:
 
-<!-- TODO this is a bug with optional args -->
-<!-- @eval-error: parameter `keyF` was not defined -->
+<!-- @eval-error: not yet implemented: uniq -->
 
 ```jsonnet
 assert std.uniq([1, 1, 1]) == [1];
@@ -1272,8 +1268,7 @@ Note that `+` on sets will simply concatenate the arrays, possibly forming an ar
 
 Examples:
 
-<!-- TODO this is a bug with optional args -->
-<!-- @eval-error: parameter `keyF` was not defined -->
+<!-- @eval-error: not yet implemented: setUnion -->
 
 ```jsonnet
 assert std.setUnion([1, 2], [2, 3]) == [ 1, 2, 3 ];
