@@ -13,18 +13,22 @@ The syntax is roughly that of TypeScript's type syntax:
 - Primitive types: `number`, `string`, `true`, `false`, `null`
   - These are fairly self-explanatory.
   - Notably, the values `true`, `false`, and `null` have their own types.
-  - The common type that is the union of `true` and `false` is written as `boolean`.
+  - The type that is the union of `true` and `false` is written as `boolean`.
 - Array types: `T[]`
   - This is an array where the elements have type `T`.
 - Object types: `{ foo: T1, bar: T2 }`
   - This is an object with two known fields: `foo` of type `T1`, and `bar` of type `T2`, and no unknown fields.
   - If an object may have unknown fields, an extra `...` is added at the end.
-  - The common type `{ ... }` (an object with no known fields that may have unknown fields) is written as `object`.
+  - The type of an object with no known fields that may have unknown fields could be written as `{ ... }`, but is instead written as `object`.
 - Union types: `T1 | T2`
   - A value of this type may be either of type `T1` or of type `T2`.
-  - The empty union type (the type with no values, which is the type of `error` expressions) is written as `never`.
+  - Unions of more than two types are allowed, like `T1 | T2 | T3`.
+  - When union types are union'd with other union types, the unions are flattened. That is, `T1 | (T2 | T3)` is the same as `(T1 | T2) | T3` which is also the same as `T1 | T2 | T3`.
+  - Duplicate types are also eliminated. So `T1 | T2 | T1` is shown as `T1 | T2`.
+  - If a union type contains both `true` and `false`, instead of showing the type as `true | false | ...`, it is shown as `boolean | ...`.
+  - The union of 0 types, aka the empty union type, is a type with no values. This is the type of `error` expressions. It is written as `never`.
 - Function types: `(x: T1) => T2`
-  - Optional arguments have a `?` after the argument name.
+  - Optional arguments have a `?` after the argument name, like `(x?: T1) => T2`
 
 ## Annotations
 
