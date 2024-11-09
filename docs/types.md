@@ -68,6 +68,22 @@ Order does not matter in union types.
 
 When a parameter is optional, it has a `?` after the argument name, like `(x?: T1) => T2`.
 
+### Precedence
+
+There is some ambiguity in the type syntax that can be resolved by specifying the binding precedence of the different bits of syntax.
+
+Union types bind stronger than function types. This means 1 and 2 below are equivalent, and distinct from 3.
+
+1. `(x: number) => string | boolean`
+2. `(x: number) => (string | boolean)`
+3. `((x: number) => string) | boolean`
+
+Array types bind stronger than union types. This means 1 and 2 below are equivalent, and distinct from 3.
+
+1. `string | boolean[]`
+2. `string | (boolean[])`
+3. `(string | boolean)[]`
+
 ## Annotations
 
 The trickiest part of type inference without type annotations is handling function parameters.

@@ -301,24 +301,6 @@ fn nl_indent(f: &mut fmt::Formatter<'_>, level: usize) -> fmt::Result {
 }
 
 /// Precedence when printing a type.
-///
-/// One ambiguity is when mixing union types and fn types. We consider 1 and 2 identical in
-/// semantics, and distinct from 3. That is, union types "bind closer" than fn types.
-///
-/// ```text
-/// (1) (number) => string | boolean
-/// (2) (number) => (string | boolean)
-/// (3) ((number) => string) | boolean
-/// ```
-///
-/// Binding closer than that are array types. We consider 1 and 2 identical in semantics, and
-/// distinct from 3.
-///
-/// ```text
-/// (1) string | boolean[]
-/// (2) string | (boolean[])
-/// (3) (string | boolean)[]
-/// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 enum Prec {
   Min,
