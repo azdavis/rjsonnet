@@ -18,6 +18,7 @@ pub mod error;
 mod exec;
 mod manifest;
 mod std_lib;
+mod std_lib_impl;
 
 #[derive(Debug, Clone, Copy)]
 pub struct Cx<'a> {

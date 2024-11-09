@@ -1,9 +1,9 @@
 //! The standard library for Jsonnet, implemented in Rust.
 
 use crate::error::Result;
-use crate::{error, exec, mk_todo, Cx};
+use crate::{error, exec, mk_todo, std_lib_impl, Cx};
 use finite_float::Float;
-use jsonnet_expr::{std_fn, Expr, ExprMust, Id, Prim, StdFn, Str};
+use jsonnet_expr::{std_fn, Expr, ExprMust, Id, Prim, StdFn};
 use jsonnet_val::jsonnet::{Array, Env, Fn, Val};
 
 pub(crate) fn get(
@@ -22,48 +22,44 @@ pub(crate) fn get(
     StdFn::type_ => {
       let arguments = std_fn::args::type_(positional, named, expr)?;
       let x = exec::get(cx, env, arguments.x)?;
-      let ret = match x {
-        Val::Prim(prim) => match prim {
-          Prim::Null => Str::null,
-          Prim::Bool(_) => Str::boolean,
-          Prim::String(_) => Str::string,
-          Prim::Number(_) => Str::number,
-        },
-        Val::Object(_) => Str::object,
-        Val::Array(_) => Str::array,
-        Val::Fn(_) => Str::function,
-      };
+      let ret = std_lib_impl::type_(&x);
       Ok(Val::Prim(Prim::String(ret)))
     }
     StdFn::isArray => {
       let arguments = std_fn::args::isArray(positional, named, expr)?;
       let v = exec::get(cx, env, arguments.v)?;
-      Ok(Val::Prim(Prim::Bool(matches!(v, Val::Array(_)))))
+      let res = std_lib_impl::isArray(&v);
+      Ok(Val::Prim(Prim::Bool(res)))
     }
     StdFn::isBoolean => {
       let arguments = std_fn::args::isBoolean(positional, named, expr)?;
       let v = exec::get(cx, env, arguments.v)?;
-      Ok(Val::Prim(Prim::Bool(matches!(v, Val::Prim(Prim::Bool(_))))))
+      let res = std_lib_impl::isBoolean(&v);
+      Ok(Val::Prim(Prim::Bool(res)))
     }
     StdFn::isFunction => {
       let arguments = std_fn::args::isFunction(positional, named, expr)?;
       let v = exec::get(cx, env, arguments.v)?;
-      Ok(Val::Prim(Prim::Bool(matches!(v, Val::Fn(_)))))
+      let res = std_lib_impl::isFunction(&v);
+      Ok(Val::Prim(Prim::Bool(res)))
     }
     StdFn::isNumber => {
       let arguments = std_fn::args::isNumber(positional, named, expr)?;
       let v = exec::get(cx, env, arguments.v)?;
-      Ok(Val::Prim(Prim::Bool(matches!(v, Val::Prim(Prim::Number(_))))))
+      let res = std_lib_impl::isNumber(&v);
+      Ok(Val::Prim(Prim::Bool(res)))
     }
     StdFn::isObject => {
       let arguments = std_fn::args::isObject(positional, named, expr)?;
       let v = exec::get(cx, env, arguments.v)?;
-      Ok(Val::Prim(Prim::Bool(matches!(v, Val::Object(_)))))
+      let res = std_lib_impl::isObject(&v);
+      Ok(Val::Prim(Prim::Bool(res)))
     }
     StdFn::isString => {
       let arguments = std_fn::args::isString(positional, named, expr)?;
       let v = exec::get(cx, env, arguments.v)?;
-      Ok(Val::Prim(Prim::Bool(matches!(v, Val::Prim(Prim::String(_))))))
+      let res = std_lib_impl::isString(&v);
+      Ok(Val::Prim(Prim::Bool(res)))
     }
     StdFn::length => {
       let arguments = std_fn::args::length(positional, named, expr)?;
