@@ -4,7 +4,7 @@
 
 use jsonnet_std_sig::S;
 use quote::{format_ident, quote};
-use std::collections::{BTreeSet, HashSet};
+use std::collections::{BTreeMap, BTreeSet, HashSet};
 
 const JOINER: &str = "__";
 
@@ -193,6 +193,18 @@ fn main() {
       let content = fn_doc.get(f.name.content()).expect("should have doc");
       quote! { Self::#name => #content, }
     });
+    let mut tmp = BTreeMap::<usize, BTreeSet<&str>>::new();
+    for f in jsonnet_std_sig::FNS {
+      let n = f.sig.params.iter().filter(|x| x.required).count();
+      tmp.entry(n).or_default().insert(f.name.ident());
+    }
+    let required_params_count_arms = tmp.iter().map(|(&n, s)| {
+      let pats = s.iter().map(|x| {
+        let id = format_ident!("{x}");
+        quote! { StdFn::#id }
+      });
+      quote! { #(#pats)|* => #n, }
+    });
     let unique_param_lists: BTreeSet<Vec<_>> =
       jsonnet_std_sig::FNS.iter().map(param_names).collect();
     let get_params = unique_param_lists.iter().map(|params| mk_get_params(params));
@@ -225,6 +237,14 @@ fn main() {
         pub const fn doc(self) -> &'static str {
           match self {
             #(#doc_arms)*
+          }
+        }
+
+        #[doc = "Returns the number of required params for this."]
+        #[must_use]
+        pub const fn required_params_count(self) -> usize {
+          match self {
+            #(#required_params_count_arms)*
           }
         }
       }

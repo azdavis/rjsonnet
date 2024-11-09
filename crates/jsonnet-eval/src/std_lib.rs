@@ -82,7 +82,7 @@ pub(crate) fn get(
         Val::Object(obj) => obj.fields().len(),
         Val::Array(arr) => arr.len(),
         Val::Fn(Fn::Regular(func)) => func.params.iter().filter(|(_, d)| d.is_none()).count(),
-        Val::Fn(Fn::Std(_)) => return Err(mk_todo(expr, "std.length of std function")),
+        Val::Fn(Fn::Std(func)) => func.required_params_count(),
       };
       Ok(Val::Prim(Prim::Number(Float::from(ret))))
     }
