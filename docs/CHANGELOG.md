@@ -10,6 +10,9 @@ Things under "main" are not released yet.
 - Support flow typing for negated conditionals. This helps when e.g. narrowing a type that might be `null` to be not `null`.
 - Improve type checking of `+` with union types.
 - Improve formatting of union types with `boolean`.
+- Improve typing for:
+  - `std.join`
+  - `std.repeat`
 
 ## v0.7.1
 

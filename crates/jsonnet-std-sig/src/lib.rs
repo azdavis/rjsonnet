@@ -283,7 +283,7 @@ pub const FNS: [Fn; 126] = [
   f("foldl", FOLD),
   f("foldr", FOLD),
   f("range", s(&[r("from", Ty::Num), r("to", Ty::Num)], Ty::ArrNum)),
-  f("repeat", s(&[r("what", Ty::Any), r("count", Ty::Num)], Ty::StrOrArrAny)),
+  f("repeat", s(&[r("what", Ty::StrOrArrAny), r("count", Ty::Num)], Ty::StrOrArrAny)),
   f(
     "slice",
     s(
@@ -296,7 +296,7 @@ pub const FNS: [Fn; 126] = [
       Ty::StrOrArrAny,
     ),
   ),
-  f("join", s(&[r("sep", Ty::Any), r("arr", Ty::ArrAny)], Ty::StrOrArrAny)),
+  f("join", s(&[r("sep", Ty::StrOrArrAny), r("arr", Ty::ArrAny)], Ty::StrOrArrAny)),
   f("lines", s(&[r("arr", Ty::ArrStr)], Ty::Str)),
   f("flattenArrays", s(&[r("arr", Ty::ArrAny)], Ty::ArrAny)),
   f("reverse", s(&[r("arr", Ty::ArrAny)], Ty::ArrAny)),
