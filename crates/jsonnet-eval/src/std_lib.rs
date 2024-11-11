@@ -16,10 +16,6 @@ pub(crate) fn get(
   std_fn: StdFn,
 ) -> Result<Val> {
   match std_fn {
-    StdFn::extVar => {
-      let _ = args::extVar(positional, named, expr)?;
-      Err(mk_todo(expr, "std.extVar"))
-    }
     StdFn::type_ => {
       let arguments = args::type_(positional, named, expr)?;
       let x = exec::get(cx, env, arguments.x)?;
