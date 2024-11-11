@@ -5,7 +5,7 @@ use crate::generated::{args, params};
 use crate::{error, exec, mk_todo, std_lib_impl, Cx};
 use finite_float::Float;
 use jsonnet_expr::{Expr, ExprMust, Id, Prim, StdFn};
-use jsonnet_val::jsonnet::{Array, Env, Val};
+use jsonnet_val::jsonnet::{Env, Val};
 
 pub(crate) fn get(
   cx: Cx<'_>,
@@ -127,48 +127,7 @@ pub(crate) fn get(
           kind: error::Kind::IncompatibleTypes,
         });
       };
-      match sep {
-        Val::Prim(Prim::String(sep)) => {
-          let mut ret = String::new();
-          let sep = cx.str_ar.get(&sep);
-          let mut first = true;
-          for (env, elem) in arr.iter() {
-            if !first {
-              ret.push_str(sep);
-            };
-            first = false;
-            let Val::Prim(Prim::String(elem)) = exec::get(cx, env, elem)? else {
-              return Err(error::Error::Exec {
-                expr: elem.unwrap_or(expr),
-                kind: error::Kind::IncompatibleTypes,
-              });
-            };
-            ret.push_str(cx.str_ar.get(&elem));
-          }
-          Ok(Val::Prim(Prim::String(cx.str_ar.str_shared(ret.into_boxed_str()))))
-        }
-        Val::Array(sep) => {
-          let mut ret = Array::default();
-          let mut first = true;
-          for (env, elem) in arr.iter() {
-            if !first {
-              ret.append(&mut sep.clone());
-            };
-            first = false;
-            let Val::Array(mut elem) = exec::get(cx, env, elem)? else {
-              return Err(error::Error::Exec {
-                expr: elem.unwrap_or(expr),
-                kind: error::Kind::IncompatibleTypes,
-              });
-            };
-            ret.append(&mut elem);
-          }
-          Ok(Val::Array(ret))
-        }
-        Val::Prim(_) | Val::Object(_) | Val::Fn(_) => {
-          Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes })
-        }
-      }
+      std_lib_impl::join(&sep, &arr, expr, cx)
     }
     StdFn::equals => {
       let arguments = args::equals(positional, named, expr)?;
