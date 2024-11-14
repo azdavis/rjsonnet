@@ -68,15 +68,9 @@ pub(crate) fn get(
     StdFn::sign => {
       let arguments = args::sign(positional, named, expr)?;
       let n = exec::get(cx, env, arguments.n)?;
-      let val = get_num(&n, arguments.n.unwrap_or(expr))?;
-      let res = if val == 0.0 {
-        Float::positive_zero()
-      } else if val.is_sign_positive() {
-        Float::positive_one()
-      } else {
-        Float::negative_one()
-      };
-      Ok(Val::Prim(Prim::Number(res)))
+      let n = get_num(&n, arguments.n.unwrap_or(expr))?;
+      let res = std_lib_impl::sign(n);
+      mk_num(res, expr)
     }
     StdFn::max => {
       let arguments = args::max(positional, named, expr)?;

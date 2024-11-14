@@ -105,3 +105,13 @@ pub(crate) fn join(sep: &Val, arr: &Array, expr: ExprMust, cx: Cx<'_>) -> Result
     }
   }
 }
+
+pub(crate) fn sign(n: f64) -> f64 {
+  if n == 0.0 {
+    0.0
+  } else if n.is_sign_positive() {
+    1.0
+  } else {
+    -1.0
+  }
+}
