@@ -42,7 +42,6 @@ fn is_impl(s: &str) -> bool {
 fn main() {
   let unique_param_lists: BTreeSet<Vec<_>> = jsonnet_std_sig::FNS.iter().map(param_names).collect();
   let get_params = unique_param_lists.iter().map(|params| mk_get_params(params));
-  let get_args = jsonnet_std_sig::FNS.iter().map(mk_get_args);
   let call_std_arms =
     jsonnet_std_sig::FNS.iter().filter(|func| is_impl(func.name.ident())).map(mk_call_std_arm);
 
@@ -76,34 +75,8 @@ fn main() {
 
       #(#get_params)*
     }
-
-    #[expect(dead_code, non_snake_case)]
-    mod args {
-      use jsonnet_expr::arg::{Result};
-      use jsonnet_expr::{Id, Expr, ExprMust};
-      use super::params;
-
-      #(#get_args)*
-    }
   };
   write_rs_tokens::go(contents, "generated.rs");
-}
-
-fn mk_get_args(f: &jsonnet_std_sig::Fn) -> proc_macro2::TokenStream {
-  let args_struct = param_names(f).join(JOINER);
-  let args_struct = ident(args_struct.as_str());
-  let name = ident(f.name.ident());
-  q! {
-    #[doc = "# Errors"]
-    #[doc = "If getting the args failed."]
-    pub fn #name(
-      positional: &[Expr],
-      named: &[(Id, Expr)],
-      expr: ExprMust,
-    ) -> Result<params::#args_struct> {
-      params::#args_struct::get(positional, named, expr)
-    }
-  }
 }
 
 fn mk_get_params(params: &[&str]) -> proc_macro2::TokenStream {
@@ -254,9 +227,11 @@ fn mk_call_std_arm(func: &jsonnet_std_sig::Fn) -> proc_macro2::TokenStream {
   } else {
     q! { ? }
   };
+  let args_struct = param_names(func).join(JOINER);
+  let args_struct = ident(args_struct.as_str());
   q! {
     StdFn::#name => {
-      let arguments = args::#name(positional, named, expr)?;
+      let arguments = params::#args_struct::get(positional, named, expr)?;
       #(#get_args)*
       let res = std_lib::#name(#(#send_args,)* #partial_args) #partial_conv;
       #conv_res
