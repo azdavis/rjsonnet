@@ -19,50 +19,50 @@ pub(crate) fn get(
     StdFn::type_ => {
       let arguments = args::type_(positional, named, expr)?;
       let x = exec::get(cx, env, arguments.x)?;
-      let ret = std_lib_impl::type_(&x);
-      Ok(Val::Prim(Prim::String(ret)))
+      let res = std_lib_impl::type_(&x);
+      Ok(res.into())
     }
     StdFn::isArray => {
       let arguments = args::isArray(positional, named, expr)?;
       let v = exec::get(cx, env, arguments.v)?;
       let res = std_lib_impl::isArray(&v);
-      Ok(Val::Prim(Prim::Bool(res)))
+      Ok(res.into())
     }
     StdFn::isBoolean => {
       let arguments = args::isBoolean(positional, named, expr)?;
       let v = exec::get(cx, env, arguments.v)?;
       let res = std_lib_impl::isBoolean(&v);
-      Ok(Val::Prim(Prim::Bool(res)))
+      Ok(res.into())
     }
     StdFn::isFunction => {
       let arguments = args::isFunction(positional, named, expr)?;
       let v = exec::get(cx, env, arguments.v)?;
       let res = std_lib_impl::isFunction(&v);
-      Ok(Val::Prim(Prim::Bool(res)))
+      Ok(res.into())
     }
     StdFn::isNumber => {
       let arguments = args::isNumber(positional, named, expr)?;
       let v = exec::get(cx, env, arguments.v)?;
       let res = std_lib_impl::isNumber(&v);
-      Ok(Val::Prim(Prim::Bool(res)))
+      Ok(res.into())
     }
     StdFn::isObject => {
       let arguments = args::isObject(positional, named, expr)?;
       let v = exec::get(cx, env, arguments.v)?;
       let res = std_lib_impl::isObject(&v);
-      Ok(Val::Prim(Prim::Bool(res)))
+      Ok(res.into())
     }
     StdFn::isString => {
       let arguments = args::isString(positional, named, expr)?;
       let v = exec::get(cx, env, arguments.v)?;
       let res = std_lib_impl::isString(&v);
-      Ok(Val::Prim(Prim::Bool(res)))
+      Ok(res.into())
     }
     StdFn::length => {
       let arguments = args::length(positional, named, expr)?;
       let x = exec::get(cx, env, arguments.x)?;
       let ret = std_lib_impl::length(&x, arguments.x.unwrap_or(expr), cx)?;
-      Ok(Val::Prim(Prim::Number(Float::from(ret))))
+      Ok(Float::from(ret).into())
     }
     StdFn::abs => math_op(cx, env, positional, named, expr, f64::abs),
     StdFn::sign => {
@@ -127,7 +127,7 @@ pub(crate) fn get(
       let arguments = args::equals(positional, named, expr)?;
       let lhs = exec::get(cx, env, arguments.x)?;
       let rhs = exec::get(cx, env, arguments.y)?;
-      Ok(Val::Prim(Prim::Bool(exec::eq_val(expr, cx, &lhs, &rhs)?)))
+      Ok(exec::eq_val(expr, cx, &lhs, &rhs)?.into())
     }
     _ => Err(mk_todo(expr, std_fn.as_static_str())),
   }
@@ -156,7 +156,7 @@ fn get_num(v: &Val, expr: ExprMust) -> Result<f64> {
 
 fn mk_num(n: f64, expr: ExprMust) -> Result<Val> {
   match Float::try_from(n) {
-    Ok(x) => Ok(Val::Prim(Prim::Number(x))),
+    Ok(x) => Ok(x.into()),
     Err(e) => Err(error::Error::Exec { expr, kind: error::Kind::Infinite(e) }),
   }
 }

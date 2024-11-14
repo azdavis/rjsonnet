@@ -135,6 +135,24 @@ pub enum Val {
   Fn(Fn),
 }
 
+impl From<bool> for Val {
+  fn from(b: bool) -> Self {
+    Val::Prim(Prim::Bool(b))
+  }
+}
+
+impl From<Str> for Val {
+  fn from(s: Str) -> Self {
+    Val::Prim(Prim::String(s))
+  }
+}
+
+impl From<finite_float::Float> for Val {
+  fn from(n: finite_float::Float) -> Self {
+    Val::Prim(Prim::Number(n))
+  }
+}
+
 /// A lazy object, with an ancestry chain from `+`.
 #[derive(Debug, Clone)]
 pub struct Object {
