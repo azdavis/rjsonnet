@@ -42,6 +42,8 @@ pub struct Fn {
   pub name: S,
   /// The signature.
   pub sig: Sig,
+  /// Whether the function returns a value for all well-typed inputs.
+  pub total: bool,
 }
 
 /// A signature for a std fn.
@@ -73,8 +75,10 @@ pub enum Ty {
   True,
   /// Either `true` or `false`.
   Bool,
-  /// A number like `0` or `123` or `-456`.
+  /// A number like `0` or `123` or `-456.789`.
   Num,
+  /// A non-negative integer.
+  Uint,
   /// A string like `"foo"` or `"bar"` or `""`.
   Str,
   /// An array of booleans, like `[false, true]`.
@@ -141,21 +145,27 @@ const ARR_KEY_F: Sig = s(&[r("arr", Ty::ArrAny), o("keyF", Ty::Hof1)], Ty::ArrAn
 const BINARY_SET_FN: Sig =
   s(&[r("a", Ty::ArrAny), r("b", Ty::ArrAny), o("keyF", Ty::Hof1)], Ty::ArrAny);
 
+/// `f` for "function"
 const fn f(name: &'static str, sig: Sig) -> Fn {
-  Fn { name: S::new(name), sig }
+  Fn { name: S::new(name), sig, total: true }
+}
+
+/// `pf` for "partial function"
+const fn pf(name: &'static str, sig: Sig) -> Fn {
+  Fn { name: S::new(name), sig, total: false }
 }
 
 /// The std fns.
 pub const FNS: [Fn; 126] = [
   f("extVar", s(&[r("x", Ty::Str)], Ty::Str)),
-  Fn { name: S::named("type", "type_"), sig: s(&[r("x", Ty::Any)], Ty::Str) },
+  Fn { name: S::named("type", "type_"), sig: s(&[r("x", Ty::Any)], Ty::Str), total: true },
   f("isArray", V_ANY_RET_BOOL),
   f("isBoolean", V_ANY_RET_BOOL),
   f("isFunction", V_ANY_RET_BOOL),
   f("isNumber", V_ANY_RET_BOOL),
   f("isObject", V_ANY_RET_BOOL),
   f("isString", V_ANY_RET_BOOL),
-  f("length", s(&[r("x", Ty::Any)], Ty::Num)),
+  pf("length", s(&[r("x", Ty::Any)], Ty::Uint)),
   f(
     "get",
     s(
@@ -196,7 +206,11 @@ pub const FNS: [Fn; 126] = [
   f("isOdd", X_NUM_RET_BOOL),
   f("isInteger", X_NUM_RET_BOOL),
   f("isDecimal", X_NUM_RET_BOOL),
-  Fn { name: S::named("mod", "mod_"), sig: s(&[r("a", Ty::NumOrStr), r("b", Ty::Any)], Ty::Any) },
+  Fn {
+    name: S::named("mod", "mod_"),
+    sig: s(&[r("a", Ty::NumOrStr), r("b", Ty::Any)], Ty::Any),
+    total: false,
+  },
   f("clamp", s(&[r("x", Ty::Num), r("minVal", Ty::Num), r("maxVal", Ty::Num)], Ty::Num)),
   f("assertEqual", s(&[r("a", Ty::Any), r("b", Ty::Any)], Ty::True)),
   f("toString", s(&[r("a", Ty::Any)], Ty::Str)),
