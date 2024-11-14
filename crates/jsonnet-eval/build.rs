@@ -163,8 +163,6 @@ fn mk_get_params(params: &[&str]) -> proc_macro2::TokenStream {
         #(#ids)*
       ];
 
-      #[doc = "# Errors"]
-      #[doc = "If getting the arguments failed."]
       pub fn get(
         positional: &[Expr],
         named: &[(Id, Expr)],
