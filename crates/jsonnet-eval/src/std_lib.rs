@@ -78,7 +78,7 @@ pub(crate) fn get(
       let b = exec::get(cx, env, arguments.b)?;
       let a = get_num(&a, arguments.a.unwrap_or(expr))?;
       let b = get_num(&b, arguments.b.unwrap_or(expr))?;
-      let res = a.max(b);
+      let res = std_lib_impl::max(a, b);
       mk_num(res, expr)
     }
     StdFn::min => {
@@ -87,7 +87,7 @@ pub(crate) fn get(
       let b = exec::get(cx, env, arguments.b)?;
       let a = get_num(&a, arguments.a.unwrap_or(expr))?;
       let b = get_num(&b, arguments.b.unwrap_or(expr))?;
-      let res = a.min(b);
+      let res = std_lib_impl::min(a, b);
       mk_num(res, expr)
     }
     StdFn::pow => {
@@ -96,7 +96,7 @@ pub(crate) fn get(
       let n = exec::get(cx, env, arguments.n)?;
       let x = get_num(&x, arguments.x.unwrap_or(expr))?;
       let n = get_num(&n, arguments.n.unwrap_or(expr))?;
-      let res = x.powf(n);
+      let res = std_lib_impl::pow(x, n);
       mk_num(res, expr)
     }
     StdFn::exp => math_op(cx, env, positional, named, expr, f64::exp),

@@ -115,3 +115,15 @@ pub(crate) fn sign(n: f64) -> f64 {
     -1.0
   }
 }
+
+pub(crate) fn max(a: f64, b: f64) -> f64 {
+  a.max(b)
+}
+
+pub(crate) fn min(a: f64, b: f64) -> f64 {
+  a.min(b)
+}
+
+pub(crate) fn pow(x: f64, n: f64) -> f64 {
+  x.powf(n)
+}
