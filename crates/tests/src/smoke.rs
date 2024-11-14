@@ -85,3 +85,29 @@ fn import() {
     .add_all()
     .check();
 }
+
+#[test]
+fn join_str() {
+  JsonnetInput::manifest(
+    r#"
+std.join("!", ["a", "b", "c"])
+"#,
+    r#"
+"a!b!c"
+"#,
+  )
+  .check();
+}
+
+#[test]
+fn join_arr() {
+  JsonnetInput::manifest(
+    r#"
+std.join([1], [[2], [4, 5], [6]])
+"#,
+    r#"
+[2, 1, 4, 5, 1, 6]
+"#,
+  )
+  .check();
+}
