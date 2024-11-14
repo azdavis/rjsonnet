@@ -17,40 +17,6 @@ pub(crate) fn get(
 ) -> Result<Val> {
   match std_fn {
     StdFn::abs => math_op(cx, env, positional, named, expr, f64::abs),
-    StdFn::sign => {
-      let arguments = args::sign(positional, named, expr)?;
-      let n = exec::get(cx, env, arguments.n)?;
-      let n = get_num(&n, arguments.n.unwrap_or(expr))?;
-      let res = std_lib_impl::sign(n);
-      mk_num(res, expr)
-    }
-    StdFn::max => {
-      let arguments = args::max(positional, named, expr)?;
-      let a = exec::get(cx, env, arguments.a)?;
-      let b = exec::get(cx, env, arguments.b)?;
-      let a = get_num(&a, arguments.a.unwrap_or(expr))?;
-      let b = get_num(&b, arguments.b.unwrap_or(expr))?;
-      let res = std_lib_impl::max(a, b);
-      mk_num(res, expr)
-    }
-    StdFn::min => {
-      let arguments = args::min(positional, named, expr)?;
-      let a = exec::get(cx, env, arguments.a)?;
-      let b = exec::get(cx, env, arguments.b)?;
-      let a = get_num(&a, arguments.a.unwrap_or(expr))?;
-      let b = get_num(&b, arguments.b.unwrap_or(expr))?;
-      let res = std_lib_impl::min(a, b);
-      mk_num(res, expr)
-    }
-    StdFn::pow => {
-      let arguments = args::pow(positional, named, expr)?;
-      let x = exec::get(cx, env, arguments.x)?;
-      let n = exec::get(cx, env, arguments.n)?;
-      let x = get_num(&x, arguments.x.unwrap_or(expr))?;
-      let n = get_num(&n, arguments.n.unwrap_or(expr))?;
-      let res = std_lib_impl::pow(x, n);
-      mk_num(res, expr)
-    }
     StdFn::exp => math_op(cx, env, positional, named, expr, f64::exp),
     // TODO is it log2 or log10?
     StdFn::log => math_op(cx, env, positional, named, expr, f64::log2),
@@ -99,14 +65,14 @@ fn math_op(
   mk_num(f(x), expr)
 }
 
-fn get_num(v: &Val, expr: ExprMust) -> Result<f64> {
+pub(crate) fn get_num(v: &Val, expr: ExprMust) -> Result<f64> {
   match v {
     Val::Prim(Prim::Number(x)) => Ok(x.value()),
     _ => Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes }),
   }
 }
 
-fn mk_num(n: f64, expr: ExprMust) -> Result<Val> {
+pub(crate) fn mk_num(n: f64, expr: ExprMust) -> Result<Val> {
   match Float::try_from(n) {
     Ok(x) => Ok(x.into()),
     Err(e) => Err(error::Error::Exec { expr, kind: error::Kind::Infinite(e) }),

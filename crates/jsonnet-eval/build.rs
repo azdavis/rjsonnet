@@ -17,6 +17,10 @@ fn can_mk_arm(s: &str) -> bool {
       | "isObject"
       | "isString"
       | "length"
+      | "sign"
+      | "max"
+      | "min"
+      | "pow"
   )
 }
 
@@ -30,7 +34,7 @@ fn main() {
   let file = file!();
 
   let contents = q! {
-    use crate::{exec, std_lib_impl};
+    use crate::{exec, std_lib, std_lib_impl};
     use jsonnet_expr::StdFn;
 
     pub const _GENERATED_BY: &str = #file;
@@ -188,7 +192,7 @@ fn mk_arm(func: &jsonnet_std_sig::Fn) -> proc_macro2::TokenStream {
     let conv = match param.ty {
       Ty::Any => q! {},
       Ty::True | Ty::Bool => todo!("conv param Bool"),
-      Ty::Num => todo!("conv param Num"),
+      Ty::Num => q! { let #name = std_lib::get_num(&#name, arguments.#name.unwrap_or(expr))?; },
       Ty::Uint => todo!("conv param Uint"),
       Ty::Str => todo!("conv param Str"),
       Ty::ArrBool => todo!("conv param ArrBool"),
@@ -220,7 +224,7 @@ fn mk_arm(func: &jsonnet_std_sig::Fn) -> proc_macro2::TokenStream {
   let conv_res = match func.sig.ret {
     Ty::Any => q! {},
     Ty::True | Ty::Bool | Ty::Str => q! { Ok(res.into()) },
-    Ty::Num => todo!("conv ret Num"),
+    Ty::Num => q! { std_lib::mk_num(res, expr) },
     Ty::Uint => q! { Ok(finite_float::Float::from(res).into()) },
     Ty::ArrBool => todo!("conv ret ArrBool"),
     Ty::ArrNum => todo!("conv ret ArrNum"),
