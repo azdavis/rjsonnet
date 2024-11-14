@@ -1,7 +1,7 @@
 //! Executing Jsonnet expression to produce Jsonnet values.
 
 use crate::error::{self, Result};
-use crate::{manifest, mk_todo, std_lib, Cx};
+use crate::{manifest, mk_todo, Cx};
 use always::always;
 use finite_float::Float;
 use jsonnet_expr::{
@@ -326,14 +326,7 @@ pub(crate) fn get_call(
       }
       get(cx, &env, func.body)
     }
-    Val::Fn(Fn::Std(std_fn)) => crate::generated::get(cx, env, positional, named, expr, std_fn)
-      .or_else(|e| {
-        if matches!(e, error::Error::Exec { expr: _, kind: error::Kind::Todo(_) }) {
-          std_lib::get(cx, env, positional, named, expr, std_fn)
-        } else {
-          Err(e)
-        }
-      }),
+    Val::Fn(Fn::Std(std_fn)) => crate::generated::get(cx, env, positional, named, expr, std_fn),
     _ => Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes }),
   }
 }

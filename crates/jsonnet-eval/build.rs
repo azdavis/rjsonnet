@@ -35,6 +35,7 @@ fn can_mk_arm(s: &str) -> bool {
       | "atan"
       | "round"
       | "equals"
+      | "join"
   )
 }
 
@@ -63,7 +64,7 @@ fn main() {
     ) -> crate::error::Result<jsonnet_val::jsonnet::Val> {
       match std_fn {
         #(#get_arms)*
-        _ => Err(crate::mk_todo(expr, "auto-gen'd std")),
+        _ => Err(crate::mk_todo(expr, std_fn.as_static_str())),
       }
     }
 

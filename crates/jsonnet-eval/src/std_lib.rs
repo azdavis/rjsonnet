@@ -1,31 +1,8 @@
 //! The standard library for Jsonnet, implemented in Rust.
 
-use crate::error::Result;
-use crate::generated::args;
-use crate::{error, exec, mk_todo, std_lib_impl, Cx};
-use finite_float::Float;
-use jsonnet_expr::{Expr, ExprMust, Id, Prim, StdFn};
-use jsonnet_val::jsonnet::{Array, Env, Val};
-
-pub(crate) fn get(
-  cx: Cx<'_>,
-  env: &Env,
-  positional: &[Expr],
-  named: &[(Id, Expr)],
-  expr: ExprMust,
-  std_fn: StdFn,
-) -> Result<Val> {
-  match std_fn {
-    StdFn::join => {
-      let arguments = args::join(positional, named, expr)?;
-      let sep = exec::get(cx, env, arguments.sep)?;
-      let arr = exec::get(cx, env, arguments.arr)?;
-      let arr = get_arr(&arr, arguments.arr.unwrap_or(expr))?;
-      std_lib_impl::join(&sep, arr, expr, cx)
-    }
-    _ => Err(mk_todo(expr, std_fn.as_static_str())),
-  }
-}
+use crate::error::{self, Result};
+use jsonnet_expr::{ExprMust, Prim};
+use jsonnet_val::jsonnet::{Array, Val};
 
 pub(crate) fn get_num(v: &Val, expr: ExprMust) -> Result<f64> {
   match v {
@@ -35,7 +12,7 @@ pub(crate) fn get_num(v: &Val, expr: ExprMust) -> Result<f64> {
 }
 
 pub(crate) fn mk_num(n: f64, expr: ExprMust) -> Result<Val> {
-  match Float::try_from(n) {
+  match finite_float::Float::try_from(n) {
     Ok(x) => Ok(x.into()),
     Err(e) => Err(error::Error::Exec { expr, kind: error::Kind::Infinite(e) }),
   }
