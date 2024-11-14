@@ -5,7 +5,7 @@ use crate::generated::args;
 use crate::{error, exec, mk_todo, std_lib_impl, Cx};
 use finite_float::Float;
 use jsonnet_expr::{Expr, ExprMust, Id, Prim, StdFn};
-use jsonnet_val::jsonnet::{Env, Val};
+use jsonnet_val::jsonnet::{Array, Env, Val};
 
 pub(crate) fn get(
   cx: Cx<'_>,
@@ -19,13 +19,9 @@ pub(crate) fn get(
     StdFn::join => {
       let arguments = args::join(positional, named, expr)?;
       let sep = exec::get(cx, env, arguments.sep)?;
-      let Val::Array(arr) = exec::get(cx, env, arguments.arr)? else {
-        return Err(error::Error::Exec {
-          expr: arguments.arr.unwrap_or(expr),
-          kind: error::Kind::IncompatibleTypes,
-        });
-      };
-      std_lib_impl::join(&sep, &arr, expr, cx)
+      let arr = exec::get(cx, env, arguments.arr)?;
+      let arr = get_arr(&arr, arguments.arr.unwrap_or(expr))?;
+      std_lib_impl::join(&sep, arr, expr, cx)
     }
     _ => Err(mk_todo(expr, std_fn.as_static_str())),
   }
@@ -42,5 +38,12 @@ pub(crate) fn mk_num(n: f64, expr: ExprMust) -> Result<Val> {
   match Float::try_from(n) {
     Ok(x) => Ok(x.into()),
     Err(e) => Err(error::Error::Exec { expr, kind: error::Kind::Infinite(e) }),
+  }
+}
+
+pub(crate) fn get_arr(v: &Val, expr: ExprMust) -> Result<&Array> {
+  match v {
+    Val::Array(arr) => Ok(arr),
+    _ => Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes }),
   }
 }
