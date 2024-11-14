@@ -5,18 +5,41 @@ use std::collections::BTreeSet;
 
 const JOINER: &str = "__";
 
+fn can_mk_arm(_: &str) -> bool {
+  false
+}
+
 fn main() {
   let unique_param_lists: BTreeSet<Vec<_>> = jsonnet_std_sig::FNS.iter().map(param_names).collect();
   let get_params = unique_param_lists.iter().map(|params| mk_get_params(params));
   let get_args = jsonnet_std_sig::FNS.iter().map(mk_get_args);
+  let get_arms =
+    jsonnet_std_sig::FNS.iter().filter(|func| can_mk_arm(func.name.ident())).map(mk_arm);
 
   let file = file!();
 
   let contents = q! {
+    use jsonnet_expr::StdFn;
+
     pub const _GENERATED_BY: &str = #file;
 
+    pub(crate) fn get(
+      _cx: crate::Cx<'_>,
+      _env: &jsonnet_val::jsonnet::Env,
+      _positional: &[jsonnet_expr::Expr],
+      _named: &[(jsonnet_expr::Id, jsonnet_expr::Expr)],
+      expr: jsonnet_expr::ExprMust,
+      std_fn: StdFn,
+    ) -> crate::error::Result<jsonnet_val::jsonnet::Val> {
+      match std_fn {
+        #(#get_arms)*
+        _ => Err(crate::mk_todo(expr, "auto-gen'd std")),
+      }
+    }
+
+
     #[expect(dead_code, non_camel_case_types, non_snake_case)]
-    pub mod params {
+    pub(crate) mod params {
       use jsonnet_expr::arg::{Result, TooMany, Error, ErrorKind};
       use jsonnet_expr::{Id, Expr, ExprMust};
 
@@ -24,7 +47,7 @@ fn main() {
     }
 
     #[expect(dead_code, non_snake_case)]
-    pub mod args {
+    pub(crate) mod args {
       use jsonnet_expr::arg::{Result};
       use jsonnet_expr::{Id, Expr, ExprMust};
       use super::params;
@@ -144,6 +167,10 @@ fn mk_get_params(params: &[&str]) -> proc_macro2::TokenStream {
 
 fn param_names(f: &jsonnet_std_sig::Fn) -> Vec<&'static str> {
   f.sig.params.iter().map(|x| x.name).collect()
+}
+
+fn mk_arm(_: &jsonnet_std_sig::Fn) -> proc_macro2::TokenStream {
+  todo!()
 }
 
 fn ident(s: &str) -> proc_macro2::Ident {
