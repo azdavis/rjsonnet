@@ -34,6 +34,7 @@ fn can_mk_arm(s: &str) -> bool {
       | "acos"
       | "atan"
       | "round"
+      | "equals"
   )
 }
 

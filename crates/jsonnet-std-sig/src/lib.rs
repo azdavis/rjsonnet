@@ -334,6 +334,6 @@ pub const FNS: [Fn; 126] = [
   f("mergePatch", s(&[r("target", Ty::Any), r("patch", Ty::Any)], Ty::Any)),
   f("trace", s(&[r("str", Ty::Str), r("rest", Ty::Any)], Ty::Any)),
   // alluded to in the spec but not mentioned on the std lib page
-  f("equals", s(&[r("x", Ty::Any), r("y", Ty::Any)], Ty::Bool)),
+  pf("equals", s(&[r("x", Ty::Any), r("y", Ty::Any)], Ty::Bool)),
   f("objectHasEx", s(&[r("obj", Ty::Obj), r("fname", Ty::Str), r("hidden", Ty::Bool)], Ty::Bool)),
 ];

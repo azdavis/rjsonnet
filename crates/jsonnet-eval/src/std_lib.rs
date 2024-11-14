@@ -27,12 +27,6 @@ pub(crate) fn get(
       };
       std_lib_impl::join(&sep, &arr, expr, cx)
     }
-    StdFn::equals => {
-      let arguments = args::equals(positional, named, expr)?;
-      let lhs = exec::get(cx, env, arguments.x)?;
-      let rhs = exec::get(cx, env, arguments.y)?;
-      Ok(exec::eq_val(expr, cx, &lhs, &rhs)?.into())
-    }
     _ => Err(mk_todo(expr, std_fn.as_static_str())),
   }
 }

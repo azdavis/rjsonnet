@@ -180,3 +180,7 @@ pub(crate) fn atan(n: f64) -> f64 {
 pub(crate) fn round(n: f64) -> f64 {
   n.round()
 }
+
+pub(crate) fn equals(lhs: &Val, rhs: &Val, expr: ExprMust, cx: Cx<'_>) -> Result<bool> {
+  exec::eq_val(expr, cx, lhs, rhs)
+}
