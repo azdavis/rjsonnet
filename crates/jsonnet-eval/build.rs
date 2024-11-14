@@ -9,7 +9,14 @@ const JOINER: &str = "__";
 fn can_mk_arm(s: &str) -> bool {
   matches!(
     s,
-    "type_" | "isArray" | "isBoolean" | "isFunction" | "isNumber" | "isObject" | "isString"
+    "type_"
+      | "isArray"
+      | "isBoolean"
+      | "isFunction"
+      | "isNumber"
+      | "isObject"
+      | "isString"
+      | "length"
   )
 }
 
@@ -214,7 +221,7 @@ fn mk_arm(func: &jsonnet_std_sig::Fn) -> proc_macro2::TokenStream {
     Ty::Any => q! {},
     Ty::True | Ty::Bool | Ty::Str => q! { Ok(res.into()) },
     Ty::Num => todo!("conv ret Num"),
-    Ty::Uint => todo!("conv ret Uint"),
+    Ty::Uint => q! { Ok(finite_float::Float::from(res).into()) },
     Ty::ArrBool => todo!("conv ret ArrBool"),
     Ty::ArrNum => todo!("conv ret ArrNum"),
     Ty::ArrStr => todo!("conv ret ArrStr"),
@@ -228,11 +235,21 @@ fn mk_arm(func: &jsonnet_std_sig::Fn) -> proc_macro2::TokenStream {
     Ty::Hof1 => todo!("conv ret Hof1"),
     Ty::Hof2 => todo!("conv ret Hof2"),
   };
+  let partial_args = if func.total {
+    q! {}
+  } else {
+    q! { expr, cx }
+  };
+  let partial_conv = if func.total {
+    q! {}
+  } else {
+    q! { ? }
+  };
   q! {
     StdFn::#name => {
       let arguments = args::#name(positional, named, expr)?;
       #(#get_args)*
-      let res = std_lib_impl::#name(#(#send_args,)*);
+      let res = std_lib_impl::#name(#(#send_args,)* #partial_args) #partial_conv;
       #conv_res
     }
   }

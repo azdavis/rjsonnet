@@ -16,12 +16,6 @@ pub(crate) fn get(
   std_fn: StdFn,
 ) -> Result<Val> {
   match std_fn {
-    StdFn::length => {
-      let arguments = args::length(positional, named, expr)?;
-      let x = exec::get(cx, env, arguments.x)?;
-      let ret = std_lib_impl::length(&x, arguments.x.unwrap_or(expr), cx)?;
-      Ok(Float::from(ret).into())
-    }
     StdFn::abs => math_op(cx, env, positional, named, expr, f64::abs),
     StdFn::sign => {
       let arguments = args::sign(positional, named, expr)?;
