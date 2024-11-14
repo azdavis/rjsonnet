@@ -124,7 +124,6 @@ fn mk_get_params(params: &[&str]) -> proc_macro2::TokenStream {
     q! { #param: unsafe { in_progress.#param.unwrap_unchecked() }, }
   });
   q! {
-    #[derive(Debug)]
     pub struct #name {
       #(#fields)*
     }
