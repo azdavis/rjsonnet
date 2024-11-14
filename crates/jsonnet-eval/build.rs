@@ -78,7 +78,7 @@ fn main() {
     }
 
     #[expect(dead_code, non_snake_case)]
-    pub(crate) mod args {
+    mod args {
       use jsonnet_expr::arg::{Result};
       use jsonnet_expr::{Id, Expr, ExprMust};
       use super::params;
