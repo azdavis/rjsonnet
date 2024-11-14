@@ -326,7 +326,9 @@ pub(crate) fn get_call(
       }
       get(cx, &env, func.body)
     }
-    Val::Fn(Fn::Std(std_fn)) => crate::generated::get(cx, env, positional, named, expr, std_fn),
+    Val::Fn(Fn::Std(std_fn)) => {
+      crate::generated::call_std(cx, env, positional, named, expr, std_fn)
+    }
     _ => Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes }),
   }
 }

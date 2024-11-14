@@ -6,7 +6,7 @@ use std::collections::BTreeSet;
 
 const JOINER: &str = "__";
 
-fn can_mk_arm(s: &str) -> bool {
+fn is_impl(s: &str) -> bool {
   matches!(
     s,
     "type_"
@@ -43,18 +43,18 @@ fn main() {
   let unique_param_lists: BTreeSet<Vec<_>> = jsonnet_std_sig::FNS.iter().map(param_names).collect();
   let get_params = unique_param_lists.iter().map(|params| mk_get_params(params));
   let get_args = jsonnet_std_sig::FNS.iter().map(mk_get_args);
-  let get_arms =
-    jsonnet_std_sig::FNS.iter().filter(|func| can_mk_arm(func.name.ident())).map(mk_arm);
+  let call_std_arms =
+    jsonnet_std_sig::FNS.iter().filter(|func| is_impl(func.name.ident())).map(mk_call_std_arm);
 
   let file = file!();
 
   let contents = q! {
-    use crate::{exec, std_lib, std_lib_impl};
+    use crate::{exec, util, std_lib};
     use jsonnet_expr::StdFn;
 
     pub const _GENERATED_BY: &str = #file;
 
-    pub(crate) fn get(
+    pub(crate) fn call_std(
       cx: crate::Cx<'_>,
       env: &jsonnet_val::jsonnet::Env,
       positional: &[jsonnet_expr::Expr],
@@ -63,7 +63,7 @@ fn main() {
       std_fn: StdFn,
     ) -> crate::error::Result<jsonnet_val::jsonnet::Val> {
       match std_fn {
-        #(#get_arms)*
+        #(#call_std_arms)*
         _ => Err(crate::mk_todo(expr, std_fn.as_static_str())),
       }
     }
@@ -198,21 +198,21 @@ fn param_names(f: &jsonnet_std_sig::Fn) -> Vec<&'static str> {
   f.sig.params.iter().map(|x| x.name).collect()
 }
 
-fn mk_arm(func: &jsonnet_std_sig::Fn) -> proc_macro2::TokenStream {
+fn mk_call_std_arm(func: &jsonnet_std_sig::Fn) -> proc_macro2::TokenStream {
   let name = ident(func.name.ident());
   let get_args = func.sig.params.iter().map(|param| {
     let name = ident(param.name);
     let conv = match param.ty {
       Ty::Any | Ty::StrOrArrNum | Ty::StrOrArrAny | Ty::NumOrNull | Ty::NumOrStr => q! {},
       Ty::True | Ty::Bool => todo!("conv param Bool"),
-      Ty::Num => q! { let #name = std_lib::get_num(&#name, arguments.#name.unwrap_or(expr))?; },
+      Ty::Num => q! { let #name = util::get_num(&#name, arguments.#name.unwrap_or(expr))?; },
       Ty::Uint => todo!("conv param Uint"),
       Ty::Str => todo!("conv param Str"),
       Ty::ArrBool => todo!("conv param ArrBool"),
       Ty::ArrNum => todo!("conv param ArrNum"),
       Ty::ArrStr => todo!("conv param ArrStr"),
       Ty::ArrKv => todo!("conv param ArrKv"),
-      Ty::ArrAny => q! { let #name = std_lib::get_arr(&#name, arguments.#name.unwrap_or(expr))?; },
+      Ty::ArrAny => q! { let #name = util::get_arr(&#name, arguments.#name.unwrap_or(expr))?; },
       Ty::Obj => todo!("conv param Obj"),
       Ty::Hof1 => todo!("conv param Hof1"),
       Ty::Hof2 => todo!("conv param Hof2"),
@@ -233,7 +233,7 @@ fn mk_arm(func: &jsonnet_std_sig::Fn) -> proc_macro2::TokenStream {
   let conv_res = match func.sig.ret {
     Ty::Any | Ty::StrOrArrNum | Ty::StrOrArrAny | Ty::NumOrNull | Ty::NumOrStr => q! { Ok(res) },
     Ty::True | Ty::Bool | Ty::Str => q! { Ok(res.into()) },
-    Ty::Num => q! { std_lib::mk_num(res, expr) },
+    Ty::Num => q! { util::mk_num(res, expr) },
     Ty::Uint => q! { Ok(finite_float::Float::from(res).into()) },
     Ty::ArrBool => todo!("conv ret ArrBool"),
     Ty::ArrNum => todo!("conv ret ArrNum"),
@@ -258,7 +258,7 @@ fn mk_arm(func: &jsonnet_std_sig::Fn) -> proc_macro2::TokenStream {
     StdFn::#name => {
       let arguments = args::#name(positional, named, expr)?;
       #(#get_args)*
-      let res = std_lib_impl::#name(#(#send_args,)* #partial_args) #partial_conv;
+      let res = std_lib::#name(#(#send_args,)* #partial_args) #partial_conv;
       #conv_res
     }
   }
