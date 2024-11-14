@@ -213,8 +213,7 @@ fn mk_call_std_arm(func: &jsonnet_std_sig::Fn) -> proc_macro2::TokenStream {
     Ty::ArrKv => todo!("conv ret ArrKv"),
     Ty::ArrAny => todo!("conv ret ArrAny"),
     Ty::Obj => todo!("conv ret Obj"),
-    Ty::Hof1 => todo!("conv ret Hof1"),
-    Ty::Hof2 => todo!("conv ret Hof2"),
+    Ty::Hof1 | Ty::Hof2 => unreachable!("will not ret a Hof"),
   };
   let partial_args = if func.total {
     q! {}
