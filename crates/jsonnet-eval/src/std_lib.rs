@@ -16,48 +16,6 @@ pub(crate) fn get(
   std_fn: StdFn,
 ) -> Result<Val> {
   match std_fn {
-    StdFn::type_ => {
-      let arguments = args::type_(positional, named, expr)?;
-      let x = exec::get(cx, env, arguments.x)?;
-      let res = std_lib_impl::type_(&x);
-      Ok(res.into())
-    }
-    StdFn::isArray => {
-      let arguments = args::isArray(positional, named, expr)?;
-      let v = exec::get(cx, env, arguments.v)?;
-      let res = std_lib_impl::isArray(&v);
-      Ok(res.into())
-    }
-    StdFn::isBoolean => {
-      let arguments = args::isBoolean(positional, named, expr)?;
-      let v = exec::get(cx, env, arguments.v)?;
-      let res = std_lib_impl::isBoolean(&v);
-      Ok(res.into())
-    }
-    StdFn::isFunction => {
-      let arguments = args::isFunction(positional, named, expr)?;
-      let v = exec::get(cx, env, arguments.v)?;
-      let res = std_lib_impl::isFunction(&v);
-      Ok(res.into())
-    }
-    StdFn::isNumber => {
-      let arguments = args::isNumber(positional, named, expr)?;
-      let v = exec::get(cx, env, arguments.v)?;
-      let res = std_lib_impl::isNumber(&v);
-      Ok(res.into())
-    }
-    StdFn::isObject => {
-      let arguments = args::isObject(positional, named, expr)?;
-      let v = exec::get(cx, env, arguments.v)?;
-      let res = std_lib_impl::isObject(&v);
-      Ok(res.into())
-    }
-    StdFn::isString => {
-      let arguments = args::isString(positional, named, expr)?;
-      let v = exec::get(cx, env, arguments.v)?;
-      let res = std_lib_impl::isString(&v);
-      Ok(res.into())
-    }
     StdFn::length => {
       let arguments = args::length(positional, named, expr)?;
       let x = exec::get(cx, env, arguments.x)?;

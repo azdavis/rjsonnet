@@ -1,12 +1,16 @@
 //! Generate code for calling the standard library functions.
 
+use jsonnet_std_sig::Ty;
 use quote::quote as q;
 use std::collections::BTreeSet;
 
 const JOINER: &str = "__";
 
-fn can_mk_arm(_: &str) -> bool {
-  false
+fn can_mk_arm(s: &str) -> bool {
+  matches!(
+    s,
+    "type_" | "isArray" | "isBoolean" | "isFunction" | "isNumber" | "isObject" | "isString"
+  )
 }
 
 fn main() {
@@ -19,15 +23,16 @@ fn main() {
   let file = file!();
 
   let contents = q! {
+    use crate::{exec, std_lib_impl};
     use jsonnet_expr::StdFn;
 
     pub const _GENERATED_BY: &str = #file;
 
     pub(crate) fn get(
-      _cx: crate::Cx<'_>,
-      _env: &jsonnet_val::jsonnet::Env,
-      _positional: &[jsonnet_expr::Expr],
-      _named: &[(jsonnet_expr::Id, jsonnet_expr::Expr)],
+      cx: crate::Cx<'_>,
+      env: &jsonnet_val::jsonnet::Env,
+      positional: &[jsonnet_expr::Expr],
+      named: &[(jsonnet_expr::Id, jsonnet_expr::Expr)],
       expr: jsonnet_expr::ExprMust,
       std_fn: StdFn,
     ) -> crate::error::Result<jsonnet_val::jsonnet::Val> {
@@ -169,8 +174,66 @@ fn param_names(f: &jsonnet_std_sig::Fn) -> Vec<&'static str> {
   f.sig.params.iter().map(|x| x.name).collect()
 }
 
-fn mk_arm(_: &jsonnet_std_sig::Fn) -> proc_macro2::TokenStream {
-  todo!()
+fn mk_arm(func: &jsonnet_std_sig::Fn) -> proc_macro2::TokenStream {
+  let name = ident(func.name.ident());
+  let get_args = func.sig.params.iter().map(|param| {
+    let name = ident(param.name);
+    let conv = match param.ty {
+      Ty::Any => q! {},
+      Ty::True | Ty::Bool => todo!("conv param Bool"),
+      Ty::Num => todo!("conv param Num"),
+      Ty::Str => todo!("conv param Str"),
+      Ty::ArrBool => todo!("conv param ArrBool"),
+      Ty::ArrNum => todo!("conv param ArrNum"),
+      Ty::ArrStr => todo!("conv param ArrStr"),
+      Ty::ArrKv => todo!("conv param ArrKv"),
+      Ty::ArrAny => todo!("conv param ArrAny"),
+      Ty::Obj => todo!("conv param Obj"),
+      Ty::StrOrArrNum => todo!("conv param StrOrArrNum"),
+      Ty::StrOrArrAny => todo!("conv param StrOrArrAny"),
+      Ty::NumOrNull => todo!("conv param NumOrNull"),
+      Ty::NumOrStr => todo!("conv param NumOrStr"),
+      Ty::Hof1 => todo!("conv param Hof1"),
+      Ty::Hof2 => todo!("conv param Hof2"),
+    };
+    q! {
+      let #name = exec::get(cx, env, arguments.#name)?;
+      #conv
+    }
+  });
+  let send_args = func.sig.params.iter().map(|param| {
+    let name = ident(param.name);
+    if matches!(param.ty, Ty::True | Ty::Bool | Ty::Num | Ty::Str) {
+      q! { #name }
+    } else {
+      q! { &#name }
+    }
+  });
+  let conv_res = match func.sig.ret {
+    Ty::Any => q! {},
+    Ty::True | Ty::Bool | Ty::Str => q! { Ok(res.into()) },
+    Ty::Num => todo!("conv ret Num"),
+    Ty::ArrBool => todo!("conv ret ArrBool"),
+    Ty::ArrNum => todo!("conv ret ArrNum"),
+    Ty::ArrStr => todo!("conv ret ArrStr"),
+    Ty::ArrKv => todo!("conv ret ArrKv"),
+    Ty::ArrAny => todo!("conv ret ArrAny"),
+    Ty::Obj => todo!("conv ret Obj"),
+    Ty::StrOrArrNum => todo!("conv ret StrOrArrNum"),
+    Ty::StrOrArrAny => todo!("conv ret StrOrArrAny"),
+    Ty::NumOrNull => todo!("conv ret NumOrNull"),
+    Ty::NumOrStr => todo!("conv ret NumOrStr"),
+    Ty::Hof1 => todo!("conv ret Hof1"),
+    Ty::Hof2 => todo!("conv ret Hof2"),
+  };
+  q! {
+    StdFn::#name => {
+      let arguments = args::#name(positional, named, expr)?;
+      #(#get_args)*
+      let res = std_lib_impl::#name(#(#send_args,)*);
+      #conv_res
+    }
+  }
 }
 
 fn ident(s: &str) -> proc_macro2::Ident {
