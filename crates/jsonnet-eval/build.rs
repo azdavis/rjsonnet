@@ -21,6 +21,19 @@ fn can_mk_arm(s: &str) -> bool {
       | "max"
       | "min"
       | "pow"
+      | "abs"
+      | "exp"
+      | "log"
+      | "floor"
+      | "ceil"
+      | "sqrt"
+      | "sin"
+      | "cos"
+      | "tan"
+      | "asin"
+      | "acos"
+      | "atan"
+      | "round"
   )
 }
 
@@ -55,7 +68,7 @@ fn main() {
 
 
     #[expect(dead_code, non_camel_case_types, non_snake_case)]
-    pub(crate) mod params {
+    mod params {
       use jsonnet_expr::arg::{Result, TooMany, Error, ErrorKind};
       use jsonnet_expr::{Id, Expr, ExprMust};
 

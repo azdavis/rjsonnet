@@ -127,3 +127,56 @@ pub(crate) fn min(a: f64, b: f64) -> f64 {
 pub(crate) fn pow(x: f64, n: f64) -> f64 {
   x.powf(n)
 }
+
+pub(crate) fn abs(n: f64) -> f64 {
+  n.abs()
+}
+
+pub(crate) fn exp(n: f64) -> f64 {
+  n.exp()
+}
+
+/// TODO is it log2 or log10?
+pub(crate) fn log(n: f64) -> f64 {
+  n.log2()
+}
+
+pub(crate) fn floor(n: f64) -> f64 {
+  n.floor()
+}
+
+pub(crate) fn ceil(n: f64) -> f64 {
+  n.ceil()
+}
+
+pub(crate) fn sqrt(n: f64) -> f64 {
+  n.sqrt()
+}
+
+pub(crate) fn sin(n: f64) -> f64 {
+  n.sin()
+}
+
+pub(crate) fn cos(n: f64) -> f64 {
+  n.cos()
+}
+
+pub(crate) fn tan(n: f64) -> f64 {
+  n.tan()
+}
+
+pub(crate) fn asin(n: f64) -> f64 {
+  n.asin()
+}
+
+pub(crate) fn acos(n: f64) -> f64 {
+  n.acos()
+}
+
+pub(crate) fn atan(n: f64) -> f64 {
+  n.atan()
+}
+
+pub(crate) fn round(n: f64) -> f64 {
+  n.round()
+}
