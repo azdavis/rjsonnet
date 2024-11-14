@@ -202,7 +202,7 @@ fn mk_arm(func: &jsonnet_std_sig::Fn) -> proc_macro2::TokenStream {
   let get_args = func.sig.params.iter().map(|param| {
     let name = ident(param.name);
     let conv = match param.ty {
-      Ty::Any => q! {},
+      Ty::Any | Ty::StrOrArrNum | Ty::StrOrArrAny | Ty::NumOrNull | Ty::NumOrStr => q! {},
       Ty::True | Ty::Bool => todo!("conv param Bool"),
       Ty::Num => q! { let #name = std_lib::get_num(&#name, arguments.#name.unwrap_or(expr))?; },
       Ty::Uint => todo!("conv param Uint"),
@@ -211,12 +211,8 @@ fn mk_arm(func: &jsonnet_std_sig::Fn) -> proc_macro2::TokenStream {
       Ty::ArrNum => todo!("conv param ArrNum"),
       Ty::ArrStr => todo!("conv param ArrStr"),
       Ty::ArrKv => todo!("conv param ArrKv"),
-      Ty::ArrAny => todo!("conv param ArrAny"),
+      Ty::ArrAny => q! { let #name = std_lib::get_arr(&#name, arguments.#name.unwrap_or(expr))?; },
       Ty::Obj => todo!("conv param Obj"),
-      Ty::StrOrArrNum => todo!("conv param StrOrArrNum"),
-      Ty::StrOrArrAny => todo!("conv param StrOrArrAny"),
-      Ty::NumOrNull => todo!("conv param NumOrNull"),
-      Ty::NumOrStr => todo!("conv param NumOrStr"),
       Ty::Hof1 => todo!("conv param Hof1"),
       Ty::Hof2 => todo!("conv param Hof2"),
     };
@@ -234,7 +230,7 @@ fn mk_arm(func: &jsonnet_std_sig::Fn) -> proc_macro2::TokenStream {
     }
   });
   let conv_res = match func.sig.ret {
-    Ty::Any => q! {},
+    Ty::Any | Ty::StrOrArrNum | Ty::StrOrArrAny | Ty::NumOrNull | Ty::NumOrStr => q! { Ok(res) },
     Ty::True | Ty::Bool | Ty::Str => q! { Ok(res.into()) },
     Ty::Num => q! { std_lib::mk_num(res, expr) },
     Ty::Uint => q! { Ok(finite_float::Float::from(res).into()) },
@@ -244,10 +240,6 @@ fn mk_arm(func: &jsonnet_std_sig::Fn) -> proc_macro2::TokenStream {
     Ty::ArrKv => todo!("conv ret ArrKv"),
     Ty::ArrAny => todo!("conv ret ArrAny"),
     Ty::Obj => todo!("conv ret Obj"),
-    Ty::StrOrArrNum => todo!("conv ret StrOrArrNum"),
-    Ty::StrOrArrAny => todo!("conv ret StrOrArrAny"),
-    Ty::NumOrNull => todo!("conv ret NumOrNull"),
-    Ty::NumOrStr => todo!("conv ret NumOrStr"),
     Ty::Hof1 => todo!("conv ret Hof1"),
     Ty::Hof2 => todo!("conv ret Hof2"),
   };
