@@ -56,7 +56,7 @@ fn main() {
     pub(crate) fn call_std(
       cx: crate::Cx<'_>,
       env: &jsonnet_val::jsonnet::Env,
-      positional: &[jsonnet_expr::Expr],
+      pos: &[jsonnet_expr::Expr],
       named: &[(jsonnet_expr::Id, jsonnet_expr::Expr)],
       expr: jsonnet_expr::ExprMust,
       std_fn: StdFn,
@@ -98,7 +98,7 @@ fn mk_get_params(params: &[&str]) -> proc_macro2::TokenStream {
   });
   let init_from_positional = params.iter().map(|&param| {
     let param = ident(param);
-    q! { #param: positional.next(), }
+    q! { #param: pos.next(), }
   });
   let set_from_named = params.iter().map(|&param| {
     let param = ident(param);
@@ -139,18 +139,18 @@ fn mk_get_params(params: &[&str]) -> proc_macro2::TokenStream {
       ];
 
       pub fn get(
-        positional: &[Expr],
+        pos: &[Expr],
         named: &[(Id, Expr)],
         expr: ExprMust,
       ) -> Result<Self> {
         if let Some(tma) = TooMany::new(
           #name::IDS.iter().copied(),
-          positional.len(),
+          pos.len(),
           named.iter().map(|&(id, _)| id),
         ) {
           return Err(Error { expr, kind: ErrorKind::TooMany(tma) });
         }
-        let mut positional = positional.iter().copied();
+        let mut pos = pos.iter().copied();
         let mut in_progress = #in_progress {
           #(#init_from_positional)*
         };
@@ -178,20 +178,20 @@ fn mk_call_std_arm(func: &jsonnet_std_sig::Fn) -> proc_macro2::TokenStream {
     let conv = match param.ty {
       Ty::Any | Ty::StrOrArrNum | Ty::StrOrArrAny | Ty::NumOrNull | Ty::NumOrStr => q! {},
       Ty::True | Ty::Bool => todo!("conv param Bool"),
-      Ty::Num => q! { let #name = util::get_num(&#name, arguments.#name.unwrap_or(expr))?; },
+      Ty::Num => q! { let #name = util::get_num(&#name, args.#name.unwrap_or(expr))?; },
       Ty::Uint => todo!("conv param Uint"),
       Ty::Str => todo!("conv param Str"),
       Ty::ArrBool => todo!("conv param ArrBool"),
       Ty::ArrNum => todo!("conv param ArrNum"),
       Ty::ArrStr => todo!("conv param ArrStr"),
       Ty::ArrKv => todo!("conv param ArrKv"),
-      Ty::ArrAny => q! { let #name = util::get_arr(&#name, arguments.#name.unwrap_or(expr))?; },
+      Ty::ArrAny => q! { let #name = util::get_arr(&#name, args.#name.unwrap_or(expr))?; },
       Ty::Obj => todo!("conv param Obj"),
       Ty::Hof1 => todo!("conv param Hof1"),
       Ty::Hof2 => todo!("conv param Hof2"),
     };
     q! {
-      let #name = exec::get(cx, env, arguments.#name)?;
+      let #name = exec::get(cx, env, args.#name)?;
       #conv
     }
   });
@@ -231,7 +231,7 @@ fn mk_call_std_arm(func: &jsonnet_std_sig::Fn) -> proc_macro2::TokenStream {
   let args_struct = ident(args_struct.as_str());
   q! {
     StdFn::#name => {
-      let arguments = params::#args_struct::get(positional, named, expr)?;
+      let args = params::#args_struct::get(pos, named, expr)?;
       #(#get_args)*
       let res = std_lib::#name(#(#send_args,)* #partial_args) #partial_conv;
       #conv_res
