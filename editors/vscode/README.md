@@ -1,4 +1,4 @@
-# Jsonnet
+# rjsonnet
 
 [Jsonnet][] support for VS Code.
 
