@@ -1,4 +1,4 @@
-//! The standard library for Jsonnet, implemented in Rust.
+//! Helper utilities.
 
 use crate::error::{self, Result};
 use jsonnet_expr::{ExprMust, Prim};
