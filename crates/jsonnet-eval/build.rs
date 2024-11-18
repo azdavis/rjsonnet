@@ -196,10 +196,14 @@ fn mk_call_std_arm(func: &jsonnet_std_sig::Fn) -> proc_macro2::TokenStream {
   });
   let send_args = func.sig.params.iter().map(|param| {
     let name = ident(param.name);
-    if matches!(param.ty, Ty::True | Ty::Bool | Ty::Num | Ty::Str) {
-      q! { #name }
-    } else {
+    let needs_borrow = matches!(
+      param.ty,
+      Ty::Any | Ty::StrOrArrNum | Ty::StrOrArrAny | Ty::NumOrNull | Ty::NumOrStr
+    );
+    if needs_borrow {
       q! { &#name }
+    } else {
+      q! { #name }
     }
   });
   let conv_res = match func.sig.ret {
