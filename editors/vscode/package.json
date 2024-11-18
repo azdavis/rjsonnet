@@ -4,6 +4,7 @@
   "displayName": "rjsonnet",
   "version": "0.7.2",
   "description": "Jsonnet support implemented in Rust",
+  "icon": "icon.png",
   "publisher": "azdavis",
   "author": "Ariel Davis <ariel.z.davis@icloud.com>",
   "repository": {

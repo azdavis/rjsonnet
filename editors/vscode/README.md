@@ -28,4 +28,8 @@
 
 ![flow typing](/img/6-flow-typing.png)
 
+## Credits
+
+The icon comes from the [Jsonnet] project, used under Creative Commons Attribution 2.5.
+
 [jsonnet]: https://jsonnet.org
