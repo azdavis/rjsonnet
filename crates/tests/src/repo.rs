@@ -125,13 +125,12 @@ fn licenses() {
     "Apache-2.0 OR BSL-1.0",
     "Apache-2.0 OR MIT",
     "Apache-2.0/MIT",
-    "MIT OR Apache-2.0 OR Zlib",
     "MIT OR Apache-2.0",
     "MIT OR Zlib OR Apache-2.0",
     "MIT",
     "MIT/Apache-2.0",
+    "Unicode-3.0",
     "Unlicense OR MIT",
-    "Zlib OR Apache-2.0 OR MIT",
   ];
   let mut allowed: FxHashMap<_, _> = allowed.iter().map(|&x| (x, false)).collect();
   let packages = METADATA.get("packages").unwrap().as_array().unwrap();
