@@ -81,6 +81,8 @@ pub enum Ty {
   Uint,
   /// A string like `"foo"` or `"bar"` or `""`.
   Str,
+  /// An array with any contents, like `["hi", 3, null, false]`.
+  ArrAny,
   /// An array of booleans, like `[false, true]`.
   ArrBool,
   /// An array of numbers, like `[1, 4]`.
@@ -89,14 +91,12 @@ pub enum Ty {
   ArrStr,
   /// An array of `{ key: string, value: any }`.
   ArrKv,
-  /// An array with any contents, like `["hi", 3, null, false]`.
-  ArrAny,
-  /// An object with arbitrary fields like `{ foo: 3 }` or `{}`.
+  /// An object with arbitrary fields.
   Obj,
-  /// A string or an array of numbers.
-  StrOrArrNum,
   /// A string or an array of anything.
   StrOrArrAny,
+  /// A string or an array of numbers.
+  StrOrArrNum,
   /// A number or `null`.
   NumOrNull,
   /// A number or a string.

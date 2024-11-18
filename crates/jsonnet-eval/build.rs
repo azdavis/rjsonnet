@@ -180,11 +180,11 @@ fn mk_call_std_arm(func: &jsonnet_std_sig::Fn) -> proc_macro2::TokenStream {
       Ty::Num => q! { let #name = util::get_num(&#name, args.#name.unwrap_or(expr))?; },
       Ty::Uint => todo!("conv param Uint"),
       Ty::Str => todo!("conv param Str"),
+      Ty::ArrAny => q! { let #name = util::get_arr(&#name, args.#name.unwrap_or(expr))?; },
       Ty::ArrBool => todo!("conv param ArrBool"),
       Ty::ArrNum => todo!("conv param ArrNum"),
       Ty::ArrStr => todo!("conv param ArrStr"),
       Ty::ArrKv => todo!("conv param ArrKv"),
-      Ty::ArrAny => q! { let #name = util::get_arr(&#name, args.#name.unwrap_or(expr))?; },
       Ty::Obj => todo!("conv param Obj"),
       Ty::Hof1 => todo!("conv param Hof1"),
       Ty::Hof2 => todo!("conv param Hof2"),
@@ -207,15 +207,15 @@ fn mk_call_std_arm(func: &jsonnet_std_sig::Fn) -> proc_macro2::TokenStream {
     }
   });
   let conv_res = match func.sig.ret {
-    Ty::Any | Ty::StrOrArrNum | Ty::StrOrArrAny | Ty::NumOrNull | Ty::NumOrStr => q! { Ok(res) },
+    Ty::Any | Ty::StrOrArrAny | Ty::StrOrArrNum | Ty::NumOrNull | Ty::NumOrStr => q! { Ok(res) },
     Ty::True | Ty::Bool | Ty::Str => q! { Ok(res.into()) },
     Ty::Num => q! { util::mk_num(res, expr) },
     Ty::Uint => q! { Ok(finite_float::Float::from(res).into()) },
+    Ty::ArrAny => todo!("conv ret ArrAny"),
     Ty::ArrBool => todo!("conv ret ArrBool"),
     Ty::ArrNum => todo!("conv ret ArrNum"),
     Ty::ArrStr => todo!("conv ret ArrStr"),
     Ty::ArrKv => todo!("conv ret ArrKv"),
-    Ty::ArrAny => todo!("conv ret ArrAny"),
     Ty::Obj => todo!("conv ret Obj"),
     Ty::Hof1 | Ty::Hof2 => unreachable!("will not ret a Hof"),
   };
