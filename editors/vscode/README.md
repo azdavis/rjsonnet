@@ -2,15 +2,30 @@
 
 [Jsonnet][] support for VS Code.
 
-## Features
+## Screenshots
 
-- Syntax highlighting
-- Snippets
-- Inline diagnostics
-- Go-to-definition
-- Hover for info
-- Type-checking
-- Auto-completions
-- Signature help
+### Syntax highlighting, error tolerant parsing, and inline diagnostics
+
+![syntax-hl-err-tolerant-diagnostics](/img/1-syntax-hl-err-tolerant-diagnostics.png)
+
+### Go to (or peek) definition
+
+![peek-def](/img/2-peek-def.png)
+
+### Hover for type and standard library documentation
+
+![std-lib](/img/3-std-lib-doc-hover.png)
+
+### Auto-complete object fields
+
+![auto-complete](/img/4-auto-complete.png)
+
+### Signature help
+
+![auto-complete](/img/5-sig-help.png)
+
+### Flow typing
+
+![flow typing](/img/6-flow-typing.png)
 
 [jsonnet]: https://jsonnet.org

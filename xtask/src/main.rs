@@ -175,6 +175,16 @@ fn dist(args: &DistArgs) {
   fs::write(&dst, license).expect("write combined license");
   assert!(dst.pop());
 
+  dst.push("img");
+  fs::create_dir(&dst).expect("create img dir");
+
+  for entry in fs::read_dir("img").expect("read img dir") {
+    let entry = entry.expect("entry");
+    dst.push(entry.file_name());
+    fs::copy(entry.path(), &dst).expect("copy img");
+    assert!(dst.pop());
+  }
+
   env::set_current_dir(&dst).expect("set dir");
   if fs::metadata("node_modules").is_err() {
     run(cmd_exe("npm").arg("ci"));
