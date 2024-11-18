@@ -2,7 +2,7 @@
 
 Things under "main" are not released yet.
 
-## main
+## v0.7.2
 
 - Improve go-to-def, etc through asserts.
 - Improve typing for `self`, `super`, and `$`.
