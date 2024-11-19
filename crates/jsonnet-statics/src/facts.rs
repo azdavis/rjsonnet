@@ -2,17 +2,14 @@
 //!
 //! Each fact about a variable `$var` must be one of:
 //!
-//! - `std.FUNC($var)` where FUNC is one of `isNumber`, `isString`, `isBoolean`, `isArray`, or
-//!   `isObject`
-//! - `std.type($var) == "S"` where S is one of number, string, boolean, array, object, or null
+//! - `std.FUNC($var)` where FUNC is one of `isNumber`, `isString`, `isBoolean`, `isArray`,
+//!   `isObject`, or `isFunction`
+//! - `std.type($var) == "S"` where S is one of number, string, boolean, array, object, function, or
+//!   null
 //! - `$var == LIT` where LIT is some literal (`null`, `3`, `"hi"`, `false`, etc)
 //!
-//! notably:
-//!
-//! - cannot use `std.isFunction`, the type system cannot model a function with totally unknown
-//!   params. this wouldn't be that helpful anyway i suppose - if you don't know how many params,
-//!   how can you call it?
-//! - cannot do `local isNumber = std.isNumber` beforehand, must literally get the field off `std`
+//! notably, cannot do `local isNumber = std.isNumber` beforehand, must literally get the field off
+//! `std`
 //!
 //! on the bright side:
 //!
@@ -94,6 +91,7 @@ pub(crate) fn get_cond(
         Str::isNumber => ty::Ty::NUMBER,
         Str::isObject => ty::Ty::OBJECT,
         Str::isString => ty::Ty::STRING,
+        Str::isFunction => ty::Ty::UNKNOWN_FN,
         _ => return,
       };
       let param = match (&positional[..], &named[..]) {
@@ -185,7 +183,7 @@ fn get_ty_eq(
     Str::number => ty::Ty::NUMBER,
     Str::object => ty::Ty::OBJECT,
     Str::string => ty::Ty::STRING,
-    // as a little bonus.
+    Str::function => ty::Ty::UNKNOWN_FN,
     Str::null => ty::Ty::NULL,
     _ => return,
   };
