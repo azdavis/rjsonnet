@@ -174,6 +174,8 @@ fn param_names(f: &jsonnet_std_sig::Fn) -> Vec<&'static str> {
   f.sig.params.iter().map(|x| x.name).collect()
 }
 
+/// NOTE: there is an assumption that the param names for std fns (e.g. `x`, `arr`) will not clash
+/// with the param names and local vars in the actual rust function (e.g. `env`, `args`)
 fn mk_call_std_arm(func: &jsonnet_std_sig::Fn) -> proc_macro2::TokenStream {
   let name = ident(func.name.ident());
   let get_args = func.sig.params.iter().map(|param| {
