@@ -176,7 +176,7 @@ fn dist(args: &DistArgs) {
   assert!(dst.pop());
 
   dst.push("img");
-  fs::create_dir(&dst).expect("create img dir");
+  fs::create_dir_all(&dst).expect("create img dir");
 
   for entry in fs::read_dir("img").expect("read img dir") {
     let entry = entry.expect("entry");
