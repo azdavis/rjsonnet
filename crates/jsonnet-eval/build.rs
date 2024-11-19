@@ -38,6 +38,8 @@ fn is_impl(s: &str) -> bool {
       | "join"
       | "isEven"
       | "isOdd"
+      | "isInteger"
+      | "isDecimal"
   )
 }
 

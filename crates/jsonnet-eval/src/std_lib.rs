@@ -193,3 +193,12 @@ pub(crate) fn isEven(n: f64) -> bool {
 pub(crate) fn isOdd(n: f64) -> bool {
   n.abs() % 2.0 == 1.0
 }
+
+#[expect(clippy::float_cmp)]
+pub(crate) fn isInteger(n: f64) -> bool {
+  n.round() == n
+}
+
+pub(crate) fn isDecimal(n: f64) -> bool {
+  !isInteger(n)
+}

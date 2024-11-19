@@ -367,11 +367,29 @@ Returns `true` if the argument is an integer number, else `false`.
 
 Raises if the argument is not a number.
 
+```jsonnet
+assert std.isInteger(1);
+assert std.isInteger(0);
+assert std.isInteger(-5);
+assert !std.isInteger(0.1);
+assert !std.isInteger(4.4);
+assert !std.isInteger(2.0001);
+```
+
 ## `isDecimal`
 
 Returns `true` if the argument is a decimal number (i.e. one with non-zero digits after the decimal point), else `false`.
 
 Raises if the argument is not a number.
+
+```jsonnet
+assert std.isDecimal(0.1);
+assert std.isDecimal(4.4);
+assert std.isDecimal(2.0001);
+assert !std.isDecimal(1);
+assert !std.isDecimal(0);
+assert !std.isDecimal(-5);
+```
 
 ## `mod`
 
