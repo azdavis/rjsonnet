@@ -27,6 +27,7 @@ fn main() {
     (ident("NUMBER_OR_STRING"), q!(Data::mk_union([Ty::NUMBER, Ty::STRING]))),
     (ident("HOF_1"), q!(Data::Fn(super::Fn::Hof(super::HofParams::One)))),
     (ident("HOF_2"), q!(Data::Fn(super::Fn::Hof(super::HofParams::Two)))),
+    (ident("UNKNOWN_FN"), q!(Data::Fn(super::Fn::Unknown))),
     (ident("OBJECT"), q!(Data::Object(super::Object::unknown()))),
     (
       ident("KEY_VALUE"),

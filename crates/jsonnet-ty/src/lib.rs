@@ -163,39 +163,43 @@ pub enum Fn {
   ///
   /// The params and return type are not known (aka any).
   Hof(HofParams),
+  /// A function for which the number of params or return type is not known at all. This is the type
+  /// of locals that are checked with `std.isFunction`.
+  Unknown,
 }
 
 impl Fn {
   fn apply(&mut self, subst: &Subst) {
     match self {
       Fn::Regular(f) => f.apply(subst),
-      Fn::Std(_) | Fn::Hof(_) => {}
+      Fn::Std(_) | Fn::Hof(_) | Fn::Unknown => {}
     }
   }
 
   fn has_local(&self) -> bool {
     match self {
       Fn::Regular(f) => f.has_local(),
-      Fn::Std(_) | Fn::Hof(_) => false,
+      Fn::Std(_) | Fn::Hof(_) | Fn::Unknown => false,
     }
   }
 
   /// Returns the params and return type for this.
   #[must_use]
-  pub fn parts(&self) -> (&[Param], Ty) {
+  pub fn parts(&self) -> (Option<&[Param]>, Ty) {
     match self {
-      Fn::Regular(func) => (func.params.as_slice(), func.ret),
+      Fn::Regular(func) => (Some(func.params.as_slice()), func.ret),
       Fn::Std(func) => {
         let sig = StdFnSig::get(*func);
-        (sig.params, sig.ret)
+        (Some(sig.params), sig.ret)
       }
       Fn::Hof(hof) => {
         let params = match hof {
           HofParams::One => [Param::X].as_slice(),
           HofParams::Two => [Param::X, Param::Y].as_slice(),
         };
-        (params, Ty::ANY)
+        (Some(params), Ty::ANY)
       }
+      Fn::Unknown => (None, Ty::ANY),
     }
   }
 }
@@ -372,7 +376,7 @@ impl<'a> MutStore<'a> {
   /// for it.
   pub fn get(&mut self, data: Data) -> Ty {
     match data {
-      // micro optimization (maybe). deferring to get_inner would also be correct
+      // micro optimizations (maybe). deferring to get_inner would also be correct
       Data::Prim(prim) => match prim {
         Prim::Any => Ty::ANY,
         Prim::True => Ty::TRUE,
@@ -381,8 +385,8 @@ impl<'a> MutStore<'a> {
         Prim::String => Ty::STRING,
         Prim::Number => Ty::NUMBER,
       },
-      // another one.
       Data::Fn(Fn::Std(f)) => Ty::std_fn(f),
+      Data::Fn(Fn::Unknown) => Ty::UNKNOWN_FN,
       // go directly to get inner.
       Data::Array(_) | Data::Object(_) | Data::Fn(Fn::Regular(_) | Fn::Hof(_)) => {
         self.get_inner(data)
@@ -548,7 +552,7 @@ impl Subst {
           work.push(Action::end(ty));
           match data {
             // known to all already exist in the global store.
-            Data::Prim(_) | Data::Fn(Fn::Std(_) | Fn::Hof(_)) => {}
+            Data::Prim(_) | Data::Fn(Fn::Std(_) | Fn::Hof(_) | Fn::Unknown) => {}
             Data::Array(ty) => work.push(Action::start(*ty)),
             Data::Object(object) => {
               let iter = object.known.values().map(|&t| Action::start(t));

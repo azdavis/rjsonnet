@@ -806,6 +806,7 @@ fn get_cur_param(
     let id = x.id()?;
     let text = id.text();
     let (params, _) = func.parts();
+    let params = params?;
     let pos = params.iter().position(|p| {
       let s = p.id.into();
       str_ar.get(&s) == text

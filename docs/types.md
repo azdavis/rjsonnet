@@ -68,6 +68,8 @@ Order does not matter in union types.
 
 When a parameter is optional, it has a `?` after the argument name, like `(x?: T1) => T2`.
 
+When a function's arguments are unknown, they are shown as `...`.
+
 ### Precedence
 
 There is some ambiguity in the type syntax that can be resolved by specifying the binding precedence of the different bits of syntax.

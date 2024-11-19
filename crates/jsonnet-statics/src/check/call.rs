@@ -7,6 +7,7 @@ use jsonnet_ty as ty;
 use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
 
+/// NOTE: the arguments have already been type-checked.
 pub(crate) fn get(
   st: &mut st::St<'_>,
   expr: ExprMust,
@@ -41,7 +42,7 @@ pub(crate) fn get(
       let ret_ty = ty::Data::Union(ret_tys.collect());
       st.tys.get(ret_ty)
     }
-    ty::Data::Prim(ty::Prim::Any) => ty::Ty::ANY,
+    ty::Data::Prim(ty::Prim::Any) | ty::Data::Fn(ty::Fn::Unknown) => ty::Ty::ANY,
     ty::Data::Prim(_) | ty::Data::Array(_) | ty::Data::Object(_) => {
       st.err(expr, error::Kind::Invalid(fn_ty, error::Invalid::Call));
       ty::Ty::ANY
@@ -225,7 +226,7 @@ fn maybe_extra_checks(
       let &(init_expr, init_ty) = params.get(&Id::init)?;
       // TODO handle unions
       let ty::Data::Fn(func) = st.tys.data(func_ty) else { return None };
-      let (&[ac_param, x_param], func_ret) = func.parts() else { return None };
+      let (Some(&[ac_param, x_param]), func_ret) = func.parts() else { return None };
       st.unify(init_expr, ac_param.ty, init_ty);
       st.unify(init_expr, func_ret, init_ty);
       let want_arr_ty = st.tys.get(ty::Data::Array(x_param.ty));
@@ -245,7 +246,7 @@ fn check_map(
   // TODO handle unions
   let ty::Data::Fn(func) = st.tys.data(func_ty) else { return None };
   // NOTE no need to emit error when not 1 param, covered by unify with Hof
-  let (&[func_param], func_ret_ty) = func.parts() else { return None };
+  let (Some(&[func_param]), func_ret_ty) = func.parts() else { return None };
   let param_arr_ty = st.tys.get(ty::Data::Array(func_param.ty));
   st.unify(arr_expr, param_arr_ty, arr_ty);
   Some(st.tys.get(ty::Data::Array(func_ret_ty)))
