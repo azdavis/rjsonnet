@@ -202,3 +202,7 @@ pub(crate) fn isInteger(n: f64) -> bool {
 pub(crate) fn isDecimal(n: f64) -> bool {
   !isInteger(n)
 }
+
+pub(crate) fn clamp(n: f64, min: f64, max: f64) -> f64 {
+  n.clamp(min, max)
+}

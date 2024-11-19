@@ -40,6 +40,7 @@ fn is_impl(s: &str) -> bool {
       | "isOdd"
       | "isInteger"
       | "isDecimal"
+      | "clamp"
   )
 }
 
@@ -57,6 +58,7 @@ fn main() {
 
     pub const _GENERATED_BY: &str = #file;
 
+    #[allow(non_snake_case)]
     pub(crate) fn call_std(
       cx: crate::Cx<'_>,
       env: &jsonnet_val::jsonnet::Env,

@@ -405,8 +405,6 @@ Equivalent to `std.max(minVal, std.min(x, maxVal))`.
 
 Examples:
 
-<!-- @eval-error: not yet implemented -->
-
 ```jsonnet
 assert std.clamp(-3, 0, 5) == 0;
 assert std.clamp(4, 0, 5) == 4;
