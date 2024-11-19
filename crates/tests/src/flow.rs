@@ -72,3 +72,25 @@ local f(x) =
   )
   .check();
 }
+
+#[test]
+fn is_fn() {
+  let thing = r#"
+local bad(f) =
+  assert std.isFunction(f) : "not a fn";
+##vvvvv diagnostic: not a pair of types that can be added with `+`; left:  `(...) => any`; right: `number`
+  f + 1
+# ^ hover: (...) => any
+;
+
+[
+  bad(3),
+##    ^ diagnostic: incompatible types; expected `(...) => any`; found `number`
+  bad(function() 3),
+  bad(function(x) x + 3),
+  bad(function(x, y) x + y),
+  bad(function(x=1, y=2) x + y),
+]
+"#;
+  JsonnetInput::eval_error(thing, "not a fn").check();
+}
