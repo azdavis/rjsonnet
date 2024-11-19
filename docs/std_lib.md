@@ -35,29 +35,78 @@ Return a string that indicates the type of the value. The possible return values
 - `"object"`
 - `"string"`
 
+```jsonnet
+assert std.type([1]) == "array";
+assert std.type(null) == "null";
+assert std.type({}) == "object";
+assert std.type(3) == "number";
+```
+
 ## `isArray`
 
 Returns whether the argument is an array.
+
+```jsonnet
+assert std.isArray([1, 2]);
+assert std.isArray([]);
+assert !std.isArray(null);
+assert !std.isArray(4);
+```
 
 ## `isBoolean`
 
 Returns whether the argument is a boolean.
 
+```jsonnet
+assert std.isBoolean(true);
+assert std.isBoolean(false);
+assert !std.isBoolean(null);
+assert !std.isBoolean(4);
+```
+
 ## `isFunction`
 
 Returns whether the argument is a function.
+
+```jsonnet
+assert std.isFunction(function(x) x + 1);
+assert std.isFunction(std.mod);
+assert !std.isFunction(null);
+assert !std.isFunction(4);
+```
 
 ## `isNumber`
 
 Returns whether the argument is a number.
 
+```jsonnet
+assert std.isNumber(3);
+assert std.isNumber(-123.345);
+assert !std.isNumber(null);
+assert !std.isNumber([]);
+```
+
 ## `isObject`
 
 Returns whether the argument is an object.
 
+```jsonnet
+assert std.isObject({});
+assert std.isObject({ a: 1 } + { b: 2 });
+assert !std.isObject(null);
+assert !std.isObject([]);
+```
+
 ## `isString`
 
 Returns whether the argument is a string.
+
+```jsonnet
+assert std.isString("hi");
+assert std.isString("");
+assert !std.isString(null);
+assert !std.isString({});
+```
 
 ## `length`
 
@@ -73,6 +122,23 @@ Depending on the type of the value given, this functions returns the number of _
 | object   | fields     |
 
 Raises an error if given `null`, `true`, `false`, or a number.
+
+```jsonnet
+assert std.length("hi") == 2;
+assert std.length("") == 0;
+assert std.length("あ") == 1;
+
+assert std.length([]) == 0;
+assert std.length([3, 4]) == 2;
+
+assert std.length(function(x) x + 1) == 1;
+assert std.length(function() 4) == 0;
+assert std.length(function(x=1) x + 2) == 0;
+
+assert std.length({}) == 0;
+assert std.length({ a: 3, b: 5 }) == 2;
+assert std.length({ x:: 9, y::: 7 }) == 2;
+```
 
 ## `prune`
 
@@ -91,6 +157,7 @@ The argument may have any type.
 ```jsonnet
 assert std.prune([1, [], 2, {}, 3, null]) == [1, 2, 3];
 assert std.prune({a: 3}) == {a: 3};
+assert std.prune({w: 0, x: "", y: [], z: null}) == {w: 0, x: ""};
 assert std.prune(null) == null;
 ```
 
