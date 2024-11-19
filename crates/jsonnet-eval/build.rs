@@ -36,6 +36,8 @@ fn is_impl(s: &str) -> bool {
       | "round"
       | "equals"
       | "join"
+      | "isEven"
+      | "isOdd"
   )
 }
 

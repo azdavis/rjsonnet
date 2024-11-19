@@ -184,3 +184,12 @@ pub(crate) fn round(n: f64) -> f64 {
 pub(crate) fn equals(lhs: &Val, rhs: &Val, expr: ExprMust, cx: Cx<'_>) -> Result<bool> {
   exec::eq_val(expr, cx, lhs, rhs)
 }
+
+pub(crate) fn isEven(n: f64) -> bool {
+  n.abs() % 2.0 == 0.0
+}
+
+#[expect(clippy::float_cmp)]
+pub(crate) fn isOdd(n: f64) -> bool {
+  n.abs() % 2.0 == 1.0
+}

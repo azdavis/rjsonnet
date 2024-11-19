@@ -333,11 +333,33 @@ Returns `true` if the argument is an even number, else `false`.
 
 Raises if the argument is not a number.
 
+```jsonnet
+assert std.isEven(2);
+assert std.isEven(0);
+assert std.isEven(-2);
+assert !std.isEven(1);
+assert !std.isEven(9);
+assert !std.isEven(-5);
+assert !std.isEven(4.4);
+assert !std.isEven(5.5);
+```
+
 ## `isOdd`
 
 Returns `true` if the argument is an odd number, else `false`.
 
 Raises if the argument is not a number.
+
+```jsonnet
+assert std.isOdd(1);
+assert std.isOdd(9);
+assert std.isOdd(-5);
+assert !std.isOdd(2);
+assert !std.isOdd(0);
+assert !std.isOdd(-2);
+assert !std.isOdd(4.4);
+assert !std.isOdd(5.5);
+```
 
 ## `isInteger`
 
