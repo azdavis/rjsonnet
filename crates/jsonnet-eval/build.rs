@@ -235,16 +235,8 @@ fn mk_call_std_arm(func: &jsonnet_std_sig::Fn) -> proc_macro2::TokenStream {
   } else {
     q! {}
   };
-  let partial_args = if func.total {
-    q! {}
-  } else {
-    q! { expr, cx, }
-  };
-  let partial_conv = if func.total {
-    q! {}
-  } else {
-    q! { ? }
-  };
+  let (partial_args, partial_conv) =
+    if func.total { (q! {}, q! {}) } else { (q! { expr, cx, }, q! { ? }) };
   let args_struct = param_names(func).join(JOINER);
   let args_struct = ident(args_struct.as_str());
   q! {
