@@ -4,7 +4,7 @@
 
 use crate::error::{self, Error, Result};
 use crate::{exec, Cx};
-use jsonnet_expr::{ExprMust, Prim, Str, StrArena};
+use jsonnet_expr::{ExprMust, Prim, Str};
 use jsonnet_val::jsonnet::{Array, Fn, Val};
 
 pub(crate) fn type_(x: &Val) -> Str {
@@ -211,14 +211,14 @@ pub(crate) fn isEmpty(s: &str) -> bool {
   s.is_empty()
 }
 
-pub(crate) fn asciiUpper(s: &str, ar: &StrArena) -> Str {
-  ar.str_shared(s.to_ascii_uppercase().into_boxed_str())
+pub(crate) fn asciiUpper(s: &str) -> String {
+  s.to_ascii_uppercase()
 }
 
-pub(crate) fn asciiLower(s: &str, ar: &StrArena) -> Str {
-  ar.str_shared(s.to_ascii_lowercase().into_boxed_str())
+pub(crate) fn asciiLower(s: &str) -> String {
+  s.to_ascii_lowercase()
 }
 
-pub(crate) fn strReplace(str: &str, from: &str, to: &str, ar: &StrArena) -> Str {
-  ar.str_shared(str.replace(from, to).into_boxed_str())
+pub(crate) fn strReplace(str: &str, from: &str, to: &str) -> String {
+  str.replace(from, to)
 }

@@ -34,3 +34,7 @@ pub(crate) fn get_str<'a>(v: &'a Val, sa: &'a StrArena, expr: ExprMust) -> Resul
     Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes })
   }
 }
+
+pub(crate) fn mk_str(sa: &StrArena, s: String) -> Val {
+  sa.str_shared(s.into_boxed_str()).into()
+}
