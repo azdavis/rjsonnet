@@ -44,6 +44,7 @@ fn is_impl(s: &str) -> bool {
       | "isEmpty"
       | "asciiUpper"
       | "asciiLower"
+      | "strReplace"
   )
 }
 

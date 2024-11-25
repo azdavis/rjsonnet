@@ -565,8 +565,6 @@ _Available since version 0.10.0._
 
 Example:
 
-<!-- @eval-error: not yet implemented -->
-
 ```jsonnet
 assert std.strReplace('I like to skate with my skateboard', 'skate', 'surf')
   == "I like to surf with my surfboard";

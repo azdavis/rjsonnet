@@ -218,3 +218,7 @@ pub(crate) fn asciiUpper(s: &str, ar: &StrArena) -> Str {
 pub(crate) fn asciiLower(s: &str, ar: &StrArena) -> Str {
   ar.str_shared(s.to_ascii_lowercase().into_boxed_str())
 }
+
+pub(crate) fn strReplace(str: &str, from: &str, to: &str, ar: &StrArena) -> Str {
+  ar.str_shared(str.replace(from, to).into_boxed_str())
+}
