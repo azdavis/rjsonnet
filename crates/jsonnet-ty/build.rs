@@ -148,7 +148,7 @@ fn mk_ty(ty: Ty) -> proc_macro2::TokenStream {
     Ty::True => q!(Ty::TRUE),
     Ty::Bool => q!(Ty::BOOL),
     Ty::Num | Ty::Uint => q!(Ty::NUMBER),
-    Ty::Str => q!(Ty::STRING),
+    Ty::Str | Ty::StaticStr => q!(Ty::STRING),
     Ty::ArrAny => q!(Ty::ARRAY_ANY),
     Ty::ArrBool => q!(Ty::ARRAY_BOOL),
     Ty::ArrNum => q!(Ty::ARRAY_NUMBER),

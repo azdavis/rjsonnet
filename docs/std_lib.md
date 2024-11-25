@@ -586,8 +586,6 @@ Returns a copy of the string in which all ASCII letters are capitalized.
 
 Example:
 
-<!-- @eval-error: not yet implemented -->
-
 ```jsonnet
 assert std.asciiUpper('100 Cats!') == "100 CATS!";
 ```

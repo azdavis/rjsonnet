@@ -81,6 +81,8 @@ pub enum Ty {
   Uint,
   /// A string like `"foo"` or `"bar"` or `""`.
   Str,
+  /// A string that is known statically.
+  StaticStr,
   /// An array with any contents, like `["hi", 3, null, false]`.
   ArrAny,
   /// An array of booleans, like `[false, true]`.
@@ -158,7 +160,7 @@ const fn pf(name: &'static str, sig: Sig) -> Fn {
 /// The std fns.
 pub const FNS: [Fn; 126] = [
   f("extVar", s(&[r("x", Ty::Str)], Ty::Str)),
-  Fn { name: S::named("type", "type_"), sig: s(&[r("x", Ty::Any)], Ty::Str), total: true },
+  Fn { name: S::named("type", "type_"), sig: s(&[r("x", Ty::Any)], Ty::StaticStr), total: true },
   f("isArray", V_ANY_RET_BOOL),
   f("isBoolean", V_ANY_RET_BOOL),
   f("isFunction", V_ANY_RET_BOOL),

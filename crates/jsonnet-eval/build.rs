@@ -42,6 +42,7 @@ fn is_impl(s: &str) -> bool {
       | "isDecimal"
       | "clamp"
       | "isEmpty"
+      | "asciiUpper"
   )
 }
 
@@ -189,6 +190,7 @@ fn mk_call_std_arm(func: &jsonnet_std_sig::Fn) -> proc_macro2::TokenStream {
       Ty::Num => q! { let #name = util::get_num(&#name, args.#name.unwrap_or(expr))?; },
       Ty::Uint => todo!("conv param Uint"),
       Ty::Str => q! { let #name = util::get_str(&#name, cx.str_ar, args.#name.unwrap_or(expr))?; },
+      Ty::StaticStr => unreachable!("cannot know fn arg vals statically"),
       Ty::ArrAny => q! { let #name = util::get_arr(&#name, args.#name.unwrap_or(expr))?; },
       Ty::ArrBool => todo!("conv param ArrBool"),
       Ty::ArrNum => todo!("conv param ArrNum"),
@@ -217,7 +219,7 @@ fn mk_call_std_arm(func: &jsonnet_std_sig::Fn) -> proc_macro2::TokenStream {
   });
   let conv_res = match func.sig.ret {
     Ty::Any | Ty::StrOrArrAny | Ty::StrOrArrNum | Ty::NumOrNull | Ty::NumOrStr => q! { Ok(res) },
-    Ty::True | Ty::Bool | Ty::Str => q! { Ok(res.into()) },
+    Ty::True | Ty::Bool | Ty::Str | Ty::StaticStr => q! { Ok(res.into()) },
     Ty::Num => q! { util::mk_num(res, expr) },
     Ty::Uint => q! { Ok(finite_float::Float::from(res).into()) },
     Ty::ArrAny => todo!("conv ret ArrAny"),
@@ -228,10 +230,15 @@ fn mk_call_std_arm(func: &jsonnet_std_sig::Fn) -> proc_macro2::TokenStream {
     Ty::Obj => todo!("conv ret Obj"),
     Ty::Hof1 | Ty::Hof2 => unreachable!("will not ret a Hof"),
   };
+  let str_ar_arg = if matches!(func.sig.ret, Ty::Str) {
+    q! { cx.str_ar, }
+  } else {
+    q! {}
+  };
   let partial_args = if func.total {
     q! {}
   } else {
-    q! { expr, cx }
+    q! { expr, cx, }
   };
   let partial_conv = if func.total {
     q! {}
@@ -244,7 +251,7 @@ fn mk_call_std_arm(func: &jsonnet_std_sig::Fn) -> proc_macro2::TokenStream {
     StdFn::#name => {
       let args = params::#args_struct::get(pos, named, expr)?;
       #(#get_args)*
-      let res = std_lib::#name(#(#send_args,)* #partial_args) #partial_conv;
+      let res = std_lib::#name(#(#send_args,)* #str_ar_arg #partial_args) #partial_conv;
       #conv_res
     }
   }
