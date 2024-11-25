@@ -627,6 +627,11 @@ _Available since version 0.20.0._
 
 Returns whether the given string has zero length.
 
+```jsonnet
+assert std.isEmpty("");
+assert !std.isEmpty("hi");
+```
+
 ## `asciiUpper`
 
 _Available since version 0.10.0._
