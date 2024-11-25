@@ -480,6 +480,12 @@ _Available since version 0.10.0._
 
 If the string `s` is shorter than `from + len`, the suffix starting at position `from` will be returned.
 
+```jsonnet
+assert std.substr("think", 1, 2) == "hi";
+assert std.substr("develop", 4, 3) == "lop";
+assert std.substr("hello world", 6, 99) == "world";
+```
+
 ## `findSubstr`
 
 _Available since version 0.10.0._

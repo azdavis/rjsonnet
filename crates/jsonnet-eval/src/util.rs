@@ -38,3 +38,12 @@ pub(crate) fn get_str<'a>(v: &'a Val, sa: &'a StrArena, expr: ExprMust) -> Resul
 pub(crate) fn mk_str(sa: &StrArena, s: String) -> Val {
   sa.str_shared(s.into_boxed_str()).into()
 }
+
+#[expect(clippy::float_cmp, clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+pub(crate) fn get_uint(n: f64, expr: ExprMust) -> Result<usize> {
+  if n >= 0.0 && n.trunc() == n {
+    Ok(n as usize)
+  } else {
+    Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes })
+  }
+}

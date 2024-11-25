@@ -45,6 +45,7 @@ fn is_impl(s: &str) -> bool {
       | "asciiUpper"
       | "asciiLower"
       | "strReplace"
+      | "substr"
   )
 }
 
@@ -190,7 +191,10 @@ fn mk_call_std_arm(func: &jsonnet_std_sig::Fn) -> proc_macro2::TokenStream {
       Ty::Any | Ty::StrOrArrNum | Ty::StrOrArrAny | Ty::NumOrNull | Ty::NumOrStr => q! {},
       Ty::True | Ty::Bool => todo!("conv param Bool"),
       Ty::Num => q! { let #name = util::get_num(&#name, args.#name.unwrap_or(expr))?; },
-      Ty::Uint => todo!("conv param Uint"),
+      Ty::Uint => q! {
+        let #name = util::get_num(&#name, args.#name.unwrap_or(expr))?;
+        let #name = util::get_uint(#name, args.#name.unwrap_or(expr))?;
+      },
       Ty::Str => q! { let #name = util::get_str(&#name, cx.str_ar, args.#name.unwrap_or(expr))?; },
       Ty::StaticStr => unreachable!("cannot know fn arg vals statically"),
       Ty::ArrAny => q! { let #name = util::get_arr(&#name, args.#name.unwrap_or(expr))?; },

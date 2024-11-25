@@ -218,7 +218,7 @@ pub const FNS: [Fn; 126] = [
   f("toString", s(&[r("a", Ty::Any)], Ty::Str)),
   f("codepoint", s(&[r("str", Ty::Str)], Ty::Num)),
   f("char", s(&[r("n", Ty::Num)], Ty::Str)),
-  f("substr", s(&[r("str", Ty::Str), r("from", Ty::Num), r("len", Ty::Num)], Ty::Str)),
+  pf("substr", s(&[r("str", Ty::Str), r("from", Ty::Uint), r("len", Ty::Uint)], Ty::Str)),
   f("findSubstr", s(&[r("pat", Ty::Str), r("str", Ty::Str)], Ty::ArrNum)),
   f("startsWith", A_B_STR_RET_BOOL),
   f("endsWith", A_B_STR_RET_BOOL),

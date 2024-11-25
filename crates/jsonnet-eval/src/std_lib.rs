@@ -221,3 +221,26 @@ pub(crate) fn asciiLower(s: &str) -> String {
 pub(crate) fn strReplace(str: &str, from: &str, to: &str) -> String {
   str.replace(from, to)
 }
+
+pub(crate) fn substr(
+  str: &str,
+  from: usize,
+  len: usize,
+  expr: ExprMust,
+  _: Cx<'_>,
+) -> Result<String> {
+  if from >= str.len() {
+    return Err(error::Error::Exec { expr, kind: error::Kind::IdxOutOfRange(from) });
+  }
+  let Some(fst) = str.get(from..) else {
+    return Err(error::Error::Exec { expr, kind: error::Kind::IdxNotUtf8Boundary(from) });
+  };
+  if fst.len() < len {
+    Ok(fst.to_owned())
+  } else {
+    match fst.get(..len) {
+      Some(x) => Ok(x.to_owned()),
+      None => Err(error::Error::Exec { expr, kind: error::Kind::IdxNotUtf8Boundary(len) }),
+    }
+  }
+}

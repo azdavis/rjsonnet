@@ -46,6 +46,8 @@ pub enum Kind {
   /// should be caught in statics
   NotInScope(Id),
   Cycle(jsonnet_val::jsonnet::Cycle),
+  IdxOutOfRange(usize),
+  IdxNotUtf8Boundary(usize),
 }
 
 impl From<arg::ErrorKind> for Kind {
@@ -96,6 +98,8 @@ impl fmt::Display for DisplayError<'_> {
           }
           write!(f, "{first_and_last}")
         }
+        Kind::IdxOutOfRange(n) => write!(f, "index out of range: {n}"),
+        Kind::IdxNotUtf8Boundary(n) => write!(f, "index not on UTF-8 boundary: {n}"),
       },
       Error::ManifestFn => f.write_str("cannot manifest function"),
       Error::NoPath(p) => {
