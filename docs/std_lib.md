@@ -351,6 +351,17 @@ assert std.atan(0.5) == 0.46364760900080615;
 
 Returns the argument rounded to the nearest integer.
 
+```jsonnet
+assert std.round(1) == 1;
+assert std.round(1.1) == 1;
+assert std.round(1.5) == 2;
+assert std.round(1.9) == 2;
+assert std.round(-1) == -1;
+assert std.round(-1.1) == -1;
+assert std.round(-1.5) == -2;
+assert std.round(-1.9) == -2;
+```
+
 ## `isEven`
 
 Returns `true` if the argument is an even number, else `false`.
