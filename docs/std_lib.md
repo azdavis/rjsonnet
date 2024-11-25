@@ -506,8 +506,6 @@ _Available since version 0.10.0._
 
 `std.startsWith(a, b)` returns whether the string `a` is prefixed by the string `b`.
 
-<!-- @eval-error: not yet implemented -->
-
 ```jsonnet
 assert std.startsWith("hi Chidi", "hi");
 assert !std.startsWith("hi Chidi", "fork");
@@ -518,8 +516,6 @@ assert !std.startsWith("hi Chidi", "fork");
 _Available since version 0.10.0._
 
 `std.endsWith(a, b)` returns whether the string `a` is suffixed by the string `b`.
-
-<!-- @eval-error: not yet implemented -->
 
 ```jsonnet
 assert std.endsWith("thank you", "you");

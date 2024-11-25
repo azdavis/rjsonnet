@@ -244,3 +244,11 @@ pub(crate) fn substr(
     }
   }
 }
+
+pub(crate) fn startsWith(a: &str, b: &str) -> bool {
+  a.starts_with(b)
+}
+
+pub(crate) fn endsWith(a: &str, b: &str) -> bool {
+  a.ends_with(b)
+}

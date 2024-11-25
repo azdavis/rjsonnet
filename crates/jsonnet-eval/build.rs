@@ -46,6 +46,8 @@ fn is_impl(s: &str) -> bool {
       | "asciiLower"
       | "strReplace"
       | "substr"
+      | "startsWith"
+      | "endsWith"
   )
 }
 
