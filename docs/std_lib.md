@@ -490,7 +490,15 @@ assert std.substr("hello world", 6, 99) == "world";
 
 _Available since version 0.10.0._
 
-`std.findSubstr(pat, str)` returns an array that contains the indexes of all occurrences of pat in str.
+`std.findSubstr(pat, str)` returns an array that contains the indexes of all occurrences of `pat` in `str`.
+
+<!-- @eval-error: not yet implemented -->
+
+```jsonnet
+assert std.findSubstr("e", "envelope") == [0, 3, 7];
+assert std.findSubstr("hi", "hi Chidi") == [0, 4];
+assert std.findSubstr("fork", "shirt") == [];
+```
 
 ## `startsWith`
 
@@ -498,11 +506,25 @@ _Available since version 0.10.0._
 
 `std.startsWith(a, b)` returns whether the string `a` is prefixed by the string `b`.
 
+<!-- @eval-error: not yet implemented -->
+
+```jsonnet
+assert std.startsWith("hi Chidi", "hi");
+assert !std.startsWith("hi Chidi", "fork");
+```
+
 ## `endsWith`
 
 _Available since version 0.10.0._
 
 `std.endsWith(a, b)` returns whether the string `a` is suffixed by the string `b`.
+
+<!-- @eval-error: not yet implemented -->
+
+```jsonnet
+assert std.endsWith("thank you", "you");
+assert !std.endsWith("thank you", "no");
+```
 
 ## `stripChars`
 
