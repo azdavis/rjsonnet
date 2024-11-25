@@ -427,7 +427,7 @@ Converts the given argument to a string.
 
 _Available since version 0.10.0._
 
-Returns the positive integer representing the unicode codepoint of the character in the given single-character string. This function is the inverse of `char`.
+Returns the positive integer representing the unicode codepoint of the character in the given single-character string. This function is the inverse of `std.char`.
 
 ## `char`
 
