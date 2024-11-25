@@ -364,7 +364,7 @@ assert std.round(-1.9) == -2;
 
 ## `isEven`
 
-Returns `true` if the argument is an even number, else `false`.
+Returns whether the argument is an even number.
 
 Raises if the argument is not a number.
 
@@ -381,7 +381,7 @@ assert !std.isEven(5.5);
 
 ## `isOdd`
 
-Returns `true` if the argument is an odd number, else `false`.
+Returns whether the argument is an odd number.
 
 Raises if the argument is not a number.
 
@@ -398,7 +398,7 @@ assert !std.isOdd(5.5);
 
 ## `isInteger`
 
-Returns `true` if the argument is an integer number, else `false`.
+Returns whether the argument is an integer number.
 
 Raises if the argument is not a number.
 
@@ -413,7 +413,7 @@ assert !std.isInteger(2.0001);
 
 ## `isDecimal`
 
-Returns `true` if the argument is a decimal number (i.e. one with non-zero digits after the decimal point), else `false`.
+Returns whether the argument is a decimal number, i.e. one with non-zero digits after the decimal point.
 
 Raises if the argument is not a number.
 
@@ -1297,7 +1297,9 @@ assert std.uniq([1, 2, 2, 3, 2]) == [1, 2, 3, 2];
 
 _Available since version 0.19.0._
 
-`std.all(arr)` returns `true` if all elements of the input array are `true`, `false` otherwise. `std.all([])` evaluates to `true`.
+`std.all(arr)` returns whether all elements of the input array are `true`.
+
+Notably, `std.all([])` returns `true`.
 
 Raises if `arr` is not an array, or `arr` contains non-boolean values.
 
@@ -1305,7 +1307,9 @@ Raises if `arr` is not an array, or `arr` contains non-boolean values.
 
 _Available since version 0.19.0._
 
-`std.any(arr)` return `true` if any element of `arr` is `true`, `false` otherwise. `std.any([])` evaluates to `false`.
+`std.any(arr)` return whether any element of `arr` is `true`.
+
+Notably, `std.any([])` returns `false`.
 
 Raises if `arr` is not an array, or `arr` contains non-boolean values.
 
@@ -1374,7 +1378,7 @@ The optional `keyF` function can be used to extract a key to use from each eleme
 
 _Available since version 0.10.0._
 
-`std.setMember(x, s, keyF=id)` returns `true` if `x` is a member of `s`, otherwise `false`.
+`std.setMember(x, s, keyF=id)` whether `x` is a member of `s`.
 
 `s` must be a set, i.e. a sorted array with no duplicates. If that is not the case, this function will quietly return non-meaningful results.
 
@@ -1390,7 +1394,7 @@ _Available since version 0.18.0._
 
 _Available since version 0.10.0._
 
-`std.objectHas(o, f)` returns `true` if the given object `o` has the field `f` (given as a string), otherwise `false`.
+`std.objectHas(o, f)` returns whether the given object `o` has the field `f` given as a string.
 
 Raises an error if the arguments are not object and string respectively.
 
