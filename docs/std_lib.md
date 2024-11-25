@@ -303,37 +303,49 @@ assert std.sqrt(1) == 1;
 
 Returns the sine of the argument.
 
-This is a trigonometry function.
+```jsonnet
+assert std.sin(0.5) == 0.479425538604203;
+```
 
 ## `cos`
 
 Returns the cosine of its argument.
 
-This is a trigonometry function.
+```jsonnet
+assert std.cos(0.5) == 0.8775825618903728;
+```
 
 ## `tan`
 
 Returns the tangent of its argument.
 
-This is a trigonometry function.
+```jsonnet
+assert std.tan(0.5) == 0.5463024898437905;
+```
 
 ## `asin`
 
 Returns the arcsine of its argument.
 
-This is a trigonometry function.
+```jsonnet
+assert std.asin(0.5) == 0.5235987755982988;
+```
 
 ## `acos`
 
 Returns the arccosine of its argument.
 
-This is a trigonometry function.
+```jsonnet
+assert std.acos(0.5) == 1.0471975511965976;
+```
 
 ## `atan`
 
 Returns the arctangent of its argument.
 
-This is a trigonometry function.
+```jsonnet
+assert std.atan(0.5) == 0.46364760900080615;
+```
 
 ## `round`
 
