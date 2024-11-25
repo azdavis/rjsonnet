@@ -403,8 +403,6 @@ _Available since version 0.15.0._
 
 Equivalent to `std.max(minVal, std.min(x, maxVal))`.
 
-Examples:
-
 ```jsonnet
 assert std.clamp(-3, 0, 5) == 0;
 assert std.clamp(4, 0, 5) == 4;
@@ -467,8 +465,6 @@ _Available since version 0.15.0._
 
 `std.stripChars(str, chars)` removes characters `chars` from the beginning and from the end of `str`.
 
-Examples:
-
 <!-- @eval-error: not yet implemented -->
 
 ```jsonnet
@@ -483,8 +479,6 @@ _Available since version 0.15.0._
 
 `std.lstripChars(str, chars)` removes characters `chars` from the beginning of `str`.
 
-Examples:
-
 <!-- @eval-error: not yet implemented -->
 
 ```jsonnet
@@ -498,8 +492,6 @@ assert std.lstripChars("cacabbbbaacc", "ac") == "bbbbaacc";
 _Available since version 0.15.0._
 
 `std.rstripChars(str, chars)` removes characters `chars` from the end of `str`.
-
-Examples:
 
 <!-- @eval-error: not yet implemented -->
 
@@ -517,8 +509,6 @@ _Available since version 0.10.0._
 
 Note: Versions up to and including 0.18.0 require `c` to be a single character.
 
-Examples:
-
 <!-- @eval-error: not yet implemented -->
 
 ```jsonnet
@@ -534,8 +524,6 @@ _Available since version 0.10.0._
 
 Note: Versions up to and including 0.18.0 require `c` to be a single character.
 
-Examples:
-
 <!-- @eval-error: not yet implemented -->
 
 ```jsonnet
@@ -549,8 +537,6 @@ _Available since version 0.19.0._
 
 `std.splitLimitR(str, c, maxsplits)` is the same as `std.splitLimit(str, c, maxsplits)` but will split from right to left.
 
-Example:
-
 <!-- @eval-error: not yet implemented -->
 
 ```jsonnet
@@ -562,8 +548,6 @@ assert std.splitLimitR("/_foo/_bar", "/_", 1) == [ "/_foo", "bar" ];
 _Available since version 0.10.0._
 
 `std.strReplace(str, from, to)` returns a copy of the string `str` in which all occurrences of string `from` have been replaced with string `to`.
-
-Example:
 
 ```jsonnet
 assert std.strReplace('I like to skate with my skateboard', 'skate', 'surf')
@@ -582,8 +566,6 @@ _Available since version 0.10.0._
 
 Returns a copy of the string in which all ASCII letters are capitalized.
 
-Example:
-
 ```jsonnet
 assert std.asciiUpper('100 Cats!') == "100 CATS!";
 ```
@@ -594,8 +576,6 @@ _Available since version 0.10.0._
 
 Returns a copy of the string in which all ASCII letters are lower cased.
 
-Example:
-
 ```jsonnet
 assert std.asciiLower('100 Cats!') == "100 cats!";
 ```
@@ -605,8 +585,6 @@ assert std.asciiLower('100 Cats!') == "100 cats!";
 _Available since version 0.10.0._
 
 Split the string into an array of strings, each containing a single codepoint.
-
-Example:
 
 <!-- @eval-error: not yet implemented -->
 
@@ -625,8 +603,6 @@ The `vals` can be an array, an object, or in other cases are treated as if they 
 The string formatting follows the same rules as Python.
 
 The `%` operator can be used as a shorthand for this function.
-
-Examples:
 
 <!-- @eval-error: not yet implemented -->
 
@@ -661,8 +637,6 @@ _Available since version 0.10.0._
 Converts the string to allow it to be embedded in a JSON representation, within a string.
 
 This adds quotes, escapes backslashes, and escapes unprintable characters.
-
-Example:
 
 <!-- @eval-error: not yet implemented -->
 
@@ -699,8 +673,6 @@ _Available since version 0.10.0._
 
 Parses a signed decimal integer from the input string.
 
-Examples:
-
 <!-- @eval-error: not yet implemented -->
 
 ```jsonnet
@@ -714,8 +686,6 @@ _Available since version 0.10.0._
 
 Parses an unsigned octal integer from the input string. Initial zeroes are tolerated.
 
-Example:
-
 <!-- @eval-error: not yet implemented -->
 
 ```jsonnet
@@ -728,8 +698,6 @@ _Available since version 0.10.0._
 
 Parses an unsigned hexadecimal integer, from the input string. Case insensitive.
 
-Example:
-
 <!-- @eval-error: not yet implemented -->
 
 ```jsonnet
@@ -741,8 +709,6 @@ assert std.parseHex("ff") == 255;
 _Available since version 0.13.0._
 
 Parses a JSON string.
-
-Example:
 
 <!-- @eval-error: not yet implemented -->
 
@@ -761,8 +727,6 @@ This is provided as a "best-effort" mechanism and should not be relied on to pro
 YAML is a superset of JSON, consequently "downcasting" or manifestation of YAML into JSON or Jsonnet values will only succeed when using the subset of YAML that is compatible with JSON.
 
 The parser does not support YAML documents with scalar values at the root. The root node of a YAML document must start with either a YAML sequence or map to be successfully parsed.
-
-Example:
 
 <!-- @eval-error: not yet implemented -->
 
@@ -1059,8 +1023,6 @@ _Available since version 0.10.0._
 
 `func` is a function that takes a single parameter, the index of the element it should initialize.
 
-Example:
-
 <!-- @eval-error: not yet implemented -->
 
 ```jsonnet
@@ -1118,8 +1080,6 @@ The argument `arr` must be an array or a string.
 
 `std.flatMap` can be thought of as a generalized `map`, with each element mapped to 0, 1 or more elements.
 
-Examples:
-
 <!-- @eval-error: not yet implemented -->
 
 ```jsonnet
@@ -1145,8 +1105,6 @@ _Available since version 0.10.0._
 
 `std.foldl(func, arr, init)` calls the function `func` on the result of the previous function call and each array element of `arr`, or `init` in the case of the initial element. Traverses `arr` from left to right.
 
-Example:
-
 <!-- @eval-error: not yet implemented -->
 
 ```jsonnet
@@ -1160,8 +1118,6 @@ assert std.foldl(cmb, ["a", "b", "c"], "_")
 _Available since version 0.10.0._
 
 `std.foldr(func, arr, init)` calls the function `func` on the result of the previous function call and each array element of `arr`, or `init` in the case of the initial element. Traverses `arr` from right to left.
-
-Example:
 
 <!-- @eval-error: not yet implemented -->
 
@@ -1177,8 +1133,6 @@ _Available since version 0.10.0._
 
 `std.range(from, to)` returns an array of ascending numbers between `from` and `to`, inclusively.
 
-Example:
-
 <!-- @eval-error: not yet implemented -->
 
 ```jsonnet
@@ -1190,8 +1144,6 @@ assert std.range(2, 6) == [2, 3, 4, 5, 6];
 _Available since version 0.15.0._
 
 `std.repeat(what, count)` repeats an array or a string `what` a number of times specified by an integer `count`.
-
-Examples:
 
 <!-- @eval-error: not yet implemented -->
 
@@ -1210,8 +1162,6 @@ _Available since version 0.10.0._
 
 Note that it's recommended to use dedicated slicing syntax both for arrays and strings (e.g. `arr[0:4:1]` instead of `slice(arr, 0, 4, 1)`).
 
-Examples:
-
 <!-- @eval-error: not yet implemented -->
 
 ```jsonnet
@@ -1228,8 +1178,6 @@ _Available since version 0.10.0._
 For `std.join(sep, arr)`, if `sep` is a string, then `arr` must be an array of strings, in which case they are concatenated with `sep` used as a delimiter.
 
 If `sep` is an array, then `arr` must be an array of arrays, in which case the arrays are concatenated in the same way, to produce a single array.
-
-Examples:
 
 ```jsonnet
 assert std.join(".", ["www", "google", "com"]) == "www.google.com";
@@ -1248,8 +1196,6 @@ _Available since version 0.10.0._
 
 Concatenate an array of arrays into a single array.
 
-Example:
-
 <!-- @eval-error: not yet implemented -->
 
 ```jsonnet
@@ -1262,8 +1208,6 @@ assert std.flattenArrays([[1, 2], [3, 4], [[5, 6], [7, 8]]])
 _Available since version 0.13.0._
 
 Returns the argument array reversed.
-
-Examples:
 
 <!-- @eval-error: not yet implemented -->
 
@@ -1280,8 +1224,6 @@ _Available since version 0.10.0._
 `std.sort(arr, keyF=id)` sorts the array using the `<=` operator.
 
 The optional argument `keyF` is a single argument function used to extract comparison key from each array element.
-
-Examples:
 
 <!-- @eval-error: not yet implemented: sort -->
 
@@ -1308,8 +1250,6 @@ _Available since version 0.10.0._
 `std.uniq(arr, keyF=id)` removes successive duplicates. When given a sorted array, removes all duplicates.
 
 The optional argument `keyF` is a single argument function used to extract comparison key from each array element.
-
-Examples:
 
 <!-- @eval-error: not yet implemented: uniq -->
 
@@ -1369,8 +1309,6 @@ _Available since version 0.10.0._
 `std.setUnion(a, b, keyF=id)` is the set union operation (values in any of `a` or `b`).
 
 Note that `+` on sets will simply concatenate the arrays, possibly forming an array that is not a set (due to not being ordered without duplicates).
-
-Examples:
 
 <!-- @eval-error: not yet implemented: setUnion -->
 
@@ -1536,8 +1474,6 @@ _Available since version 0.10.0._
 _Available since version 0.11.0._
 
 `std.trace(str, rest)` outputs the given string `str` to stderr and returns `rest` as the result.
-
-Example:
 
 <!-- @eval-error: not yet implemented -->
 
