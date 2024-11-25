@@ -242,7 +242,7 @@ impl<'a> JsonnetInput<'a> {
       }
 
       (OutcomeKind::EvalError | OutcomeKind::PreEvalError, Ok(got)) => {
-        panic!("{path_str}: no error, got json: {got:?}")
+        panic!("{path_str}: unexpected lack of error, got json: {got:?}")
       }
       (OutcomeKind::Manifest | OutcomeKind::String, Err(err)) => {
         let got = err.display(st.strings(), st.paths(), Some(pwd));
