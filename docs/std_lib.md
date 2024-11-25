@@ -576,7 +576,7 @@ assert std.strReplace('I like to skate with my skateboard', 'skate', 'surf')
 
 _Available since version 0.20.0._
 
-Returns `true` if the given string is of zero length.
+Returns whether the given string has zero length.
 
 ## `asciiUpper`
 
