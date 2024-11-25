@@ -617,7 +617,7 @@ _Available since version 0.10.0._
 `std.strReplace(str, from, to)` returns a copy of the string `str` in which all occurrences of string `from` have been replaced with string `to`.
 
 ```jsonnet
-assert std.strReplace('I like to skate with my skateboard', 'skate', 'surf')
+assert std.strReplace("I like to skate with my skateboard", "skate", "surf")
   == "I like to surf with my surfboard";
 ```
 
@@ -639,7 +639,7 @@ _Available since version 0.10.0._
 Returns a copy of the string in which all ASCII letters are capitalized.
 
 ```jsonnet
-assert std.asciiUpper('100 Cats!') == "100 CATS!";
+assert std.asciiUpper("100 Cats!") == "100 CATS!";
 ```
 
 ## `asciiLower`
@@ -649,7 +649,7 @@ _Available since version 0.10.0._
 Returns a copy of the string in which all ASCII letters are lower cased.
 
 ```jsonnet
-assert std.asciiLower('100 Cats!') == "100 cats!";
+assert std.asciiLower("100 Cats!") == "100 cats!";
 ```
 
 ## `stringChars`
@@ -803,7 +803,7 @@ The parser does not support YAML documents with scalar values at the root. The r
 <!-- @eval-error: not yet implemented -->
 
 ```jsonnet
-assert std.parseYaml('foo: bar') == { "foo": "bar" };
+assert std.parseYaml("foo: bar") == { "foo": "bar" };
 ```
 
 ## `encodeUTF8`
@@ -1010,7 +1010,7 @@ This example:
 <!-- @eval-error: not yet implemented: manifestYamlStream -->
 
 ```jsonnet
-std.manifestYamlStream( ['a', 1, []], indent_array_in_object=false, c_document_end=true)
+std.manifestYamlStream( ["a", 1, []], indent_array_in_object=false, c_document_end=true)
 ```
 
 Yields this string:
@@ -1036,12 +1036,12 @@ This example:
 
 ```jsonnet
 std.manifestXmlJsonml([
-  'svg', { height: 100, width: 100 },
+  "svg", { height: 100, width: 100 },
   [
-    'circle', {
+    "circle", {
       cx: 50, cy: 50, r: 40,
-      stroke: 'black', 'stroke-width': 3,
-      fill: 'red',
+      stroke: "black", "stroke-width": 3,
+      fill: "red",
     }
   ],
 ])
@@ -1068,16 +1068,16 @@ JsonML is designed to preserve "mixed-mode content" (i.e., textual data outside 
 
 ```jsonnet
 std.manifestXmlJsonml([
-  'svg',
+  "svg",
   { height: 100, width: 100 },
-  '\n  ',
+  "\n  ",
   [
-    'circle', {
-      cx: 50, cy: 50, r: 40, stroke: 'black',
-      'stroke-width': 3, fill: 'red',
+    "circle", {
+      cx: 50, cy: 50, r: 40, stroke: "black",
+      "stroke-width": 3, fill: "red",
     }
   ],
-  '\n',
+  "\n",
 ])
 ```
 
@@ -1556,9 +1556,9 @@ _Available since version 0.11.0._
 ```jsonnet
 local choose(c, yes, no) =
   if c then
-    std.trace('c is true, returning ' + std.toString(yes), yes)
+    std.trace("c is true, returning " + std.toString(yes), yes)
   else
-    std.trace('c is false, returning ' + std.toString(no), no);
+    std.trace("c is false, returning " + std.toString(no), no);
 
 {
   foo: choose(true, { bar: 1 }, { quz: 2 }),
