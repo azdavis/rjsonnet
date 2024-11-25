@@ -58,7 +58,7 @@ Duplicate types are also eliminated. So we prefer to show `T1 | T2 | T1` as `T1 
 
 If a union type contains both `true` and `false`, instead of showing the type as `true | false | ...`, it is shown as `boolean | ...`.
 
-Order does not matter in union types.
+Order does not matter in union types. So `T1 | T2` is the same as `T2 | T1`.
 
 `never` is the union of 0 types, aka the empty union type. It is a type with no values. This is the type of `error` expressions.
 
@@ -66,9 +66,11 @@ Order does not matter in union types.
 
 `(x: T1) => T2` is the type of functions with one required parameter `x` of type `T1` that return type `T2`.
 
+If a function has multiple parameters, they are separated with `,`. If it has no parameters, the parameter list is shown as `()`.
+
 When a parameter is optional, it has a `?` after the argument name, like `(x?: T1) => T2`.
 
-When a function's arguments are unknown, they are shown as `...`.
+When a function's parameters are unknown, they are shown as `...`.
 
 ### Precedence
 
