@@ -1017,10 +1017,15 @@ Yields a string containing this XML (all on one line):
 
 ```xml
 <svg height="100" width="100">
-    <circle cx="50" cy="50" fill="red" r="40"
-    stroke="black" stroke-width="3"></circle>;
-</svg>;
-
+  <circle
+    cx="50"
+    cy="50"
+    r="40"
+    fill="red"
+    stroke="black"
+    stroke-width="3"
+  ></circle>
+</svg>
 ```
 
 JsonML is designed to preserve "mixed-mode content" (i.e., textual data outside of or next to elements). This includes the whitespace needed to avoid having all the XML on one line, which is meaningful in XML. In order to have whitespace in the XML output, it must be present in the JsonML input:
