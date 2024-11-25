@@ -128,17 +128,16 @@ pub(crate) fn pow(x: f64, n: f64) -> f64 {
   x.powf(n)
 }
 
+pub(crate) fn exp(x: f64) -> f64 {
+  x.exp()
+}
+
+pub(crate) fn log(x: f64) -> f64 {
+  x.ln()
+}
+
 pub(crate) fn abs(n: f64) -> f64 {
   n.abs()
-}
-
-pub(crate) fn exp(n: f64) -> f64 {
-  n.exp()
-}
-
-/// TODO is it log2 or log10?
-pub(crate) fn log(n: f64) -> f64 {
-  n.log2()
 }
 
 pub(crate) fn floor(n: f64) -> f64 {

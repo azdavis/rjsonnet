@@ -217,9 +217,21 @@ assert std.pow(99, 0) == 1;
 
 `std.exp(x)` returns $e^x$, i.e. $e$ to the $x$ power, where [$e \approx 2.71828$](<https://en.wikipedia.org/wiki/E_(mathematical_constant)>).
 
+```jsonnet
+assert std.exp(0) == 1;
+assert std.exp(1) == 2.718281828459045;
+assert std.exp(2) == 7.38905609893065;
+```
+
 ## `log`
 
 `std.log(x)` returns the natural logarithm of $x$, i.e. the solution $y$ in $e^y = x$, where [$e \approx 2.71828$](<https://en.wikipedia.org/wiki/E_(mathematical_constant)>).
+
+```jsonnet
+assert std.log(1) == 0;
+assert std.log(123) == 4.812184355372417;
+assert std.log(345) == 5.84354441703136;
+```
 
 ## `exponent`
 
