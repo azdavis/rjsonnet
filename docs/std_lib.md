@@ -598,8 +598,6 @@ Returns a copy of the string in which all ASCII letters are lower cased.
 
 Example:
 
-<!-- @eval-error: not yet implemented -->
-
 ```jsonnet
 assert std.asciiLower('100 Cats!') == "100 cats!";
 ```

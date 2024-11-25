@@ -43,6 +43,7 @@ fn is_impl(s: &str) -> bool {
       | "clamp"
       | "isEmpty"
       | "asciiUpper"
+      | "asciiLower"
   )
 }
 

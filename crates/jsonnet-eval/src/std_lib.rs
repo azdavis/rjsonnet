@@ -214,3 +214,7 @@ pub(crate) fn isEmpty(s: &str) -> bool {
 pub(crate) fn asciiUpper(s: &str, ar: &StrArena) -> Str {
   ar.str_shared(s.to_ascii_uppercase().into_boxed_str())
 }
+
+pub(crate) fn asciiLower(s: &str, ar: &StrArena) -> Str {
+  ar.str_shared(s.to_ascii_lowercase().into_boxed_str())
+}
