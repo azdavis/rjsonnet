@@ -284,7 +284,7 @@ pub const FNS: [Fn; 126] = [
   ),
   f("manifestXmlJsonml", s(&[r("value", Ty::ArrAny)], Ty::Str)),
   f("manifestTomlEx", s(&[r("toml", Ty::Obj), r("indent", Ty::Str)], Ty::Str)),
-  f("makeArray", s(&[r("sz", Ty::Num), r("func", Ty::Hof1)], Ty::ArrAny)),
+  f("makeArray", s(&[r("sz", Ty::Uint), r("func", Ty::Hof1)], Ty::ArrAny)),
   f("member", s(&[r("arr", Ty::StrOrArrAny), r("x", Ty::Any)], Ty::Bool)),
   f("count", s(&[r("arr", Ty::ArrAny), r("x", Ty::Any)], Ty::Num)),
   f("find", s(&[r("value", Ty::Any), r("arr", Ty::ArrAny)], Ty::ArrNum)),
@@ -299,13 +299,13 @@ pub const FNS: [Fn; 126] = [
   f("foldl", FOLD),
   f("foldr", FOLD),
   f("range", s(&[r("from", Ty::Num), r("to", Ty::Num)], Ty::ArrNum)),
-  f("repeat", s(&[r("what", Ty::StrOrArrAny), r("count", Ty::Num)], Ty::StrOrArrAny)),
+  f("repeat", s(&[r("what", Ty::StrOrArrAny), r("count", Ty::Uint)], Ty::StrOrArrAny)),
   f(
     "slice",
     s(
       &[
         r("indexable", Ty::StrOrArrAny),
-        r("index", Ty::Num),
+        r("index", Ty::Uint),
         r("end", Ty::NumOrNull),
         r("step", Ty::NumOrNull),
       ],
