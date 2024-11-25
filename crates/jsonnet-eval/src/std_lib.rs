@@ -195,7 +195,7 @@ pub(crate) fn isOdd(n: f64) -> bool {
 
 #[expect(clippy::float_cmp)]
 pub(crate) fn isInteger(n: f64) -> bool {
-  n.round() == n
+  n.trunc() == n
 }
 
 pub(crate) fn isDecimal(n: f64) -> bool {
