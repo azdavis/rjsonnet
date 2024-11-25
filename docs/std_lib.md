@@ -528,8 +528,6 @@ _Available since version 0.15.0._
 
 `std.stripChars(str, chars)` removes characters `chars` from the beginning and from the end of `str`.
 
-<!-- @eval-error: not yet implemented -->
-
 ```jsonnet
 assert std.stripChars(" test test test ", " ") == "test test test";
 assert std.stripChars("aaabbbbcccc", "ac") == "bbbb";
@@ -542,8 +540,6 @@ _Available since version 0.15.0._
 
 `std.lstripChars(str, chars)` removes characters `chars` from the beginning of `str`.
 
-<!-- @eval-error: not yet implemented -->
-
 ```jsonnet
 assert std.lstripChars(" test test test ", " ") == "test test test ";
 assert std.lstripChars("aaabbbbcccc", "ac") == "bbbbcccc";
@@ -555,8 +551,6 @@ assert std.lstripChars("cacabbbbaacc", "ac") == "bbbbaacc";
 _Available since version 0.15.0._
 
 `std.rstripChars(str, chars)` removes characters `chars` from the end of `str`.
-
-<!-- @eval-error: not yet implemented -->
 
 ```jsonnet
 assert std.rstripChars(" test test test ", " ") == " test test test";

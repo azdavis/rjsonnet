@@ -6,6 +6,7 @@ use crate::error::{self, Error, Result};
 use crate::{exec, Cx};
 use jsonnet_expr::{ExprMust, Prim, Str};
 use jsonnet_val::jsonnet::{Array, Fn, Val};
+use rustc_hash::FxHashSet;
 
 pub(crate) fn type_(x: &Val) -> Str {
   match x {
@@ -251,4 +252,19 @@ pub(crate) fn startsWith(a: &str, b: &str) -> bool {
 
 pub(crate) fn endsWith(a: &str, b: &str) -> bool {
   a.ends_with(b)
+}
+
+pub(crate) fn stripChars(s: &str, cs: &str) -> String {
+  let cs: FxHashSet<_> = cs.chars().collect();
+  s.trim_matches(|c| cs.contains(&c)).to_owned()
+}
+
+pub(crate) fn lstripChars(s: &str, cs: &str) -> String {
+  let cs: FxHashSet<_> = cs.chars().collect();
+  s.trim_start_matches(|c| cs.contains(&c)).to_owned()
+}
+
+pub(crate) fn rstripChars(s: &str, cs: &str) -> String {
+  let cs: FxHashSet<_> = cs.chars().collect();
+  s.trim_end_matches(|c| cs.contains(&c)).to_owned()
 }

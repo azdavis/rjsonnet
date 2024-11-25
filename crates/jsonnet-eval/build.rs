@@ -48,6 +48,9 @@ fn is_impl(s: &str) -> bool {
       | "substr"
       | "startsWith"
       | "endsWith"
+      | "stripChars"
+      | "lstripChars"
+      | "rstripChars"
   )
 }
 
