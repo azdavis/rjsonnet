@@ -307,7 +307,7 @@ Bitwise not.
 
 Import a file as raw bytes.
 
-<!-- @pre-eval-error: path not found: foo.zip -->
+<!-- @pre-eval-error: path not found: `foo.zip` -->
 
 ```jsonnet
 local f = importbin "foo.zip";
@@ -318,7 +318,7 @@ assert std.length(f) == 123;
 
 Import a file as a string.
 
-<!-- @pre-eval-error: path not found: hi.txt -->
+<!-- @pre-eval-error: path not found: `hi.txt` -->
 
 ```jsonnet
 local f = importstr "hi.txt";
@@ -377,7 +377,7 @@ If `a.jsonnet` contains:
 
 And in the same folder `b.jsonnet` contains:
 
-<!-- @pre-eval-error: path not found: a.jsonnet -->
+<!-- @pre-eval-error: path not found: `a.jsonnet` -->
 
 ```jsonnet
 local a = import "a.jsonnet";

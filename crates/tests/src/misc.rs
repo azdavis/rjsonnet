@@ -183,7 +183,7 @@ fn remove() {
           JsonnetInput::pre_eval_error(
             r"
   (import 'b.jsonnet') + 2
-## ^^^^^^^^^^^^^^^^^^ diagnostic: path not found: b.jsonnet
+## ^^^^^^^^^^^^^^^^^^ diagnostic: path not found: `b.jsonnet`
 ",
           ),
         )
