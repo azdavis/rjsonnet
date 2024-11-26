@@ -34,7 +34,7 @@ fn ok() {
     assert!(
       has_enough_when_not_exempt,
       "either have examples and not exempt, or have no examples and exempt: `{}`",
-      f.name.content()
+      f.name.content(),
     );
 
     for example in f.examples {
