@@ -621,18 +621,16 @@ pub const FNS: [Fn; 126] = [
     available_since: None,
     doc: indoc! {"
       Returns the smallest integer greater than or equal to the argument.
-
-      ```jsonnet
-      assert std.floor(1) == 1;
-      assert std.floor(1.99) == 1;
-      assert std.floor(2.01) == 2;
-      assert std.floor(-1) == -1;
-      assert std.floor(-1.01) == -2;
-      assert std.floor(-1.99) == -2;
-      assert std.floor(-2.01) == -3;
-      ```
     "},
-    examples: &[],
+    examples: &[
+      "std.floor(1) == 1",
+      "std.floor(1.99) == 1",
+      "std.floor(2.01) == 2",
+      "std.floor(-1) == -1",
+      "std.floor(-1.01) == -2",
+      "std.floor(-1.99) == -2",
+      "std.floor(-2.01) == -3",
+    ],
   },
   Fn {
     name: S::new("ceil"),
@@ -642,18 +640,16 @@ pub const FNS: [Fn; 126] = [
     available_since: None,
     doc: indoc! {"
       Returns the greatest integer smaller than or equal to the argument.
-
-      ```jsonnet
-      assert std.ceil(1) == 1;
-      assert std.ceil(1.99) == 2;
-      assert std.ceil(2.01) == 3;
-      assert std.ceil(-1) == -1;
-      assert std.ceil(-1.01) == -1;
-      assert std.ceil(-1.99) == -1;
-      assert std.ceil(-2.01) == -2;
-      ```
     "},
-    examples: &[],
+    examples: &[
+      "std.ceil(1) == 1",
+      "std.ceil(1.99) == 2",
+      "std.ceil(2.01) == 3",
+      "std.ceil(-1) == -1",
+      "std.ceil(-1.01) == -1",
+      "std.ceil(-1.99) == -1",
+      "std.ceil(-2.01) == -2",
+    ],
   },
   Fn {
     name: S::new("sqrt"),
@@ -663,14 +659,8 @@ pub const FNS: [Fn; 126] = [
     available_since: None,
     doc: indoc! {"
       Returns the square root of the argument.
-
-      ```jsonnet
-      assert std.sqrt(9) == 3;
-      assert std.sqrt(4) == 2;
-      assert std.sqrt(1) == 1;
-      ```
     "},
-    examples: &[],
+    examples: &["std.sqrt(9) == 3", "std.sqrt(4) == 2", "std.sqrt(1) == 1"],
   },
   Fn {
     name: S::new("sin"),
@@ -680,12 +670,8 @@ pub const FNS: [Fn; 126] = [
     available_since: None,
     doc: indoc! {"
       Returns the sine of the argument.
-
-      ```jsonnet
-      assert std.sin(0.5) == 0.479425538604203;
-      ```
     "},
-    examples: &[],
+    examples: &["std.sin(0.5) == 0.479425538604203"],
   },
   Fn {
     name: S::new("cos"),
@@ -695,12 +681,8 @@ pub const FNS: [Fn; 126] = [
     available_since: None,
     doc: indoc! {"
       Returns the cosine of its argument.
-
-      ```jsonnet
-      assert std.cos(0.5) == 0.8775825618903728;
-      ```
     "},
-    examples: &[],
+    examples: &["std.cos(0.5) == 0.8775825618903728"],
   },
   Fn {
     name: S::new("tan"),
@@ -710,12 +692,8 @@ pub const FNS: [Fn; 126] = [
     available_since: None,
     doc: indoc! {"
       Returns the tangent of its argument.
-
-      ```jsonnet
-      assert std.tan(0.5) == 0.5463024898437905;
-      ```
     "},
-    examples: &[],
+    examples: &["std.tan(0.5) == 0.5463024898437905"],
   },
   Fn {
     name: S::new("asin"),
@@ -725,12 +703,8 @@ pub const FNS: [Fn; 126] = [
     available_since: None,
     doc: indoc! {"
       Returns the arcsine of its argument.
-
-      ```jsonnet
-      assert std.asin(0.5) == 0.5235987755982988;
-      ```
     "},
-    examples: &[],
+    examples: &["std.asin(0.5) == 0.5235987755982988"],
   },
   Fn {
     name: S::new("acos"),
@@ -740,12 +714,9 @@ pub const FNS: [Fn; 126] = [
     available_since: None,
     doc: indoc! {"
       Returns the arccosine of its argument.
-
-      ```jsonnet
-      assert std.acos(0.5) == 1.0471975511965976;
       ```
     "},
-    examples: &[],
+    examples: &["std.acos(0.5) == 1.0471975511965976"],
   },
   Fn {
     name: S::new("atan"),
@@ -755,12 +726,8 @@ pub const FNS: [Fn; 126] = [
     available_since: None,
     doc: indoc! {"
       Returns the arctangent of its argument.
-
-      ```jsonnet
-      assert std.atan(0.5) == 0.46364760900080615;
-      ```
     "},
-    examples: &[],
+    examples: &["std.atan(0.5) == 0.46364760900080615"],
   },
   Fn {
     name: S::new("round"),
@@ -770,19 +737,17 @@ pub const FNS: [Fn; 126] = [
     available_since: None,
     doc: indoc! {"
       Returns the argument rounded to the nearest integer.
-
-      ```jsonnet
-      assert std.round(1) == 1;
-      assert std.round(1.1) == 1;
-      assert std.round(1.5) == 2;
-      assert std.round(1.9) == 2;
-      assert std.round(-1) == -1;
-      assert std.round(-1.1) == -1;
-      assert std.round(-1.5) == -2;
-      assert std.round(-1.9) == -2;
-      ```
     "},
-    examples: &[],
+    examples: &[
+      "std.round(1) == 1",
+      "std.round(1.1) == 1",
+      "std.round(1.5) == 2",
+      "std.round(1.9) == 2",
+      "std.round(-1) == -1",
+      "std.round(-1.1) == -1",
+      "std.round(-1.5) == -2",
+      "std.round(-1.9) == -2",
+    ],
   },
   Fn {
     name: S::new("isEven"),
@@ -794,19 +759,17 @@ pub const FNS: [Fn; 126] = [
       Returns whether the argument is an even number.
 
       Raises if the argument is not a number.
-
-      ```jsonnet
-      assert std.isEven(2);
-      assert std.isEven(0);
-      assert std.isEven(-2);
-      assert !std.isEven(1);
-      assert !std.isEven(9);
-      assert !std.isEven(-5);
-      assert !std.isEven(4.4);
-      assert !std.isEven(5.5);
-      ```
     "},
-    examples: &[],
+    examples: &[
+      "std.isEven(2)",
+      "std.isEven(0)",
+      "std.isEven(-2)",
+      "!std.isEven(1)",
+      "!std.isEven(9)",
+      "!std.isEven(-5)",
+      "!std.isEven(4.4)",
+      "!std.isEven(5.5)",
+    ],
   },
   Fn {
     name: S::new("isOdd"),
@@ -818,19 +781,17 @@ pub const FNS: [Fn; 126] = [
       Returns whether the argument is an odd number.
 
       Raises if the argument is not a number.
-
-      ```jsonnet
-      assert std.isOdd(1);
-      assert std.isOdd(9);
-      assert std.isOdd(-5);
-      assert !std.isOdd(2);
-      assert !std.isOdd(0);
-      assert !std.isOdd(-2);
-      assert !std.isOdd(4.4);
-      assert !std.isOdd(5.5);
-      ```
     "},
-    examples: &[],
+    examples: &[
+      "std.isOdd(1)",
+      "std.isOdd(9)",
+      "std.isOdd(-5)",
+      "!std.isOdd(2)",
+      "!std.isOdd(0)",
+      "!std.isOdd(-2)",
+      "!std.isOdd(4.4)",
+      "!std.isOdd(5.5)",
+    ],
   },
   Fn {
     name: S::new("isInteger"),
@@ -842,17 +803,15 @@ pub const FNS: [Fn; 126] = [
       Returns whether the argument is an integer number.
 
       Raises if the argument is not a number.
-
-      ```jsonnet
-      assert std.isInteger(1);
-      assert std.isInteger(0);
-      assert std.isInteger(-5);
-      assert !std.isInteger(0.1);
-      assert !std.isInteger(4.4);
-      assert !std.isInteger(2.0001);
-      ```
     "},
-    examples: &[],
+    examples: &[
+      "std.isInteger(1)",
+      "std.isInteger(0)",
+      "std.isInteger(-5)",
+      "!std.isInteger(0.1)",
+      "!std.isInteger(4.4)",
+      "!std.isInteger(2.0001)",
+    ],
   },
   Fn {
     name: S::new("isDecimal"),
@@ -865,17 +824,15 @@ pub const FNS: [Fn; 126] = [
       after the decimal point.
 
       Raises if the argument is not a number.
-
-      ```jsonnet
-      assert std.isDecimal(0.1);
-      assert std.isDecimal(4.4);
-      assert std.isDecimal(2.0001);
-      assert !std.isDecimal(1);
-      assert !std.isDecimal(0);
-      assert !std.isDecimal(-5);
-      ```
     "},
-    examples: &[],
+    examples: &[
+      "std.isDecimal(0.1)",
+      "std.isDecimal(4.4)",
+      "std.isDecimal(2.0001)",
+      "!std.isDecimal(1)",
+      "!std.isDecimal(0)",
+      "!std.isDecimal(-5)",
+    ],
   },
   Fn {
     name: S::named("mod", "mod_"),
@@ -900,14 +857,8 @@ pub const FNS: [Fn; 126] = [
       `std.clamp(x, minVal, maxVal)` clamps a value to fit within the range `[minVal, maxVal]`.
 
       Equivalent to `std.max(minVal, std.min(x, maxVal))`.
-
-      ```jsonnet
-      assert std.clamp(-3, 0, 5) == 0;
-      assert std.clamp(4, 0, 5) == 4;
-      assert std.clamp(7, 0, 5) == 5;
-      ```
     "},
-    examples: &[],
+    examples: &["std.clamp(-3, 0, 5) == 0", "std.clamp(4, 0, 5) == 4", "std.clamp(7, 0, 5) == 5"],
   },
   Fn {
     name: S::new("assertEqual"),
@@ -966,20 +917,18 @@ pub const FNS: [Fn; 126] = [
     sig: sig(&[req("str", Ty::Str), req("from", Ty::Uint), req("len", Ty::Uint)], Ty::Str),
     total: false,
     available_since: Some(10),
-    doc: indoc! {r#"
+    doc: indoc! {"
       `std.substr(str, from, len)` returns a string that is the part of `s` that starts at
       offset `from` and is `len` codepoints long.
 
       If the string `s` is shorter than `from + len`, returns the suffix starting at position
       `from`.
-
-      ```jsonnet
-      assert std.substr("think", 1, 2) == "hi";
-      assert std.substr("develop", 4, 3) == "lop";
-      assert std.substr("hello world", 6, 99) == "world";
-      ```
-    "#},
-    examples: &[],
+    "},
+    examples: &[
+      r#" std.substr("think", 1, 2) == "hi" "#,
+      r#" std.substr("develop", 4, 3) == "lop" "#,
+      r#" std.substr("hello world", 6, 99) == "world" "#,
+    ],
   },
   Fn {
     name: S::new("findSubstr"),
@@ -987,17 +936,15 @@ pub const FNS: [Fn; 126] = [
     sig: sig(&[req("pat", Ty::Str), req("str", Ty::Str)], Ty::ArrNum),
     total: true,
     available_since: Some(10),
-    doc: indoc! {r#"
+    doc: indoc! {"
       `std.findSubstr(pat, str)` returns an array that contains the indexes of all occurrences
       of `pat` in `str`.
-
-      ```jsonnet
-      assert std.findSubstr("e", "envelope") == [0, 3, 7];
-      assert std.findSubstr("hi", "hi Chidi") == [0, 4];
-      assert std.findSubstr("fork", "shirt") == [];
-      ```
-    "#},
-    examples: &[],
+    "},
+    examples: &[
+      r#" std.findSubstr("e", "envelope") == [0, 3, 7] "#,
+      r#" std.findSubstr("hi", "hi Chidi") == [0, 4] "#,
+      r#" std.findSubstr("fork", "shirt") == [] "#,
+    ],
   },
   Fn {
     name: S::new("startsWith"),
@@ -1007,13 +954,11 @@ pub const FNS: [Fn; 126] = [
     available_since: Some(10),
     doc: indoc! {r#"
       `std.startsWith(a, b)` returns whether the string `a` is prefixed by the string `b`.
-
-      ```jsonnet
-      assert std.startsWith("hi Chidi", "hi");
-      assert !std.startsWith("hi Chidi", "fork");
-      ```
     "#},
-    examples: &[],
+    examples: &[
+      r#" std.startsWith("hi Chidi", "hi") "#,
+      r#" !std.startsWith("hi Chidi", "fork") "#,
+    ],
   },
   Fn {
     name: S::new("endsWith"),
@@ -1023,13 +968,8 @@ pub const FNS: [Fn; 126] = [
     available_since: Some(10),
     doc: indoc! {r#"
       `std.endsWith(a, b)` returns whether the string `a` is suffixed by the string `b`.
-
-      ```jsonnet
-      assert std.endsWith("thank you", "you");
-      assert !std.endsWith("thank you", "no");
-      ```
     "#},
-    examples: &[],
+    examples: &[r#" std.endsWith("thank you", "you") "#, r#" !std.endsWith("thank you", "no") "#],
   },
   Fn {
     name: S::new("stripChars"),
@@ -1040,14 +980,12 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {r#"
       `std.stripChars(str, chars)` removes characters `chars` from the beginning and from the end
       of `str`.
-
-      ```jsonnet
-      assert std.stripChars(" test test test ", " ") == "test test test";
-      assert std.stripChars("aaabbbbcccc", "ac") == "bbbb";
-      assert std.stripChars("cacabbbbaacc", "ac") == "bbbb";
-      ```
     "#},
-    examples: &[],
+    examples: &[
+      r#" std.stripChars(" test test test ", " ") == "test test test" "#,
+      r#" std.stripChars("aaabbbbcccc", "ac") == "bbbb" "#,
+      r#" std.stripChars("cacabbbbaacc", "ac") == "bbbb" "#,
+    ],
   },
   Fn {
     name: S::new("lstripChars"),
@@ -1057,14 +995,12 @@ pub const FNS: [Fn; 126] = [
     available_since: Some(15),
     doc: indoc! {r#"
       `std.lstripChars(str, chars)` removes characters `chars` from the beginning of `str`.
-
-      ```jsonnet
-      assert std.lstripChars(" test test test ", " ") == "test test test ";
-      assert std.lstripChars("aaabbbbcccc", "ac") == "bbbbcccc";
-      assert std.lstripChars("cacabbbbaacc", "ac") == "bbbbaacc";
-      ```
     "#},
-    examples: &[],
+    examples: &[
+      r#" std.lstripChars(" test test test ", " ") == "test test test " "#,
+      r#" std.lstripChars("aaabbbbcccc", "ac") == "bbbbcccc" "#,
+      r#" std.lstripChars("cacabbbbaacc", "ac") == "bbbbaacc" "#,
+    ],
   },
   Fn {
     name: S::new("rstripChars"),
@@ -1074,14 +1010,12 @@ pub const FNS: [Fn; 126] = [
     available_since: Some(15),
     doc: indoc! {r#"
       `std.rstripChars(str, chars)` removes characters `chars` from the end of `str`.
-
-      ```jsonnet
-      assert std.rstripChars(" test test test ", " ") == " test test test";
-      assert std.rstripChars("aaabbbbcccc", "ac") == "aaabbbb";
-      assert std.rstripChars("cacabbbbaacc", "ac") == "cacabbbb";
-      ```
     "#},
-    examples: &[],
+    examples: &[
+      r#" std.rstripChars(" test test test ", " ") == " test test test" "#,
+      r#" std.rstripChars("aaabbbbcccc", "ac") == "aaabbbb" "#,
+      r#" std.rstripChars("cacabbbbaacc", "ac") == "cacabbbb" "#,
+    ],
   },
   Fn {
     name: S::new("split"),
@@ -1094,13 +1028,11 @@ pub const FNS: [Fn; 126] = [
       string `c`.
 
       Note: Versions up to and including 0.18.0 require `c` to be a single character.
-
-      ```jsonnet
-      assert std.split("foo/_bar", "/_") == [ "foo", "bar" ];
-      assert std.split("/_foo/_bar", "/_") == [ "", "foo", "bar" ];
-      ```
     "#},
-    examples: &[],
+    examples: &[
+      r#" std.split("foo/bar", "/") == ["foo", "bar"] "#,
+      r#" std.split("/foo/bar", "/") == ["", "foo", "bar"] "#,
+    ],
   },
   Fn {
     name: S::new("splitLimit"),
@@ -1114,13 +1046,11 @@ pub const FNS: [Fn; 126] = [
       length `maxsplits + 1`. A limit of `-1` means unlimited.
 
       Note: Versions up to and including 0.18.0 require `c` to be a single character.
-
-      ```jsonnet
-      assert std.splitLimit("foo/_bar", "/_", 1) == [ "foo", "bar" ];
-      assert std.splitLimit("/_foo/_bar", "/_", 1) == [ "", "foo/_bar" ];
-      ```
     "#},
-    examples: &[],
+    examples: &[
+      r#" std.splitLimit("foo/bar", "/", 1) == ["foo", "bar"] "#,
+      r#" std.splitLimit("/foo/bar", "/", 1) == ["", "foo/bar"] "#,
+    ],
   },
   Fn {
     name: S::new("splitLimitR"),
@@ -1129,14 +1059,10 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: Some(19),
     doc: indoc! {r#"
-      `std.splitLimitR(str, c, maxsplits)` is the
-      same as `std.splitLimit(str, c, maxsplits)` but will split from right to left.
-
-      ```jsonnet
-      assert std.splitLimitR("/_foo/_bar", "/_", 1) == [ "/_foo", "bar" ];
-      ```
+      `std.splitLimitR(str, c, maxsplits)` is the same as
+      `std.splitLimit(str, c, maxsplits)` but will split from right to left.
     "#},
-    examples: &[],
+    examples: &[r#" std.splitLimitR("/foo/bar", "/", 1) == ["/foo", "bar"] "#],
   },
   Fn {
     name: S::new("strReplace"),
@@ -1147,13 +1073,11 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {r#"
       `std.strReplace(str, from, to)` returns a copy of the string `str` in which all occurrences
       of string `from` have been replaced with string `to`.
-
-      ```jsonnet
-      assert std.strReplace("I like to skate with my skateboard", "skate", "surf")
-        == "I like to surf with my surfboard";
-      ```
     "#},
-    examples: &[],
+    examples: &[indoc! {r#"
+      std.strReplace("I like to skate with my skateboard", "skate", "surf")
+        == "I like to surf with my surfboard"
+    "#}],
   },
   Fn {
     name: S::new("isEmpty"),
@@ -1163,13 +1087,12 @@ pub const FNS: [Fn; 126] = [
     available_since: Some(20),
     doc: indoc! {r#"
       Returns whether the given string has zero length.
-
-      ```jsonnet
-      assert std.isEmpty("");
-      assert !std.isEmpty("hi");
-      ```
     "#},
-    examples: &[],
+    examples: &[
+      r#" std.isEmpty("") "#,
+      r#" !std.isEmpty("hi") "#,
+      r#" !std.isEmpty("hello world") "#,
+    ],
   },
   Fn {
     name: S::new("asciiUpper"),
@@ -1179,12 +1102,8 @@ pub const FNS: [Fn; 126] = [
     available_since: Some(10),
     doc: indoc! {r#"
       Returns a copy of the string in which all ASCII letters are capitalized.
-
-      ```jsonnet
-      assert std.asciiUpper("100 Cats!") == "100 CATS!";
-      ```
     "#},
-    examples: &[],
+    examples: &[r#" std.asciiUpper("100 Cats!") == "100 CATS!" "#],
   },
   Fn {
     name: S::new("asciiLower"),
@@ -1194,12 +1113,8 @@ pub const FNS: [Fn; 126] = [
     available_since: Some(10),
     doc: indoc! {r#"
       Returns a copy of the string in which all ASCII letters are lower cased.
-
-      ```jsonnet
-      assert std.asciiLower("100 Cats!") == "100 cats!";
-      ```
     "#},
-    examples: &[],
+    examples: &[r#" std.asciiLower("100 Cats!") == "100 cats!" "#],
   },
   Fn {
     name: S::new("stringChars"),
@@ -1209,12 +1124,12 @@ pub const FNS: [Fn; 126] = [
     available_since: Some(10),
     doc: indoc! {r#"
       Split the string into an array of strings, each containing a single codepoint.
-
-      ```jsonnet
-      assert std.stringChars("foo") == ["f", "o", "o"];
-      ```
     "#},
-    examples: &[],
+    examples: &[
+      r#" std.stringChars("foo") == ["f", "o", "o"] "#,
+      r#" std.stringChars("はい") == ["は", "い"]"#,
+      r#" std.stringChars("") == []"#,
+    ],
   },
   Fn {
     name: S::new("format"),
@@ -1231,16 +1146,16 @@ pub const FNS: [Fn; 126] = [
       The string formatting follows the same rules as Python.
 
       The `%` operator can be used as a shorthand for this function.
-
-      ```jsonnet
-      assert std.format("Hello %03d", 12) == "Hello 012";
-      assert "Hello %03d" % 12 == "Hello 012";
-      assert "Hello %s, age %d" % ["Foo", 25] == "Hello Foo, age 25";
-      assert "Hello %(name)s, age %(age)d" % {age: 25, name: "Foo"}
-        == "Hello Foo, age 25";
-      ```
     "#},
-    examples: &[],
+    examples: &[
+      r#" std.format("Hello %03d", 12) == "Hello 012" "#,
+      r#" "Hello %03d" % 12 == "Hello 012" "#,
+      r#" "Hello %s, age %d" % ["Foo", 25] == "Hello Foo, age 25" "#,
+      indoc! {r#"
+      "Hello %(name)s, age %(age)d" % {age: 25, name: "Foo"}
+        == "Hello Foo, age 25"
+      "#},
+    ],
   },
   Fn {
     name: S::new("escapeStringBash"),
