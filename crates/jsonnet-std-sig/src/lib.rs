@@ -591,7 +591,17 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: None,
     doc: indoc! {"
-      TODO
+      Returns the smallest integer greater than or equal to the argument.
+
+      ```jsonnet
+      assert std.floor(1) == 1;
+      assert std.floor(1.99) == 1;
+      assert std.floor(2.01) == 2;
+      assert std.floor(-1) == -1;
+      assert std.floor(-1.01) == -2;
+      assert std.floor(-1.99) == -2;
+      assert std.floor(-2.01) == -3;
+      ```
     "},
   },
   Fn {
@@ -600,7 +610,17 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: None,
     doc: indoc! {"
-      TODO
+      Returns the greatest integer smaller than or equal to the argument.
+
+      ```jsonnet
+      assert std.ceil(1) == 1;
+      assert std.ceil(1.99) == 2;
+      assert std.ceil(2.01) == 3;
+      assert std.ceil(-1) == -1;
+      assert std.ceil(-1.01) == -1;
+      assert std.ceil(-1.99) == -1;
+      assert std.ceil(-2.01) == -2;
+      ```
     "},
   },
   Fn {
@@ -609,7 +629,13 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: None,
     doc: indoc! {"
-      TODO
+      Returns the square root of the argument.
+
+      ```jsonnet
+      assert std.sqrt(9) == 3;
+      assert std.sqrt(4) == 2;
+      assert std.sqrt(1) == 1;
+      ```
     "},
   },
   Fn {
@@ -618,7 +644,11 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: None,
     doc: indoc! {"
-      TODO
+      Returns the sine of the argument.
+
+      ```jsonnet
+      assert std.sin(0.5) == 0.479425538604203;
+      ```
     "},
   },
   Fn {
@@ -627,7 +657,11 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: None,
     doc: indoc! {"
-      TODO
+      Returns the cosine of its argument.
+
+      ```jsonnet
+      assert std.cos(0.5) == 0.8775825618903728;
+      ```
     "},
   },
   Fn {
@@ -636,7 +670,11 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: None,
     doc: indoc! {"
-      TODO
+      Returns the tangent of its argument.
+
+      ```jsonnet
+      assert std.tan(0.5) == 0.5463024898437905;
+      ```
     "},
   },
   Fn {
@@ -645,7 +683,11 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: None,
     doc: indoc! {"
-      TODO
+      Returns the arcsine of its argument.
+
+      ```jsonnet
+      assert std.asin(0.5) == 0.5235987755982988;
+      ```
     "},
   },
   Fn {
@@ -654,7 +696,11 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: None,
     doc: indoc! {"
-      TODO
+      Returns the arccosine of its argument.
+
+      ```jsonnet
+      assert std.acos(0.5) == 1.0471975511965976;
+      ```
     "},
   },
   Fn {
@@ -663,7 +709,11 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: None,
     doc: indoc! {"
-      TODO
+      Returns the arctangent of its argument.
+
+      ```jsonnet
+      assert std.atan(0.5) == 0.46364760900080615;
+      ```
     "},
   },
   Fn {
@@ -672,7 +722,18 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: None,
     doc: indoc! {"
-      TODO
+      Returns the argument rounded to the nearest integer.
+
+      ```jsonnet
+      assert std.round(1) == 1;
+      assert std.round(1.1) == 1;
+      assert std.round(1.5) == 2;
+      assert std.round(1.9) == 2;
+      assert std.round(-1) == -1;
+      assert std.round(-1.1) == -1;
+      assert std.round(-1.5) == -2;
+      assert std.round(-1.9) == -2;
+      ```
     "},
   },
   Fn {
@@ -681,7 +742,20 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: None,
     doc: indoc! {"
-      TODO
+      Returns whether the argument is an even number.
+
+      Raises if the argument is not a number.
+
+      ```jsonnet
+      assert std.isEven(2);
+      assert std.isEven(0);
+      assert std.isEven(-2);
+      assert !std.isEven(1);
+      assert !std.isEven(9);
+      assert !std.isEven(-5);
+      assert !std.isEven(4.4);
+      assert !std.isEven(5.5);
+      ```
     "},
   },
   Fn {
@@ -690,7 +764,20 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: None,
     doc: indoc! {"
-      TODO
+      Returns whether the argument is an odd number.
+
+      Raises if the argument is not a number.
+
+      ```jsonnet
+      assert std.isOdd(1);
+      assert std.isOdd(9);
+      assert std.isOdd(-5);
+      assert !std.isOdd(2);
+      assert !std.isOdd(0);
+      assert !std.isOdd(-2);
+      assert !std.isOdd(4.4);
+      assert !std.isOdd(5.5);
+      ```
     "},
   },
   Fn {
@@ -699,7 +786,18 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: None,
     doc: indoc! {"
-      TODO
+      Returns whether the argument is an integer number.
+
+      Raises if the argument is not a number.
+
+      ```jsonnet
+      assert std.isInteger(1);
+      assert std.isInteger(0);
+      assert std.isInteger(-5);
+      assert !std.isInteger(0.1);
+      assert !std.isInteger(4.4);
+      assert !std.isInteger(2.0001);
+      ```
     "},
   },
   Fn {
@@ -708,7 +806,19 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: None,
     doc: indoc! {"
-      TODO
+      Returns whether the argument is a decimal number, i.e. one with non-zero digits
+      after the decimal point.
+
+      Raises if the argument is not a number.
+
+      ```jsonnet
+      assert std.isDecimal(0.1);
+      assert std.isDecimal(4.4);
+      assert std.isDecimal(2.0001);
+      assert !std.isDecimal(1);
+      assert !std.isDecimal(0);
+      assert !std.isDecimal(-5);
+      ```
     "},
   },
   Fn {
@@ -717,52 +827,69 @@ pub const FNS: [Fn; 126] = [
     total: false,
     available_since: None,
     doc: indoc! {"
-      TODO
+      This is what the `%` operator is desugared to. It performs modulo arithmetic if the left
+      hand side is a number, or if the left hand side is a string, it does Python-style string
+      formatting with `std.format`.
     "},
   },
   Fn {
     name: S::new("clamp"),
     sig: sig(&[req("x", Ty::Num), req("minVal", Ty::Num), req("maxVal", Ty::Num)], Ty::Num),
     total: true,
-    available_since: None,
+    available_since: Some(15),
     doc: indoc! {"
-      TODO
+      `std.clamp(x, minVal, maxVal)` clamps a value to fit within the range `[minVal, maxVal]`.
+
+      Equivalent to `std.max(minVal, std.min(x, maxVal))`.
+
+      ```jsonnet
+      assert std.clamp(-3, 0, 5) == 0;
+      assert std.clamp(4, 0, 5) == 4;
+      assert std.clamp(7, 0, 5) == 5;
+      ```
     "},
   },
   Fn {
     name: S::new("assertEqual"),
     sig: sig(&[req("a", Ty::Any), req("b", Ty::Any)], Ty::True),
     total: true,
-    available_since: None,
+    available_since: Some(10),
     doc: indoc! {"
-      TODO
+      `std.assertEqual(a, b)` ensures that `a == b` holds.
+
+      Returns `true` if so, else throws an error message.
     "},
   },
   Fn {
     name: S::new("toString"),
     sig: sig(&[req("a", Ty::Any)], Ty::Str),
     total: true,
-    available_since: None,
+    available_since: Some(10),
     doc: indoc! {"
-      TODO
+      Converts the given argument to a string.
     "},
   },
   Fn {
     name: S::new("codepoint"),
     sig: sig(&[req("str", Ty::Str)], Ty::Uint),
     total: true,
-    available_since: None,
+    available_since: Some(10),
     doc: indoc! {"
-      TODO
+      Returns the positive integer representing the unicode codepoint of the character
+      in the given single-character string.
+
+      This function is the inverse of `std.char`.
     "},
   },
   Fn {
     name: S::new("char"),
     sig: sig(&[req("n", Ty::Uint)], Ty::Str),
     total: true,
-    available_since: None,
+    available_since: Some(10),
     doc: indoc! {"
-      TODO
+      Returns a string of length one whose only unicode codepoint has integer id n.
+
+      This function is the inverse of `std.codepoint`.
     "},
   },
   Fn {
