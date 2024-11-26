@@ -46,6 +46,8 @@ pub struct Fn {
   pub sig: Sig,
   /// Whether the function returns a value for all well-typed inputs.
   pub total: bool,
+  /// When this is available since. If Some(n), this is available since Jsonnet version 0.n.0.
+  pub available_since: Option<u8>,
   /// The documentation.
   pub doc: &'static str,
 }
@@ -155,6 +157,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("extVar"),
     sig: sig(&[req("x", Ty::Str)], Ty::Str),
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -163,6 +166,7 @@ pub const FNS: [Fn; 126] = [
     name: S::named("type", "type_"),
     sig: sig(&[req("x", Ty::Any)], Ty::StaticStr),
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -171,6 +175,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("isArray"),
     sig: V_ANY_RET_BOOL,
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -179,6 +184,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("isBoolean"),
     sig: V_ANY_RET_BOOL,
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -187,6 +193,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("isFunction"),
     sig: V_ANY_RET_BOOL,
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -195,6 +202,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("isNumber"),
     sig: V_ANY_RET_BOOL,
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -203,6 +211,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("isObject"),
     sig: V_ANY_RET_BOOL,
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -211,6 +220,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("isString"),
     sig: V_ANY_RET_BOOL,
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -219,6 +229,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("length"),
     sig: sig(&[req("x", Ty::Any)], Ty::Uint),
     total: false,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -230,6 +241,7 @@ pub const FNS: [Fn; 126] = [
       Ty::Any,
     ),
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -238,6 +250,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("objectHas"),
     sig: OBJ_HAS,
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -246,6 +259,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("objectFields"),
     sig: OBJ_FIELDS,
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -254,6 +268,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("objectValues"),
     sig: OBJ_VALUES,
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -262,6 +277,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("objectKeysValues"),
     sig: OBJ_KEYS_VALUES,
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -270,6 +286,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("objectHasAll"),
     sig: OBJ_HAS,
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -278,6 +295,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("objectFieldsAll"),
     sig: OBJ_FIELDS,
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -286,6 +304,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("objectValuesAll"),
     sig: OBJ_VALUES,
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -294,6 +313,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("objectKeysValuesAll"),
     sig: OBJ_KEYS_VALUES,
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -302,6 +322,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("prune"),
     sig: sig(&[req("a", Ty::Any)], Ty::Any),
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -310,6 +331,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("mapWithKey"),
     sig: sig(&[req("func", Ty::Hof2), req("obj", Ty::Obj)], Ty::Obj),
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -318,6 +340,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("abs"),
     sig: N_NUM_RET_NUM,
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -326,6 +349,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("sign"),
     sig: N_NUM_RET_NUM,
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -334,6 +358,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("max"),
     sig: sig(&[req("a", Ty::Num), req("b", Ty::Num)], Ty::Num),
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -342,6 +367,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("min"),
     sig: sig(&[req("a", Ty::Num), req("b", Ty::Num)], Ty::Num),
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -350,6 +376,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("pow"),
     sig: sig(&[req("x", Ty::Num), req("n", Ty::Num)], Ty::Num),
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -358,6 +385,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("exp"),
     sig: X_NUM_RET_NUM,
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -366,6 +394,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("log"),
     sig: X_NUM_RET_NUM,
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -374,6 +403,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("exponent"),
     sig: X_NUM_RET_NUM,
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -382,6 +412,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("mantissa"),
     sig: X_NUM_RET_NUM,
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -390,6 +421,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("floor"),
     sig: X_NUM_RET_NUM,
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -398,6 +430,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("ceil"),
     sig: X_NUM_RET_NUM,
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -406,6 +439,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("sqrt"),
     sig: X_NUM_RET_NUM,
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -414,6 +448,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("sin"),
     sig: X_NUM_RET_NUM,
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -422,6 +457,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("cos"),
     sig: X_NUM_RET_NUM,
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -430,6 +466,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("tan"),
     sig: X_NUM_RET_NUM,
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -438,6 +475,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("asin"),
     sig: X_NUM_RET_NUM,
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -446,6 +484,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("acos"),
     sig: X_NUM_RET_NUM,
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -454,6 +493,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("atan"),
     sig: X_NUM_RET_NUM,
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -462,6 +502,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("round"),
     sig: X_NUM_RET_NUM,
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -470,6 +511,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("isEven"),
     sig: X_NUM_RET_BOOL,
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -478,6 +520,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("isOdd"),
     sig: X_NUM_RET_BOOL,
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -486,6 +529,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("isInteger"),
     sig: X_NUM_RET_BOOL,
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -494,6 +538,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("isDecimal"),
     sig: X_NUM_RET_BOOL,
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -502,6 +547,7 @@ pub const FNS: [Fn; 126] = [
     name: S::named("mod", "mod_"),
     sig: sig(&[req("a", Ty::NumOrStr), req("b", Ty::Any)], Ty::Any),
     total: false,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -510,6 +556,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("clamp"),
     sig: sig(&[req("x", Ty::Num), req("minVal", Ty::Num), req("maxVal", Ty::Num)], Ty::Num),
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -518,6 +565,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("assertEqual"),
     sig: sig(&[req("a", Ty::Any), req("b", Ty::Any)], Ty::True),
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -526,6 +574,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("toString"),
     sig: sig(&[req("a", Ty::Any)], Ty::Str),
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -534,6 +583,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("codepoint"),
     sig: sig(&[req("str", Ty::Str)], Ty::Uint),
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -542,6 +592,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("char"),
     sig: sig(&[req("n", Ty::Uint)], Ty::Str),
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -550,6 +601,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("substr"),
     sig: sig(&[req("str", Ty::Str), req("from", Ty::Uint), req("len", Ty::Uint)], Ty::Str),
     total: false,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -558,6 +610,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("findSubstr"),
     sig: sig(&[req("pat", Ty::Str), req("str", Ty::Str)], Ty::ArrNum),
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -566,6 +619,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("startsWith"),
     sig: A_B_STR_RET_BOOL,
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -574,6 +628,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("endsWith"),
     sig: A_B_STR_RET_BOOL,
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -582,6 +637,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("stripChars"),
     sig: STR_CHARS_STR_RET_STR,
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -590,6 +646,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("lstripChars"),
     sig: STR_CHARS_STR_RET_STR,
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -598,6 +655,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("rstripChars"),
     sig: STR_CHARS_STR_RET_STR,
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -606,6 +664,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("split"),
     sig: sig(&[req("str", Ty::Str), req("c", Ty::Str)], Ty::ArrStr),
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -614,6 +673,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("splitLimit"),
     sig: SPLIT_LIMIT,
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -622,6 +682,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("splitLimitR"),
     sig: SPLIT_LIMIT,
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -630,6 +691,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("strReplace"),
     sig: sig(&[req("str", Ty::Str), req("from", Ty::Str), req("to", Ty::Str)], Ty::Str),
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -638,6 +700,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("isEmpty"),
     sig: sig(&[req("str", Ty::Str)], Ty::Bool),
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -646,6 +709,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("asciiUpper"),
     sig: STR_RET_STR,
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -654,6 +718,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("asciiLower"),
     sig: STR_RET_STR,
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -662,6 +727,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("stringChars"),
     sig: sig(&[req("str", Ty::Str)], Ty::ArrStr),
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -670,6 +736,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("format"),
     sig: sig(&[req("str", Ty::Str), req("vals", Ty::Any)], Ty::Str),
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -678,6 +745,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("escapeStringBash"),
     sig: STR_RET_STR,
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -686,6 +754,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("escapeStringDollars"),
     sig: STR_RET_STR,
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -694,6 +763,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("escapeStringJson"),
     sig: STR_RET_STR,
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -702,6 +772,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("escapeStringPython"),
     sig: STR_RET_STR,
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -710,6 +781,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("escapeStringXml"),
     sig: STR_RET_STR,
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -718,6 +790,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("parseInt"),
     sig: STR_RET_NUM,
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -726,6 +799,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("parseOctal"),
     sig: STR_RET_NUM,
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -734,6 +808,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("parseHex"),
     sig: STR_RET_NUM,
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -742,6 +817,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("parseJson"),
     sig: STR_RET_ANY,
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -750,6 +826,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("parseYaml"),
     sig: STR_RET_ANY,
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -758,6 +835,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("encodeUTF8"),
     sig: sig(&[req("str", Ty::Str)], Ty::ArrNum),
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -766,6 +844,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("decodeUTF8"),
     sig: sig(&[req("arr", Ty::ArrNum)], Ty::Str),
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -774,6 +853,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("manifestIni"),
     sig: sig(&[req("ini", Ty::Obj)], Ty::Str),
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -782,6 +862,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("manifestPython"),
     sig: sig(&[req("v", Ty::Any)], Ty::Str),
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -790,6 +871,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("manifestPythonVars"),
     sig: sig(&[req("conf", Ty::Any)], Ty::Str),
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -806,6 +888,7 @@ pub const FNS: [Fn; 126] = [
       Ty::Str,
     ),
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -814,6 +897,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("manifestJson"),
     sig: MANIFEST_JSON,
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -822,6 +906,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("manifestJsonMinified"),
     sig: MANIFEST_JSON,
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -837,6 +922,7 @@ pub const FNS: [Fn; 126] = [
       Ty::Str,
     ),
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -853,6 +939,7 @@ pub const FNS: [Fn; 126] = [
       Ty::Str,
     ),
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -861,6 +948,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("manifestXmlJsonml"),
     sig: sig(&[req("value", Ty::ArrAny)], Ty::Str),
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -869,6 +957,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("manifestTomlEx"),
     sig: sig(&[req("toml", Ty::Obj), req("indent", Ty::Str)], Ty::Str),
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -877,6 +966,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("makeArray"),
     sig: sig(&[req("sz", Ty::Uint), req("func", Ty::Hof1)], Ty::ArrAny),
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -885,6 +975,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("member"),
     sig: sig(&[req("arr", Ty::StrOrArrAny), req("x", Ty::Any)], Ty::Bool),
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -893,6 +984,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("count"),
     sig: sig(&[req("arr", Ty::ArrAny), req("x", Ty::Any)], Ty::Num),
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -901,6 +993,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("find"),
     sig: sig(&[req("value", Ty::Any), req("arr", Ty::ArrAny)], Ty::ArrNum),
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -909,6 +1002,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("map"),
     sig: ARR_HOF1,
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -917,6 +1011,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("mapWithIndex"),
     sig: sig(&[req("func", Ty::Hof2), req("arr", Ty::ArrAny)], Ty::ArrAny),
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -928,6 +1023,7 @@ pub const FNS: [Fn; 126] = [
       Ty::ArrAny,
     ),
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -936,6 +1032,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("flatMap"),
     sig: sig(&[req("func", Ty::Hof1), req("arr", Ty::StrOrArrAny)], Ty::StrOrArrAny),
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -944,6 +1041,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("filter"),
     sig: ARR_HOF1,
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -952,6 +1050,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("foldl"),
     sig: FOLD,
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -960,6 +1059,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("foldr"),
     sig: FOLD,
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -968,6 +1068,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("range"),
     sig: sig(&[req("from", Ty::Num), req("to", Ty::Num)], Ty::ArrNum),
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -976,6 +1077,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("repeat"),
     sig: sig(&[req("what", Ty::StrOrArrAny), req("count", Ty::Uint)], Ty::StrOrArrAny),
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -992,6 +1094,7 @@ pub const FNS: [Fn; 126] = [
       Ty::StrOrArrAny,
     ),
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -1000,6 +1103,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("join"),
     sig: sig(&[req("sep", Ty::StrOrArrAny), req("arr", Ty::ArrAny)], Ty::StrOrArrAny),
     total: false,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -1008,6 +1112,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("lines"),
     sig: sig(&[req("arr", Ty::ArrStr)], Ty::Str),
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -1016,6 +1121,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("flattenArrays"),
     sig: sig(&[req("arr", Ty::ArrAny)], Ty::ArrAny),
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -1024,6 +1130,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("reverse"),
     sig: sig(&[req("arr", Ty::ArrAny)], Ty::ArrAny),
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -1032,6 +1139,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("sort"),
     sig: ARR_KEY_F,
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -1040,6 +1148,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("uniq"),
     sig: ARR_KEY_F,
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -1048,6 +1157,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("all"),
     sig: sig(&[req("arr", Ty::ArrBool)], Ty::Bool),
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -1056,6 +1166,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("any"),
     sig: sig(&[req("arr", Ty::ArrBool)], Ty::Bool),
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -1064,6 +1175,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("sum"),
     sig: sig(&[req("arr", Ty::ArrNum)], Ty::Num),
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -1072,6 +1184,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("avg"),
     sig: sig(&[req("arr", Ty::ArrNum)], Ty::Num),
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -1080,6 +1193,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("set"),
     sig: ARR_KEY_F,
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -1088,6 +1202,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("setInter"),
     sig: BINARY_SET_FN,
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -1096,6 +1211,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("setUnion"),
     sig: BINARY_SET_FN,
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -1104,6 +1220,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("setDiff"),
     sig: BINARY_SET_FN,
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -1112,6 +1229,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("setMember"),
     sig: sig(&[req("x", Ty::Any), req("arr", Ty::ArrAny), opt("keyF", Ty::Hof1)], Ty::Bool),
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -1120,6 +1238,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("base64"),
     sig: sig(&[req("input", Ty::StrOrArrNum)], Ty::Str),
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -1128,6 +1247,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("base64DecodeBytes"),
     sig: sig(&[req("str", Ty::Str)], Ty::ArrNum),
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -1136,6 +1256,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("base64Decode"),
     sig: STR_RET_STR,
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -1144,6 +1265,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("md5"),
     sig: sig(&[req("s", Ty::Str)], Ty::Str),
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -1152,6 +1274,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("xor"),
     sig: X_Y_BOOL_RET_BOOL,
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -1160,6 +1283,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("xnor"),
     sig: X_Y_BOOL_RET_BOOL,
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -1168,6 +1292,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("mergePatch"),
     sig: sig(&[req("target", Ty::Any), req("patch", Ty::Any)], Ty::Any),
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -1176,6 +1301,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("trace"),
     sig: sig(&[req("str", Ty::Str), req("rest", Ty::Any)], Ty::Any),
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -1185,6 +1311,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("equals"),
     sig: sig(&[req("x", Ty::Any), req("y", Ty::Any)], Ty::Bool),
     total: false,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
@@ -1193,6 +1320,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("objectHasEx"),
     sig: sig(&[req("obj", Ty::Obj), req("fname", Ty::Str), req("hidden", Ty::Bool)], Ty::Bool),
     total: true,
+    available_since: None,
     doc: indoc! {"
       TODO
     "},
