@@ -190,7 +190,11 @@ fn main() {
     });
     let doc_arms = jsonnet_std_sig::FNS.iter().map(|f| {
       let name = ident(f.name.ident());
-      let content = fn_doc.get(f.name.content()).expect("should have doc");
+      let content = if f.doc.trim() == "TODO" {
+        fn_doc.get(f.name.content()).expect("should have doc")
+      } else {
+        f.doc
+      };
       q! { Self::#name => #content, }
     });
     let mut tmp = BTreeMap::<usize, BTreeSet<&str>>::new();
