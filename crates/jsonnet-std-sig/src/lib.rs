@@ -1854,7 +1854,7 @@ pub const FNS: [Fn; 126] = [
       initialize.
 
       ```jsonnet
-      assert std.makeArray(3,function(x) x * x) == [ 0, 1, 4 ];
+      assert std.makeArray(3, function(x) x * x) == [0, 1, 4];
       ```
     "},
     examples: &[],
@@ -2128,7 +2128,7 @@ pub const FNS: [Fn; 126] = [
 
       ```jsonnet
       assert std.flattenArrays([[1, 2], [3, 4], [[5, 6], [7, 8]]])
-        == [ 1, 2, 3, 4, [ 5, 6 ], [ 7, 8 ] ];
+        == [1, 2, 3, 4, [5, 6], [7, 8]];
       ```
     "},
     examples: &[],
