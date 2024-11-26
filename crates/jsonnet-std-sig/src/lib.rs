@@ -48,7 +48,8 @@ pub struct Fn {
   pub sig: Sig,
   /// Whether the function returns a value for all well-typed inputs.
   pub total: bool,
-  /// When this is available since. If Some(n), this is available since Jsonnet version 0.n.0.
+  /// Since what Jsonnet version this is available since. If `Some(n)`, this is available since
+  /// Jsonnet version 0.n.0. If `None`, unknown.
   pub available_since: Option<u8>,
   /// The documentation.
   pub doc: &'static str,
