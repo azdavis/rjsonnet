@@ -367,8 +367,20 @@ impl StdField {
   #[must_use]
   pub fn doc(&self) -> &'static str {
     match self {
-      StdField::ThisFile => generated::THIS_FILE_DOC,
+      StdField::ThisFile => {
+        "Note that this is a field. It contains the current Jsonnet filename as a string."
+      }
       StdField::Fn(std_fn) => std_fn.doc(),
+    }
+  }
+
+  /// Returns since what Jsonnet version this is available. If `Some(n)`, this is available since
+  /// Jsonnet version 0.n.0. If `None`, unknown.
+  #[must_use]
+  pub fn available_since(&self) -> Option<u8> {
+    match self {
+      StdField::ThisFile => Some(10),
+      StdField::Fn(_) => todo!(),
     }
   }
 }

@@ -1,7 +1,5 @@
 //! Generate some string/identifier names.
 
-#![expect(clippy::disallowed_methods, reason = "can panic in build script")]
-
 use jsonnet_std_sig::S;
 use quote::quote as q;
 use std::collections::{BTreeMap, BTreeSet, HashSet};
@@ -161,16 +159,6 @@ fn main() {
   };
 
   let std_fn = {
-    let (fn_doc, this_file_doc) = {
-      let mut tmp =
-        code_h2_md_map::get(include_str!("../../docs/std_lib.md"), |x| format!("std field: {x}"));
-      let tf = tmp.remove("thisFile").unwrap();
-      let from_doc: HashSet<_> = tmp.keys().copied().collect();
-      let from_fns: HashSet<_> = jsonnet_std_sig::FNS.iter().map(|f| f.name.content()).collect();
-      let in_doc: Vec<_> = from_doc.difference(&from_fns).collect();
-      assert!(in_doc.is_empty(), "got in_doc: {in_doc:?}");
-      (tmp, tf)
-    };
     let variants = jsonnet_std_sig::FNS.iter().map(|f| ident(f.name.ident()));
     let count = jsonnet_std_sig::FNS.len();
     let str_variant_tuples = jsonnet_std_sig::FNS.iter().map(|f| {
@@ -188,11 +176,7 @@ fn main() {
     });
     let doc_arms = jsonnet_std_sig::FNS.iter().map(|f| {
       let name = ident(f.name.ident());
-      let content = if f.doc.trim() == "TODO" {
-        fn_doc.get(f.name.content()).expect("should have doc")
-      } else {
-        f.doc
-      };
+      let content = f.doc;
       q! { Self::#name => #content, }
     });
     let mut tmp = BTreeMap::<usize, BTreeSet<&str>>::new();
@@ -208,8 +192,6 @@ fn main() {
       q! { #(#pats)|* => #n, }
     });
     q! {
-      pub const THIS_FILE_DOC: &str = #this_file_doc;
-
       #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
       #[expect(non_camel_case_types)]
       pub enum StdFn {

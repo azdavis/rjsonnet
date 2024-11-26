@@ -1,4 +1,6 @@
 //! The names and parameter names of the standard library functions.
+//!
+//! Based on [the original std lib docs](https://jsonnet.org/ref/stdlib.html).
 
 use indoc::indoc;
 
@@ -48,8 +50,8 @@ pub struct Fn {
   pub sig: Sig,
   /// Whether the function returns a value for all well-typed inputs.
   pub total: bool,
-  /// Since what Jsonnet version this is available since. If `Some(n)`, this is available since
-  /// Jsonnet version 0.n.0. If `None`, unknown.
+  /// Since what Jsonnet version this is available. If `Some(n)`, this is available since Jsonnet
+  /// version 0.n.0. If `None`, unknown.
   pub available_since: Option<u8>,
   /// The documentation.
   pub doc: &'static str,
@@ -353,9 +355,10 @@ pub const FNS: [Fn; 126] = [
       Ty::Any,
     ),
     total: true,
-    available_since: None,
+    available_since: Some(18),
     doc: indoc! {"
-      TODO
+      `std.get(o, f, default=null, inc_hidden=true)` returns the object `o`'s field `f` if it exists
+      or `default` value otherwise. `inc_hidden` controls whether to include hidden fields.
     "},
     examples: &[],
   },
@@ -364,9 +367,13 @@ pub const FNS: [Fn; 126] = [
     implemented: false,
     sig: OBJ_HAS,
     total: true,
-    available_since: None,
+    available_since: Some(10),
     doc: indoc! {"
-      TODO
+      `std.objectHas(o, f)` returns whether the given object `o` has the field `f` given as a string.
+
+      Raises an error if the arguments are not object and string respectively.
+
+      Returns `false` if the field is hidden.
     "},
     examples: &[],
   },
@@ -375,9 +382,11 @@ pub const FNS: [Fn; 126] = [
     implemented: false,
     sig: OBJ_FIELDS,
     total: true,
-    available_since: None,
+    available_since: Some(10),
     doc: indoc! {"
-      TODO
+      Returns an array of strings, each element being a field from the given object.
+
+      **Does not** include hidden fields.
     "},
     examples: &[],
   },
@@ -386,9 +395,11 @@ pub const FNS: [Fn; 126] = [
     implemented: false,
     sig: OBJ_VALUES,
     total: true,
-    available_since: None,
+    available_since: Some(17),
     doc: indoc! {"
-      TODO
+      Returns an array of the values in the given object.
+
+      **Does not** include hidden fields.
     "},
     examples: &[],
   },
@@ -397,9 +408,12 @@ pub const FNS: [Fn; 126] = [
     implemented: false,
     sig: OBJ_KEYS_VALUES,
     total: true,
-    available_since: None,
+    available_since: Some(20),
     doc: indoc! {"
-      TODO
+      Returns an array of objects from the given object, each object having two fields:
+      key (string) and value (object).
+
+      **Does not** include hidden fields.
     "},
     examples: &[],
   },
@@ -408,9 +422,9 @@ pub const FNS: [Fn; 126] = [
     implemented: false,
     sig: OBJ_HAS,
     total: true,
-    available_since: None,
+    available_since: Some(10),
     doc: indoc! {"
-      TODO
+      Like `std.objectHas` but also includes hidden fields.
     "},
     examples: &[],
   },
@@ -419,9 +433,9 @@ pub const FNS: [Fn; 126] = [
     implemented: false,
     sig: OBJ_FIELDS,
     total: true,
-    available_since: None,
+    available_since: Some(10),
     doc: indoc! {"
-      TODO
+      Like `std.objectFields` but also includes hidden fields.
     "},
     examples: &[],
   },
@@ -430,9 +444,9 @@ pub const FNS: [Fn; 126] = [
     implemented: false,
     sig: OBJ_VALUES,
     total: true,
-    available_since: None,
+    available_since: Some(10),
     doc: indoc! {"
-      TODO
+      Like `std.objectValues` but also includes hidden fields.
     "},
     examples: &[],
   },
@@ -441,9 +455,9 @@ pub const FNS: [Fn; 126] = [
     implemented: false,
     sig: OBJ_KEYS_VALUES,
     total: true,
-    available_since: None,
+    available_since: Some(20),
     doc: indoc! {"
-      TODO
+      Like `std.objectKeysValues` but also includes hidden fields.
     "},
     examples: &[],
   },
@@ -478,9 +492,13 @@ pub const FNS: [Fn; 126] = [
     implemented: false,
     sig: sig(&[req("func", Ty::Hof2), req("obj", Ty::Obj)], Ty::Obj),
     total: true,
-    available_since: None,
+    available_since: Some(10),
     doc: indoc! {"
-      TODO
+      `std.mapWithKey(func, obj)` applies the given `func` to all fields of the given `obj`, also
+      passing the field name.
+
+      The function `func` is expected to take the field name as the first parameter and the field
+      value as the second.
     "},
     examples: &[],
   },
@@ -2304,9 +2322,9 @@ pub const FNS: [Fn; 126] = [
     implemented: false,
     sig: ARR_KEY_F,
     total: true,
-    available_since: None,
+    available_since: Some(10),
     doc: indoc! {"
-      TODO
+      `std.set(arr, keyF=id)` is a shortcut for `std.uniq(std.sort(arr))`.
     "},
     examples: &[],
   },
@@ -2315,9 +2333,15 @@ pub const FNS: [Fn; 126] = [
     implemented: false,
     sig: BINARY_SET_FN,
     total: true,
-    available_since: None,
+    available_since: Some(10),
     doc: indoc! {"
-      TODO
+      `std.setInter(a, b, keyF=id)` is the set intersection operation (values in both `a` and `b`).
+
+      `a` and `b` must be sets, i.e. sorted arrays with no duplicates. If that is not the case, this
+      function will quietly return non-meaningful results.
+
+      The optional `keyF` function can be used to extract a key to use from each element. This key
+      is used for the purpose of identifying uniqueness.
     "},
     examples: &[],
   },
@@ -2326,10 +2350,30 @@ pub const FNS: [Fn; 126] = [
     implemented: false,
     sig: BINARY_SET_FN,
     total: true,
-    available_since: None,
-    doc: indoc! {"
-      TODO
-    "},
+    available_since: Some(10),
+    doc: indoc! {r#"
+      `std.setUnion(a, b, keyF=id)` is the set union operation (values in any of `a` or `b`).
+
+      Note that `+` on sets will simply concatenate the arrays, possibly forming an array that is
+      not a set (due to not being ordered without duplicates).
+
+      <!-- @eval-error: not yet implemented: setUnion -->
+
+      ```jsonnet
+      assert std.setUnion([1, 2], [2, 3]) == [ 1, 2, 3 ];
+      assert std.setUnion(
+        [{n:"A", v:1}, {n:"B"}],
+        [{n:"A", v: 9999}, {n:"C"}],
+        keyF=function(x) x.n
+      ) == [ { "n": "A", "v": 1 }, { "n": "B" }, { "n": "C" } ];
+      ```
+
+      `a` and `b` must be sets, i.e. sorted arrays with no duplicates. If that is not the case, this
+      function will quietly return non-meaningful results.
+
+      The optional `keyF` function can be used to extract a key to use from each element. This key
+      is used for the purpose of identifying uniqueness.
+    "#},
     examples: &[],
   },
   Fn {
@@ -2337,9 +2381,15 @@ pub const FNS: [Fn; 126] = [
     implemented: false,
     sig: BINARY_SET_FN,
     total: true,
-    available_since: None,
+    available_since: Some(10),
     doc: indoc! {"
-      TODO
+      `std.setDiff(a, b, keyF=id)` is the set difference operation (values in `a` but not `b`).
+
+      `a` and `b` must be sets, i.e. sorted arrays with no duplicates. If that is not the case, this
+      function will quietly return non-meaningful results.
+
+      The optional `keyF` function can be used to extract a key to use from each element. This key
+      is used for the purpose of identifying uniqueness.
     "},
     examples: &[],
   },
@@ -2348,9 +2398,15 @@ pub const FNS: [Fn; 126] = [
     implemented: false,
     sig: sig(&[req("x", Ty::Any), req("arr", Ty::ArrAny), opt("keyF", Ty::Hof1)], Ty::Bool),
     total: true,
-    available_since: None,
+    available_since: Some(10),
     doc: indoc! {"
-      TODO
+      `std.setMember(x, s, keyF=id)` whether `x` is a member of `s`.
+
+      `s` must be a set, i.e. a sorted array with no duplicates. If that is not the case, this
+      function will quietly return non-meaningful results.
+
+      The optional `keyF` function can be used to extract a key to use from each element. This key
+      is used for the purpose of identifying uniqueness.
     "},
     examples: &[],
   },
@@ -2359,9 +2415,17 @@ pub const FNS: [Fn; 126] = [
     implemented: false,
     sig: sig(&[req("input", Ty::StrOrArrNum)], Ty::Str),
     total: true,
-    available_since: None,
+    available_since: Some(10),
     doc: indoc! {"
-      TODO
+      Encodes the given value into a base64 string.
+
+      The encoding sequence is `A-Za-z0-9+/` with `=` to pad the output to a multiple of 4
+      characters.
+
+      The value can be a string or an array of numbers, but the codepoints / numbers must be in the
+      0 to 255 range.
+
+      The resulting string has no line breaks.
     "},
     examples: &[],
   },
@@ -2370,9 +2434,13 @@ pub const FNS: [Fn; 126] = [
     implemented: false,
     sig: sig(&[req("str", Ty::Str)], Ty::ArrNum),
     total: true,
-    available_since: None,
+    available_since: Some(10),
     doc: indoc! {"
-      TODO
+      `std.base64DecodeBytes(str)` decodes the given base64 string into an array of bytes
+      (number values).
+
+      Currently assumes the input string has no line breaks and is padded to a multiple of 4
+      (with the `=` character). In other words, it consumes the output of `base64`.
     "},
     examples: &[],
   },
@@ -2381,9 +2449,13 @@ pub const FNS: [Fn; 126] = [
     implemented: false,
     sig: STR_RET_STR,
     total: true,
-    available_since: None,
+    available_since: Some(10),
     doc: indoc! {"
-      TODO
+      **Deprecated**: use `std.base64DecodeBytes` and decode the string explicitly
+      (e.g. with `std.decodeUTF8`) instead.
+
+      Behaves like `std.base64DecodeBytes` except returns a naively encoded string instead of an
+      array of bytes.
     "},
     examples: &[],
   },
@@ -2392,9 +2464,9 @@ pub const FNS: [Fn; 126] = [
     implemented: false,
     sig: sig(&[req("s", Ty::Str)], Ty::Str),
     total: true,
-    available_since: None,
+    available_since: Some(10),
     doc: indoc! {"
-      TODO
+      Encodes the given value into an MD5 string.
     "},
     examples: &[],
   },
@@ -2403,9 +2475,9 @@ pub const FNS: [Fn; 126] = [
     implemented: false,
     sig: X_Y_BOOL_RET_BOOL,
     total: true,
-    available_since: None,
+    available_since: Some(20),
     doc: indoc! {"
-      TODO
+      Returns the xor (exclusive or) of the two given booleans.
     "},
     examples: &[],
   },
@@ -2414,9 +2486,9 @@ pub const FNS: [Fn; 126] = [
     implemented: false,
     sig: X_Y_BOOL_RET_BOOL,
     total: true,
-    available_since: None,
+    available_since: Some(20),
     doc: indoc! {"
-      TODO
+      Returns the xnor (exclusive nor) of the two given booleans.
     "},
     examples: &[],
   },
@@ -2425,9 +2497,10 @@ pub const FNS: [Fn; 126] = [
     implemented: false,
     sig: sig(&[req("target", Ty::Any), req("patch", Ty::Any)], Ty::Any),
     total: true,
-    available_since: None,
+    available_since: Some(10),
     doc: indoc! {"
-      TODO
+      `std.mergePatch(target, patch)` applies `patch` to `target` according to
+      [RFC7396](https://tools.ietf.org/html/rfc7396).
     "},
     examples: &[],
   },
@@ -2436,10 +2509,41 @@ pub const FNS: [Fn; 126] = [
     implemented: false,
     sig: sig(&[req("str", Ty::Str), req("rest", Ty::Any)], Ty::Any),
     total: true,
-    available_since: None,
-    doc: indoc! {"
-      TODO
-    "},
+    available_since: Some(11),
+    doc: indoc! {r#"
+      `std.trace(str, rest)` outputs the given string `str` to stderr and returns `rest` as the
+      result.
+
+      <!-- @eval-error: not yet implemented -->
+
+      ```jsonnet
+      local choose(c, yes, no) =
+        if c then
+          std.trace("c is true, returning " + std.toString(yes), yes)
+        else
+          std.trace("c is false, returning " + std.toString(no), no);
+
+      {
+        foo: choose(true, { bar: 1 }, { quz: 2 }),
+      }
+      ```
+
+      Prints:
+
+      ```text
+      TRACE: test.jsonnet:3 c is true, returning {"bar": 1}
+      ```
+
+      And evaluates to:
+
+      ```json
+      {
+        "foo": {
+          "bar": 1
+        }
+      }
+      ```
+    "#},
     examples: &[],
   },
   // alluded to in the spec but not mentioned on the std lib page
@@ -2450,7 +2554,7 @@ pub const FNS: [Fn; 126] = [
     total: false,
     available_since: None,
     doc: indoc! {"
-      TODO
+      Returns whether the two arguments equal each other.
     "},
     examples: &[],
   },
@@ -2461,7 +2565,10 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: None,
     doc: indoc! {"
-      TODO
+      `std.objectHasEx(obj, fname, hidden)` is the same as:
+
+      - `std.objectHasAll(obj, fname)` when `hidden` is `true`
+      - `std.objectHas(obj, fname)` when `hidden` is `false`.
     "},
     examples: &[],
   },
