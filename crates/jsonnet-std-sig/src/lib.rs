@@ -2,6 +2,8 @@
 //!
 //! Based on [the original std lib docs](https://jsonnet.org/ref/stdlib.html).
 
+#![allow(clippy::needless_raw_string_hashes)]
+
 use indoc::indoc;
 
 /// A name-content string pair.
@@ -207,15 +209,8 @@ pub const FNS: [Fn; 126] = [
     available_since: None,
     doc: indoc! {"
       Returns whether the argument is an array.
-
-      ```jsonnet
-      assert std.isArray([1, 2]);
-      assert std.isArray([]);
-      assert !std.isArray(null);
-      assert !std.isArray(4);
-      ```
     "},
-    examples: &[],
+    examples: &["std.isArray([1, 2])", "std.isArray([])", "!std.isArray(null)", "!std.isArray(4)"],
   },
   Fn {
     name: S::new("isBoolean"),
@@ -225,15 +220,13 @@ pub const FNS: [Fn; 126] = [
     available_since: None,
     doc: indoc! {"
       Returns whether the argument is a boolean.
-
-      ```jsonnet
-      assert std.isBoolean(true);
-      assert std.isBoolean(false);
-      assert !std.isBoolean(null);
-      assert !std.isBoolean(4);
-      ```
     "},
-    examples: &[],
+    examples: &[
+      "std.isBoolean(true)",
+      "std.isBoolean(false)",
+      "!std.isBoolean(null)",
+      "!std.isBoolean(4)",
+    ],
   },
   Fn {
     name: S::new("isFunction"),
@@ -243,15 +236,13 @@ pub const FNS: [Fn; 126] = [
     available_since: None,
     doc: indoc! {"
       Returns whether the argument is a function.
-
-      ```jsonnet
-      assert std.isFunction(function(x) x + 1);
-      assert std.isFunction(std.mod);
-      assert !std.isFunction(null);
-      assert !std.isFunction(4);
-      ```
     "},
-    examples: &[],
+    examples: &[
+      "std.isFunction(function(x) x + 1)",
+      "std.isFunction(std.mod)",
+      "!std.isFunction(null)",
+      "!std.isFunction(4)",
+    ],
   },
   Fn {
     name: S::new("isNumber"),
@@ -261,15 +252,13 @@ pub const FNS: [Fn; 126] = [
     available_since: None,
     doc: indoc! {"
       Returns whether the argument is a number.
-
-      ```jsonnet
-      assert std.isNumber(3);
-      assert std.isNumber(-123.345);
-      assert !std.isNumber(null);
-      assert !std.isNumber([]);
-      ```
     "},
-    examples: &[],
+    examples: &[
+      "std.isNumber(3)",
+      "std.isNumber(-123.345)",
+      "!std.isNumber(null)",
+      "!std.isNumber([])",
+    ],
   },
   Fn {
     name: S::new("isObject"),
@@ -279,15 +268,13 @@ pub const FNS: [Fn; 126] = [
     available_since: None,
     doc: indoc! {"
       Returns whether the argument is an object.
-
-      ```jsonnet
-      assert std.isObject({});
-      assert std.isObject({ a: 1 } + { b: 2 });
-      assert !std.isObject(null);
-      assert !std.isObject([]);
-      ```
     "},
-    examples: &[],
+    examples: &[
+      "std.isObject({})",
+      "std.isObject({ a: 1 } + { b: 2 })",
+      "!std.isObject(null)",
+      "!std.isObject([])",
+    ],
   },
   Fn {
     name: S::new("isString"),
@@ -295,17 +282,15 @@ pub const FNS: [Fn; 126] = [
     sig: V_ANY_RET_BOOL,
     total: true,
     available_since: None,
-    doc: indoc! {r#"
+    doc: indoc! {"
       Returns whether the argument is a string.
-
-      ```jsonnet
-      assert std.isString("hi");
-      assert std.isString("");
-      assert !std.isString(null);
-      assert !std.isString({});
-      ```
-    "#},
-    examples: &[],
+    "},
+    examples: &[
+      r#" std.isString("hi") "#,
+      r#" std.isString("") "#,
+      r#" !std.isString(null) "#,
+      r#" !std.isString({}) "#,
+    ],
   },
   Fn {
     name: S::new("length"),
@@ -325,25 +310,20 @@ pub const FNS: [Fn; 126] = [
       | object   | fields     |
 
       Raises an error if given `null`, `true`, `false`, or a number.
-
-      ```jsonnet
-      assert std.length("hi") == 2;
-      assert std.length("") == 0;
-      assert std.length("あ") == 1;
-
-      assert std.length([]) == 0;
-      assert std.length([3, 4]) == 2;
-
-      assert std.length(function(x) x + 1) == 1;
-      assert std.length(function() 4) == 0;
-      assert std.length(function(x=1) x + 2) == 0;
-
-      assert std.length({}) == 0;
-      assert std.length({ a: 3, b: 5 }) == 2;
-      assert std.length({ x:: 9, y::: 7 }) == 2;
-      ```
     "#},
-    examples: &[],
+    examples: &[
+      r#" std.length("hi") == 2 "#,
+      r#" std.length("") == 0 "#,
+      r#" std.length("あ") == 1 "#,
+      r#" std.length([]) == 0 "#,
+      r#" std.length([3, 4]) == 2 "#,
+      r#" std.length(function(x) x + 1) == 1 "#,
+      r#" std.length(function() 4) == 0 "#,
+      r#" std.length(function(x=1) x + 2) == 0 "#,
+      r#" std.length({}) == 0 "#,
+      r#" std.length({ a: 3, b: 5 }) == 2 "#,
+      r#" std.length({ x:: 9, y::: 7 }) == 2 "#,
+    ],
   },
   Fn {
     name: S::new("get"),
@@ -473,15 +453,13 @@ pub const FNS: [Fn; 126] = [
       - `null` values
 
       The argument may have any type.
-
-      ```jsonnet
-      assert std.prune([1, [], 2, {}, 3, null]) == [1, 2, 3];
-      assert std.prune({a: 3}) == {a: 3};
-      assert std.prune({w: 0, x: "", y: [], z: null}) == {w: 0, x: ""};
-      assert std.prune(null) == null;
-      ```
     "#},
-    examples: &[],
+    examples: &[
+      r#" std.prune([1, [], 2, {}, 3, null]) == [1, 2, 3] "#,
+      r#" std.prune({a: 3}) == {a: 3} "#,
+      r#" std.prune({w: 0, x: "", y: [], z: null}) == {w: 0, x: ""} "#,
+      r#" std.prune(null) == null "#,
+    ],
   },
   Fn {
     name: S::new("mapWithKey"),
@@ -506,14 +484,8 @@ pub const FNS: [Fn; 126] = [
     available_since: None,
     doc: indoc! {"
       Returns the absolute value of the number.
-
-      ```jsonnet
-      assert std.abs(3) == 3;
-      assert std.abs(-1.2) == 1.2;
-      assert std.abs(0) == 0;
-      ```
     "},
-    examples: &[],
+    examples: &["std.abs(3) == 3", "std.abs(-1.2) == 1.2", "std.abs(0) == 0"],
   },
   Fn {
     name: S::new("sign"),
@@ -523,14 +495,8 @@ pub const FNS: [Fn; 126] = [
     available_since: None,
     doc: indoc! {"
       Returns `-1`, `0`, or `1` if the number is negative, zero, or positive respectively.
-
-      ```jsonnet
-      assert std.sign(3) == 1;
-      assert std.sign(-1.2) == -1;
-      assert std.sign(0) == 0;
-      ```
     "},
-    examples: &[],
+    examples: &["std.sign(3) == 1", "std.sign(-1.2) == -1", "std.sign(0) == 0"],
   },
   Fn {
     name: S::new("max"),
@@ -540,14 +506,8 @@ pub const FNS: [Fn; 126] = [
     available_since: None,
     doc: indoc! {"
       Returns the maximum of the two arguments.
-
-      ```jsonnet
-      assert std.max(3, 2) == 3;
-      assert std.max(4, 4) == 4;
-      assert std.max(-5, 1) == 1;
-      ```
     "},
-    examples: &[],
+    examples: &["std.max(3, 2) == 3", "std.max(4, 4) == 4", "std.max(-5, 1) == 1"],
   },
   Fn {
     name: S::new("min"),
@@ -557,14 +517,8 @@ pub const FNS: [Fn; 126] = [
     available_since: None,
     doc: indoc! {"
       Returns the minimum of the two arguments.
-
-      ```jsonnet
-      assert std.min(3, 2) == 2;
-      assert std.min(4, 4) == 4;
-      assert std.min(-5, 1) == -5;
-      ```
     "},
-    examples: &[],
+    examples: &["std.min(3, 2) == 2", "std.min(4, 4) == 4", "std.min(-5, 1) == -5"],
   },
   Fn {
     name: S::new("pow"),
@@ -574,16 +528,14 @@ pub const FNS: [Fn; 126] = [
     available_since: None,
     doc: indoc! {"
       `std.pow(x, y)` returns $x^y$, i.e. $x$ to the $y$ power.
-
-      ```jsonnet
-      assert std.pow(2, 3) == 8;
-      assert std.pow(3, 2) == 9;
-      assert std.pow(1, 99) == 1;
-      assert std.pow(0, 2) == 0;
-      assert std.pow(99, 0) == 1;
-      ```
     "},
-    examples: &[],
+    examples: &[
+      "std.pow(2, 3) == 8",
+      "std.pow(3, 2) == 9",
+      "std.pow(1, 99) == 1",
+      "std.pow(0, 2) == 0",
+      "std.pow(99, 0) == 1",
+    ],
   },
   Fn {
     name: S::new("exp"),
@@ -594,14 +546,12 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {r"
       `std.exp(x)` returns $e^x$, i.e. $e$ to the $x$ power, where
       [$e \approx 2.71828$](<https://en.wikipedia.org/wiki/E_(mathematical_constant)>).
-
-      ```jsonnet
-      assert std.exp(0) == 1;
-      assert std.exp(1) == 2.718281828459045;
-      assert std.exp(2) == 7.38905609893065;
-      ```
     "},
-    examples: &[],
+    examples: &[
+      "std.exp(0) == 1",
+      "std.exp(1) == 2.718281828459045",
+      "std.exp(2) == 7.38905609893065",
+    ],
   },
   Fn {
     name: S::new("log"),
@@ -613,14 +563,12 @@ pub const FNS: [Fn; 126] = [
       `std.log(x)` returns the natural logarithm of $x$,
       i.e. the solution $y$ in $e^y = x$, where
       [$e \approx 2.71828$](<https://en.wikipedia.org/wiki/E_(mathematical_constant)>).
-
-      ```jsonnet
-      assert std.log(1) == 0;
-      assert std.log(123) == 4.812184355372417;
-      assert std.log(345) == 5.84354441703136;
-      ```
     "},
-    examples: &[],
+    examples: &[
+      "std.log(1) == 0",
+      "std.log(123) == 4.812184355372417",
+      "std.log(345) == 5.84354441703136",
+    ],
   },
   Fn {
     name: S::new("exponent"),
