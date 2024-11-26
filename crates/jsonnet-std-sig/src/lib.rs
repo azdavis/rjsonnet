@@ -191,15 +191,13 @@ pub const FNS: [Fn; 126] = [
       - `"number"`
       - `"object"`
       - `"string"`
-
-      ```jsonnet
-      assert std.type([1]) == "array";
-      assert std.type(null) == "null";
-      assert std.type({}) == "object";
-      assert std.type(3) == "number";
-      ```
     "#},
-    examples: &[],
+    examples: &[
+      r#" std.type([1]) == "array" "#,
+      r#" std.type(null) == "null" "#,
+      r#" std.type({}) == "object" "#,
+      r#" std.type(3) == "number" "#,
+    ],
   },
   Fn {
     name: S::new("isArray"),

@@ -176,7 +176,16 @@ fn main() {
     });
     let doc_arms = jsonnet_std_sig::FNS.iter().map(|f| {
       let name = ident(f.name.ident());
-      let content = f.doc;
+      let mut content = f.doc.to_owned();
+      if !f.examples.is_empty() {
+        content.push_str("\n\n```jsonnet\n");
+        for example in f.examples {
+          use std::fmt::Write as _;
+          #[expect(clippy::disallowed_methods, reason = "can panic in build script")]
+          writeln!(content, "assert {};", example.trim()).expect("should write to string");
+        }
+        content.push_str("```\n");
+      }
       q! { Self::#name => #content, }
     });
     let mut tmp = BTreeMap::<usize, BTreeSet<&str>>::new();
