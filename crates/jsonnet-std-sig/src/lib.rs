@@ -341,7 +341,12 @@ pub const FNS: [Fn; 126] = [
       `std.get(o, f, default=null, inc_hidden=true)` returns the object `o`'s field `f` if it exists
       or `default` value otherwise. `inc_hidden` controls whether to include hidden fields.
     "},
-    examples: &[],
+    examples: &[
+      r#" std.get({hi: 4}, "hi", 3) == 4 "#,
+      r#" std.get({}, "hi", 3) == 3 "#,
+      r#" std.get({hi:: 5}, "hi", 3) == 5 "#,
+      r#" std.get({hi:: 5}, "hi", 3, false) == 3 "#,
+    ],
   },
   Fn {
     name: S::new("objectHas"),
@@ -357,7 +362,11 @@ pub const FNS: [Fn; 126] = [
 
       Returns `false` if the field is hidden.
     "},
-    examples: &[],
+    examples: &[
+      r#" !std.objectHas({}, "hi") "#,
+      r#" std.objectHas({hi: 3}, "hi") "#,
+      r#" !std.objectHas({hi:: 3}, "hi") "#,
+    ],
   },
   Fn {
     name: S::new("objectFields"),
@@ -370,7 +379,11 @@ pub const FNS: [Fn; 126] = [
 
       **Does not** include hidden fields.
     "},
-    examples: &[],
+    examples: &[
+      r#" std.objectFields({}) == [] "#,
+      r#" std.objectFields({a: 1, b: 2}) == ["a", "b"] "#,
+      r#" std.objectFields({a:: 1, b: 2}) == ["b"] "#,
+    ],
   },
   Fn {
     name: S::new("objectValues"),
@@ -383,7 +396,11 @@ pub const FNS: [Fn; 126] = [
 
       **Does not** include hidden fields.
     "},
-    examples: &[],
+    examples: &[
+      r#" std.objectValues({}) == [] "#,
+      r#" std.objectValues({a: 1, b: 2}) == [1, 2] "#,
+      r#" std.objectValues({a:: 1, b: 2}) == [2] "#,
+    ],
   },
   Fn {
     name: S::new("objectKeysValues"),
@@ -397,7 +414,11 @@ pub const FNS: [Fn; 126] = [
 
       **Does not** include hidden fields.
     "},
-    examples: &[],
+    examples: &[
+      r#" std.objectKeysValues({}) == [] "#,
+      r#" std.objectKeysValues({a: 1, b: 2}) == [{key: "a", value: 1 }, { key: "b", value: 2 }] "#,
+      r#" std.objectKeysValues({a:: 1, b: 2}) == [{ key: "b", value: 2 }] "#,
+    ],
   },
   Fn {
     name: S::new("objectHasAll"),
@@ -408,7 +429,11 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       Like `std.objectHas` but also includes hidden fields.
     "},
-    examples: &[],
+    examples: &[
+      r#" !std.objectHasAll({}, "hi") "#,
+      r#" std.objectHasAll({hi: 3}, "hi") "#,
+      r#" std.objectHasAll({hi:: 3}, "hi") "#,
+    ],
   },
   Fn {
     name: S::new("objectFieldsAll"),
@@ -419,7 +444,11 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       Like `std.objectFields` but also includes hidden fields.
     "},
-    examples: &[],
+    examples: &[
+      r#" std.objectFieldsAll({}) == [] "#,
+      r#" std.objectFieldsAll({a: 1, b: 2}) == ["a", "b"] "#,
+      r#" std.objectFieldsAll({a:: 1, b: 2}) == ["a", "b"] "#,
+    ],
   },
   Fn {
     name: S::new("objectValuesAll"),
@@ -430,7 +459,11 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       Like `std.objectValues` but also includes hidden fields.
     "},
-    examples: &[],
+    examples: &[
+      r#" std.objectValuesAll({}) == [] "#,
+      r#" std.objectValuesAll({a: 1, b: 2}) == [1, 2] "#,
+      r#" std.objectValuesAll({a:: 1, b: 2}) == [1, 2] "#,
+    ],
   },
   Fn {
     name: S::new("objectKeysValuesAll"),
@@ -441,7 +474,11 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       Like `std.objectKeysValues` but also includes hidden fields.
     "},
-    examples: &[],
+    examples: &[
+      r#" std.objectKeysValuesAll({}) == [] "#,
+      r#" std.objectKeysValuesAll({a: 1, b: 2}) == [{key: "a", value: 1 }, { key: "b", value: 2 }] "#,
+      r#" std.objectKeysValuesAll({a:: 1, b: 2}) == [{key: "a", value: 1 }, { key: "b", value: 2 }] "#,
+    ],
   },
   Fn {
     name: S::new("prune"),
@@ -478,7 +515,15 @@ pub const FNS: [Fn; 126] = [
       The function `func` is expected to take the field name as the first parameter and the field
       value as the second.
     "},
-    examples: &[],
+    examples: &[
+      indoc! {r#"
+        std.mapWithKey(function(a, b) a + b, {a: 1, b: 2}) == {
+          a: "a1",
+          b: "b2",
+        }
+      "#},
+      r#" std.mapWithKey(function(a, b) a + b, {a:: 1, b: 2}) == {b: "b2"} "#,
+    ],
   },
   Fn {
     name: S::new("abs"),
@@ -580,20 +625,18 @@ pub const FNS: [Fn; 126] = [
     sig: X_NUM_RET_NUM,
     total: true,
     available_since: None,
-    doc: indoc! {"
-      `std.exponent(x)` returns the exponent of the IEEE754 64-bit floating point number `x`.
+    doc: indoc! {r"
+      `std.exponent(x)` returns the integer exponent of the IEEE754 64-bit floating point number
+      `x`.
 
-      The following function returns `true` for all numbers `x`:
-
-      <!-- @eval-error: manifest function -->
-
-      ```jsonnet
-      function(x)
-        assert std.isNumber(x);
-        x == std.mantissa(x) * std.pow(2, std.exponent(x))
-      ```
+      This is the integer $b$ in the solution of $x = a \times 2^b$.
     "},
-    examples: &[],
+    examples: &[
+      "std.exponent(0) == 0",
+      "std.exponent(4) == 3",
+      "std.exponent(123456789) == 27",
+      "std.exponent(-789456) == 20",
+    ],
   },
   Fn {
     name: S::new("mantissa"),
@@ -605,17 +648,14 @@ pub const FNS: [Fn; 126] = [
       `std.mantissa(x)` returns the significand, also called the mantissa, of the IEEE754
       64-bit floating point number `x`.
 
-      The following function returns `true` for all numbers `x`:
-
-      <!-- @eval-error: manifest function -->
-
-      ```jsonnet
-      function(x)
-        assert std.isNumber(x);
-        x == std.mantissa(x) * std.pow(2, std.exponent(x))
-      ```
+      This is the number $a$ in the solution of $x = a \times 2^b$ where $b$ is an integer.
     "},
-    examples: &[],
+    examples: &[
+      "std.mantissa(0) == 0",
+      "std.mantissa(4) == 0.5",
+      "std.mantissa(123456789) == 0.9198247566819191",
+      "std.mantissa(-789456) == -0.7528839111328125",
+    ],
   },
   Fn {
     name: S::new("floor"),
@@ -875,7 +915,7 @@ pub const FNS: [Fn; 126] = [
 
       Returns `true` if so, else throws an error message.
     "},
-    examples: &[],
+    examples: &["std.assertEqual(2 + 2, 4)"],
   },
   Fn {
     name: S::new("toString"),
@@ -886,7 +926,11 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       Converts the given argument to a string.
     "},
-    examples: &[],
+    examples: &[
+      r#" std.toString("a") == "a" "#,
+      r#" std.toString(123) == "123" "#,
+      r#" std.toString(null) == "null" "#,
+    ],
   },
   Fn {
     name: S::new("codepoint"),
@@ -900,7 +944,11 @@ pub const FNS: [Fn; 126] = [
 
       This function is the inverse of `std.char`.
     "},
-    examples: &[],
+    examples: &[
+      r#" std.codepoint("A") == 65 "#,
+      r#" std.codepoint("a") == 97 "#,
+      r#" std.codepoint("あ") == 12354 "#,
+    ],
   },
   Fn {
     name: S::new("char"),
@@ -913,7 +961,11 @@ pub const FNS: [Fn; 126] = [
 
       This function is the inverse of `std.codepoint`.
     "},
-    examples: &[],
+    examples: &[
+      r#" std.char(65) == "A" "#,
+      r#" std.char(97) == "a" "#,
+      r#" std.char(12354) == "あ" "#,
+    ],
   },
   Fn {
     name: S::new("substr"),
@@ -1173,7 +1225,7 @@ pub const FNS: [Fn; 126] = [
 
       This allows injection of arbitrary strings as arguments of commands in bash scripts.
     "#},
-    examples: &[],
+    examples: &[r#" std.escapeStringBash("echo 'hi'") == "'echo '\"'\"'hi'\"'\"''" "#],
   },
   Fn {
     name: S::new("escapeStringDollars"),
@@ -1187,7 +1239,7 @@ pub const FNS: [Fn; 126] = [
       This allows injection of arbitrary strings into systems that use `$` for string
       interpolation, like Terraform.
     "},
-    examples: &[],
+    examples: &[r#" std.escapeStringDollars("1 + $x") == "1 + $$x" "#],
   },
   Fn {
     name: S::new("escapeStringJson"),
@@ -1216,7 +1268,10 @@ pub const FNS: [Fn; 126] = [
 
       This is an alias for `escapeStringJson`.
     "},
-    examples: &[],
+    examples: &[indoc! {r#"
+      "{name: %s}" % std.escapeStringPython("Multiline\nc:\\path")
+        == "{name: \"Multiline\\nc:\\\\path\"}"
+    "#}],
   },
   Fn {
     name: S::new("escapeStringXml"),
@@ -1236,7 +1291,10 @@ pub const FNS: [Fn; 126] = [
       | `"`     | `&quot;` |
       | `'`     | `&apos;` |
     "#},
-    examples: &[],
+    examples: &[
+      r#" std.escapeStringXml("2 > 1") == "2 &gt; 1" "#,
+      r#" std.escapeStringXml("that's great") == "that&apos;s great" "#,
+    ],
   },
   Fn {
     name: S::new("parseInt"),
@@ -1269,7 +1327,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {r#"
       Parses an unsigned hexadecimal integer, from the input string. Case insensitive.
     "#},
-    examples: &[r#" std.parseHex("ff") == 255 "#],
+    examples: &[r#" std.parseHex("ff") == 255 "#, r#" std.parseHex("BADc0de") == 195936478 "#],
   },
   Fn {
     name: S::new("parseJson"),
@@ -1282,6 +1340,7 @@ pub const FNS: [Fn; 126] = [
     "#},
     examples: &[
       r#" std.parseJson("null") == null "#,
+      r#" std.parseJson("[2, false]") == [2, false] "#,
       r#" std.parseJson('{"foo": "bar"}') == { "foo": "bar" } "#,
     ],
   },
@@ -1314,7 +1373,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       Encode a string using UTF8. Returns an array of numbers representing bytes.
     "},
-    examples: &[],
+    examples: &[r#" std.encodeUTF8("hey") == [104, 101, 121] "#],
   },
   Fn {
     name: S::new("decodeUTF8"),
@@ -1325,7 +1384,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       Decode an array of numbers representing bytes using UTF8. Returns a string.
     "},
-    examples: &[],
+    examples: &[r#" std.decodeUTF8([104, 101, 121]) == "hey" "#],
   },
   Fn {
     name: S::new("manifestIni"),
@@ -1714,7 +1773,12 @@ pub const FNS: [Fn; 126] = [
 
       Argument `arr` may be an array or a string.
     "},
-    examples: &[],
+    examples: &[
+      r#" std.member([1, 2], 2) "#,
+      r#" !std.member([1, 2], 3) "#,
+      r#" std.member("hello", "l") "#,
+      r#" !std.member("hello", "z") "#,
+    ],
   },
   Fn {
     name: S::new("count"),
@@ -1725,7 +1789,11 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       `std.count(arr, x)` returns the number of times that `x` occurs in `arr`.
     "},
-    examples: &[],
+    examples: &[
+      r#" std.count([1, 2], 2) == 1 "#,
+      r#" std.count([1, 2], 3) == 0 "#,
+      r#" std.count([3, 1, 3, 0], 3) == 2 "#,
+    ],
   },
   Fn {
     name: S::new("find"),
@@ -1737,7 +1805,11 @@ pub const FNS: [Fn; 126] = [
       `std.find(value, arr)` returns an array that contains the indexes of all occurrences of
       `value` in `arr`.
     "},
-    examples: &[],
+    examples: &[
+      r#" std.find(2, [1, 2]) == [0] "#,
+      r#" std.find(3, [1, 2]) == [] "#,
+      r#" std.find(3, [3, 1, 3, 0]) == [0, 2] "#,
+    ],
   },
   Fn {
     name: S::new("map"),
@@ -1748,7 +1820,10 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       `std.map(func, arr)` applies the given `func` to every element of `arr` to form a new array.
     "},
-    examples: &[],
+    examples: &[
+      r#" std.map(function(x) x + 1, [2, 4]) == [3, 5] "#,
+      r#" std.map(function(x) error "oh no", []) "#,
+    ],
   },
   Fn {
     name: S::new("mapWithIndex"),
@@ -1762,7 +1837,10 @@ pub const FNS: [Fn; 126] = [
       The function is expected to take the index as the first parameter and the element as the
       second.
     "},
-    examples: &[],
+    examples: &[
+      r#" std.mapWithIndex(function(i, x) x + i, [2, 4]) == [2, 5] "#,
+      r#" std.mapWithIndex(function(i, x) error "oh no", []) "#,
+    ],
   },
   Fn {
     name: S::new("filterMap"),
@@ -1777,7 +1855,16 @@ pub const FNS: [Fn; 126] = [
       `std.filterMap(filter_func, map_func, arr)` first filters with `filter_func`, then maps
       with `map_func`, the given array `arr`.
     "},
-    examples: &[],
+    examples: &[indoc! {"
+      std.filterMap(
+        function(x) x > 3,
+        function(x) x + 2,
+        [1, 6, 2, 5],
+      ) == [
+        8,
+        7,
+      ]
+    "}],
   },
   Fn {
     name: S::new("flatMap"),
@@ -1826,7 +1913,7 @@ pub const FNS: [Fn; 126] = [
       `std.filter(func, arr)` return a new array containing all the elements of `arr` for which the
       `func` function returns `true`.
     "},
-    examples: &[],
+    examples: &[" std.filter(function(x) x > 3, [1, 6, 2, 8, 3, 8]) == [6, 8, 8] "],
   },
   Fn {
     name: S::new("foldl"),
@@ -1952,7 +2039,16 @@ pub const FNS: [Fn; 126] = [
 
       This is suitable for constructing bash scripts and the like.
     "},
-    examples: &[],
+    examples: &[
+      indoc! {r#"
+        std.lines([
+          "cd /tmp",
+          "ls -l",
+          "mkdir -p foo",
+        ]) == "cd /tmp\nls -l\nmkdir -p foo\n"
+      "#},
+      r#" std.lines([]) == "" "#,
+    ],
   },
   Fn {
     name: S::new("flattenArrays"),
@@ -2105,8 +2201,11 @@ pub const FNS: [Fn; 126] = [
       `std.set(arr, keyF=id)` returns a sorted array with no duplicates, i.e. a set.
 
       It is equivalent to `std.uniq(std.sort(arr))`.
+
+      The optional `keyF` function can be used to extract a key to use from each element. This key
+      is used for the purpose of identifying uniqueness.
     "},
-    examples: &[],
+    examples: &[r#" std.set([1, 6, 2, 6]) == [1, 2, 6] "#],
   },
   Fn {
     name: S::new("setInter"),
@@ -2123,7 +2222,7 @@ pub const FNS: [Fn; 126] = [
       The optional `keyF` function can be used to extract a key to use from each element. This key
       is used for the purpose of identifying uniqueness.
     "},
-    examples: &[],
+    examples: &[r#" std.setInter([1, 2], [2, 3]) == [2] "#],
   },
   Fn {
     name: S::new("setUnion"),
@@ -2169,7 +2268,7 @@ pub const FNS: [Fn; 126] = [
       The optional `keyF` function can be used to extract a key to use from each element. This key
       is used for the purpose of identifying uniqueness.
     "},
-    examples: &[],
+    examples: &[r#" std.setDiff([1, 2], [2, 3]) == [1] "#],
   },
   Fn {
     name: S::new("setMember"),
@@ -2186,7 +2285,7 @@ pub const FNS: [Fn; 126] = [
       The optional `keyF` function can be used to extract a key to use from each element. This key
       is used for the purpose of identifying uniqueness.
     "},
-    examples: &[],
+    examples: &[r#" std.setMember(1, [1, 2]) "#, r#" !std.setMember(3, [1, 2]) "#],
   },
   Fn {
     name: S::new("base64"),
@@ -2205,7 +2304,7 @@ pub const FNS: [Fn; 126] = [
 
       The resulting string has no line breaks.
     "},
-    examples: &[],
+    examples: &[r#" std.base64("hello world") == "aGVsbG8gd29ybGQ=" "#],
   },
   Fn {
     name: S::new("base64DecodeBytes"),
@@ -2220,7 +2319,7 @@ pub const FNS: [Fn; 126] = [
       Currently assumes the input string has no line breaks and is padded to a multiple of 4
       (with the `=` character). In other words, it consumes the output of `base64`.
     "},
-    examples: &[],
+    examples: &[r#" std.decodeUTF8(std.base64DecodeBytes("aGVsbG8gd29ybGQ=")) == "hello world" "#],
   },
   Fn {
     name: S::new("base64Decode"),
@@ -2246,7 +2345,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       Encodes the given value into an MD5 string.
     "},
-    examples: &[],
+    examples: &[r#" std.md5("hello world") == "5eb63bbbe01eeed093cb22bb8f5acdc3" "#],
   },
   Fn {
     name: S::new("xor"),
@@ -2257,7 +2356,12 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       Returns the xor (exclusive or) of the two given booleans.
     "},
-    examples: &[],
+    examples: &[
+      "!std.xor(true, true)",
+      "std.xor(true, false)",
+      "std.xor(false, true)",
+      "!std.xor(false, false)",
+    ],
   },
   Fn {
     name: S::new("xnor"),
@@ -2268,7 +2372,12 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       Returns the xnor (exclusive nor) of the two given booleans.
     "},
-    examples: &[],
+    examples: &[
+      "std.xnor(true, true)",
+      "!std.xnor(true, false)",
+      "!std.xnor(false, true)",
+      "std.xnor(false, false)",
+    ],
   },
   Fn {
     name: S::new("mergePatch"),
@@ -2280,7 +2389,19 @@ pub const FNS: [Fn; 126] = [
       `std.mergePatch(target, patch)` applies `patch` to `target` according to
       [RFC7396](https://tools.ietf.org/html/rfc7396).
     "},
-    examples: &[],
+    examples: &[
+      r#" std.mergePatch({ a: 1, b: 2 }, "hi") == "hi" "#,
+      indoc! {"
+        std.mergePatch(
+          { a: 1, b: 2 },
+          { a: 3, c: 4 },
+        ) == {
+          a: 3,
+          b: 2,
+          c: 4,
+        }
+      "},
+    ],
   },
   Fn {
     name: S::new("trace"),
@@ -2332,7 +2453,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       Returns whether the two arguments equal each other.
     "},
-    examples: &[],
+    examples: &["std.equals(1 + 1, 2)", "!std.equals(2 + 2, 5)"],
   },
   Fn {
     name: S::new("objectHasEx"),
@@ -2346,6 +2467,9 @@ pub const FNS: [Fn; 126] = [
       - `std.objectHasAll(obj, fname)` when `hidden` is `true`
       - `std.objectHas(obj, fname)` when `hidden` is `false`.
     "},
-    examples: &[],
+    examples: &[
+      r#" std.objectHasEx({a:: 1}, "a", true) "#,
+      r#" !std.objectHasEx({a:: 1}, "a", false) "#,
+    ],
   },
 ];
