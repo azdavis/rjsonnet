@@ -1196,13 +1196,11 @@ pub const FNS: [Fn; 126] = [
       Converts the string to allow it to be embedded in a JSON representation, within a string.
 
       This adds quotes, escapes backslashes, and escapes unprintable characters.
-
-      ```jsonnet
-      assert "{name: %s}" % std.escapeStringJson("Multiline\nc:\\path")
-        == "{name: \"Multiline\\nc:\\\\path\"}";
-      ```
     "#},
-    examples: &[],
+    examples: &[indoc! {r#"
+      "{name: %s}" % std.escapeStringJson("Multiline\nc:\\path")
+        == "{name: \"Multiline\\nc:\\\\path\"}"
+    "#}],
   },
   Fn {
     name: S::new("escapeStringPython"),
@@ -1245,13 +1243,8 @@ pub const FNS: [Fn; 126] = [
     available_since: Some(10),
     doc: indoc! {r#"
       Parses a signed decimal integer from the input string.
-
-      ```jsonnet
-      assert std.parseInt("123") == 123;
-      assert std.parseInt("-123") == -123;
-      ```
     "#},
-    examples: &[],
+    examples: &[r#" std.parseInt("123") == 123 "#, r#" std.parseInt("-123") == -123 "#],
   },
   Fn {
     name: S::new("parseOctal"),
@@ -1261,12 +1254,8 @@ pub const FNS: [Fn; 126] = [
     available_since: Some(10),
     doc: indoc! {r#"
       Parses an unsigned octal integer from the input string. Initial zeroes are tolerated.
-
-      ```jsonnet
-      assert std.parseOctal("755") == 493;
-      ```
     "#},
-    examples: &[],
+    examples: &[r#" std.parseOctal("755") == 493 "#, r#" std.parseOctal("0755") == 493 "#],
   },
   Fn {
     name: S::new("parseHex"),
@@ -1276,12 +1265,8 @@ pub const FNS: [Fn; 126] = [
     available_since: Some(10),
     doc: indoc! {r#"
       Parses an unsigned hexadecimal integer, from the input string. Case insensitive.
-
-      ```jsonnet
-      assert std.parseHex("ff") == 255;
-      ```
     "#},
-    examples: &[],
+    examples: &[r#" std.parseHex("ff") == 255 "#],
   },
   Fn {
     name: S::new("parseJson"),
@@ -1291,12 +1276,11 @@ pub const FNS: [Fn; 126] = [
     available_since: Some(13),
     doc: indoc! {r#"
       Parses a JSON string.
-
-      ```jsonnet
-      assert std.parseJson('{"foo": "bar"}') == { "foo": "bar" };
-      ```
     "#},
-    examples: &[],
+    examples: &[
+      r#" std.parseJson("null") == null "#,
+      r#" std.parseJson('{"foo": "bar"}') == { "foo": "bar" } "#,
+    ],
   },
   Fn {
     name: S::new("parseYaml"),
@@ -1315,12 +1299,8 @@ pub const FNS: [Fn; 126] = [
 
       The parser does not support YAML documents with scalar values at the root. The root node of a
       YAML document must start with either a YAML sequence or map to be successfully parsed.
-
-      ```jsonnet
-      assert std.parseYaml("foo: bar") == { "foo": "bar" };
-      ```
     "#},
-    examples: &[],
+    examples: &[r#" std.parseYaml("foo: bar") == { "foo": "bar" } "#],
   },
   Fn {
     name: S::new("encodeUTF8"),
@@ -1717,12 +1697,8 @@ pub const FNS: [Fn; 126] = [
 
       `func` is a function that takes a single parameter, the index of the element it should
       initialize.
-
-      ```jsonnet
-      assert std.makeArray(3, function(x) x * x) == [0, 1, 4];
-      ```
     "},
-    examples: &[],
+    examples: &[r#" std.makeArray(3, function(x) x * x) == [0, 1, 4] "#],
   },
   Fn {
     name: S::new("member"),
@@ -1817,19 +1793,25 @@ pub const FNS: [Fn; 126] = [
 
       `std.flatMap` can be thought of as a generalized `map`, with each element mapped to 0, 1 or
       more elements.
-
-      ```jsonnet
-      assert std.flatMap(function(x) [x, x], [1, 2, 3])
-        == [ 1, 1, 2, 2, 3, 3 ];
-      assert std.flatMap(function(x) if x == 2 then [] else [x], [1, 2, 3])
-        == [ 1, 3 ];
-      assert std.flatMap(function(x) if x == 2 then [] else [x * 3, x * 2], [1, 2, 3])
-        == [ 3, 2, 9, 6 ];
-      assert std.flatMap(function(x) x+x, "foo")
-        == "ffoooo";
-      ```
     "#},
-    examples: &[],
+    examples: &[
+      indoc! {"
+        std.flatMap(function(x) [x, x], [1, 2, 3])
+          == [1, 1, 2, 2, 3, 3]
+      "},
+      indoc! {"
+        std.flatMap(function(x) if x == 2 then [] else [x], [1, 2, 3])
+          == [1, 3]
+      "},
+      indoc! {"
+        std.flatMap(function(x) if x == 2 then [] else [x * 3, x * 2], [1, 2, 3])
+          == [3, 2, 9, 6]
+      "},
+      indoc! {r#"
+        std.flatMap(function(x) x + x, "foo")
+          == "ffoooo"
+      "#},
+    ],
   },
   Fn {
     name: S::new("filter"),
@@ -1854,14 +1836,11 @@ pub const FNS: [Fn; 126] = [
       call and each array element of `arr`, or `init` in the case of the initial element.
 
       Traverses `arr` from left to right.
-
-      ```jsonnet
-      local cmb(ac, x) = "(%s %s)" % [ac, x];
-      assert std.foldl(cmb, ["a", "b", "c"], "_")
-        == "(((_ a) b) c)";
-      ```
     "#},
-    examples: &[],
+    examples: &[indoc! {r#"
+      std.foldl(function(ac, x) "(%s %s)" % [ac, x], ["a", "b", "c"], "_")
+        == "(((_ a) b) c)"
+    "#}],
   },
   Fn {
     name: S::new("foldr"),
@@ -1874,14 +1853,11 @@ pub const FNS: [Fn; 126] = [
       call and each array element of `arr`, or `init` in the case of the initial element.
 
       Traverses `arr` from right to left.
-
-      ```jsonnet
-      local cmb(ac, x) = "(%s %s)" % [ac, x];
-      assert std.foldr(cmb, ["a", "b", "c"], "_")
-        == "(((_ c) b) a)";
-      ```
     "#},
-    examples: &[],
+    examples: &[indoc! {r#"
+      std.foldr(function(ac, x) "(%s %s)" % [ac, x], ["a", "b", "c"], "_")
+        == "(((_ c) b) a)"
+    "#}],
   },
   Fn {
     name: S::new("range"),
@@ -1893,11 +1869,13 @@ pub const FNS: [Fn; 126] = [
       `std.range(from, to)` returns an array of ascending numbers between `from` and `to`,
       inclusively.
 
-      ```jsonnet
-      assert std.range(2, 6) == [2, 3, 4, 5, 6];
-      ```
+      Raises if `from` or `to` are not integers.
     "},
-    examples: &[],
+    examples: &[
+      r#" std.range(2, 6) == [2, 3, 4, 5, 6] "#,
+      r#" std.range(-1, 3) == [-1, 0, 1, 2, 3] "#,
+      r#" std.range(0, 0) == [0] "#,
+    ],
   },
   Fn {
     name: S::new("repeat"),
@@ -1908,16 +1886,11 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {r#"
       `std.repeat(what, count)` repeats an array or a string `what` a number of times specified by
       an integer `count`.
-
-      ```jsonnet
-      assert std.repeat([1, 2, 3], 3)
-        == [ 1, 2, 3, 1, 2, 3, 1, 2, 3 ];
-      assert std.repeat("blah", 2)
-        == "blahblah";
-      ```
-
     "#},
-    examples: &[],
+    examples: &[
+      r#" std.repeat([1, 2], 3) == [1, 2, 1, 2, 1, 2] "#,
+      r#" std.repeat("boo", 2) == "booboo" "#,
+    ],
   },
   Fn {
     name: S::new("slice"),
@@ -1939,15 +1912,13 @@ pub const FNS: [Fn; 126] = [
 
       Note that it's recommended to use dedicated slicing syntax both for arrays and strings,
       e.g. `arr[0:4:1]` instead of `std.slice(arr, 0, 4, 1)`.
-
-      ```jsonnet
-      assert std.slice([1, 2, 3, 4, 5, 6], 0, 4, 1) == [ 1, 2, 3, 4 ];
-      assert std.slice([1, 2, 3, 4, 5, 6], 1, 6, 2) == [ 2, 4, 6 ];
-      assert std.slice("jsonnet", 0, 4, 1) == "json";
-      assert std.slice("jsonnet", -3, null, null) == "net";
-      ```
     "#},
-    examples: &[],
+    examples: &[
+      r#" std.slice([1, 2, 3, 4, 5, 6], 0, 4, 1) == [1, 2, 3, 4] "#,
+      r#" std.slice([1, 2, 3, 4, 5, 6], 1, 6, 2) == [2, 4, 6] "#,
+      r#" std.slice("jsonnet", 0, 4, 1) == "json" "#,
+      r#" std.slice("jsonnet", -3, null, null) == "net" "#,
+    ],
   },
   Fn {
     name: S::new("join"),
@@ -1961,13 +1932,11 @@ pub const FNS: [Fn; 126] = [
 
       If `sep` is an array, then `arr` must be an array of arrays, in which case the arrays are
       concatenated in the same way, to produce a single array.
-
-      ```jsonnet
-      assert std.join(".", ["www", "google", "com"]) == "www.google.com";
-      assert std.join([9, 9], [[1], [2, 3]]) == [ 1, 9, 9, 2, 3 ];
-      ```
     "#},
-    examples: &[],
+    examples: &[
+      r#" std.join(".", ["www", "google", "com"]) == "www.google.com" "#,
+      r#" std.join([9, 9], [[1], [2, 3]]) == [ 1, 9, 9, 2, 3 ] "#,
+    ],
   },
   Fn {
     name: S::new("lines"),
@@ -1991,12 +1960,12 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       Concatenate an array of arrays into a single array.
 
-      ```jsonnet
-      assert std.flattenArrays([[1, 2], [3, 4], [[5, 6], [7, 8]]])
-        == [1, 2, 3, 4, [5, 6], [7, 8]];
-      ```
+      Does not recursively flatten deeply nested arrays.
     "},
-    examples: &[],
+    examples: &[indoc! {"
+      std.flattenArrays([[1, 2], [3], [[4], [5, 6]]])
+        == [1, 2, 3, [4], [5, 6]]
+      "}],
   },
   Fn {
     name: S::new("reverse"),
@@ -2006,14 +1975,12 @@ pub const FNS: [Fn; 126] = [
     available_since: Some(13),
     doc: indoc! {"
       Returns the argument array reversed.
-
-      ```jsonnet
-      assert std.reverse([2, 4, 6]) == [6, 4, 2];
-      assert std.reverse([8]) == [8];
-      assert std.reverse([]) == [];
-      ```
     "},
-    examples: &[],
+    examples: &[
+      "std.reverse([2, 4, 6]) == [6, 4, 2]",
+      "std.reverse([8]) == [8]",
+      "std.reverse([]) == []",
+    ],
   },
   Fn {
     name: S::new("sort"),
@@ -2058,13 +2025,8 @@ pub const FNS: [Fn; 126] = [
 
       The optional argument `keyF` is a single argument function used to extract comparison key from
       each array element.
-
-      ```jsonnet
-      assert std.uniq([1, 1, 1]) == [1];
-      assert std.uniq([1, 2, 2, 3, 2]) == [1, 2, 3, 2];
-      ```
     "},
-    examples: &[],
+    examples: &["std.uniq([1, 1, 1]) == [1]", "std.uniq([1, 2, 2, 3, 2]) == [1, 2, 3, 2]"],
   },
   Fn {
     name: S::new("all"),
@@ -2075,11 +2037,14 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       `std.all(arr)` returns whether all elements of the input array are `true`.
 
-      Notably, `std.all([])` returns `true`.
-
       Raises if `arr` is not an array, or `arr` contains non-boolean values.
     "},
-    examples: &[],
+    examples: &[
+      "std.all([true, true]) == true",
+      "std.all([true, false]) == false",
+      "std.all([true, true, true, false, true]) == false",
+      "std.all([]) == true",
+    ],
   },
   Fn {
     name: S::new("any"),
@@ -2090,11 +2055,14 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       `std.any(arr)` returns whether any element of `arr` is `true`.
 
-      Notably, `std.any([])` returns `false`.
-
       Raises if `arr` is not an array, or `arr` contains non-boolean values.
     "},
-    examples: &[],
+    examples: &[
+      "std.any([false, false]) == false",
+      "std.any([true, false]) == true",
+      "std.any([false, false, false, true, false]) == true",
+      "std.any([]) == false",
+    ],
   },
   Fn {
     name: S::new("sum"),
@@ -2105,7 +2073,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       Returns the sum of all the elements.
     "},
-    examples: &[],
+    examples: &["std.sum([]) == 0", "std.sum([1, 2, 3, 4]) == 10"],
   },
   Fn {
     name: S::new("avg"),
@@ -2115,8 +2083,14 @@ pub const FNS: [Fn; 126] = [
     available_since: Some(20),
     doc: indoc! {"
       Returns the average of all the elements.
+
+      Raises if the input is empty.
     "},
-    examples: &[],
+    examples: &[
+      "std.avg([1, 3]) == 2",
+      "std.avg([2, 4, 6, 5, 6, 7]) == 5",
+      "std.avg([1, 2]) == 1.5",
+    ],
   },
   Fn {
     name: S::new("set"),
@@ -2125,7 +2099,9 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: Some(10),
     doc: indoc! {"
-      `std.set(arr, keyF=id)` is a shortcut for `std.uniq(std.sort(arr))`.
+      `std.set(arr, keyF=id)` returns a sorted array with no duplicates, i.e. a set.
+
+      It is equivalent to `std.uniq(std.sort(arr))`.
     "},
     examples: &[],
   },
@@ -2158,22 +2134,22 @@ pub const FNS: [Fn; 126] = [
       Note that `+` on sets will simply concatenate the arrays, possibly forming an array that is
       not a set (due to not being ordered without duplicates).
 
-      ```jsonnet
-      assert std.setUnion([1, 2], [2, 3]) == [ 1, 2, 3 ];
-      assert std.setUnion(
-        [{n:"A", v:1}, {n:"B"}],
-        [{n:"A", v: 9999}, {n:"C"}],
-        keyF=function(x) x.n
-      ) == [ { "n": "A", "v": 1 }, { "n": "B" }, { "n": "C" } ];
-      ```
-
       `a` and `b` must be sets, i.e. sorted arrays with no duplicates. If that is not the case, this
       function will quietly return non-meaningful results.
 
       The optional `keyF` function can be used to extract a key to use from each element. This key
       is used for the purpose of identifying uniqueness.
     "#},
-    examples: &[],
+    examples: &[
+      "std.setUnion([1, 2], [2, 3]) == [1, 2, 3]",
+      indoc! {r#"
+        std.setUnion(
+          [{n:"A", v:1}, {n:"B"}],
+          [{n:"A", v: 9999}, {n:"C"}],
+          keyF=function(x) x.n
+        ) == [{ "n": "A", "v": 1 }, { "n": "B" }, { "n": "C" }]
+      "#},
+    ],
   },
   Fn {
     name: S::new("setDiff"),
