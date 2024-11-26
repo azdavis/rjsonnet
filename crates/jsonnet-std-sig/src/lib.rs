@@ -109,233 +109,358 @@ pub enum Ty {
   Hof2,
 }
 
-/// `r` for "required"
-const fn r(name: &'static str, ty: Ty) -> Param {
+const fn req(name: &'static str, ty: Ty) -> Param {
   Param { name, ty, required: true }
 }
 
-/// `o` for "optional"
-const fn o(name: &'static str, ty: Ty) -> Param {
+const fn opt(name: &'static str, ty: Ty) -> Param {
   Param { name, ty, required: false }
 }
 
-/// `s` for "sig"
-const fn s(params: &'static [Param], ret: Ty) -> Sig {
+const fn sig(params: &'static [Param], ret: Ty) -> Sig {
   Sig { params, ret }
 }
 
-const V_ANY_RET_BOOL: Sig = s(&[r("v", Ty::Any)], Ty::Bool);
-const X_NUM_RET_NUM: Sig = s(&[r("x", Ty::Num)], Ty::Num);
-const N_NUM_RET_NUM: Sig = s(&[r("n", Ty::Num)], Ty::Num);
-const X_NUM_RET_BOOL: Sig = s(&[r("x", Ty::Num)], Ty::Bool);
-const STR_RET_STR: Sig = s(&[r("str", Ty::Str)], Ty::Str);
-const X_Y_BOOL_RET_BOOL: Sig = s(&[r("x", Ty::Bool), r("y", Ty::Bool)], Ty::Bool);
-const A_B_STR_RET_BOOL: Sig = s(&[r("a", Ty::Str), r("b", Ty::Str)], Ty::Bool);
-const STR_CHARS_STR_RET_STR: Sig = s(&[r("str", Ty::Str), r("chars", Ty::Str)], Ty::Str);
-const STR_RET_NUM: Sig = s(&[r("str", Ty::Str)], Ty::Num);
-const STR_RET_ANY: Sig = s(&[r("str", Ty::Str)], Ty::Any);
+const V_ANY_RET_BOOL: Sig = sig(&[req("v", Ty::Any)], Ty::Bool);
+const X_NUM_RET_NUM: Sig = sig(&[req("x", Ty::Num)], Ty::Num);
+const N_NUM_RET_NUM: Sig = sig(&[req("n", Ty::Num)], Ty::Num);
+const X_NUM_RET_BOOL: Sig = sig(&[req("x", Ty::Num)], Ty::Bool);
+const STR_RET_STR: Sig = sig(&[req("str", Ty::Str)], Ty::Str);
+const X_Y_BOOL_RET_BOOL: Sig = sig(&[req("x", Ty::Bool), req("y", Ty::Bool)], Ty::Bool);
+const A_B_STR_RET_BOOL: Sig = sig(&[req("a", Ty::Str), req("b", Ty::Str)], Ty::Bool);
+const STR_CHARS_STR_RET_STR: Sig = sig(&[req("str", Ty::Str), req("chars", Ty::Str)], Ty::Str);
+const STR_RET_NUM: Sig = sig(&[req("str", Ty::Str)], Ty::Num);
+const STR_RET_ANY: Sig = sig(&[req("str", Ty::Str)], Ty::Any);
 const SPLIT_LIMIT: Sig =
-  s(&[r("str", Ty::Str), r("c", Ty::Str), r("maxsplits", Ty::Num)], Ty::ArrStr);
-const OBJ_HAS: Sig = s(&[r("o", Ty::Obj), r("f", Ty::Str)], Ty::Bool);
-const OBJ_FIELDS: Sig = s(&[r("o", Ty::Obj)], Ty::ArrStr);
-const OBJ_VALUES: Sig = s(&[r("o", Ty::Obj)], Ty::ArrAny);
-const OBJ_KEYS_VALUES: Sig = s(&[r("o", Ty::Obj)], Ty::ArrKv);
-const MANIFEST_JSON: Sig = s(&[r("value", Ty::Any)], Ty::Str);
-const ARR_HOF1: Sig = s(&[r("func", Ty::Hof1), r("arr", Ty::ArrAny)], Ty::ArrAny);
-const FOLD: Sig = s(&[r("func", Ty::Hof2), r("arr", Ty::ArrAny), r("init", Ty::Any)], Ty::Any);
-const ARR_KEY_F: Sig = s(&[r("arr", Ty::ArrAny), o("keyF", Ty::Hof1)], Ty::ArrAny);
+  sig(&[req("str", Ty::Str), req("c", Ty::Str), req("maxsplits", Ty::Num)], Ty::ArrStr);
+const OBJ_HAS: Sig = sig(&[req("o", Ty::Obj), req("f", Ty::Str)], Ty::Bool);
+const OBJ_FIELDS: Sig = sig(&[req("o", Ty::Obj)], Ty::ArrStr);
+const OBJ_VALUES: Sig = sig(&[req("o", Ty::Obj)], Ty::ArrAny);
+const OBJ_KEYS_VALUES: Sig = sig(&[req("o", Ty::Obj)], Ty::ArrKv);
+const MANIFEST_JSON: Sig = sig(&[req("value", Ty::Any)], Ty::Str);
+const ARR_HOF1: Sig = sig(&[req("func", Ty::Hof1), req("arr", Ty::ArrAny)], Ty::ArrAny);
+const FOLD: Sig =
+  sig(&[req("func", Ty::Hof2), req("arr", Ty::ArrAny), req("init", Ty::Any)], Ty::Any);
+const ARR_KEY_F: Sig = sig(&[req("arr", Ty::ArrAny), opt("keyF", Ty::Hof1)], Ty::ArrAny);
 const BINARY_SET_FN: Sig =
-  s(&[r("a", Ty::ArrAny), r("b", Ty::ArrAny), o("keyF", Ty::Hof1)], Ty::ArrAny);
-
-/// `f` for "function"
-const fn f(name: &'static str, sig: Sig) -> Fn {
-  Fn { name: S::new(name), sig, total: true }
-}
-
-/// `pf` for "partial function"
-const fn pf(name: &'static str, sig: Sig) -> Fn {
-  Fn { name: S::new(name), sig, total: false }
-}
+  sig(&[req("a", Ty::ArrAny), req("b", Ty::ArrAny), opt("keyF", Ty::Hof1)], Ty::ArrAny);
 
 /// The std fns.
 pub const FNS: [Fn; 126] = [
-  f("extVar", s(&[r("x", Ty::Str)], Ty::Str)),
-  Fn { name: S::named("type", "type_"), sig: s(&[r("x", Ty::Any)], Ty::StaticStr), total: true },
-  f("isArray", V_ANY_RET_BOOL),
-  f("isBoolean", V_ANY_RET_BOOL),
-  f("isFunction", V_ANY_RET_BOOL),
-  f("isNumber", V_ANY_RET_BOOL),
-  f("isObject", V_ANY_RET_BOOL),
-  f("isString", V_ANY_RET_BOOL),
-  pf("length", s(&[r("x", Ty::Any)], Ty::Uint)),
-  f(
-    "get",
-    s(
-      &[r("o", Ty::Obj), r("f", Ty::Str), o("default", Ty::Any), o("inc_hidden", Ty::Bool)],
+  Fn { name: S::new("extVar"), sig: sig(&[req("x", Ty::Str)], Ty::Str), total: true },
+  Fn {
+    name: S::named("type", "type_"),
+    sig: sig(&[req("x", Ty::Any)], Ty::StaticStr),
+    total: true,
+  },
+  Fn { name: S::new("isArray"), sig: V_ANY_RET_BOOL, total: true },
+  Fn { name: S::new("isBoolean"), sig: V_ANY_RET_BOOL, total: true },
+  Fn { name: S::new("isFunction"), sig: V_ANY_RET_BOOL, total: true },
+  Fn { name: S::new("isNumber"), sig: V_ANY_RET_BOOL, total: true },
+  Fn { name: S::new("isObject"), sig: V_ANY_RET_BOOL, total: true },
+  Fn { name: S::new("isString"), sig: V_ANY_RET_BOOL, total: true },
+  Fn { name: S::new("length"), sig: sig(&[req("x", Ty::Any)], Ty::Uint), total: false },
+  Fn {
+    name: S::new("get"),
+    sig: sig(
+      &[req("o", Ty::Obj), req("f", Ty::Str), opt("default", Ty::Any), opt("inc_hidden", Ty::Bool)],
       Ty::Any,
     ),
-  ),
-  f("objectHas", OBJ_HAS),
-  f("objectFields", OBJ_FIELDS),
-  f("objectValues", OBJ_VALUES),
-  f("objectKeysValues", OBJ_KEYS_VALUES),
-  f("objectHasAll", OBJ_HAS),
-  f("objectFieldsAll", OBJ_FIELDS),
-  f("objectValuesAll", OBJ_VALUES),
-  f("objectKeysValuesAll", OBJ_KEYS_VALUES),
-  f("prune", s(&[r("a", Ty::Any)], Ty::Any)),
-  f("mapWithKey", s(&[r("func", Ty::Hof2), r("obj", Ty::Obj)], Ty::Obj)),
-  f("abs", N_NUM_RET_NUM),
-  f("sign", N_NUM_RET_NUM),
-  f("max", s(&[r("a", Ty::Num), r("b", Ty::Num)], Ty::Num)),
-  f("min", s(&[r("a", Ty::Num), r("b", Ty::Num)], Ty::Num)),
-  f("pow", s(&[r("x", Ty::Num), r("n", Ty::Num)], Ty::Num)),
-  f("exp", X_NUM_RET_NUM),
-  f("log", X_NUM_RET_NUM),
-  f("exponent", X_NUM_RET_NUM),
-  f("mantissa", X_NUM_RET_NUM),
-  f("floor", X_NUM_RET_NUM),
-  f("ceil", X_NUM_RET_NUM),
-  f("sqrt", X_NUM_RET_NUM),
-  f("sin", X_NUM_RET_NUM),
-  f("cos", X_NUM_RET_NUM),
-  f("tan", X_NUM_RET_NUM),
-  f("asin", X_NUM_RET_NUM),
-  f("acos", X_NUM_RET_NUM),
-  f("atan", X_NUM_RET_NUM),
-  f("round", X_NUM_RET_NUM),
-  f("isEven", X_NUM_RET_BOOL),
-  f("isOdd", X_NUM_RET_BOOL),
-  f("isInteger", X_NUM_RET_BOOL),
-  f("isDecimal", X_NUM_RET_BOOL),
+    total: true,
+  },
+  Fn { name: S::new("objectHas"), sig: OBJ_HAS, total: true },
+  Fn { name: S::new("objectFields"), sig: OBJ_FIELDS, total: true },
+  Fn { name: S::new("objectValues"), sig: OBJ_VALUES, total: true },
+  Fn { name: S::new("objectKeysValues"), sig: OBJ_KEYS_VALUES, total: true },
+  Fn { name: S::new("objectHasAll"), sig: OBJ_HAS, total: true },
+  Fn { name: S::new("objectFieldsAll"), sig: OBJ_FIELDS, total: true },
+  Fn { name: S::new("objectValuesAll"), sig: OBJ_VALUES, total: true },
+  Fn { name: S::new("objectKeysValuesAll"), sig: OBJ_KEYS_VALUES, total: true },
+  Fn { name: S::new("prune"), sig: sig(&[req("a", Ty::Any)], Ty::Any), total: true },
+  Fn {
+    name: S::new("mapWithKey"),
+    sig: sig(&[req("func", Ty::Hof2), req("obj", Ty::Obj)], Ty::Obj),
+    total: true,
+  },
+  Fn { name: S::new("abs"), sig: N_NUM_RET_NUM, total: true },
+  Fn { name: S::new("sign"), sig: N_NUM_RET_NUM, total: true },
+  Fn {
+    name: S::new("max"),
+    sig: sig(&[req("a", Ty::Num), req("b", Ty::Num)], Ty::Num),
+    total: true,
+  },
+  Fn {
+    name: S::new("min"),
+    sig: sig(&[req("a", Ty::Num), req("b", Ty::Num)], Ty::Num),
+    total: true,
+  },
+  Fn {
+    name: S::new("pow"),
+    sig: sig(&[req("x", Ty::Num), req("n", Ty::Num)], Ty::Num),
+    total: true,
+  },
+  Fn { name: S::new("exp"), sig: X_NUM_RET_NUM, total: true },
+  Fn { name: S::new("log"), sig: X_NUM_RET_NUM, total: true },
+  Fn { name: S::new("exponent"), sig: X_NUM_RET_NUM, total: true },
+  Fn { name: S::new("mantissa"), sig: X_NUM_RET_NUM, total: true },
+  Fn { name: S::new("floor"), sig: X_NUM_RET_NUM, total: true },
+  Fn { name: S::new("ceil"), sig: X_NUM_RET_NUM, total: true },
+  Fn { name: S::new("sqrt"), sig: X_NUM_RET_NUM, total: true },
+  Fn { name: S::new("sin"), sig: X_NUM_RET_NUM, total: true },
+  Fn { name: S::new("cos"), sig: X_NUM_RET_NUM, total: true },
+  Fn { name: S::new("tan"), sig: X_NUM_RET_NUM, total: true },
+  Fn { name: S::new("asin"), sig: X_NUM_RET_NUM, total: true },
+  Fn { name: S::new("acos"), sig: X_NUM_RET_NUM, total: true },
+  Fn { name: S::new("atan"), sig: X_NUM_RET_NUM, total: true },
+  Fn { name: S::new("round"), sig: X_NUM_RET_NUM, total: true },
+  Fn { name: S::new("isEven"), sig: X_NUM_RET_BOOL, total: true },
+  Fn { name: S::new("isOdd"), sig: X_NUM_RET_BOOL, total: true },
+  Fn { name: S::new("isInteger"), sig: X_NUM_RET_BOOL, total: true },
+  Fn { name: S::new("isDecimal"), sig: X_NUM_RET_BOOL, total: true },
   Fn {
     name: S::named("mod", "mod_"),
-    sig: s(&[r("a", Ty::NumOrStr), r("b", Ty::Any)], Ty::Any),
+    sig: sig(&[req("a", Ty::NumOrStr), req("b", Ty::Any)], Ty::Any),
     total: false,
   },
-  f("clamp", s(&[r("x", Ty::Num), r("minVal", Ty::Num), r("maxVal", Ty::Num)], Ty::Num)),
-  f("assertEqual", s(&[r("a", Ty::Any), r("b", Ty::Any)], Ty::True)),
-  f("toString", s(&[r("a", Ty::Any)], Ty::Str)),
-  f("codepoint", s(&[r("str", Ty::Str)], Ty::Uint)),
-  f("char", s(&[r("n", Ty::Uint)], Ty::Str)),
-  pf("substr", s(&[r("str", Ty::Str), r("from", Ty::Uint), r("len", Ty::Uint)], Ty::Str)),
-  f("findSubstr", s(&[r("pat", Ty::Str), r("str", Ty::Str)], Ty::ArrNum)),
-  f("startsWith", A_B_STR_RET_BOOL),
-  f("endsWith", A_B_STR_RET_BOOL),
-  f("stripChars", STR_CHARS_STR_RET_STR),
-  f("lstripChars", STR_CHARS_STR_RET_STR),
-  f("rstripChars", STR_CHARS_STR_RET_STR),
-  f("split", s(&[r("str", Ty::Str), r("c", Ty::Str)], Ty::ArrStr)),
-  f("splitLimit", SPLIT_LIMIT),
-  f("splitLimitR", SPLIT_LIMIT),
-  f("strReplace", s(&[r("str", Ty::Str), r("from", Ty::Str), r("to", Ty::Str)], Ty::Str)),
-  f("isEmpty", s(&[r("str", Ty::Str)], Ty::Bool)),
-  f("asciiUpper", STR_RET_STR),
-  f("asciiLower", STR_RET_STR),
-  f("stringChars", s(&[r("str", Ty::Str)], Ty::ArrStr)),
-  f("format", s(&[r("str", Ty::Str), r("vals", Ty::Any)], Ty::Str)),
-  f("escapeStringBash", STR_RET_STR),
-  f("escapeStringDollars", STR_RET_STR),
-  f("escapeStringJson", STR_RET_STR),
-  f("escapeStringPython", STR_RET_STR),
-  f("escapeStringXml", STR_RET_STR),
-  f("parseInt", STR_RET_NUM),
-  f("parseOctal", STR_RET_NUM),
-  f("parseHex", STR_RET_NUM),
-  f("parseJson", STR_RET_ANY),
-  f("parseYaml", STR_RET_ANY),
-  f("encodeUTF8", s(&[r("str", Ty::Str)], Ty::ArrNum)),
-  f("decodeUTF8", s(&[r("arr", Ty::ArrNum)], Ty::Str)),
-  f("manifestIni", s(&[r("ini", Ty::Obj)], Ty::Str)),
-  f("manifestPython", s(&[r("v", Ty::Any)], Ty::Str)),
-  f("manifestPythonVars", s(&[r("conf", Ty::Any)], Ty::Str)),
-  f(
-    "manifestJsonEx",
-    s(
+  Fn {
+    name: S::new("clamp"),
+    sig: sig(&[req("x", Ty::Num), req("minVal", Ty::Num), req("maxVal", Ty::Num)], Ty::Num),
+    total: true,
+  },
+  Fn {
+    name: S::new("assertEqual"),
+    sig: sig(&[req("a", Ty::Any), req("b", Ty::Any)], Ty::True),
+    total: true,
+  },
+  Fn { name: S::new("toString"), sig: sig(&[req("a", Ty::Any)], Ty::Str), total: true },
+  Fn { name: S::new("codepoint"), sig: sig(&[req("str", Ty::Str)], Ty::Uint), total: true },
+  Fn { name: S::new("char"), sig: sig(&[req("n", Ty::Uint)], Ty::Str), total: true },
+  Fn {
+    name: S::new("substr"),
+    sig: sig(&[req("str", Ty::Str), req("from", Ty::Uint), req("len", Ty::Uint)], Ty::Str),
+    total: false,
+  },
+  Fn {
+    name: S::new("findSubstr"),
+    sig: sig(&[req("pat", Ty::Str), req("str", Ty::Str)], Ty::ArrNum),
+    total: true,
+  },
+  Fn { name: S::new("startsWith"), sig: A_B_STR_RET_BOOL, total: true },
+  Fn { name: S::new("endsWith"), sig: A_B_STR_RET_BOOL, total: true },
+  Fn { name: S::new("stripChars"), sig: STR_CHARS_STR_RET_STR, total: true },
+  Fn { name: S::new("lstripChars"), sig: STR_CHARS_STR_RET_STR, total: true },
+  Fn { name: S::new("rstripChars"), sig: STR_CHARS_STR_RET_STR, total: true },
+  Fn {
+    name: S::new("split"),
+    sig: sig(&[req("str", Ty::Str), req("c", Ty::Str)], Ty::ArrStr),
+    total: true,
+  },
+  Fn { name: S::new("splitLimit"), sig: SPLIT_LIMIT, total: true },
+  Fn { name: S::new("splitLimitR"), sig: SPLIT_LIMIT, total: true },
+  Fn {
+    name: S::new("strReplace"),
+    sig: sig(&[req("str", Ty::Str), req("from", Ty::Str), req("to", Ty::Str)], Ty::Str),
+    total: true,
+  },
+  Fn { name: S::new("isEmpty"), sig: sig(&[req("str", Ty::Str)], Ty::Bool), total: true },
+  Fn { name: S::new("asciiUpper"), sig: STR_RET_STR, total: true },
+  Fn { name: S::new("asciiLower"), sig: STR_RET_STR, total: true },
+  Fn { name: S::new("stringChars"), sig: sig(&[req("str", Ty::Str)], Ty::ArrStr), total: true },
+  Fn {
+    name: S::new("format"),
+    sig: sig(&[req("str", Ty::Str), req("vals", Ty::Any)], Ty::Str),
+    total: true,
+  },
+  Fn { name: S::new("escapeStringBash"), sig: STR_RET_STR, total: true },
+  Fn { name: S::new("escapeStringDollars"), sig: STR_RET_STR, total: true },
+  Fn { name: S::new("escapeStringJson"), sig: STR_RET_STR, total: true },
+  Fn { name: S::new("escapeStringPython"), sig: STR_RET_STR, total: true },
+  Fn { name: S::new("escapeStringXml"), sig: STR_RET_STR, total: true },
+  Fn { name: S::new("parseInt"), sig: STR_RET_NUM, total: true },
+  Fn { name: S::new("parseOctal"), sig: STR_RET_NUM, total: true },
+  Fn { name: S::new("parseHex"), sig: STR_RET_NUM, total: true },
+  Fn { name: S::new("parseJson"), sig: STR_RET_ANY, total: true },
+  Fn { name: S::new("parseYaml"), sig: STR_RET_ANY, total: true },
+  Fn { name: S::new("encodeUTF8"), sig: sig(&[req("str", Ty::Str)], Ty::ArrNum), total: true },
+  Fn { name: S::new("decodeUTF8"), sig: sig(&[req("arr", Ty::ArrNum)], Ty::Str), total: true },
+  Fn { name: S::new("manifestIni"), sig: sig(&[req("ini", Ty::Obj)], Ty::Str), total: true },
+  Fn { name: S::new("manifestPython"), sig: sig(&[req("v", Ty::Any)], Ty::Str), total: true },
+  Fn {
+    name: S::new("manifestPythonVars"),
+    sig: sig(&[req("conf", Ty::Any)], Ty::Str),
+    total: true,
+  },
+  Fn {
+    name: S::new("manifestJsonEx"),
+    sig: sig(
       &[
-        r("value", Ty::Any),
-        r("indent", Ty::Str),
-        o("newline", Ty::Str),
-        o("key_val_sep", Ty::Str),
+        req("value", Ty::Any),
+        req("indent", Ty::Str),
+        opt("newline", Ty::Str),
+        opt("key_val_sep", Ty::Str),
       ],
       Ty::Str,
     ),
-  ),
-  f("manifestJson", MANIFEST_JSON),
-  f("manifestJsonMinified", MANIFEST_JSON),
-  f(
-    "manifestYamlDoc",
-    s(
-      &[r("value", Ty::Any), o("indent_array_in_object", Ty::Bool), o("quote_keys", Ty::Bool)],
-      Ty::Str,
-    ),
-  ),
-  f(
-    "manifestYamlStream",
-    s(
+    total: true,
+  },
+  Fn { name: S::new("manifestJson"), sig: MANIFEST_JSON, total: true },
+  Fn { name: S::new("manifestJsonMinified"), sig: MANIFEST_JSON, total: true },
+  Fn {
+    name: S::new("manifestYamlDoc"),
+    sig: sig(
       &[
-        r("value", Ty::ArrAny),
-        o("indent_array_in_object", Ty::Bool),
-        o("c_document_end", Ty::Bool),
-        o("quote_keys", Ty::Bool),
+        req("value", Ty::Any),
+        opt("indent_array_in_object", Ty::Bool),
+        opt("quote_keys", Ty::Bool),
       ],
       Ty::Str,
     ),
-  ),
-  f("manifestXmlJsonml", s(&[r("value", Ty::ArrAny)], Ty::Str)),
-  f("manifestTomlEx", s(&[r("toml", Ty::Obj), r("indent", Ty::Str)], Ty::Str)),
-  f("makeArray", s(&[r("sz", Ty::Uint), r("func", Ty::Hof1)], Ty::ArrAny)),
-  f("member", s(&[r("arr", Ty::StrOrArrAny), r("x", Ty::Any)], Ty::Bool)),
-  f("count", s(&[r("arr", Ty::ArrAny), r("x", Ty::Any)], Ty::Num)),
-  f("find", s(&[r("value", Ty::Any), r("arr", Ty::ArrAny)], Ty::ArrNum)),
-  f("map", ARR_HOF1),
-  f("mapWithIndex", s(&[r("func", Ty::Hof2), r("arr", Ty::ArrAny)], Ty::ArrAny)),
-  f(
-    "filterMap",
-    s(&[r("filter_func", Ty::Hof1), r("map_func", Ty::Hof1), r("arr", Ty::ArrAny)], Ty::ArrAny),
-  ),
-  f("flatMap", s(&[r("func", Ty::Hof1), r("arr", Ty::StrOrArrAny)], Ty::StrOrArrAny)),
-  f("filter", ARR_HOF1),
-  f("foldl", FOLD),
-  f("foldr", FOLD),
-  f("range", s(&[r("from", Ty::Num), r("to", Ty::Num)], Ty::ArrNum)),
-  f("repeat", s(&[r("what", Ty::StrOrArrAny), r("count", Ty::Uint)], Ty::StrOrArrAny)),
-  f(
-    "slice",
-    s(
+    total: true,
+  },
+  Fn {
+    name: S::new("manifestYamlStream"),
+    sig: sig(
       &[
-        r("indexable", Ty::StrOrArrAny),
-        r("index", Ty::Uint),
-        r("end", Ty::NumOrNull),
-        r("step", Ty::NumOrNull),
+        req("value", Ty::ArrAny),
+        opt("indent_array_in_object", Ty::Bool),
+        opt("c_document_end", Ty::Bool),
+        opt("quote_keys", Ty::Bool),
+      ],
+      Ty::Str,
+    ),
+    total: true,
+  },
+  Fn {
+    name: S::new("manifestXmlJsonml"),
+    sig: sig(&[req("value", Ty::ArrAny)], Ty::Str),
+    total: true,
+  },
+  Fn {
+    name: S::new("manifestTomlEx"),
+    sig: sig(&[req("toml", Ty::Obj), req("indent", Ty::Str)], Ty::Str),
+    total: true,
+  },
+  Fn {
+    name: S::new("makeArray"),
+    sig: sig(&[req("sz", Ty::Uint), req("func", Ty::Hof1)], Ty::ArrAny),
+    total: true,
+  },
+  Fn {
+    name: S::new("member"),
+    sig: sig(&[req("arr", Ty::StrOrArrAny), req("x", Ty::Any)], Ty::Bool),
+    total: true,
+  },
+  Fn {
+    name: S::new("count"),
+    sig: sig(&[req("arr", Ty::ArrAny), req("x", Ty::Any)], Ty::Num),
+    total: true,
+  },
+  Fn {
+    name: S::new("find"),
+    sig: sig(&[req("value", Ty::Any), req("arr", Ty::ArrAny)], Ty::ArrNum),
+    total: true,
+  },
+  Fn { name: S::new("map"), sig: ARR_HOF1, total: true },
+  Fn {
+    name: S::new("mapWithIndex"),
+    sig: sig(&[req("func", Ty::Hof2), req("arr", Ty::ArrAny)], Ty::ArrAny),
+    total: true,
+  },
+  Fn {
+    name: S::new("filterMap"),
+    sig: sig(
+      &[req("filter_func", Ty::Hof1), req("map_func", Ty::Hof1), req("arr", Ty::ArrAny)],
+      Ty::ArrAny,
+    ),
+    total: true,
+  },
+  Fn {
+    name: S::new("flatMap"),
+    sig: sig(&[req("func", Ty::Hof1), req("arr", Ty::StrOrArrAny)], Ty::StrOrArrAny),
+    total: true,
+  },
+  Fn { name: S::new("filter"), sig: ARR_HOF1, total: true },
+  Fn { name: S::new("foldl"), sig: FOLD, total: true },
+  Fn { name: S::new("foldr"), sig: FOLD, total: true },
+  Fn {
+    name: S::new("range"),
+    sig: sig(&[req("from", Ty::Num), req("to", Ty::Num)], Ty::ArrNum),
+    total: true,
+  },
+  Fn {
+    name: S::new("repeat"),
+    sig: sig(&[req("what", Ty::StrOrArrAny), req("count", Ty::Uint)], Ty::StrOrArrAny),
+    total: true,
+  },
+  Fn {
+    name: S::new("slice"),
+    sig: sig(
+      &[
+        req("indexable", Ty::StrOrArrAny),
+        req("index", Ty::Uint),
+        req("end", Ty::NumOrNull),
+        req("step", Ty::NumOrNull),
       ],
       Ty::StrOrArrAny,
     ),
-  ),
-  pf("join", s(&[r("sep", Ty::StrOrArrAny), r("arr", Ty::ArrAny)], Ty::StrOrArrAny)),
-  f("lines", s(&[r("arr", Ty::ArrStr)], Ty::Str)),
-  f("flattenArrays", s(&[r("arr", Ty::ArrAny)], Ty::ArrAny)),
-  f("reverse", s(&[r("arr", Ty::ArrAny)], Ty::ArrAny)),
-  f("sort", ARR_KEY_F),
-  f("uniq", ARR_KEY_F),
-  f("all", s(&[r("arr", Ty::ArrBool)], Ty::Bool)),
-  f("any", s(&[r("arr", Ty::ArrBool)], Ty::Bool)),
-  f("sum", s(&[r("arr", Ty::ArrNum)], Ty::Num)),
-  f("avg", s(&[r("arr", Ty::ArrNum)], Ty::Num)),
-  f("set", ARR_KEY_F),
-  f("setInter", BINARY_SET_FN),
-  f("setUnion", BINARY_SET_FN),
-  f("setDiff", BINARY_SET_FN),
-  f("setMember", s(&[r("x", Ty::Any), r("arr", Ty::ArrAny), o("keyF", Ty::Hof1)], Ty::Bool)),
-  f("base64", s(&[r("input", Ty::StrOrArrNum)], Ty::Str)),
-  f("base64DecodeBytes", s(&[r("str", Ty::Str)], Ty::ArrNum)),
-  f("base64Decode", STR_RET_STR),
-  f("md5", s(&[r("s", Ty::Str)], Ty::Str)),
-  f("xor", X_Y_BOOL_RET_BOOL),
-  f("xnor", X_Y_BOOL_RET_BOOL),
-  f("mergePatch", s(&[r("target", Ty::Any), r("patch", Ty::Any)], Ty::Any)),
-  f("trace", s(&[r("str", Ty::Str), r("rest", Ty::Any)], Ty::Any)),
+    total: true,
+  },
+  Fn {
+    name: S::new("join"),
+    sig: sig(&[req("sep", Ty::StrOrArrAny), req("arr", Ty::ArrAny)], Ty::StrOrArrAny),
+    total: false,
+  },
+  Fn { name: S::new("lines"), sig: sig(&[req("arr", Ty::ArrStr)], Ty::Str), total: true },
+  Fn {
+    name: S::new("flattenArrays"),
+    sig: sig(&[req("arr", Ty::ArrAny)], Ty::ArrAny),
+    total: true,
+  },
+  Fn { name: S::new("reverse"), sig: sig(&[req("arr", Ty::ArrAny)], Ty::ArrAny), total: true },
+  Fn { name: S::new("sort"), sig: ARR_KEY_F, total: true },
+  Fn { name: S::new("uniq"), sig: ARR_KEY_F, total: true },
+  Fn { name: S::new("all"), sig: sig(&[req("arr", Ty::ArrBool)], Ty::Bool), total: true },
+  Fn { name: S::new("any"), sig: sig(&[req("arr", Ty::ArrBool)], Ty::Bool), total: true },
+  Fn { name: S::new("sum"), sig: sig(&[req("arr", Ty::ArrNum)], Ty::Num), total: true },
+  Fn { name: S::new("avg"), sig: sig(&[req("arr", Ty::ArrNum)], Ty::Num), total: true },
+  Fn { name: S::new("set"), sig: ARR_KEY_F, total: true },
+  Fn { name: S::new("setInter"), sig: BINARY_SET_FN, total: true },
+  Fn { name: S::new("setUnion"), sig: BINARY_SET_FN, total: true },
+  Fn { name: S::new("setDiff"), sig: BINARY_SET_FN, total: true },
+  Fn {
+    name: S::new("setMember"),
+    sig: sig(&[req("x", Ty::Any), req("arr", Ty::ArrAny), opt("keyF", Ty::Hof1)], Ty::Bool),
+    total: true,
+  },
+  Fn { name: S::new("base64"), sig: sig(&[req("input", Ty::StrOrArrNum)], Ty::Str), total: true },
+  Fn {
+    name: S::new("base64DecodeBytes"),
+    sig: sig(&[req("str", Ty::Str)], Ty::ArrNum),
+    total: true,
+  },
+  Fn { name: S::new("base64Decode"), sig: STR_RET_STR, total: true },
+  Fn { name: S::new("md5"), sig: sig(&[req("s", Ty::Str)], Ty::Str), total: true },
+  Fn { name: S::new("xor"), sig: X_Y_BOOL_RET_BOOL, total: true },
+  Fn { name: S::new("xnor"), sig: X_Y_BOOL_RET_BOOL, total: true },
+  Fn {
+    name: S::new("mergePatch"),
+    sig: sig(&[req("target", Ty::Any), req("patch", Ty::Any)], Ty::Any),
+    total: true,
+  },
+  Fn {
+    name: S::new("trace"),
+    sig: sig(&[req("str", Ty::Str), req("rest", Ty::Any)], Ty::Any),
+    total: true,
+  },
   // alluded to in the spec but not mentioned on the std lib page
-  pf("equals", s(&[r("x", Ty::Any), r("y", Ty::Any)], Ty::Bool)),
-  f("objectHasEx", s(&[r("obj", Ty::Obj), r("fname", Ty::Str), r("hidden", Ty::Bool)], Ty::Bool)),
+  Fn {
+    name: S::new("equals"),
+    sig: sig(&[req("x", Ty::Any), req("y", Ty::Any)], Ty::Bool),
+    total: false,
+  },
+  Fn {
+    name: S::new("objectHasEx"),
+    sig: sig(&[req("obj", Ty::Obj), req("fname", Ty::Str), req("hidden", Ty::Bool)], Ty::Bool),
+    total: true,
+  },
 ];
