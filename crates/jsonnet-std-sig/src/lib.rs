@@ -1,4 +1,4 @@
-//! The names and parameter names of the standard library functions.
+//! Info about the standard library functions.
 //!
 //! Based on [the original std lib docs](https://jsonnet.org/ref/stdlib.html).
 
