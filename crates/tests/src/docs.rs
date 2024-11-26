@@ -11,3 +11,10 @@ fn tokens() {
 fn std_lib() {
   check(include_str!("../../../docs/std_lib.md"));
 }
+
+#[test]
+fn std_lib_new() {
+  for f in jsonnet_std_sig::FNS {
+    check(f.doc);
+  }
+}

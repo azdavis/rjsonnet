@@ -1127,6 +1127,7 @@ dependencies = [
  "jsonnet-analyze",
  "jsonnet-eval",
  "jsonnet-expr",
+ "jsonnet-std-sig",
  "jsonnet-ty",
  "jsonnet-val",
  "lang-srv-state",
