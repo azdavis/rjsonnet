@@ -72,7 +72,7 @@ A resolver for import paths.
 
 ### `crates/jsonnet-std-sig`
 
-Rust code describing the signatures of the standard library functions.
+Rust code describing the standard library functions.
 
 ## Overall crates
 
