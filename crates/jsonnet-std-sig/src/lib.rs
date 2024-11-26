@@ -896,136 +896,237 @@ pub const FNS: [Fn; 126] = [
     name: S::new("substr"),
     sig: sig(&[req("str", Ty::Str), req("from", Ty::Uint), req("len", Ty::Uint)], Ty::Str),
     total: false,
-    available_since: None,
-    doc: indoc! {"
-      TODO
-    "},
+    available_since: Some(10),
+    doc: indoc! {r#"
+      `std.substr(str, from, len)` returns a string that is the part of `s` that starts at
+      offset `from` and is `len` codepoints long.
+
+      If the string `s` is shorter than `from + len`, returns the suffix starting at position
+      `from`.
+
+      ```jsonnet
+      assert std.substr("think", 1, 2) == "hi";
+      assert std.substr("develop", 4, 3) == "lop";
+      assert std.substr("hello world", 6, 99) == "world";
+      ```
+    "#},
   },
   Fn {
     name: S::new("findSubstr"),
     sig: sig(&[req("pat", Ty::Str), req("str", Ty::Str)], Ty::ArrNum),
     total: true,
-    available_since: None,
-    doc: indoc! {"
-      TODO
-    "},
+    available_since: Some(10),
+    doc: indoc! {r#"
+      `std.findSubstr(pat, str)` returns an array that contains the indexes of all occurrences
+      of `pat` in `str`.
+
+      <!-- @eval-error: not yet implemented -->
+
+      ```jsonnet
+      assert std.findSubstr("e", "envelope") == [0, 3, 7];
+      assert std.findSubstr("hi", "hi Chidi") == [0, 4];
+      assert std.findSubstr("fork", "shirt") == [];
+      ```
+    "#},
   },
   Fn {
     name: S::new("startsWith"),
     sig: A_B_STR_RET_BOOL,
     total: true,
-    available_since: None,
-    doc: indoc! {"
-      TODO
-    "},
+    available_since: Some(10),
+    doc: indoc! {r#"
+      `std.startsWith(a, b)` returns whether the string `a` is prefixed by the string `b`.
+
+      ```jsonnet
+      assert std.startsWith("hi Chidi", "hi");
+      assert !std.startsWith("hi Chidi", "fork");
+      ```
+    "#},
   },
   Fn {
     name: S::new("endsWith"),
     sig: A_B_STR_RET_BOOL,
     total: true,
-    available_since: None,
-    doc: indoc! {"
-      TODO
-    "},
+    available_since: Some(10),
+    doc: indoc! {r#"
+      `std.endsWith(a, b)` returns whether the string `a` is suffixed by the string `b`.
+
+      ```jsonnet
+      assert std.endsWith("thank you", "you");
+      assert !std.endsWith("thank you", "no");
+      ```
+    "#},
   },
   Fn {
     name: S::new("stripChars"),
     sig: STR_CHARS_STR_RET_STR,
     total: true,
-    available_since: None,
-    doc: indoc! {"
-      TODO
-    "},
+    available_since: Some(15),
+    doc: indoc! {r#"
+      `std.stripChars(str, chars)` removes characters `chars` from the beginning and from the end
+      of `str`.
+
+      ```jsonnet
+      assert std.stripChars(" test test test ", " ") == "test test test";
+      assert std.stripChars("aaabbbbcccc", "ac") == "bbbb";
+      assert std.stripChars("cacabbbbaacc", "ac") == "bbbb";
+      ```
+    "#},
   },
   Fn {
     name: S::new("lstripChars"),
     sig: STR_CHARS_STR_RET_STR,
     total: true,
-    available_since: None,
-    doc: indoc! {"
-      TODO
-    "},
+    available_since: Some(15),
+    doc: indoc! {r#"
+      `std.lstripChars(str, chars)` removes characters `chars` from the beginning of `str`.
+
+      ```jsonnet
+      assert std.lstripChars(" test test test ", " ") == "test test test ";
+      assert std.lstripChars("aaabbbbcccc", "ac") == "bbbbcccc";
+      assert std.lstripChars("cacabbbbaacc", "ac") == "bbbbaacc";
+      ```
+    "#},
   },
   Fn {
     name: S::new("rstripChars"),
     sig: STR_CHARS_STR_RET_STR,
     total: true,
-    available_since: None,
-    doc: indoc! {"
-      TODO
-    "},
+    available_since: Some(15),
+    doc: indoc! {r#"
+      `std.rstripChars(str, chars)` removes characters `chars` from the end of `str`.
+
+      ```jsonnet
+      assert std.rstripChars(" test test test ", " ") == " test test test";
+      assert std.rstripChars("aaabbbbcccc", "ac") == "aaabbbb";
+      assert std.rstripChars("cacabbbbaacc", "ac") == "cacabbbb";
+      ```
+    "#},
   },
   Fn {
     name: S::new("split"),
     sig: sig(&[req("str", Ty::Str), req("c", Ty::Str)], Ty::ArrStr),
     total: true,
-    available_since: None,
-    doc: indoc! {"
-      TODO
-    "},
+    available_since: Some(10),
+    doc: indoc! {r#"
+      `std.split(str, c)` splits the string `str` into an array of strings, divided by the
+      string `c`.
+
+      Note: Versions up to and including 0.18.0 require `c` to be a single character.
+
+      <!-- @eval-error: not yet implemented -->
+
+      ```jsonnet
+      assert std.split("foo/_bar", "/_") == [ "foo", "bar" ];
+      assert std.split("/_foo/_bar", "/_") == [ "", "foo", "bar" ];
+      ```
+    "#},
   },
   Fn {
     name: S::new("splitLimit"),
     sig: SPLIT_LIMIT,
     total: true,
-    available_since: None,
-    doc: indoc! {"
-      TODO
-    "},
+    available_since: Some(10),
+    doc: indoc! {r#"
+      `std.splitLimit(str, c, maxsplits)` is the same as `std.split(str, c)` but will stop
+      after `maxsplits` splits, thereby the largest array it will return has
+      length `maxsplits + 1`. A limit of `-1` means unlimited.
+
+      Note: Versions up to and including 0.18.0 require `c` to be a single character.
+
+      <!-- @eval-error: not yet implemented -->
+
+      ```jsonnet
+      assert std.splitLimit("foo/_bar", "/_", 1) == [ "foo", "bar" ];
+      assert std.splitLimit("/_foo/_bar", "/_", 1) == [ "", "foo/_bar" ];
+      ```
+    "#},
   },
   Fn {
     name: S::new("splitLimitR"),
     sig: SPLIT_LIMIT,
     total: true,
-    available_since: None,
-    doc: indoc! {"
-      TODO
-    "},
+    available_since: Some(19),
+    doc: indoc! {r#"
+      `std.splitLimitR(str, c, maxsplits)` is the
+      same as `std.splitLimit(str, c, maxsplits)` but will split from right to left.
+
+      <!-- @eval-error: not yet implemented -->
+
+      ```jsonnet
+      assert std.splitLimitR("/_foo/_bar", "/_", 1) == [ "/_foo", "bar" ];
+      ```
+    "#},
   },
   Fn {
     name: S::new("strReplace"),
     sig: sig(&[req("str", Ty::Str), req("from", Ty::Str), req("to", Ty::Str)], Ty::Str),
     total: true,
-    available_since: None,
-    doc: indoc! {"
-      TODO
-    "},
+    available_since: Some(10),
+    doc: indoc! {r#"
+      `std.strReplace(str, from, to)` returns a copy of the string `str` in which all occurrences
+      of string `from` have been replaced with string `to`.
+
+      ```jsonnet
+      assert std.strReplace("I like to skate with my skateboard", "skate", "surf")
+        == "I like to surf with my surfboard";
+      ```
+    "#},
   },
   Fn {
     name: S::new("isEmpty"),
     sig: sig(&[req("str", Ty::Str)], Ty::Bool),
     total: true,
-    available_since: None,
-    doc: indoc! {"
-      TODO
-    "},
+    available_since: Some(20),
+    doc: indoc! {r#"
+      Returns whether the given string has zero length.
+
+      ```jsonnet
+      assert std.isEmpty("");
+      assert !std.isEmpty("hi");
+      ```
+    "#},
   },
   Fn {
     name: S::new("asciiUpper"),
     sig: STR_RET_STR,
     total: true,
-    available_since: None,
-    doc: indoc! {"
-      TODO
-    "},
+    available_since: Some(10),
+    doc: indoc! {r#"
+      Returns a copy of the string in which all ASCII letters are capitalized.
+
+      ```jsonnet
+      assert std.asciiUpper("100 Cats!") == "100 CATS!";
+      ```
+    "#},
   },
   Fn {
     name: S::new("asciiLower"),
     sig: STR_RET_STR,
     total: true,
-    available_since: None,
-    doc: indoc! {"
-      TODO
-    "},
+    available_since: Some(10),
+    doc: indoc! {r#"
+      Returns a copy of the string in which all ASCII letters are lower cased.
+
+      ```jsonnet
+      assert std.asciiLower("100 Cats!") == "100 cats!";
+      ```
+    "#},
   },
   Fn {
     name: S::new("stringChars"),
     sig: sig(&[req("str", Ty::Str)], Ty::ArrStr),
     total: true,
-    available_since: None,
-    doc: indoc! {"
-      TODO
-    "},
+    available_since: Some(10),
+    doc: indoc! {r#"
+      Split the string into an array of strings, each containing a single codepoint.
+
+      <!-- @eval-error: not yet implemented -->
+
+      ```jsonnet
+      assert std.stringChars("foo") == ["f", "o", "o"];
+      ```
+    "#},
   },
   Fn {
     name: S::new("format"),
