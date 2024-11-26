@@ -157,19 +157,35 @@ pub const FNS: [Fn; 126] = [
     name: S::new("extVar"),
     sig: sig(&[req("x", Ty::Str)], Ty::Str),
     total: true,
-    available_since: None,
+    available_since: Some(10),
     doc: indoc! {"
-      TODO
+      If an external variable with the given name was defined, return its value. Otherwise, raise
+      an error.
     "},
   },
   Fn {
     name: S::named("type", "type_"),
     sig: sig(&[req("x", Ty::Any)], Ty::StaticStr),
     total: true,
-    available_since: None,
-    doc: indoc! {"
-      TODO
-    "},
+    available_since: Some(10),
+    doc: indoc! {r#"
+      Returns a string that indicates the type of the value. The possible return values are:
+
+      - `"array"`
+      - `"boolean"`
+      - `"function"`
+      - `"null"`
+      - `"number"`
+      - `"object"`
+      - `"string"`
+
+      ```jsonnet
+      assert std.type([1]) == "array";
+      assert std.type(null) == "null";
+      assert std.type({}) == "object";
+      assert std.type(3) == "number";
+      ```
+    "#},
   },
   Fn {
     name: S::new("isArray"),
@@ -177,7 +193,14 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: None,
     doc: indoc! {"
-      TODO
+      Returns whether the argument is an array.
+
+      ```jsonnet
+      assert std.isArray([1, 2]);
+      assert std.isArray([]);
+      assert !std.isArray(null);
+      assert !std.isArray(4);
+      ```
     "},
   },
   Fn {
@@ -186,7 +209,14 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: None,
     doc: indoc! {"
-      TODO
+      Returns whether the argument is a boolean.
+
+      ```jsonnet
+      assert std.isBoolean(true);
+      assert std.isBoolean(false);
+      assert !std.isBoolean(null);
+      assert !std.isBoolean(4);
+      ```
     "},
   },
   Fn {
@@ -195,7 +225,14 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: None,
     doc: indoc! {"
-      TODO
+      Returns whether the argument is a function.
+
+      ```jsonnet
+      assert std.isFunction(function(x) x + 1);
+      assert std.isFunction(std.mod);
+      assert !std.isFunction(null);
+      assert !std.isFunction(4);
+      ```
     "},
   },
   Fn {
@@ -204,7 +241,14 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: None,
     doc: indoc! {"
-      TODO
+      Returns whether the argument is a number.
+
+      ```jsonnet
+      assert std.isNumber(3);
+      assert std.isNumber(-123.345);
+      assert !std.isNumber(null);
+      assert !std.isNumber([]);
+      ```
     "},
   },
   Fn {
@@ -213,7 +257,14 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: None,
     doc: indoc! {"
-      TODO
+      Returns whether the argument is an object.
+
+      ```jsonnet
+      assert std.isObject({});
+      assert std.isObject({ a: 1 } + { b: 2 });
+      assert !std.isObject(null);
+      assert !std.isObject([]);
+      ```
     "},
   },
   Fn {
@@ -221,18 +272,52 @@ pub const FNS: [Fn; 126] = [
     sig: V_ANY_RET_BOOL,
     total: true,
     available_since: None,
-    doc: indoc! {"
-      TODO
-    "},
+    doc: indoc! {r#"
+      Returns whether the argument is a string.
+
+      ```jsonnet
+      assert std.isString("hi");
+      assert std.isString("");
+      assert !std.isString(null);
+      assert !std.isString({});
+      ```
+    "#},
   },
   Fn {
     name: S::new("length"),
     sig: sig(&[req("x", Ty::Any)], Ty::Uint),
     total: false,
-    available_since: None,
-    doc: indoc! {"
-      TODO
-    "},
+    available_since: Some(10),
+    doc: indoc! {r#"
+      Depending on the type of the value given, this functions returns the number of
+      _something_ in that argument value. The table below describes the _something_:
+
+      | Type     | Something  |
+      | -------- | ---------- |
+      | array    | elements   |
+      | string   | codepoints |
+      | function | parameters |
+      | object   | fields     |
+
+      Raises an error if given `null`, `true`, `false`, or a number.
+
+      ```jsonnet
+      assert std.length("hi") == 2;
+      assert std.length("") == 0;
+      assert std.length("あ") == 1;
+
+      assert std.length([]) == 0;
+      assert std.length([3, 4]) == 2;
+
+      assert std.length(function(x) x + 1) == 1;
+      assert std.length(function() 4) == 0;
+      assert std.length(function(x=1) x + 2) == 0;
+
+      assert std.length({}) == 0;
+      assert std.length({ a: 3, b: 5 }) == 2;
+      assert std.length({ x:: 9, y::: 7 }) == 2;
+      ```
+    "#},
   },
   Fn {
     name: S::new("get"),
@@ -322,10 +407,25 @@ pub const FNS: [Fn; 126] = [
     name: S::new("prune"),
     sig: sig(&[req("a", Ty::Any)], Ty::Any),
     total: true,
-    available_since: None,
-    doc: indoc! {"
-      TODO
-    "},
+    available_since: Some(10),
+    doc: indoc! {r#"
+      Recursively remove all "empty" members of a. "Empty" is defined as
+
+      - zero length arrays
+      - zero length objects
+      - `null` values
+
+      The argument may have any type.
+
+      <!-- @eval-error: not yet implemented: prune -->
+
+      ```jsonnet
+      assert std.prune([1, [], 2, {}, 3, null]) == [1, 2, 3];
+      assert std.prune({a: 3}) == {a: 3};
+      assert std.prune({w: 0, x: "", y: [], z: null}) == {w: 0, x: ""};
+      assert std.prune(null) == null;
+      ```
+    "#},
   },
   Fn {
     name: S::new("mapWithKey"),
@@ -342,7 +442,13 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: None,
     doc: indoc! {"
-      TODO
+      Returns the absolute value of the number.
+
+      ```jsonnet
+      assert std.abs(3) == 3;
+      assert std.abs(-1.2) == 1.2;
+      assert std.abs(0) == 0;
+      ```
     "},
   },
   Fn {
@@ -351,7 +457,13 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: None,
     doc: indoc! {"
-      TODO
+      Returns `-1`, `0`, or `1` if the number is negative, zero, or positive respectively.
+
+      ```jsonnet
+      assert std.sign(3) == 1;
+      assert std.sign(-1.2) == -1;
+      assert std.sign(0) == 0;
+      ```
     "},
   },
   Fn {
@@ -360,7 +472,13 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: None,
     doc: indoc! {"
-      TODO
+      Returns the maximum of the two arguments.
+
+      ```jsonnet
+      assert std.max(3, 2) == 3;
+      assert std.max(4, 4) == 4;
+      assert std.max(-5, 1) == 1;
+      ```
     "},
   },
   Fn {
@@ -369,7 +487,13 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: None,
     doc: indoc! {"
-      TODO
+      Returns the minimum of the two arguments.
+
+      ```jsonnet
+      assert std.min(3, 2) == 2;
+      assert std.min(4, 4) == 4;
+      assert std.min(-5, 1) == -5;
+      ```
     "},
   },
   Fn {
@@ -378,7 +502,15 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: None,
     doc: indoc! {"
-      TODO
+      `std.pow(x, y)` returns $x^y$, i.e. $x$ to the $y$ power.
+
+      ```jsonnet
+      assert std.pow(2, 3) == 8;
+      assert std.pow(3, 2) == 9;
+      assert std.pow(1, 99) == 1;
+      assert std.pow(0, 2) == 0;
+      assert std.pow(99, 0) == 1;
+      ```
     "},
   },
   Fn {
@@ -386,8 +518,15 @@ pub const FNS: [Fn; 126] = [
     sig: X_NUM_RET_NUM,
     total: true,
     available_since: None,
-    doc: indoc! {"
-      TODO
+    doc: indoc! {r"
+      `std.exp(x)` returns $e^x$, i.e. $e$ to the $x$ power, where
+      [$e \approx 2.71828$](<https://en.wikipedia.org/wiki/E_(mathematical_constant)>).
+
+      ```jsonnet
+      assert std.exp(0) == 1;
+      assert std.exp(1) == 2.718281828459045;
+      assert std.exp(2) == 7.38905609893065;
+      ```
     "},
   },
   Fn {
@@ -395,8 +534,16 @@ pub const FNS: [Fn; 126] = [
     sig: X_NUM_RET_NUM,
     total: true,
     available_since: None,
-    doc: indoc! {"
-      TODO
+    doc: indoc! {r"
+      `std.log(x)` returns the natural logarithm of $x$,
+      i.e. the solution $y$ in $e^y = x$, where
+      [$e \approx 2.71828$](<https://en.wikipedia.org/wiki/E_(mathematical_constant)>).
+
+      ```jsonnet
+      assert std.log(1) == 0;
+      assert std.log(123) == 4.812184355372417;
+      assert std.log(345) == 5.84354441703136;
+      ```
     "},
   },
   Fn {
@@ -405,7 +552,17 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: None,
     doc: indoc! {"
-      TODO
+      `std.exponent(x)` returns the exponent of the IEEE754 64-bit floating point number `x`.
+
+      The following function returns `true` for all numbers `x`:
+
+      <!-- @eval-error: manifest function -->
+
+      ```jsonnet
+      function(x)
+        assert std.isNumber(x);
+        x == std.mantissa(x) * std.pow(2, std.exponent(x))
+      ```
     "},
   },
   Fn {
@@ -414,7 +571,18 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: None,
     doc: indoc! {"
-      TODO
+      `std.mantissa(x)` returns the significand, also called the mantissa, of the IEEE754
+      64-bit floating point number `x`.
+
+      The following function returns `true` for all numbers `x`:
+
+      <!-- @eval-error: manifest function -->
+
+      ```jsonnet
+      function(x)
+        assert std.isNumber(x);
+        x == std.mantissa(x) * std.pow(2, std.exponent(x))
+      ```
     "},
   },
   Fn {

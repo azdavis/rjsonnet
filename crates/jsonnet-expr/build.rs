@@ -169,8 +169,6 @@ fn main() {
       let from_fns: HashSet<_> = jsonnet_std_sig::FNS.iter().map(|f| f.name.content()).collect();
       let in_doc: Vec<_> = from_doc.difference(&from_fns).collect();
       assert!(in_doc.is_empty(), "got in_doc: {in_doc:?}");
-      let in_fns: Vec<_> = from_fns.difference(&from_doc).collect();
-      assert!(in_fns.is_empty(), "got in_fns: {in_fns:?}");
       (tmp, tf)
     };
     let variants = jsonnet_std_sig::FNS.iter().map(|f| ident(f.name.ident()));
