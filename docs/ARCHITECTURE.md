@@ -88,7 +88,7 @@ The language server binary. Basically just mashes `jsonnet-analyze` and `lang-sr
 
 ### `crates/tests`
 
-The tests. No other crate has individual tests, we only have full end-to-end tests here.
+The end-to-end tests. Lexing, parsing, desugaring, static analysis, evaluation, and manifestation are all tested here, with full Jsonnet programs as input.
 
 ## Generic crates
 

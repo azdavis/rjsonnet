@@ -682,6 +682,7 @@ name = "jsonnet-std-sig"
 version = "0.7.2"
 dependencies = [
  "indoc",
+ "rustc-hash",
 ]
 
 [[package]]

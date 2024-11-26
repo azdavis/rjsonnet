@@ -4,6 +4,9 @@
 
 #![allow(clippy::needless_raw_string_hashes)]
 
+#[cfg(test)]
+mod tests;
+
 use indoc::indoc;
 
 /// A name-content string pair.
