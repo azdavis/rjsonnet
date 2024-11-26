@@ -59,6 +59,7 @@
     "RUSTFLAGS",
     "rustfmt",
     "serde",
+    "significand",
     "softprops",
     "substr",
     "superness",
