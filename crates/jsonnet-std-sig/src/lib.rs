@@ -42,6 +42,8 @@ impl S {
 pub struct Fn {
   /// The name.
   pub name: S,
+  /// Whether this is implemented.
+  pub implemented: bool,
   /// The signature.
   pub sig: Sig,
   /// Whether the function returns a value for all well-typed inputs.
@@ -160,6 +162,7 @@ const BINARY_SET_FN: Sig =
 pub const FNS: [Fn; 126] = [
   Fn {
     name: S::new("extVar"),
+    implemented: false,
     sig: sig(&[req("x", Ty::Str)], Ty::Str),
     total: true,
     available_since: Some(10),
@@ -171,6 +174,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::named("type", "type_"),
+    implemented: true,
     sig: sig(&[req("x", Ty::Any)], Ty::StaticStr),
     total: true,
     available_since: Some(10),
@@ -196,6 +200,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("isArray"),
+    implemented: true,
     sig: V_ANY_RET_BOOL,
     total: true,
     available_since: None,
@@ -213,6 +218,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("isBoolean"),
+    implemented: true,
     sig: V_ANY_RET_BOOL,
     total: true,
     available_since: None,
@@ -230,6 +236,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("isFunction"),
+    implemented: true,
     sig: V_ANY_RET_BOOL,
     total: true,
     available_since: None,
@@ -247,6 +254,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("isNumber"),
+    implemented: true,
     sig: V_ANY_RET_BOOL,
     total: true,
     available_since: None,
@@ -264,6 +272,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("isObject"),
+    implemented: true,
     sig: V_ANY_RET_BOOL,
     total: true,
     available_since: None,
@@ -281,6 +290,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("isString"),
+    implemented: true,
     sig: V_ANY_RET_BOOL,
     total: true,
     available_since: None,
@@ -298,6 +308,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("length"),
+    implemented: true,
     sig: sig(&[req("x", Ty::Any)], Ty::Uint),
     total: false,
     available_since: Some(10),
@@ -335,6 +346,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("get"),
+    implemented: false,
     sig: sig(
       &[req("o", Ty::Obj), req("f", Ty::Str), opt("default", Ty::Any), opt("inc_hidden", Ty::Bool)],
       Ty::Any,
@@ -348,6 +360,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("objectHas"),
+    implemented: false,
     sig: OBJ_HAS,
     total: true,
     available_since: None,
@@ -358,6 +371,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("objectFields"),
+    implemented: false,
     sig: OBJ_FIELDS,
     total: true,
     available_since: None,
@@ -368,6 +382,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("objectValues"),
+    implemented: false,
     sig: OBJ_VALUES,
     total: true,
     available_since: None,
@@ -378,6 +393,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("objectKeysValues"),
+    implemented: false,
     sig: OBJ_KEYS_VALUES,
     total: true,
     available_since: None,
@@ -388,6 +404,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("objectHasAll"),
+    implemented: false,
     sig: OBJ_HAS,
     total: true,
     available_since: None,
@@ -398,6 +415,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("objectFieldsAll"),
+    implemented: false,
     sig: OBJ_FIELDS,
     total: true,
     available_since: None,
@@ -408,6 +426,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("objectValuesAll"),
+    implemented: false,
     sig: OBJ_VALUES,
     total: true,
     available_since: None,
@@ -418,6 +437,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("objectKeysValuesAll"),
+    implemented: false,
     sig: OBJ_KEYS_VALUES,
     total: true,
     available_since: None,
@@ -428,6 +448,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("prune"),
+    implemented: false,
     sig: sig(&[req("a", Ty::Any)], Ty::Any),
     total: true,
     available_since: Some(10),
@@ -453,6 +474,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("mapWithKey"),
+    implemented: false,
     sig: sig(&[req("func", Ty::Hof2), req("obj", Ty::Obj)], Ty::Obj),
     total: true,
     available_since: None,
@@ -463,6 +485,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("abs"),
+    implemented: true,
     sig: N_NUM_RET_NUM,
     total: true,
     available_since: None,
@@ -479,6 +502,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("sign"),
+    implemented: true,
     sig: N_NUM_RET_NUM,
     total: true,
     available_since: None,
@@ -495,6 +519,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("max"),
+    implemented: true,
     sig: sig(&[req("a", Ty::Num), req("b", Ty::Num)], Ty::Num),
     total: true,
     available_since: None,
@@ -511,6 +536,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("min"),
+    implemented: true,
     sig: sig(&[req("a", Ty::Num), req("b", Ty::Num)], Ty::Num),
     total: true,
     available_since: None,
@@ -527,6 +553,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("pow"),
+    implemented: true,
     sig: sig(&[req("x", Ty::Num), req("n", Ty::Num)], Ty::Num),
     total: true,
     available_since: None,
@@ -545,6 +572,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("exp"),
+    implemented: true,
     sig: X_NUM_RET_NUM,
     total: true,
     available_since: None,
@@ -562,6 +590,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("log"),
+    implemented: true,
     sig: X_NUM_RET_NUM,
     total: true,
     available_since: None,
@@ -580,6 +609,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("exponent"),
+    implemented: false,
     sig: X_NUM_RET_NUM,
     total: true,
     available_since: None,
@@ -600,6 +630,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("mantissa"),
+    implemented: false,
     sig: X_NUM_RET_NUM,
     total: true,
     available_since: None,
@@ -621,6 +652,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("floor"),
+    implemented: true,
     sig: X_NUM_RET_NUM,
     total: true,
     available_since: None,
@@ -641,6 +673,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("ceil"),
+    implemented: true,
     sig: X_NUM_RET_NUM,
     total: true,
     available_since: None,
@@ -661,6 +694,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("sqrt"),
+    implemented: true,
     sig: X_NUM_RET_NUM,
     total: true,
     available_since: None,
@@ -677,6 +711,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("sin"),
+    implemented: true,
     sig: X_NUM_RET_NUM,
     total: true,
     available_since: None,
@@ -691,6 +726,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("cos"),
+    implemented: true,
     sig: X_NUM_RET_NUM,
     total: true,
     available_since: None,
@@ -705,6 +741,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("tan"),
+    implemented: true,
     sig: X_NUM_RET_NUM,
     total: true,
     available_since: None,
@@ -719,6 +756,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("asin"),
+    implemented: true,
     sig: X_NUM_RET_NUM,
     total: true,
     available_since: None,
@@ -733,6 +771,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("acos"),
+    implemented: true,
     sig: X_NUM_RET_NUM,
     total: true,
     available_since: None,
@@ -747,6 +786,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("atan"),
+    implemented: true,
     sig: X_NUM_RET_NUM,
     total: true,
     available_since: None,
@@ -761,6 +801,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("round"),
+    implemented: true,
     sig: X_NUM_RET_NUM,
     total: true,
     available_since: None,
@@ -782,6 +823,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("isEven"),
+    implemented: true,
     sig: X_NUM_RET_BOOL,
     total: true,
     available_since: None,
@@ -805,6 +847,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("isOdd"),
+    implemented: true,
     sig: X_NUM_RET_BOOL,
     total: true,
     available_since: None,
@@ -828,6 +871,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("isInteger"),
+    implemented: true,
     sig: X_NUM_RET_BOOL,
     total: true,
     available_since: None,
@@ -849,6 +893,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("isDecimal"),
+    implemented: true,
     sig: X_NUM_RET_BOOL,
     total: true,
     available_since: None,
@@ -871,6 +916,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::named("mod", "mod_"),
+    implemented: false,
     sig: sig(&[req("a", Ty::NumOrStr), req("b", Ty::Any)], Ty::Any),
     total: false,
     available_since: None,
@@ -883,6 +929,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("clamp"),
+    implemented: true,
     sig: sig(&[req("x", Ty::Num), req("minVal", Ty::Num), req("maxVal", Ty::Num)], Ty::Num),
     total: true,
     available_since: Some(15),
@@ -901,6 +948,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("assertEqual"),
+    implemented: false,
     sig: sig(&[req("a", Ty::Any), req("b", Ty::Any)], Ty::True),
     total: true,
     available_since: Some(10),
@@ -913,6 +961,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("toString"),
+    implemented: false,
     sig: sig(&[req("a", Ty::Any)], Ty::Str),
     total: true,
     available_since: Some(10),
@@ -923,6 +972,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("codepoint"),
+    implemented: false,
     sig: sig(&[req("str", Ty::Str)], Ty::Uint),
     total: true,
     available_since: Some(10),
@@ -936,6 +986,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("char"),
+    implemented: false,
     sig: sig(&[req("n", Ty::Uint)], Ty::Str),
     total: true,
     available_since: Some(10),
@@ -948,6 +999,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("substr"),
+    implemented: true,
     sig: sig(&[req("str", Ty::Str), req("from", Ty::Uint), req("len", Ty::Uint)], Ty::Str),
     total: false,
     available_since: Some(10),
@@ -968,6 +1020,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("findSubstr"),
+    implemented: false,
     sig: sig(&[req("pat", Ty::Str), req("str", Ty::Str)], Ty::ArrNum),
     total: true,
     available_since: Some(10),
@@ -987,6 +1040,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("startsWith"),
+    implemented: true,
     sig: A_B_STR_RET_BOOL,
     total: true,
     available_since: Some(10),
@@ -1002,6 +1056,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("endsWith"),
+    implemented: true,
     sig: A_B_STR_RET_BOOL,
     total: true,
     available_since: Some(10),
@@ -1017,6 +1072,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("stripChars"),
+    implemented: true,
     sig: STR_CHARS_STR_RET_STR,
     total: true,
     available_since: Some(15),
@@ -1034,6 +1090,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("lstripChars"),
+    implemented: true,
     sig: STR_CHARS_STR_RET_STR,
     total: true,
     available_since: Some(15),
@@ -1050,6 +1107,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("rstripChars"),
+    implemented: true,
     sig: STR_CHARS_STR_RET_STR,
     total: true,
     available_since: Some(15),
@@ -1066,6 +1124,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("split"),
+    implemented: false,
     sig: sig(&[req("str", Ty::Str), req("c", Ty::Str)], Ty::ArrStr),
     total: true,
     available_since: Some(10),
@@ -1086,6 +1145,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("splitLimit"),
+    implemented: false,
     sig: SPLIT_LIMIT,
     total: true,
     available_since: Some(10),
@@ -1107,6 +1167,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("splitLimitR"),
+    implemented: false,
     sig: SPLIT_LIMIT,
     total: true,
     available_since: Some(19),
@@ -1124,6 +1185,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("strReplace"),
+    implemented: true,
     sig: sig(&[req("str", Ty::Str), req("from", Ty::Str), req("to", Ty::Str)], Ty::Str),
     total: true,
     available_since: Some(10),
@@ -1140,6 +1202,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("isEmpty"),
+    implemented: true,
     sig: sig(&[req("str", Ty::Str)], Ty::Bool),
     total: true,
     available_since: Some(20),
@@ -1155,6 +1218,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("asciiUpper"),
+    implemented: true,
     sig: STR_RET_STR,
     total: true,
     available_since: Some(10),
@@ -1169,6 +1233,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("asciiLower"),
+    implemented: true,
     sig: STR_RET_STR,
     total: true,
     available_since: Some(10),
@@ -1183,6 +1248,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("stringChars"),
+    implemented: false,
     sig: sig(&[req("str", Ty::Str)], Ty::ArrStr),
     total: true,
     available_since: Some(10),
@@ -1199,6 +1265,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("format"),
+    implemented: false,
     sig: sig(&[req("str", Ty::Str), req("vals", Ty::Any)], Ty::Str),
     total: true,
     available_since: None,
@@ -1209,6 +1276,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("escapeStringBash"),
+    implemented: false,
     sig: STR_RET_STR,
     total: true,
     available_since: None,
@@ -1219,6 +1287,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("escapeStringDollars"),
+    implemented: false,
     sig: STR_RET_STR,
     total: true,
     available_since: None,
@@ -1229,6 +1298,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("escapeStringJson"),
+    implemented: false,
     sig: STR_RET_STR,
     total: true,
     available_since: None,
@@ -1239,6 +1309,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("escapeStringPython"),
+    implemented: false,
     sig: STR_RET_STR,
     total: true,
     available_since: None,
@@ -1249,6 +1320,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("escapeStringXml"),
+    implemented: false,
     sig: STR_RET_STR,
     total: true,
     available_since: None,
@@ -1259,6 +1331,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("parseInt"),
+    implemented: false,
     sig: STR_RET_NUM,
     total: true,
     available_since: None,
@@ -1269,6 +1342,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("parseOctal"),
+    implemented: false,
     sig: STR_RET_NUM,
     total: true,
     available_since: None,
@@ -1279,6 +1353,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("parseHex"),
+    implemented: false,
     sig: STR_RET_NUM,
     total: true,
     available_since: None,
@@ -1289,6 +1364,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("parseJson"),
+    implemented: false,
     sig: STR_RET_ANY,
     total: true,
     available_since: None,
@@ -1299,6 +1375,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("parseYaml"),
+    implemented: false,
     sig: STR_RET_ANY,
     total: true,
     available_since: None,
@@ -1309,6 +1386,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("encodeUTF8"),
+    implemented: false,
     sig: sig(&[req("str", Ty::Str)], Ty::ArrNum),
     total: true,
     available_since: None,
@@ -1319,6 +1397,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("decodeUTF8"),
+    implemented: false,
     sig: sig(&[req("arr", Ty::ArrNum)], Ty::Str),
     total: true,
     available_since: None,
@@ -1329,6 +1408,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("manifestIni"),
+    implemented: false,
     sig: sig(&[req("ini", Ty::Obj)], Ty::Str),
     total: true,
     available_since: None,
@@ -1339,6 +1419,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("manifestPython"),
+    implemented: false,
     sig: sig(&[req("v", Ty::Any)], Ty::Str),
     total: true,
     available_since: None,
@@ -1349,6 +1430,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("manifestPythonVars"),
+    implemented: false,
     sig: sig(&[req("conf", Ty::Any)], Ty::Str),
     total: true,
     available_since: None,
@@ -1359,6 +1441,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("manifestJsonEx"),
+    implemented: false,
     sig: sig(
       &[
         req("value", Ty::Any),
@@ -1377,6 +1460,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("manifestJson"),
+    implemented: false,
     sig: MANIFEST_JSON,
     total: true,
     available_since: None,
@@ -1387,6 +1471,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("manifestJsonMinified"),
+    implemented: false,
     sig: MANIFEST_JSON,
     total: true,
     available_since: None,
@@ -1397,6 +1482,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("manifestYamlDoc"),
+    implemented: false,
     sig: sig(
       &[
         req("value", Ty::Any),
@@ -1414,6 +1500,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("manifestYamlStream"),
+    implemented: false,
     sig: sig(
       &[
         req("value", Ty::ArrAny),
@@ -1432,6 +1519,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("manifestXmlJsonml"),
+    implemented: false,
     sig: sig(&[req("value", Ty::ArrAny)], Ty::Str),
     total: true,
     available_since: None,
@@ -1442,6 +1530,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("manifestTomlEx"),
+    implemented: false,
     sig: sig(&[req("toml", Ty::Obj), req("indent", Ty::Str)], Ty::Str),
     total: true,
     available_since: None,
@@ -1452,6 +1541,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("makeArray"),
+    implemented: false,
     sig: sig(&[req("sz", Ty::Uint), req("func", Ty::Hof1)], Ty::ArrAny),
     total: true,
     available_since: None,
@@ -1462,6 +1552,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("member"),
+    implemented: false,
     sig: sig(&[req("arr", Ty::StrOrArrAny), req("x", Ty::Any)], Ty::Bool),
     total: true,
     available_since: None,
@@ -1472,6 +1563,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("count"),
+    implemented: false,
     sig: sig(&[req("arr", Ty::ArrAny), req("x", Ty::Any)], Ty::Num),
     total: true,
     available_since: None,
@@ -1482,6 +1574,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("find"),
+    implemented: false,
     sig: sig(&[req("value", Ty::Any), req("arr", Ty::ArrAny)], Ty::ArrNum),
     total: true,
     available_since: None,
@@ -1492,6 +1585,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("map"),
+    implemented: false,
     sig: ARR_HOF1,
     total: true,
     available_since: None,
@@ -1502,6 +1596,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("mapWithIndex"),
+    implemented: false,
     sig: sig(&[req("func", Ty::Hof2), req("arr", Ty::ArrAny)], Ty::ArrAny),
     total: true,
     available_since: None,
@@ -1512,6 +1607,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("filterMap"),
+    implemented: false,
     sig: sig(
       &[req("filter_func", Ty::Hof1), req("map_func", Ty::Hof1), req("arr", Ty::ArrAny)],
       Ty::ArrAny,
@@ -1525,6 +1621,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("flatMap"),
+    implemented: false,
     sig: sig(&[req("func", Ty::Hof1), req("arr", Ty::StrOrArrAny)], Ty::StrOrArrAny),
     total: true,
     available_since: None,
@@ -1535,6 +1632,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("filter"),
+    implemented: false,
     sig: ARR_HOF1,
     total: true,
     available_since: None,
@@ -1545,6 +1643,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("foldl"),
+    implemented: false,
     sig: FOLD,
     total: true,
     available_since: None,
@@ -1555,6 +1654,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("foldr"),
+    implemented: false,
     sig: FOLD,
     total: true,
     available_since: None,
@@ -1565,6 +1665,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("range"),
+    implemented: false,
     sig: sig(&[req("from", Ty::Num), req("to", Ty::Num)], Ty::ArrNum),
     total: true,
     available_since: None,
@@ -1575,6 +1676,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("repeat"),
+    implemented: false,
     sig: sig(&[req("what", Ty::StrOrArrAny), req("count", Ty::Uint)], Ty::StrOrArrAny),
     total: true,
     available_since: None,
@@ -1585,6 +1687,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("slice"),
+    implemented: false,
     sig: sig(
       &[
         req("indexable", Ty::StrOrArrAny),
@@ -1603,6 +1706,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("join"),
+    implemented: true,
     sig: sig(&[req("sep", Ty::StrOrArrAny), req("arr", Ty::ArrAny)], Ty::StrOrArrAny),
     total: false,
     available_since: None,
@@ -1613,6 +1717,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("lines"),
+    implemented: false,
     sig: sig(&[req("arr", Ty::ArrStr)], Ty::Str),
     total: true,
     available_since: None,
@@ -1623,6 +1728,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("flattenArrays"),
+    implemented: false,
     sig: sig(&[req("arr", Ty::ArrAny)], Ty::ArrAny),
     total: true,
     available_since: None,
@@ -1633,6 +1739,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("reverse"),
+    implemented: false,
     sig: sig(&[req("arr", Ty::ArrAny)], Ty::ArrAny),
     total: true,
     available_since: None,
@@ -1643,6 +1750,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("sort"),
+    implemented: false,
     sig: ARR_KEY_F,
     total: true,
     available_since: None,
@@ -1653,6 +1761,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("uniq"),
+    implemented: false,
     sig: ARR_KEY_F,
     total: true,
     available_since: None,
@@ -1663,6 +1772,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("all"),
+    implemented: false,
     sig: sig(&[req("arr", Ty::ArrBool)], Ty::Bool),
     total: true,
     available_since: None,
@@ -1673,6 +1783,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("any"),
+    implemented: false,
     sig: sig(&[req("arr", Ty::ArrBool)], Ty::Bool),
     total: true,
     available_since: None,
@@ -1683,6 +1794,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("sum"),
+    implemented: false,
     sig: sig(&[req("arr", Ty::ArrNum)], Ty::Num),
     total: true,
     available_since: None,
@@ -1693,6 +1805,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("avg"),
+    implemented: false,
     sig: sig(&[req("arr", Ty::ArrNum)], Ty::Num),
     total: true,
     available_since: None,
@@ -1703,6 +1816,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("set"),
+    implemented: false,
     sig: ARR_KEY_F,
     total: true,
     available_since: None,
@@ -1713,6 +1827,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("setInter"),
+    implemented: false,
     sig: BINARY_SET_FN,
     total: true,
     available_since: None,
@@ -1723,6 +1838,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("setUnion"),
+    implemented: false,
     sig: BINARY_SET_FN,
     total: true,
     available_since: None,
@@ -1733,6 +1849,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("setDiff"),
+    implemented: false,
     sig: BINARY_SET_FN,
     total: true,
     available_since: None,
@@ -1743,6 +1860,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("setMember"),
+    implemented: false,
     sig: sig(&[req("x", Ty::Any), req("arr", Ty::ArrAny), opt("keyF", Ty::Hof1)], Ty::Bool),
     total: true,
     available_since: None,
@@ -1753,6 +1871,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("base64"),
+    implemented: false,
     sig: sig(&[req("input", Ty::StrOrArrNum)], Ty::Str),
     total: true,
     available_since: None,
@@ -1763,6 +1882,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("base64DecodeBytes"),
+    implemented: false,
     sig: sig(&[req("str", Ty::Str)], Ty::ArrNum),
     total: true,
     available_since: None,
@@ -1773,6 +1893,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("base64Decode"),
+    implemented: false,
     sig: STR_RET_STR,
     total: true,
     available_since: None,
@@ -1783,6 +1904,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("md5"),
+    implemented: false,
     sig: sig(&[req("s", Ty::Str)], Ty::Str),
     total: true,
     available_since: None,
@@ -1793,6 +1915,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("xor"),
+    implemented: false,
     sig: X_Y_BOOL_RET_BOOL,
     total: true,
     available_since: None,
@@ -1803,6 +1926,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("xnor"),
+    implemented: false,
     sig: X_Y_BOOL_RET_BOOL,
     total: true,
     available_since: None,
@@ -1813,6 +1937,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("mergePatch"),
+    implemented: false,
     sig: sig(&[req("target", Ty::Any), req("patch", Ty::Any)], Ty::Any),
     total: true,
     available_since: None,
@@ -1823,6 +1948,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("trace"),
+    implemented: false,
     sig: sig(&[req("str", Ty::Str), req("rest", Ty::Any)], Ty::Any),
     total: true,
     available_since: None,
@@ -1834,6 +1960,7 @@ pub const FNS: [Fn; 126] = [
   // alluded to in the spec but not mentioned on the std lib page
   Fn {
     name: S::new("equals"),
+    implemented: true,
     sig: sig(&[req("x", Ty::Any), req("y", Ty::Any)], Ty::Bool),
     total: false,
     available_since: None,
@@ -1844,6 +1971,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("objectHasEx"),
+    implemented: false,
     sig: sig(&[req("obj", Ty::Obj), req("fname", Ty::Str), req("hidden", Ty::Bool)], Ty::Bool),
     total: true,
     available_since: None,

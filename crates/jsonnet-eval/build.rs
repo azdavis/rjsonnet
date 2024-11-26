@@ -6,59 +6,11 @@ use std::collections::BTreeSet;
 
 const JOINER: &str = "__";
 
-fn is_impl(s: &str) -> bool {
-  matches!(
-    s,
-    "type_"
-      | "isArray"
-      | "isBoolean"
-      | "isFunction"
-      | "isNumber"
-      | "isObject"
-      | "isString"
-      | "length"
-      | "sign"
-      | "max"
-      | "min"
-      | "pow"
-      | "abs"
-      | "exp"
-      | "log"
-      | "floor"
-      | "ceil"
-      | "sqrt"
-      | "sin"
-      | "cos"
-      | "tan"
-      | "asin"
-      | "acos"
-      | "atan"
-      | "round"
-      | "equals"
-      | "join"
-      | "isEven"
-      | "isOdd"
-      | "isInteger"
-      | "isDecimal"
-      | "clamp"
-      | "isEmpty"
-      | "asciiUpper"
-      | "asciiLower"
-      | "strReplace"
-      | "substr"
-      | "startsWith"
-      | "endsWith"
-      | "stripChars"
-      | "lstripChars"
-      | "rstripChars"
-  )
-}
-
 fn main() {
   let unique_param_lists: BTreeSet<Vec<_>> = jsonnet_std_sig::FNS.iter().map(param_names).collect();
   let get_params = unique_param_lists.iter().map(|params| mk_get_params(params));
   let call_std_arms =
-    jsonnet_std_sig::FNS.iter().filter(|func| is_impl(func.name.ident())).map(mk_call_std_arm);
+    jsonnet_std_sig::FNS.iter().filter(|func| func.implemented).map(mk_call_std_arm);
 
   let file = file!();
 
