@@ -50,6 +50,10 @@ pub struct Fn {
   pub available_since: Option<u8>,
   /// The documentation.
   pub doc: &'static str,
+  /// Some examples to show in the doc.
+  ///
+  /// A list of Jsonnet expression that should all evaluate to `true`.
+  pub examples: &'static [&'static str],
 }
 
 /// A signature for a std fn.
@@ -152,6 +156,7 @@ const BINARY_SET_FN: Sig =
   sig(&[req("a", Ty::ArrAny), req("b", Ty::ArrAny), opt("keyF", Ty::Hof1)], Ty::ArrAny);
 
 /// The std fns.
+
 pub const FNS: [Fn; 126] = [
   Fn {
     name: S::new("extVar"),
@@ -162,6 +167,7 @@ pub const FNS: [Fn; 126] = [
       If an external variable with the given name was defined, return its value. Otherwise, raise
       an error.
     "},
+    examples: &[],
   },
   Fn {
     name: S::named("type", "type_"),
@@ -186,6 +192,7 @@ pub const FNS: [Fn; 126] = [
       assert std.type(3) == "number";
       ```
     "#},
+    examples: &[],
   },
   Fn {
     name: S::new("isArray"),
@@ -202,6 +209,7 @@ pub const FNS: [Fn; 126] = [
       assert !std.isArray(4);
       ```
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("isBoolean"),
@@ -218,6 +226,7 @@ pub const FNS: [Fn; 126] = [
       assert !std.isBoolean(4);
       ```
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("isFunction"),
@@ -234,6 +243,7 @@ pub const FNS: [Fn; 126] = [
       assert !std.isFunction(4);
       ```
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("isNumber"),
@@ -250,6 +260,7 @@ pub const FNS: [Fn; 126] = [
       assert !std.isNumber([]);
       ```
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("isObject"),
@@ -266,6 +277,7 @@ pub const FNS: [Fn; 126] = [
       assert !std.isObject([]);
       ```
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("isString"),
@@ -282,6 +294,7 @@ pub const FNS: [Fn; 126] = [
       assert !std.isString({});
       ```
     "#},
+    examples: &[],
   },
   Fn {
     name: S::new("length"),
@@ -318,6 +331,7 @@ pub const FNS: [Fn; 126] = [
       assert std.length({ x:: 9, y::: 7 }) == 2;
       ```
     "#},
+    examples: &[],
   },
   Fn {
     name: S::new("get"),
@@ -330,6 +344,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       TODO
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("objectHas"),
@@ -339,6 +354,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       TODO
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("objectFields"),
@@ -348,6 +364,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       TODO
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("objectValues"),
@@ -357,6 +374,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       TODO
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("objectKeysValues"),
@@ -366,6 +384,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       TODO
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("objectHasAll"),
@@ -375,6 +394,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       TODO
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("objectFieldsAll"),
@@ -384,6 +404,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       TODO
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("objectValuesAll"),
@@ -393,6 +414,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       TODO
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("objectKeysValuesAll"),
@@ -402,6 +424,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       TODO
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("prune"),
@@ -426,6 +449,7 @@ pub const FNS: [Fn; 126] = [
       assert std.prune(null) == null;
       ```
     "#},
+    examples: &[],
   },
   Fn {
     name: S::new("mapWithKey"),
@@ -435,6 +459,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       TODO
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("abs"),
@@ -450,6 +475,7 @@ pub const FNS: [Fn; 126] = [
       assert std.abs(0) == 0;
       ```
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("sign"),
@@ -465,6 +491,7 @@ pub const FNS: [Fn; 126] = [
       assert std.sign(0) == 0;
       ```
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("max"),
@@ -480,6 +507,7 @@ pub const FNS: [Fn; 126] = [
       assert std.max(-5, 1) == 1;
       ```
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("min"),
@@ -495,6 +523,7 @@ pub const FNS: [Fn; 126] = [
       assert std.min(-5, 1) == -5;
       ```
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("pow"),
@@ -512,6 +541,7 @@ pub const FNS: [Fn; 126] = [
       assert std.pow(99, 0) == 1;
       ```
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("exp"),
@@ -528,6 +558,7 @@ pub const FNS: [Fn; 126] = [
       assert std.exp(2) == 7.38905609893065;
       ```
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("log"),
@@ -545,6 +576,7 @@ pub const FNS: [Fn; 126] = [
       assert std.log(345) == 5.84354441703136;
       ```
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("exponent"),
@@ -564,6 +596,7 @@ pub const FNS: [Fn; 126] = [
         x == std.mantissa(x) * std.pow(2, std.exponent(x))
       ```
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("mantissa"),
@@ -584,6 +617,7 @@ pub const FNS: [Fn; 126] = [
         x == std.mantissa(x) * std.pow(2, std.exponent(x))
       ```
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("floor"),
@@ -603,6 +637,7 @@ pub const FNS: [Fn; 126] = [
       assert std.floor(-2.01) == -3;
       ```
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("ceil"),
@@ -622,6 +657,7 @@ pub const FNS: [Fn; 126] = [
       assert std.ceil(-2.01) == -2;
       ```
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("sqrt"),
@@ -637,6 +673,7 @@ pub const FNS: [Fn; 126] = [
       assert std.sqrt(1) == 1;
       ```
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("sin"),
@@ -650,6 +687,7 @@ pub const FNS: [Fn; 126] = [
       assert std.sin(0.5) == 0.479425538604203;
       ```
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("cos"),
@@ -663,6 +701,7 @@ pub const FNS: [Fn; 126] = [
       assert std.cos(0.5) == 0.8775825618903728;
       ```
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("tan"),
@@ -676,6 +715,7 @@ pub const FNS: [Fn; 126] = [
       assert std.tan(0.5) == 0.5463024898437905;
       ```
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("asin"),
@@ -689,6 +729,7 @@ pub const FNS: [Fn; 126] = [
       assert std.asin(0.5) == 0.5235987755982988;
       ```
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("acos"),
@@ -702,6 +743,7 @@ pub const FNS: [Fn; 126] = [
       assert std.acos(0.5) == 1.0471975511965976;
       ```
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("atan"),
@@ -715,6 +757,7 @@ pub const FNS: [Fn; 126] = [
       assert std.atan(0.5) == 0.46364760900080615;
       ```
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("round"),
@@ -735,6 +778,7 @@ pub const FNS: [Fn; 126] = [
       assert std.round(-1.9) == -2;
       ```
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("isEven"),
@@ -757,6 +801,7 @@ pub const FNS: [Fn; 126] = [
       assert !std.isEven(5.5);
       ```
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("isOdd"),
@@ -779,6 +824,7 @@ pub const FNS: [Fn; 126] = [
       assert !std.isOdd(5.5);
       ```
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("isInteger"),
@@ -799,6 +845,7 @@ pub const FNS: [Fn; 126] = [
       assert !std.isInteger(2.0001);
       ```
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("isDecimal"),
@@ -820,6 +867,7 @@ pub const FNS: [Fn; 126] = [
       assert !std.isDecimal(-5);
       ```
     "},
+    examples: &[],
   },
   Fn {
     name: S::named("mod", "mod_"),
@@ -831,6 +879,7 @@ pub const FNS: [Fn; 126] = [
       hand side is a number, or if the left hand side is a string, it does Python-style string
       formatting with `std.format`.
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("clamp"),
@@ -848,6 +897,7 @@ pub const FNS: [Fn; 126] = [
       assert std.clamp(7, 0, 5) == 5;
       ```
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("assertEqual"),
@@ -859,6 +909,7 @@ pub const FNS: [Fn; 126] = [
 
       Returns `true` if so, else throws an error message.
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("toString"),
@@ -868,6 +919,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       Converts the given argument to a string.
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("codepoint"),
@@ -880,6 +932,7 @@ pub const FNS: [Fn; 126] = [
 
       This function is the inverse of `std.char`.
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("char"),
@@ -891,6 +944,7 @@ pub const FNS: [Fn; 126] = [
 
       This function is the inverse of `std.codepoint`.
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("substr"),
@@ -910,6 +964,7 @@ pub const FNS: [Fn; 126] = [
       assert std.substr("hello world", 6, 99) == "world";
       ```
     "#},
+    examples: &[],
   },
   Fn {
     name: S::new("findSubstr"),
@@ -928,6 +983,7 @@ pub const FNS: [Fn; 126] = [
       assert std.findSubstr("fork", "shirt") == [];
       ```
     "#},
+    examples: &[],
   },
   Fn {
     name: S::new("startsWith"),
@@ -942,6 +998,7 @@ pub const FNS: [Fn; 126] = [
       assert !std.startsWith("hi Chidi", "fork");
       ```
     "#},
+    examples: &[],
   },
   Fn {
     name: S::new("endsWith"),
@@ -956,6 +1013,7 @@ pub const FNS: [Fn; 126] = [
       assert !std.endsWith("thank you", "no");
       ```
     "#},
+    examples: &[],
   },
   Fn {
     name: S::new("stripChars"),
@@ -972,6 +1030,7 @@ pub const FNS: [Fn; 126] = [
       assert std.stripChars("cacabbbbaacc", "ac") == "bbbb";
       ```
     "#},
+    examples: &[],
   },
   Fn {
     name: S::new("lstripChars"),
@@ -987,6 +1046,7 @@ pub const FNS: [Fn; 126] = [
       assert std.lstripChars("cacabbbbaacc", "ac") == "bbbbaacc";
       ```
     "#},
+    examples: &[],
   },
   Fn {
     name: S::new("rstripChars"),
@@ -1002,6 +1062,7 @@ pub const FNS: [Fn; 126] = [
       assert std.rstripChars("cacabbbbaacc", "ac") == "cacabbbb";
       ```
     "#},
+    examples: &[],
   },
   Fn {
     name: S::new("split"),
@@ -1021,6 +1082,7 @@ pub const FNS: [Fn; 126] = [
       assert std.split("/_foo/_bar", "/_") == [ "", "foo", "bar" ];
       ```
     "#},
+    examples: &[],
   },
   Fn {
     name: S::new("splitLimit"),
@@ -1041,6 +1103,7 @@ pub const FNS: [Fn; 126] = [
       assert std.splitLimit("/_foo/_bar", "/_", 1) == [ "", "foo/_bar" ];
       ```
     "#},
+    examples: &[],
   },
   Fn {
     name: S::new("splitLimitR"),
@@ -1057,6 +1120,7 @@ pub const FNS: [Fn; 126] = [
       assert std.splitLimitR("/_foo/_bar", "/_", 1) == [ "/_foo", "bar" ];
       ```
     "#},
+    examples: &[],
   },
   Fn {
     name: S::new("strReplace"),
@@ -1072,6 +1136,7 @@ pub const FNS: [Fn; 126] = [
         == "I like to surf with my surfboard";
       ```
     "#},
+    examples: &[],
   },
   Fn {
     name: S::new("isEmpty"),
@@ -1086,6 +1151,7 @@ pub const FNS: [Fn; 126] = [
       assert !std.isEmpty("hi");
       ```
     "#},
+    examples: &[],
   },
   Fn {
     name: S::new("asciiUpper"),
@@ -1099,6 +1165,7 @@ pub const FNS: [Fn; 126] = [
       assert std.asciiUpper("100 Cats!") == "100 CATS!";
       ```
     "#},
+    examples: &[],
   },
   Fn {
     name: S::new("asciiLower"),
@@ -1112,6 +1179,7 @@ pub const FNS: [Fn; 126] = [
       assert std.asciiLower("100 Cats!") == "100 cats!";
       ```
     "#},
+    examples: &[],
   },
   Fn {
     name: S::new("stringChars"),
@@ -1127,6 +1195,7 @@ pub const FNS: [Fn; 126] = [
       assert std.stringChars("foo") == ["f", "o", "o"];
       ```
     "#},
+    examples: &[],
   },
   Fn {
     name: S::new("format"),
@@ -1136,6 +1205,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       TODO
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("escapeStringBash"),
@@ -1145,6 +1215,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       TODO
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("escapeStringDollars"),
@@ -1154,6 +1225,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       TODO
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("escapeStringJson"),
@@ -1163,6 +1235,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       TODO
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("escapeStringPython"),
@@ -1172,6 +1245,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       TODO
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("escapeStringXml"),
@@ -1181,6 +1255,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       TODO
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("parseInt"),
@@ -1190,6 +1265,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       TODO
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("parseOctal"),
@@ -1199,6 +1275,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       TODO
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("parseHex"),
@@ -1208,6 +1285,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       TODO
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("parseJson"),
@@ -1217,6 +1295,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       TODO
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("parseYaml"),
@@ -1226,6 +1305,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       TODO
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("encodeUTF8"),
@@ -1235,6 +1315,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       TODO
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("decodeUTF8"),
@@ -1244,6 +1325,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       TODO
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("manifestIni"),
@@ -1253,6 +1335,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       TODO
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("manifestPython"),
@@ -1262,6 +1345,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       TODO
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("manifestPythonVars"),
@@ -1271,6 +1355,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       TODO
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("manifestJsonEx"),
@@ -1288,6 +1373,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       TODO
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("manifestJson"),
@@ -1297,6 +1383,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       TODO
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("manifestJsonMinified"),
@@ -1306,6 +1393,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       TODO
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("manifestYamlDoc"),
@@ -1322,6 +1410,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       TODO
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("manifestYamlStream"),
@@ -1339,6 +1428,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       TODO
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("manifestXmlJsonml"),
@@ -1348,6 +1438,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       TODO
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("manifestTomlEx"),
@@ -1357,6 +1448,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       TODO
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("makeArray"),
@@ -1366,6 +1458,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       TODO
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("member"),
@@ -1375,6 +1468,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       TODO
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("count"),
@@ -1384,6 +1478,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       TODO
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("find"),
@@ -1393,6 +1488,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       TODO
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("map"),
@@ -1402,6 +1498,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       TODO
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("mapWithIndex"),
@@ -1411,6 +1508,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       TODO
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("filterMap"),
@@ -1423,6 +1521,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       TODO
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("flatMap"),
@@ -1432,6 +1531,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       TODO
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("filter"),
@@ -1441,6 +1541,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       TODO
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("foldl"),
@@ -1450,6 +1551,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       TODO
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("foldr"),
@@ -1459,6 +1561,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       TODO
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("range"),
@@ -1468,6 +1571,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       TODO
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("repeat"),
@@ -1477,6 +1581,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       TODO
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("slice"),
@@ -1494,6 +1599,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       TODO
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("join"),
@@ -1503,6 +1609,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       TODO
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("lines"),
@@ -1512,6 +1619,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       TODO
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("flattenArrays"),
@@ -1521,6 +1629,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       TODO
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("reverse"),
@@ -1530,6 +1639,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       TODO
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("sort"),
@@ -1539,6 +1649,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       TODO
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("uniq"),
@@ -1548,6 +1659,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       TODO
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("all"),
@@ -1557,6 +1669,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       TODO
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("any"),
@@ -1566,6 +1679,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       TODO
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("sum"),
@@ -1575,6 +1689,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       TODO
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("avg"),
@@ -1584,6 +1699,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       TODO
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("set"),
@@ -1593,6 +1709,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       TODO
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("setInter"),
@@ -1602,6 +1719,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       TODO
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("setUnion"),
@@ -1611,6 +1729,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       TODO
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("setDiff"),
@@ -1620,6 +1739,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       TODO
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("setMember"),
@@ -1629,6 +1749,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       TODO
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("base64"),
@@ -1638,6 +1759,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       TODO
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("base64DecodeBytes"),
@@ -1647,6 +1769,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       TODO
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("base64Decode"),
@@ -1656,6 +1779,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       TODO
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("md5"),
@@ -1665,6 +1789,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       TODO
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("xor"),
@@ -1674,6 +1799,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       TODO
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("xnor"),
@@ -1683,6 +1809,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       TODO
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("mergePatch"),
@@ -1692,6 +1819,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       TODO
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("trace"),
@@ -1701,6 +1829,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       TODO
     "},
+    examples: &[],
   },
   // alluded to in the spec but not mentioned on the std lib page
   Fn {
@@ -1711,6 +1840,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       TODO
     "},
+    examples: &[],
   },
   Fn {
     name: S::new("objectHasEx"),
@@ -1720,5 +1850,6 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       TODO
     "},
+    examples: &[],
   },
 ];
