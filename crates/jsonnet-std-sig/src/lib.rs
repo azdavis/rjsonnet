@@ -347,7 +347,8 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: Some(10),
     doc: indoc! {"
-      `std.objectHas(o, f)` returns whether the given object `o` has the field `f` given as a string.
+      `std.objectHas(o, f)` returns whether the given object `o` has the field `f` given as a
+      string.
 
       Raises an error if the arguments are not object and string respectively.
 
@@ -1223,7 +1224,8 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: Some(10),
     doc: indoc! {r#"
-      Converts the string to allow it to be embedded in XML (or HTML). The following replacements are made:
+      Converts the string to allow it to be embedded in XML (or HTML). The following replacements
+      are made:
 
       | Replace | With     |
       | ------- | -------- |
