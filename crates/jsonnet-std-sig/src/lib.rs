@@ -474,8 +474,6 @@ pub const FNS: [Fn; 126] = [
 
       The argument may have any type.
 
-      <!-- @eval-error: not yet implemented: prune -->
-
       ```jsonnet
       assert std.prune([1, [], 2, {}, 3, null]) == [1, 2, 3];
       assert std.prune({a: 3}) == {a: 3};
@@ -1045,8 +1043,6 @@ pub const FNS: [Fn; 126] = [
       `std.findSubstr(pat, str)` returns an array that contains the indexes of all occurrences
       of `pat` in `str`.
 
-      <!-- @eval-error: not yet implemented -->
-
       ```jsonnet
       assert std.findSubstr("e", "envelope") == [0, 3, 7];
       assert std.findSubstr("hi", "hi Chidi") == [0, 4];
@@ -1151,8 +1147,6 @@ pub const FNS: [Fn; 126] = [
 
       Note: Versions up to and including 0.18.0 require `c` to be a single character.
 
-      <!-- @eval-error: not yet implemented -->
-
       ```jsonnet
       assert std.split("foo/_bar", "/_") == [ "foo", "bar" ];
       assert std.split("/_foo/_bar", "/_") == [ "", "foo", "bar" ];
@@ -1173,8 +1167,6 @@ pub const FNS: [Fn; 126] = [
 
       Note: Versions up to and including 0.18.0 require `c` to be a single character.
 
-      <!-- @eval-error: not yet implemented -->
-
       ```jsonnet
       assert std.splitLimit("foo/_bar", "/_", 1) == [ "foo", "bar" ];
       assert std.splitLimit("/_foo/_bar", "/_", 1) == [ "", "foo/_bar" ];
@@ -1191,8 +1183,6 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {r#"
       `std.splitLimitR(str, c, maxsplits)` is the
       same as `std.splitLimit(str, c, maxsplits)` but will split from right to left.
-
-      <!-- @eval-error: not yet implemented -->
 
       ```jsonnet
       assert std.splitLimitR("/_foo/_bar", "/_", 1) == [ "/_foo", "bar" ];
@@ -1272,8 +1262,6 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {r#"
       Split the string into an array of strings, each containing a single codepoint.
 
-      <!-- @eval-error: not yet implemented -->
-
       ```jsonnet
       assert std.stringChars("foo") == ["f", "o", "o"];
       ```
@@ -1295,8 +1283,6 @@ pub const FNS: [Fn; 126] = [
       The string formatting follows the same rules as Python.
 
       The `%` operator can be used as a shorthand for this function.
-
-      <!-- @eval-error: not yet implemented -->
 
       ```jsonnet
       assert std.format("Hello %03d", 12) == "Hello 012";
@@ -1347,8 +1333,6 @@ pub const FNS: [Fn; 126] = [
 
       This adds quotes, escapes backslashes, and escapes unprintable characters.
 
-      <!-- @eval-error: not yet implemented -->
-
       ```jsonnet
       assert "{name: %s}" % std.escapeStringJson("Multiline\nc:\\path")
         == "{name: \"Multiline\\nc:\\\\path\"}";
@@ -1397,8 +1381,6 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {r#"
       Parses a signed decimal integer from the input string.
 
-      <!-- @eval-error: not yet implemented -->
-
       ```jsonnet
       assert std.parseInt("123") == 123;
       assert std.parseInt("-123") == -123;
@@ -1415,8 +1397,6 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {r#"
       Parses an unsigned octal integer from the input string. Initial zeroes are tolerated.
 
-      <!-- @eval-error: not yet implemented -->
-
       ```jsonnet
       assert std.parseOctal("755") == 493;
       ```
@@ -1432,8 +1412,6 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {r#"
       Parses an unsigned hexadecimal integer, from the input string. Case insensitive.
 
-      <!-- @eval-error: not yet implemented -->
-
       ```jsonnet
       assert std.parseHex("ff") == 255;
       ```
@@ -1448,8 +1426,6 @@ pub const FNS: [Fn; 126] = [
     available_since: Some(13),
     doc: indoc! {r#"
       Parses a JSON string.
-
-      <!-- @eval-error: not yet implemented -->
 
       ```jsonnet
       assert std.parseJson('{"foo": "bar"}') == { "foo": "bar" };
@@ -1474,8 +1450,6 @@ pub const FNS: [Fn; 126] = [
 
       The parser does not support YAML documents with scalar values at the root. The root node of a
       YAML document must start with either a YAML sequence or map to be successfully parsed.
-
-      <!-- @eval-error: not yet implemented -->
 
       ```jsonnet
       assert std.parseYaml("foo: bar") == { "foo": "bar" };
@@ -1519,8 +1493,6 @@ pub const FNS: [Fn; 126] = [
       containing a key/value mapping.
 
       This example:
-
-      <!-- @eval-error: not yet implemented -->
 
       ```jsonnet
       std.manifestIni({
@@ -1569,8 +1541,6 @@ pub const FNS: [Fn; 126] = [
 
       This example:
 
-      <!-- @eval-error: not yet implemented -->
-
       ```jsonnet
       std.manifestPython({
         b: ["foo", "bar"],
@@ -1606,8 +1576,6 @@ pub const FNS: [Fn; 126] = [
       Python global variables.
 
       This example:
-
-      <!-- @eval-error: not yet implemented -->
 
       ```jsonnet
       std.manifestPythonVars({
@@ -1711,8 +1679,6 @@ pub const FNS: [Fn; 126] = [
 
       This example:
 
-      <!-- @eval-error: not yet implemented: manifestYamlDoc -->
-
       ```jsonnet
       std.manifestYamlDoc(
         {
@@ -1781,8 +1747,6 @@ pub const FNS: [Fn; 126] = [
 
       This example:
 
-      <!-- @eval-error: not yet implemented: manifestYamlStream -->
-
       ```jsonnet
       std.manifestYamlStream( ["a", 1, []], indent_array_in_object=false, c_document_end=true)
       ```
@@ -1811,8 +1775,6 @@ pub const FNS: [Fn; 126] = [
       XML.
 
       This example:
-
-      <!-- @eval-error: not yet implemented -->
 
       ```jsonnet
       std.manifestXmlJsonml([
@@ -1846,8 +1808,6 @@ pub const FNS: [Fn; 126] = [
       elements). This includes the whitespace needed to avoid having all the XML on one line, which
       is meaningful in XML. In order to have whitespace in the XML output, it must be present in the
       JsonML input:
-
-      <!-- @eval-error: not yet implemented -->
 
       ```jsonnet
       std.manifestXmlJsonml([
@@ -1892,8 +1852,6 @@ pub const FNS: [Fn; 126] = [
 
       `func` is a function that takes a single parameter, the index of the element it should
       initialize.
-
-      <!-- @eval-error: not yet implemented -->
 
       ```jsonnet
       assert std.makeArray(3,function(x) x * x) == [ 0, 1, 4 ];
@@ -1995,8 +1953,6 @@ pub const FNS: [Fn; 126] = [
       `std.flatMap` can be thought of as a generalized `map`, with each element mapped to 0, 1 or
       more elements.
 
-      <!-- @eval-error: not yet implemented -->
-
       ```jsonnet
       assert std.flatMap(function(x) [x, x], [1, 2, 3])
         == [ 1, 1, 2, 2, 3, 3 ];
@@ -2034,8 +1990,6 @@ pub const FNS: [Fn; 126] = [
 
       Traverses `arr` from left to right.
 
-      <!-- @eval-error: not yet implemented -->
-
       ```jsonnet
       local cmb(ac, x) = "(%s %s)" % [ac, x];
       assert std.foldl(cmb, ["a", "b", "c"], "_")
@@ -2056,8 +2010,6 @@ pub const FNS: [Fn; 126] = [
 
       Traverses `arr` from right to left.
 
-      <!-- @eval-error: not yet implemented -->
-
       ```jsonnet
       local cmb(ac, x) = "(%s %s)" % [ac, x];
       assert std.foldr(cmb, ["a", "b", "c"], "_")
@@ -2076,8 +2028,6 @@ pub const FNS: [Fn; 126] = [
       `std.range(from, to)` returns an array of ascending numbers between `from` and `to`,
       inclusively.
 
-      <!-- @eval-error: not yet implemented -->
-
       ```jsonnet
       assert std.range(2, 6) == [2, 3, 4, 5, 6];
       ```
@@ -2093,8 +2043,6 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {r#"
       `std.repeat(what, count)` repeats an array or a string `what` a number of times specified by
       an integer `count`.
-
-      <!-- @eval-error: not yet implemented -->
 
       ```jsonnet
       assert std.repeat([1, 2, 3], 3)
@@ -2126,8 +2074,6 @@ pub const FNS: [Fn; 126] = [
 
       Note that it's recommended to use dedicated slicing syntax both for arrays and strings,
       e.g. `arr[0:4:1]` instead of `std.slice(arr, 0, 4, 1)`.
-
-      <!-- @eval-error: not yet implemented -->
 
       ```jsonnet
       assert std.slice([1, 2, 3, 4, 5, 6], 0, 4, 1) == [ 1, 2, 3, 4 ];
@@ -2180,8 +2126,6 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       Concatenate an array of arrays into a single array.
 
-      <!-- @eval-error: not yet implemented -->
-
       ```jsonnet
       assert std.flattenArrays([[1, 2], [3, 4], [[5, 6], [7, 8]]])
         == [ 1, 2, 3, 4, [ 5, 6 ], [ 7, 8 ] ];
@@ -2197,8 +2141,6 @@ pub const FNS: [Fn; 126] = [
     available_since: Some(13),
     doc: indoc! {"
       Returns the argument array reversed.
-
-      <!-- @eval-error: not yet implemented -->
 
       ```jsonnet
       assert std.reverse([2, 4, 6]) == [6, 4, 2];
@@ -2219,8 +2161,6 @@ pub const FNS: [Fn; 126] = [
 
       The optional argument `keyF` is a single argument function used to extract comparison key from
       each array element.
-
-      <!-- @eval-error: not yet implemented: sort -->
 
       ```jsonnet
       assert std.sort([5, 2, 9]) == [2, 5, 9];
@@ -2253,8 +2193,6 @@ pub const FNS: [Fn; 126] = [
 
       The optional argument `keyF` is a single argument function used to extract comparison key from
       each array element.
-
-      <!-- @eval-error: not yet implemented: uniq -->
 
       ```jsonnet
       assert std.uniq([1, 1, 1]) == [1];
@@ -2354,8 +2292,6 @@ pub const FNS: [Fn; 126] = [
 
       Note that `+` on sets will simply concatenate the arrays, possibly forming an array that is
       not a set (due to not being ordered without duplicates).
-
-      <!-- @eval-error: not yet implemented: setUnion -->
 
       ```jsonnet
       assert std.setUnion([1, 2], [2, 3]) == [ 1, 2, 3 ];
@@ -2511,8 +2447,6 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {r#"
       `std.trace(str, rest)` outputs the given string `str` to stderr and returns `rest` as the
       result.
-
-      <!-- @eval-error: not yet implemented -->
 
       ```jsonnet
       local choose(c, yes, no) =

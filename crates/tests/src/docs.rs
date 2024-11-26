@@ -10,6 +10,9 @@ fn tokens() {
 #[test]
 fn std_lib() {
   for f in jsonnet_std_sig::FNS {
+    if !f.implemented {
+      continue;
+    }
     markdown::check(f.doc);
     for example in f.examples {
       JsonnetInput::manifest(example, "true").check();
