@@ -613,7 +613,6 @@ name = "jsonnet-expr"
 version = "0.7.2"
 dependencies = [
  "always",
- "code-h2-md-map",
  "finite-float",
  "jsonnet-std-sig",
  "la-arena",
