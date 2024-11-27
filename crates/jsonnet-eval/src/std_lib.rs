@@ -268,3 +268,11 @@ pub(crate) fn rstripChars(s: &str, cs: &str) -> String {
   let cs: FxHashSet<_> = cs.chars().collect();
   s.trim_end_matches(|c| cs.contains(&c)).to_owned()
 }
+
+pub(crate) fn xor(a: bool, b: bool) -> bool {
+  a != b
+}
+
+pub(crate) fn xnor(a: bool, b: bool) -> bool {
+  a == b
+}

@@ -12,7 +12,6 @@ pub(crate) fn get_num(v: &Val, expr: ExprMust) -> Result<f64> {
   }
 }
 
-#[expect(dead_code)]
 pub(crate) fn get_bool(v: &Val, expr: ExprMust) -> Result<bool> {
   if let Val::Prim(Prim::Bool(x)) = v {
     Ok(*x)

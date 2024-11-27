@@ -2346,7 +2346,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("xor"),
-    implemented: false,
+    implemented: true,
     sig: X_Y_BOOL_RET_BOOL,
     total: true,
     available_since: Some(20),
@@ -2362,7 +2362,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("xnor"),
-    implemented: false,
+    implemented: true,
     sig: X_Y_BOOL_RET_BOOL,
     total: true,
     available_since: Some(20),
