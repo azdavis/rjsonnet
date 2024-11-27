@@ -20,12 +20,6 @@ pub trait FileSystem {
   fn is_file(&self, p: &std::path::Path) -> bool;
 }
 
-// impl<'a> FileSystem for &'a dyn FileSystem {
-//   fn is_file(&self, p: &std::path::Path) -> bool {
-//     (*self).is_file(p)
-//   }
-// }
-
 /// At least one dir.
 #[derive(Debug, Clone, Copy)]
 pub struct NonEmptyDirs<'a> {
