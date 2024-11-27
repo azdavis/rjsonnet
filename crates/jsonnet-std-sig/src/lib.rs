@@ -1163,8 +1163,14 @@ pub const FNS: [Fn; 126] = [
     available_since: Some(10),
     doc: indoc! {r#"
       Returns a copy of the string in which all ASCII letters are capitalized.
+
+      Non-ASCII letters, even those which may have a notion of upper or lower case, will not be
+      changed.
     "#},
-    examples: &[r#" std.asciiUpper("100 Cats!") == "100 CATS!" "#],
+    examples: &[
+      r#" std.asciiUpper("100 Cats!") == "100 CATS!" "#,
+      r#" std.asciiUpper("César") == "CéSAR" "#,
+    ],
   },
   Fn {
     name: S::new("asciiLower"),
@@ -1174,8 +1180,14 @@ pub const FNS: [Fn; 126] = [
     available_since: Some(10),
     doc: indoc! {r#"
       Returns a copy of the string in which all ASCII letters are lower cased.
+
+      Non-ASCII letters, even those which may have a notion of upper or lower case, will not be
+      changed.
     "#},
-    examples: &[r#" std.asciiLower("100 Cats!") == "100 cats!" "#],
+    examples: &[
+      r#" std.asciiLower("100 Cats!") == "100 cats!" "#,
+      r#" std.asciiLower("CÉSAR") == "cÉsar" "#,
+    ],
   },
   Fn {
     name: S::new("stringChars"),
