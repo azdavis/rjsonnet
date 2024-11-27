@@ -131,3 +131,30 @@ local f(b) =
   )
   .check();
 }
+
+#[test]
+fn obj_field_ty() {
+  JsonnetInput::manifest(
+    r#"
+local f(obj) =
+  assert std.isObject(obj);
+##                    ^^^ hover: object
+  if "a" in obj then
+    if std.isNumber(obj.a) then
+##                  ^^^ hover: { a: any, ... }
+      obj.a + 7
+##    ^^^ hover: { a: number, ... }
+    else
+      std.length(obj.a)
+##               ^^^ hover: { a: any, ... }
+  else
+    std.length(obj)
+##             ^^^ hover: object
+;
+
+[f({b: null}), f({a: "hello"}), f({a: 4})]
+"#,
+    "[1, 5, 11]",
+  )
+  .check();
+}

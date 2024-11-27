@@ -61,11 +61,15 @@ pub(crate) struct Fact {
 
 impl Fact {
   pub(crate) const fn partial(ty: ty::Ty) -> Self {
-    Self { and: ty, minus: ty::Ty::NEVER, partial: true }
+    Self::with_partiality(ty, true)
   }
 
   pub(crate) const fn total(ty: ty::Ty) -> Self {
-    Self { and: ty, minus: ty::Ty::NEVER, partial: false }
+    Self::with_partiality(ty, false)
+  }
+
+  pub(crate) const fn with_partiality(ty: ty::Ty, partial: bool) -> Self {
+    Self { and: ty, minus: ty::Ty::NEVER, partial }
   }
 
   pub(crate) fn and(self, tys: &mut ty::MutStore<'_>, other: Self) -> Self {

@@ -10,6 +10,7 @@ Things under "main" are not released yet.
 - Error on invalid `super` usage.
 - Error on invalid `import` with a text block.
 - Support flow typing for checking object field membership.
+- Support flow typing for checking object field types.
 
 ## v0.7.2
 

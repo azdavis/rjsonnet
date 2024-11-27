@@ -100,12 +100,12 @@ pub(crate) fn get_cond(
         Str::objectHas | Str::objectHasAll => {
           // TODO handle named params (including mixed positional/named)
           let (&[Some(obj), Some(field)], []) = (&positional[..], &named[..]) else { return };
-          let ExprData::Id(id) = ar[obj] else { return };
           let ExprData::Prim(Prim::String(field)) = &ar[field] else { return };
-          let ty = tys.get(ty::Data::Object(ty::Object {
+          let mut ty = tys.get(ty::Data::Object(ty::Object {
             known: BTreeMap::from([(field.clone(), ty::Ty::ANY)]),
             has_unknown: true,
           }));
+          let Some(id) = follow_subscripts(tys, ar, obj, &mut ty) else { return };
           ac.add(tys, id, Fact::total(ty));
         }
         _ => {}
@@ -157,7 +157,7 @@ fn get_is_ty(
   ac: &mut Facts,
   positional: &[Expr],
   named: &[(Id, Expr)],
-  ty: ty::Ty,
+  mut ty: ty::Ty,
 ) {
   let param = match (positional, named) {
     (&[Some(x)], []) => x,
@@ -169,7 +169,7 @@ fn get_is_ty(
     }
     _ => return,
   };
-  let ExprData::Id(id) = ar[param] else { return };
+  let Some(id) = follow_subscripts(tys, ar, param, &mut ty) else { return };
   ac.add(tys, id, Fact::total(ty));
 }
 
@@ -202,9 +202,8 @@ fn get_ty_eq(
     }
     _ => return,
   };
-  let ExprData::Id(id) = ar[param] else { return };
   let ExprData::Prim(Prim::String(type_str)) = &ar[type_str] else { return };
-  let ty = match *type_str {
+  let mut ty = match *type_str {
     Str::array => ty::Ty::ARRAY_ANY,
     Str::boolean => ty::Ty::BOOL,
     Str::number => ty::Ty::NUMBER,
@@ -214,6 +213,7 @@ fn get_ty_eq(
     Str::null => ty::Ty::NULL,
     _ => return,
   };
+  let Some(id) = follow_subscripts(tys, ar, param, &mut ty) else { return };
   ac.add(tys, id, Fact::total(ty));
 }
 
@@ -225,18 +225,41 @@ fn get_eq_lit(
   var: ExprMust,
   lit: ExprMust,
 ) {
-  let ExprData::Id(id) = ar[var] else { return };
-  let fact = match &ar[lit] {
+  let (mut ty, partial) = match &ar[lit] {
     ExprData::Prim(prim) => match prim {
-      Prim::Null => Fact::total(ty::Ty::NULL),
-      Prim::Bool(b) => Fact::total(if *b { ty::Ty::TRUE } else { ty::Ty::FALSE }),
-      Prim::String(_) => Fact::partial(ty::Ty::STRING),
-      Prim::Number(_) => Fact::partial(ty::Ty::NUMBER),
+      Prim::Null => (ty::Ty::NULL, false),
+      Prim::Bool(b) => (if *b { ty::Ty::TRUE } else { ty::Ty::FALSE }, false),
+      Prim::String(_) => (ty::Ty::STRING, true),
+      Prim::Number(_) => (ty::Ty::NUMBER, true),
     },
-    ExprData::Object { .. } | ExprData::ObjectComp { .. } => Fact::partial(ty::Ty::OBJECT),
-    ExprData::Array(_) => Fact::partial(ty::Ty::ARRAY_ANY),
-    ExprData::Error(_) => Fact::total(ty::Ty::NEVER),
+    ExprData::Object { .. } | ExprData::ObjectComp { .. } => (ty::Ty::OBJECT, true),
+    ExprData::Array(_) => (ty::Ty::ARRAY_ANY, true),
+    ExprData::Error(_) => (ty::Ty::NEVER, false),
     _ => return,
   };
-  ac.add(tys, id, fact);
+  let Some(id) = follow_subscripts(tys, ar, var, &mut ty) else { return };
+  ac.add(tys, id, Fact::with_partiality(ty, partial));
+}
+
+/// follow subscripts towards an id at the end, updating the ty as we go.
+fn follow_subscripts(
+  tys: &mut ty::MutStore<'_>,
+  ar: &ExprArena,
+  mut expr: ExprMust,
+  ty: &mut ty::Ty,
+) -> Option<Id> {
+  loop {
+    match ar[expr] {
+      ExprData::Subscript { on: Some(on), idx: Some(idx) } => {
+        let ExprData::Prim(Prim::String(idx)) = &ar[idx] else { return None };
+        *ty = tys.get(ty::Data::Object(ty::Object {
+          known: BTreeMap::from([(idx.clone(), *ty)]),
+          has_unknown: true,
+        }));
+        expr = on;
+      }
+      ExprData::Id(id) => return Some(id),
+      _ => return None,
+    }
+  }
 }
