@@ -1,8 +1,11 @@
 //! Generate some string/identifier names.
 
+#![expect(clippy::disallowed_methods, reason = "can panic in build script")]
+
 use jsonnet_std_sig::S;
 use quote::quote as q;
 use std::collections::{BTreeMap, BTreeSet, HashSet};
+use std::fmt::Write as _;
 
 const JOINER: &str = "__";
 
@@ -180,11 +183,17 @@ fn main() {
       if !f.examples.is_empty() {
         content.push_str("\n\n```jsonnet\n");
         for example in f.examples {
-          use std::fmt::Write as _;
-          #[expect(clippy::disallowed_methods, reason = "can panic in build script")]
-          writeln!(content, "assert {};", example.trim()).expect("should write to string");
+          writeln!(content, "assert {};", example.trim()).unwrap();
         }
         content.push_str("```\n");
+      }
+      if f.sig.params.iter().any(|p| !p.is_required()) {
+        content
+          .push_str("\nDefault values for optional parameters:\n\n| Name | Value |\n|--|--|\n");
+        for p in f.sig.params {
+          let Some(d) = p.default else { continue };
+          writeln!(content, "| `{}` | `{}` |", p.name, d).unwrap();
+        }
       }
       q! { Self::#name => #content, }
     });
