@@ -180,7 +180,6 @@ const ARR_KEY_F: Sig = sig(&[req("arr", Ty::ArrAny), KEY_F], Ty::ArrAny);
 const BINARY_SET_FN: Sig = sig(&[req("a", Ty::ArrAny), req("b", Ty::ArrAny), KEY_F], Ty::ArrAny);
 
 /// The std fns.
-
 pub const FNS: [Fn; 126] = [
   Fn {
     name: S::new("extVar"),
