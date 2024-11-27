@@ -15,15 +15,15 @@ fn main() {
   let doc: FxHashMap<_, _> = jsonnet_token::ALL
     .iter()
     .map(|tok| {
-      let mut doc = String::new();
+      let mut doc = format!("token: `{}`\n\n", tok.text);
       if tok.purposes.len() == 1 {
         let purpose = tok.purposes.first().unwrap();
         push_purpose(&mut doc, purpose);
       } else {
-        doc.push_str("This token has multiple purposes:\n\n");
+        doc.push_str("This token has multiple purposes:\n");
         for (idx, purpose) in tok.purposes.iter().enumerate() {
           use std::fmt::Write as _;
-          write!(doc, "## {}\n\n", idx + 1).unwrap();
+          write!(doc, "\n**Purpose {}**\n\n", idx + 1).unwrap();
           push_purpose(&mut doc, purpose);
         }
       }
