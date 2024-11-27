@@ -85,27 +85,15 @@ pub(crate) fn get_cond(
         return;
       }
       let ExprData::Prim(Prim::String(func_name)) = &ar[idx] else { return };
-      let ty = match *func_name {
-        Str::isArray => ty::Ty::ARRAY_ANY,
-        Str::isBoolean => ty::Ty::BOOL,
-        Str::isNumber => ty::Ty::NUMBER,
-        Str::isObject => ty::Ty::OBJECT,
-        Str::isString => ty::Ty::STRING,
-        Str::isFunction => ty::Ty::UNKNOWN_FN,
-        _ => return,
-      };
-      let param = match (&positional[..], &named[..]) {
-        (&[Some(x)], []) => x,
-        ([], &[(id, Some(x))]) => {
-          if id != Id::v {
-            return;
-          }
-          x
-        }
-        _ => return,
-      };
-      let ExprData::Id(id) = ar[param] else { return };
-      ac.add(tys, id, Fact::total(ty));
+      match *func_name {
+        Str::isArray => get_is_ty(tys, ar, ac, positional, named, ty::Ty::ARRAY_ANY),
+        Str::isBoolean => get_is_ty(tys, ar, ac, positional, named, ty::Ty::BOOL),
+        Str::isNumber => get_is_ty(tys, ar, ac, positional, named, ty::Ty::NUMBER),
+        Str::isObject => get_is_ty(tys, ar, ac, positional, named, ty::Ty::OBJECT),
+        Str::isString => get_is_ty(tys, ar, ac, positional, named, ty::Ty::STRING),
+        Str::isFunction => get_is_ty(tys, ar, ac, positional, named, ty::Ty::UNKNOWN_FN),
+        _ => {}
+      }
     }
     // the cond is itself another if expression.
     &ExprData::If { cond, yes: Some(yes), no: Some(no) } => {
@@ -144,6 +132,29 @@ pub(crate) fn get_cond(
     }
     _ => {}
   }
+}
+
+/// Handles a call to a `std.is<TY>` function.
+fn get_is_ty(
+  tys: &mut ty::MutStore<'_>,
+  ar: &ExprArena,
+  ac: &mut Facts,
+  positional: &[Expr],
+  named: &[(Id, Expr)],
+  ty: ty::Ty,
+) {
+  let param = match (positional, named) {
+    (&[Some(x)], []) => x,
+    ([], &[(id, Some(x))]) => {
+      if id != Id::v {
+        return;
+      }
+      x
+    }
+    _ => return,
+  };
+  let ExprData::Id(id) = ar[param] else { return };
+  ac.add(tys, id, Fact::total(ty));
 }
 
 /// Process `std.type($var) == "TYPE"`, where TYPE is number, string, etc.
