@@ -2,7 +2,7 @@
   "private": true,
   "name": "rjsonnet",
   "displayName": "rjsonnet",
-  "version": "0.7.2",
+  "version": "0.7.3",
   "description": "Jsonnet support implemented in Rust",
   "icon": "icon.png",
   "publisher": "azdavis",

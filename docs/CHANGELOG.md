@@ -2,7 +2,7 @@
 
 Things under "main" are not released yet.
 
-## main
+## v0.7.3
 
 - Allow `std.isFunction` and similar to learn that variables have function type.
 - Add more examples to std lib docs.
