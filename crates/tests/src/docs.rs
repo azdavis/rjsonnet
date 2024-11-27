@@ -1,22 +1,24 @@
 //! Tests to make sure the code examples in the docs work.
 
-use crate::check::{markdown, JsonnetInput};
+use crate::check::{markdown, Input, JsonnetInput};
 use jsonnet_token::Error;
 
 #[test]
 fn tokens() {
   for tok in jsonnet_token::ALL {
-    for purpose in tok.purposes {
+    for (idx, purpose) in tok.purposes.iter().enumerate() {
       let mut ex = purpose.example.trim().to_owned();
       if ex.ends_with(';') {
         ex.push_str("null");
       }
-      match purpose.outcome {
-        Ok(()) => JsonnetInput::manifest(&ex, "").check(),
-        Err(Error::Eval(e)) => JsonnetInput::eval_error(&ex, e).check(),
-        Err(Error::PreEval(e)) => JsonnetInput::pre_eval_error_one(&ex, e).check(),
-        Err(Error::StackOverflow) => {}
-      }
+      let jsonnet = match purpose.outcome {
+        Ok(()) => JsonnetInput::manifest(&ex, ""),
+        Err(Error::Eval(e)) => JsonnetInput::eval_error(&ex, e),
+        Err(Error::PreEval(e)) => JsonnetInput::pre_eval_error_one(&ex, e),
+        Err(Error::StackOverflow) => continue,
+      };
+      let path = format!("{}_{}.jsonnet", tok.text, idx);
+      Input::default().with_jsonnet(path.as_str(), jsonnet).add_all().check();
     }
   }
 }
@@ -28,8 +30,12 @@ fn std_lib() {
       continue;
     }
     markdown::check(f.doc);
-    for example in f.examples {
-      JsonnetInput::manifest(example, "true").check();
+    for (idx, &example) in f.examples.iter().enumerate() {
+      let path = format!("{}_{}.jsonnet", f.name.content(), idx);
+      Input::default()
+        .with_jsonnet(path.as_str(), JsonnetInput::manifest(example, "true"))
+        .add_all()
+        .check();
     }
   }
 }
