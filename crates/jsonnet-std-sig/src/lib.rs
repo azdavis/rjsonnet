@@ -938,6 +938,8 @@ pub const FNS: [Fn; 126] = [
       r#" std.toString("a") == "a" "#,
       r#" std.toString(123) == "123" "#,
       r#" std.toString(null) == "null" "#,
+      r#" std.toString([2, 5]) == "[2, 5]" "#,
+      r#" std.toString({a: 1}) == "{\"a\": 1}" "#,
     ],
   },
   Fn {
