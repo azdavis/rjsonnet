@@ -1,8 +1,7 @@
 //! Tests to make sure the code examples in the docs work.
 
-use jsonnet_token::Error;
-
 use crate::check::{markdown, JsonnetInput};
+use jsonnet_token::Error;
 
 #[test]
 fn tokens() {
