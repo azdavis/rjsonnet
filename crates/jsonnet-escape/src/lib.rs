@@ -140,6 +140,8 @@ where
   let prefix = st.since(prefix_start);
   if prefix.is_empty() {
     out.err(st.cur_idx(), Error::NoWhitespacePrefixForTextBlockFirstLine);
+    give_up_on_text_block(st);
+    return;
   }
   st.bump_while(|b| {
     out.byte(b);
@@ -160,6 +162,7 @@ where
     st.bump_while(is_non_nl_ws);
     if !st.eat_prefix(b"|||") {
       out.err(st.cur_idx(), Error::NoBarBarBarForTextBlockEnd);
+      give_up_on_text_block(st);
     }
     break;
   }
@@ -167,4 +170,10 @@ where
 
 fn is_non_nl_ws(b: u8) -> bool {
   matches!(b, b' ' | b'\t' | b'\r')
+}
+
+fn give_up_on_text_block(st: &mut St<'_>) {
+  while st.cur().is_some() && !st.eat_prefix(b"|||") {
+    st.bump();
+  }
 }
