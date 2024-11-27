@@ -82,8 +82,16 @@ pub struct Param {
   pub name: &'static str,
   /// Its type.
   pub ty: Ty,
-  /// Whether it is required.
-  pub required: bool,
+  /// The default value for this param. If `None`, the param is required.
+  pub default: Option<&'static str>,
+}
+
+impl Param {
+  /// Returns whether this parameter is required.
+  #[must_use]
+  pub fn is_required(&self) -> bool {
+    self.default.is_none()
+  }
 }
 
 /// A simple type.
@@ -130,17 +138,18 @@ pub enum Ty {
 }
 
 const fn req(name: &'static str, ty: Ty) -> Param {
-  Param { name, ty, required: true }
+  Param { name, ty, default: None }
 }
 
-const fn opt(name: &'static str, ty: Ty) -> Param {
-  Param { name, ty, required: false }
+const fn opt(name: &'static str, ty: Ty, default: &'static str) -> Param {
+  Param { name, ty, default: Some(default) }
 }
 
 const fn sig(params: &'static [Param], ret: Ty) -> Sig {
   Sig { params, ret }
 }
 
+const KEY_F: Param = opt("keyF", Ty::Hof1, "function(x) x");
 const V_ANY_RET_BOOL: Sig = sig(&[req("v", Ty::Any)], Ty::Bool);
 const X_NUM_RET_NUM: Sig = sig(&[req("x", Ty::Num)], Ty::Num);
 const N_NUM_RET_NUM: Sig = sig(&[req("n", Ty::Num)], Ty::Num);
@@ -161,9 +170,8 @@ const MANIFEST_JSON: Sig = sig(&[req("value", Ty::Any)], Ty::Str);
 const ARR_HOF1: Sig = sig(&[req("func", Ty::Hof1), req("arr", Ty::ArrAny)], Ty::ArrAny);
 const FOLD: Sig =
   sig(&[req("func", Ty::Hof2), req("arr", Ty::ArrAny), req("init", Ty::Any)], Ty::Any);
-const ARR_KEY_F: Sig = sig(&[req("arr", Ty::ArrAny), opt("keyF", Ty::Hof1)], Ty::ArrAny);
-const BINARY_SET_FN: Sig =
-  sig(&[req("a", Ty::ArrAny), req("b", Ty::ArrAny), opt("keyF", Ty::Hof1)], Ty::ArrAny);
+const ARR_KEY_F: Sig = sig(&[req("arr", Ty::ArrAny), KEY_F], Ty::ArrAny);
+const BINARY_SET_FN: Sig = sig(&[req("a", Ty::ArrAny), req("b", Ty::ArrAny), KEY_F], Ty::ArrAny);
 
 /// The std fns.
 
@@ -332,7 +340,12 @@ pub const FNS: [Fn; 126] = [
     name: S::new("get"),
     implemented: false,
     sig: sig(
-      &[req("o", Ty::Obj), req("f", Ty::Str), opt("default", Ty::Any), opt("inc_hidden", Ty::Bool)],
+      &[
+        req("o", Ty::Obj),
+        req("f", Ty::Str),
+        opt("default", Ty::Any, "null"),
+        opt("inc_hidden", Ty::Bool, "true"),
+      ],
       Ty::Any,
     ),
     total: true,
@@ -1511,8 +1524,8 @@ pub const FNS: [Fn; 126] = [
       &[
         req("value", Ty::Any),
         req("indent", Ty::Str),
-        opt("newline", Ty::Str),
-        opt("key_val_sep", Ty::Str),
+        opt("newline", Ty::Str, "\"\\n\""),
+        opt("key_val_sep", Ty::Str, ": "),
       ],
       Ty::Str,
     ),
@@ -1564,8 +1577,8 @@ pub const FNS: [Fn; 126] = [
     sig: sig(
       &[
         req("value", Ty::Any),
-        opt("indent_array_in_object", Ty::Bool),
-        opt("quote_keys", Ty::Bool),
+        opt("indent_array_in_object", Ty::Bool, "false"),
+        opt("quote_keys", Ty::Bool, "true"),
       ],
       Ty::Str,
     ),
@@ -1625,9 +1638,9 @@ pub const FNS: [Fn; 126] = [
     sig: sig(
       &[
         req("value", Ty::ArrAny),
-        opt("indent_array_in_object", Ty::Bool),
-        opt("c_document_end", Ty::Bool),
-        opt("quote_keys", Ty::Bool),
+        opt("indent_array_in_object", Ty::Bool, "false"),
+        opt("c_document_end", Ty::Bool, "false"),
+        opt("quote_keys", Ty::Bool, "true"),
       ],
       Ty::Str,
     ),
@@ -2273,7 +2286,7 @@ pub const FNS: [Fn; 126] = [
   Fn {
     name: S::new("setMember"),
     implemented: false,
-    sig: sig(&[req("x", Ty::Any), req("arr", Ty::ArrAny), opt("keyF", Ty::Hof1)], Ty::Bool),
+    sig: sig(&[req("x", Ty::Any), req("arr", Ty::ArrAny), KEY_F], Ty::Bool),
     total: true,
     available_since: Some(10),
     doc: indoc! {"

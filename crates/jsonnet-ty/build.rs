@@ -172,7 +172,7 @@ fn mk_ty(ty: Ty) -> proc_macro2::TokenStream {
 fn mk_param(param: jsonnet_std_sig::Param) -> proc_macro2::TokenStream {
   let id = ident(param.name);
   let ty = mk_ty(param.ty);
-  let required = param.required;
+  let required = param.is_required();
   q! {
     Param {
       id: Id::#id,

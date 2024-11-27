@@ -190,7 +190,7 @@ fn main() {
     });
     let mut tmp = BTreeMap::<usize, BTreeSet<&str>>::new();
     for f in jsonnet_std_sig::FNS {
-      let n = f.sig.params.iter().filter(|x| x.required).count();
+      let n = f.sig.params.iter().filter(|param| param.is_required()).count();
       tmp.entry(n).or_default().insert(f.name.ident());
     }
     let required_params_count_arms = tmp.iter().map(|(&n, s)| {
