@@ -4,8 +4,8 @@
 
 use crate::error::{self, Error, Result};
 use crate::{exec, Cx};
-use jsonnet_expr::{ExprMust, Prim, Str};
-use jsonnet_val::jsonnet::{Array, Fn, Val};
+use jsonnet_expr::{ExprMust, Prim, Str, Visibility};
+use jsonnet_val::jsonnet::{Array, Fn, Object, Val};
 use rustc_hash::FxHashSet;
 
 pub(crate) fn type_(x: &Val) -> Str {
@@ -275,4 +275,20 @@ pub(crate) fn xor(a: bool, b: bool) -> bool {
 
 pub(crate) fn xnor(a: bool, b: bool) -> bool {
   a == b
+}
+
+pub(crate) fn objectHas(o: &Object, f: &Str) -> bool {
+  o.get_field(f).is_some_and(|(vis, _)| matches!(vis, Visibility::Default | Visibility::Visible))
+}
+
+pub(crate) fn objectHasAll(o: &Object, f: &Str) -> bool {
+  o.get_field(f).is_some()
+}
+
+pub(crate) fn objectHasEx(o: &Object, f: &Str, hidden: bool) -> bool {
+  if hidden {
+    objectHasAll(o, f)
+  } else {
+    objectHas(o, f)
+  }
 }

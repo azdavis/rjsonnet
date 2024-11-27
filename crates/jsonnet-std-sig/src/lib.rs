@@ -162,7 +162,7 @@ const STR_RET_NUM: Sig = sig(&[req("str", Ty::Str)], Ty::Num);
 const STR_RET_ANY: Sig = sig(&[req("str", Ty::Str)], Ty::Any);
 const SPLIT_LIMIT: Sig =
   sig(&[req("str", Ty::Str), req("c", Ty::Str), req("maxsplits", Ty::Num)], Ty::ArrStr);
-const OBJ_HAS: Sig = sig(&[req("o", Ty::Obj), req("f", Ty::Str)], Ty::Bool);
+const OBJ_HAS: Sig = sig(&[req("o", Ty::Obj), req("f", Ty::StrInterned)], Ty::Bool);
 const OBJ_FIELDS: Sig = sig(&[req("o", Ty::Obj)], Ty::ArrStr);
 const OBJ_VALUES: Sig = sig(&[req("o", Ty::Obj)], Ty::ArrAny);
 const OBJ_KEYS_VALUES: Sig = sig(&[req("o", Ty::Obj)], Ty::ArrKv);
@@ -363,7 +363,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("objectHas"),
-    implemented: false,
+    implemented: true,
     sig: OBJ_HAS,
     total: true,
     available_since: Some(10),
@@ -432,7 +432,7 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("objectHasAll"),
-    implemented: false,
+    implemented: true,
     sig: OBJ_HAS,
     total: true,
     available_since: Some(10),
@@ -2453,8 +2453,11 @@ pub const FNS: [Fn; 126] = [
   },
   Fn {
     name: S::new("objectHasEx"),
-    implemented: false,
-    sig: sig(&[req("obj", Ty::Obj), req("fname", Ty::Str), req("hidden", Ty::Bool)], Ty::Bool),
+    implemented: true,
+    sig: sig(
+      &[req("obj", Ty::Obj), req("fname", Ty::StrInterned), req("hidden", Ty::Bool)],
+      Ty::Bool,
+    ),
     total: true,
     available_since: None,
     doc: indoc! {"

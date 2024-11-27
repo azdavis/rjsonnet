@@ -783,7 +783,7 @@ pub const ALL: [Token; 51] = [
           assert "foo" in { foo: 3 };
           assert !("bar" in { foo: 3 });
         "#},
-        outcome: Err(Error::Eval("not yet implemented: objectHasAll")),
+        outcome: Ok(()),
       },
     ],
   },

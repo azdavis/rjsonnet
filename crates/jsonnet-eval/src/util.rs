@@ -35,7 +35,6 @@ pub(crate) fn get_arr(v: &Val, expr: ExprMust) -> Result<&Array> {
   }
 }
 
-#[expect(dead_code)]
 pub(crate) fn get_obj(v: &Val, expr: ExprMust) -> Result<&Object> {
   if let Val::Object(o) = v {
     Ok(o)
