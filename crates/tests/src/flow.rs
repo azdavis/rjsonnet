@@ -94,3 +94,40 @@ local bad(f) =
 "#;
   JsonnetInput::eval_error(thing, "not a fn").check();
 }
+
+#[test]
+fn obj_field_in() {
+  JsonnetInput::manifest(
+    r#"
+local f(obj) =
+  assert std.isObject(obj);
+  if "foo" in obj then
+##            ^^^ hover: object
+    obj.foo
+##  ^^^ hover: { foo: any, ... }
+  else
+    std.length(obj);
+##             ^^^ hover: object
+
+f({thing: 5}) + f({foo: 2})
+"#,
+    "3",
+  )
+  .check();
+}
+
+#[test]
+fn obj_field_in_known() {
+  JsonnetInput::manifest(
+    r#"
+local f(b) =
+  local obj = if b then { foo: 3 } else {};
+  if "foo" in obj then obj.foo else 4;
+##                     ^^^ hover: { foo: number }
+
+[f(true), f(false)]
+"#,
+    "[3, 4]",
+  )
+  .check();
+}

@@ -2,6 +2,7 @@
 
 use crate::{Data, MutStore, Object, Prim, Ty, Union};
 use always::always;
+use std::collections::{BTreeMap, BTreeSet};
 
 /// Returns the type that is BOTH x AND y.
 ///
@@ -28,17 +29,25 @@ pub fn and(tys: &mut MutStore<'_>, x: Ty, y: Ty) -> Ty {
       tys.get(Data::Array(elem))
     }
     (Data::Object(x), Data::Object(y)) => {
-      let mut known = x.known.clone();
-      let y_known = y.known.clone();
-      let has_unknown = x.has_unknown && y.has_unknown;
-      for (name, x) in &mut known {
-        let Some(&y) = y_known.get(name) else { continue };
-        *x = and(tys, *x, y);
+      if definitely_lacks(x, y) || definitely_lacks(y, x) {
+        // NOTE: we DO return never if the types cannot possibly intersect. this happens when one
+        // object with no unknown fields lacks a known field on the other object.
+        return Ty::NEVER;
+      }
+      let x = x.clone();
+      let y = y.clone();
+      let keys: BTreeSet<_> = x.known.keys().chain(y.known.keys()).collect();
+      let mut known = BTreeMap::<jsonnet_expr::Str, Ty>::new();
+      for key in keys {
+        let &x = x.known.get(key).unwrap_or(&Ty::ANY);
+        let &y = y.known.get(key).unwrap_or(&Ty::ANY);
+        let ty = and(tys, x, y);
+        always!(known.insert(key.clone(), ty).is_none());
         // NOTE: we do NOT return never even if a field has type never. this is because the language
         // is lazy - we can have a lazy field of type never and not witness the never-ness if we
         // don't access that field. it's a little wonky.
       }
-      tys.get(Data::Object(Object { known, has_unknown }))
+      tys.get(Data::Object(Object { known, has_unknown: x.has_unknown && y.has_unknown }))
     }
     (Data::Fn(_), Data::Fn(_)) => {
       // we could almost certainly be more permissive here, but this case is probably rare to run
@@ -49,6 +58,11 @@ pub fn and(tys: &mut MutStore<'_>, x: Ty, y: Ty) -> Ty {
     (_, Data::Union(ys)) => union_and(tys, ys.clone(), x),
     _ => Ty::NEVER,
   }
+}
+
+/// returns whether the first object is known to definitely lack w.r.t. the second.
+fn definitely_lacks(x: &Object, y: &Object) -> bool {
+  !x.has_unknown && y.known.keys().any(|k| !x.known.contains_key(k))
 }
 
 /// and distributes across or:

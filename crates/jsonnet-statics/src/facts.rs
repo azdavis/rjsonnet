@@ -5,10 +5,14 @@
 //! - `std.isTY($var)` where TY is one of Number, String, Boolean, Array, Object, or Function
 //! - `std.type($var) == "S"` where S is one of number, string, boolean, array, object, function, or
 //!   null
+//! - `std.objectHas(All)($var, "FIELD")` where FIELD is a field name
 //! - `$var == LIT` where LIT is some literal (`null`, `3`, `"hi"`, `false`, etc)
 //!
-//! notably, cannot do `local isNumber = std.isNumber` beforehand, must literally get the field off
-//! `std`
+//! caveats:
+//!
+//! - cannot do `local isNumber = std.isNumber` beforehand, must literally get the field off
+//!   `std`
+//! - support for named params to fns may be incomplete
 //!
 //! on the bright side:
 //!
@@ -16,6 +20,7 @@
 //!   to)
 //! - can chain the facts with `a || b` (or `if a then true else b`, which is what `||`
 //!   desugars to); when both a and b are about the same variable, will union the types
+//! - "FIELD" in $var desugars to a call to `std.objectHasAll`, so that works
 //! - checking we get from `std` is NOT syntactic, we do an env lookup. so we won't trick this by
 //!   doing `local std = wtf` beforehand, and also it'll still work with `local foo = std` and then
 //!   asserting with `foo.isTY` etc.
@@ -23,6 +28,7 @@
 use crate::scope::{Fact, Facts, Scope};
 use jsonnet_expr::{Expr, ExprArena, ExprData, ExprMust, Id, Prim, Str};
 use jsonnet_ty as ty;
+use std::collections::BTreeMap;
 
 /// Collects facts that are always true in the expression because otherwise the expression diverges
 /// (i.e. it `error`s).
@@ -91,6 +97,17 @@ pub(crate) fn get_cond(
         Str::isObject => get_is_ty(tys, ar, ac, positional, named, ty::Ty::OBJECT),
         Str::isString => get_is_ty(tys, ar, ac, positional, named, ty::Ty::STRING),
         Str::isFunction => get_is_ty(tys, ar, ac, positional, named, ty::Ty::UNKNOWN_FN),
+        Str::objectHas | Str::objectHasAll => {
+          // TODO handle named params (including mixed positional/named)
+          let (&[Some(obj), Some(field)], []) = (&positional[..], &named[..]) else { return };
+          let ExprData::Id(id) = ar[obj] else { return };
+          let ExprData::Prim(Prim::String(field)) = &ar[field] else { return };
+          let ty = tys.get(ty::Data::Object(ty::Object {
+            known: BTreeMap::from([(field.clone(), ty::Ty::ANY)]),
+            has_unknown: true,
+          }));
+          ac.add(tys, id, Fact::total(ty));
+        }
         _ => {}
       }
     }

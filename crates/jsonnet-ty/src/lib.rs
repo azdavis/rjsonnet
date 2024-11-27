@@ -117,6 +117,8 @@ pub enum Prim {
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Object {
   /// The known fields.
+  ///
+  /// TODO do we need to handle hidden/visible fields at the type level?
   pub known: BTreeMap<Str, Ty>,
   /// Whether this has unknown (dynamic) fields. For example, this guy does:
   /// ```jsonnet
