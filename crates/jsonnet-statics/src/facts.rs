@@ -2,8 +2,7 @@
 //!
 //! Each fact about a variable `$var` must be one of:
 //!
-//! - `std.FUNC($var)` where FUNC is one of `isNumber`, `isString`, `isBoolean`, `isArray`,
-//!   `isObject`, or `isFunction`
+//! - `std.isTY($var)` where TY is one of Number, String, Boolean, Array, Object, or Function
 //! - `std.type($var) == "S"` where S is one of number, string, boolean, array, object, function, or
 //!   null
 //! - `$var == LIT` where LIT is some literal (`null`, `3`, `"hi"`, `false`, etc)
@@ -19,7 +18,7 @@
 //!   desugars to); when both a and b are about the same variable, will union the types
 //! - checking we get from `std` is NOT syntactic, we do an env lookup. so we won't trick this by
 //!   doing `local std = wtf` beforehand, and also it'll still work with `local foo = std` and then
-//!   asserting with `foo.isTYPE` etc.
+//!   asserting with `foo.isTY` etc.
 
 use crate::scope::{Fact, Facts, Scope};
 use jsonnet_expr::{Expr, ExprArena, ExprData, ExprMust, Id, Prim, Str};
@@ -134,7 +133,7 @@ pub(crate) fn get_cond(
   }
 }
 
-/// Handles a call to a `std.is<TY>` function.
+/// Handles a call to a `std.isTY` function.
 fn get_is_ty(
   tys: &mut ty::MutStore<'_>,
   ar: &ExprArena,
