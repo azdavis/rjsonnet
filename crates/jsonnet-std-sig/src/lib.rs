@@ -351,8 +351,8 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: Some(18),
     doc: indoc! {"
-      `std.get(o, f, default=null, inc_hidden=true)` returns the object `o`'s field `f` if it exists
-      or `default` value otherwise. `inc_hidden` controls whether to include hidden fields.
+      Returns the object `o`'s field `f` if it exists or `default` value otherwise. `inc_hidden`
+      controls whether to include hidden fields.
     "},
     examples: &[
       r#" std.get({hi: 4}, "hi", 3) == 4 "#,
@@ -368,10 +368,7 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: Some(10),
     doc: indoc! {"
-      `std.objectHas(o, f)` returns whether the given object `o` has the field `f` given as a
-      string.
-
-      Raises an error if the arguments are not object and string respectively.
+      Returns whether the given object `o` has the field `f`.
 
       Returns `false` if the field is hidden.
     "},
@@ -522,11 +519,10 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: Some(10),
     doc: indoc! {"
-      `std.mapWithKey(func, obj)` applies the given `func` to all fields of the given `obj`, also
-      passing the field name.
+      Applies the given `func` to all fields of the given `obj`, also passing the field name.
 
-      The function `func` is expected to take the field name as the first parameter and the field
-      value as the second.
+      `func` is expected to take the field name as the first parameter and the field value as the
+      second.
     "},
     examples: &[
       indoc! {r#"
@@ -589,7 +585,7 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: None,
     doc: indoc! {"
-      `std.pow(x, y)` returns $x^y$, i.e. $x$ to the $y$ power.
+      Returns $x^n$, i.e. $x$ to the $n$ power.
     "},
     examples: &[
       "std.pow(2, 3) == 8",
@@ -606,7 +602,7 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: None,
     doc: indoc! {r"
-      `std.exp(x)` returns $e^x$, i.e. $e$ to the $x$ power, where
+      Returns $e^x$, i.e. $e$ to the $x$ power, where
       [$e \approx 2.71828$](<https://en.wikipedia.org/wiki/E_(mathematical_constant)>).
     "},
     examples: &[
@@ -622,7 +618,7 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: None,
     doc: indoc! {r"
-      `std.log(x)` returns the natural logarithm of $x$,
+      Returns the natural logarithm of $x$,
       i.e. the solution $y$ in $e^y = x$, where
       [$e \approx 2.71828$](<https://en.wikipedia.org/wiki/E_(mathematical_constant)>).
     "},
@@ -639,8 +635,7 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: None,
     doc: indoc! {r"
-      `std.exponent(x)` returns the integer exponent of the IEEE754 64-bit floating point number
-      `x`.
+      Returns the integer exponent of the IEEE754 64-bit floating point number `x`.
 
       This is the integer $b$ in the solution of $x = a \times 2^b$.
     "},
@@ -658,8 +653,8 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: None,
     doc: indoc! {"
-      `std.mantissa(x)` returns the significand, also called the mantissa, of the IEEE754
-      64-bit floating point number `x`.
+      Returns the significand, also called the mantissa, of the IEEE754 64-bit floating point
+      number `x`.
 
       This is the number $a$ in the solution of $x = a \times 2^b$ where $b$ is an integer.
     "},
@@ -911,7 +906,7 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: Some(15),
     doc: indoc! {"
-      `std.clamp(x, minVal, maxVal)` clamps a value to fit within the range `[minVal, maxVal]`.
+      Clamps a value to fit within the range `[minVal, maxVal]`.
 
       Equivalent to `std.max(minVal, std.min(x, maxVal))`.
     "},
@@ -924,7 +919,7 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: Some(10),
     doc: indoc! {"
-      `std.assertEqual(a, b)` ensures that `a == b` holds.
+      Ensures that `a == b` holds.
 
       Returns `true` if so, else throws an error message.
     "},
@@ -987,10 +982,10 @@ pub const FNS: [Fn; 126] = [
     total: false,
     available_since: Some(10),
     doc: indoc! {"
-      `std.substr(str, from, len)` returns a string that is the part of `s` that starts at
-      offset `from` and is `len` codepoints long.
+      Returns a string that is the part of `str` that starts at offset `from` and is `len`
+      codepoints long.
 
-      If the string `s` is shorter than `from + len`, returns the suffix starting at position
+      If the string `str` is shorter than `from + len`, returns the suffix starting at position
       `from`.
     "},
     examples: &[
@@ -1006,8 +1001,7 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: Some(10),
     doc: indoc! {"
-      `std.findSubstr(pat, str)` returns an array that contains the indexes of all occurrences
-      of `pat` in `str`.
+      Returns an array that contains the indexes of all occurrences of `pat` in `str`.
     "},
     examples: &[
       r#" std.findSubstr("e", "envelope") == [0, 3, 7] "#,
@@ -1022,7 +1016,7 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: Some(10),
     doc: indoc! {r#"
-      `std.startsWith(a, b)` returns whether the string `a` is prefixed by the string `b`.
+      Returns whether the string `a` is prefixed by the string `b`.
     "#},
     examples: &[
       r#" std.startsWith("hi Chidi", "hi") "#,
@@ -1036,7 +1030,7 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: Some(10),
     doc: indoc! {r#"
-      `std.endsWith(a, b)` returns whether the string `a` is suffixed by the string `b`.
+      Returns whether the string `a` is suffixed by the string `b`.
     "#},
     examples: &[r#" std.endsWith("thank you", "you") "#, r#" !std.endsWith("thank you", "no") "#],
   },
@@ -1047,8 +1041,8 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: Some(15),
     doc: indoc! {r#"
-      `std.stripChars(str, chars)` removes characters `chars` from the beginning and from the end
-      of `str`.
+      Removes characters from the string `chars`, treated as a set of characters, from the beginning
+      and end of `str`.
     "#},
     examples: &[
       r#" std.stripChars(" test test test ", " ") == "test test test" "#,
@@ -1063,7 +1057,8 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: Some(15),
     doc: indoc! {r#"
-      `std.lstripChars(str, chars)` removes characters `chars` from the beginning of `str`.
+      Removes characters from the string `chars`, treated as a set of characters, from the beginning
+      of `str`.
     "#},
     examples: &[
       r#" std.lstripChars(" test test test ", " ") == "test test test " "#,
@@ -1078,7 +1073,8 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: Some(15),
     doc: indoc! {r#"
-      `std.rstripChars(str, chars)` removes characters `chars` from the end of `str`.
+      Removes characters from the string `chars`, treated as a set of characters, from the end
+      of `str`.
     "#},
     examples: &[
       r#" std.rstripChars(" test test test ", " ") == " test test test" "#,
@@ -1093,8 +1089,7 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: Some(10),
     doc: indoc! {r#"
-      `std.split(str, c)` splits the string `str` into an array of strings, divided by the
-      string `c`.
+      Splits the string `str` into an array of strings, divided by the string `c`.
 
       Note: Versions up to and including 0.18.0 require `c` to be a single character.
     "#},
@@ -1110,9 +1105,9 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: Some(10),
     doc: indoc! {r#"
-      `std.splitLimit(str, c, maxsplits)` is the same as `std.split(str, c)` but will stop
-      after `maxsplits` splits, thereby the largest array it will return has
-      length `maxsplits + 1`. A limit of `-1` means unlimited.
+      Identical to `std.split(str, c)`, but will stop after `maxsplits` splits, thereby the largest
+      array it will return has length `maxsplits + 1`. A limit of `-1` means unlimited, and is identical to
+      `std.split(str, c)`.
 
       Note: Versions up to and including 0.18.0 require `c` to be a single character.
     "#},
@@ -1128,8 +1123,7 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: Some(19),
     doc: indoc! {r#"
-      `std.splitLimitR(str, c, maxsplits)` is the same as
-      `std.splitLimit(str, c, maxsplits)` but will split from right to left.
+      Identical to `std.splitLimit(str, c, maxsplits)`, but will split from right to left.
     "#},
     examples: &[r#" std.splitLimitR("/foo/bar", "/", 1) == ["/foo", "bar"] "#],
   },
@@ -1140,8 +1134,7 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: Some(10),
     doc: indoc! {r#"
-      `std.strReplace(str, from, to)` returns a copy of the string `str` in which all occurrences
-      of string `from` have been replaced with string `to`.
+      Replaces all occurrences of string `from` with string `to` in `str`.
     "#},
     examples: &[indoc! {r#"
       std.strReplace("I like to skate with my skateboard", "skate", "surf")
@@ -1207,7 +1200,7 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: Some(10),
     doc: indoc! {r#"
-      `std.format(str, vals)` format the string `str` using the values in `vals`.
+      Formats the string `str` using the values in `vals`.
 
       The `vals` can be an array, an object, or in other cases are treated as if they were provided
       in a singleton array.
@@ -1532,14 +1525,12 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: Some(10),
     doc: indoc! {r#"
-      `std.manifestJsonEx(value, indent, newline, key_val_sep)` convert the given object to a JSON
-      form.
+      Converts the given object to a JSON form.
 
       `indent` is a string containing one or more whitespace characters that are used for
       indentation.
 
-      `newline` is by default `"\n"` and is inserted where a newline would normally be used to break
-      long lines.
+      `newline` is inserted where a newline would normally be used to break long lines.
 
       `key_val_sep` is used to separate the key and value of an object field.
     "#},
@@ -1585,8 +1576,7 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: Some(10),
     doc: indoc! {r#"
-      `std.manifestYamlDoc(value, indent_array_in_object=false, quote_keys=true)` convert the given
-      value to a YAML form.
+      Converts the given value to a YAML form.
 
       Note that `manifestJson` could also be used for this purpose, because any JSON is also valid
       YAML. But this function will produce more canonical-looking YAML.
@@ -1753,7 +1743,7 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: None,
     doc: indoc! {"
-      `std.manifestTomlEx(toml, indent)` convert the given `toml` to a TOML form.
+      Converts the given `toml` to a TOML form.
 
       `indent` is a string containing one or more whitespace characters that are used for
       indentation.
@@ -1767,8 +1757,7 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: Some(10),
     doc: indoc! {"
-      `std.makeArray(sz, func)` creates a new array of `sz` elements by calling `func` to initialize
-      each element.
+      Creates a new array of `sz` elements by calling `func` to initialize each element.
 
       `func` is a function that takes a single parameter, the index of the element it should
       initialize.
@@ -1782,7 +1771,7 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: Some(15),
     doc: indoc! {"
-      `std.member(arr, x)` returns whether `x` occurs in `arr`.
+      Returns whether `x` occurs in `arr`.
 
       Argument `arr` may be an array or a string.
     "},
@@ -1815,8 +1804,7 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: Some(10),
     doc: indoc! {"
-      `std.find(value, arr)` returns an array that contains the indexes of all occurrences of
-      `value` in `arr`.
+      Returns an array that contains the indexes of all occurrences of `value` in `arr`.
     "},
     examples: &[
       r#" std.find(2, [1, 2]) == [0] "#,
@@ -1831,7 +1819,7 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: Some(10),
     doc: indoc! {"
-      `std.map(func, arr)` applies the given `func` to every element of `arr` to form a new array.
+      Applies the given `func` to every element of `arr` to form a new array.
     "},
     examples: &[
       r#" std.map(function(x) x + 1, [2, 4]) == [3, 5] "#,
@@ -1865,8 +1853,7 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: Some(10),
     doc: indoc! {"
-      `std.filterMap(filter_func, map_func, arr)` first filters with `filter_func`, then maps
-      with `map_func`, the given array `arr`.
+      First filters with `filter_func`, then maps with `map_func`, the given array `arr`.
     "},
     examples: &[indoc! {"
       std.filterMap(
@@ -1886,16 +1873,14 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: Some(10),
     doc: indoc! {r#"
-      `std.flatMap(func, arr)` applies the given function to every element of `arr` to form a new
-      array then flatten the result.
+      Applies the given function to every element of `arr`, then flattens the result.
 
       The argument `arr` must be an array or a string.
 
       - If `arr` is an array, `func` must return an array.
       - If `arr` is a string, `func` must return a string.
 
-      `std.flatMap` can be thought of as a generalized `map`, with each element mapped to 0, 1 or
-      more elements.
+      Can be thought of as a generalized `map`, with each element mapped to 0, 1 or more elements.
     "#},
     examples: &[
       indoc! {"
@@ -1923,8 +1908,8 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: Some(10),
     doc: indoc! {"
-      `std.filter(func, arr)` return a new array containing all the elements of `arr` for which the
-      `func` function returns `true`.
+      Returns a new array containing all the elements of `arr` for which the `func` function returns
+      `true`.
     "},
     examples: &[" std.filter(function(x) x > 3, [1, 6, 2, 8, 3, 8]) == [6, 8, 8] "],
   },
@@ -1935,8 +1920,8 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: Some(10),
     doc: indoc! {r#"
-      `std.foldl(func, arr, init)` calls the function `func` on the result of the previous function
-      call and each array element of `arr`, or `init` in the case of the initial element.
+      Calls the function `func` on the result of the previous function call and each array element
+      of `arr`, or `init` in the case of the initial element.
 
       Traverses `arr` from left to right.
     "#},
@@ -1952,8 +1937,8 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: Some(10),
     doc: indoc! {r#"
-      `std.foldr(func, arr, init)` calls the function `func` on the result of the previous function
-      call and each array element of `arr`, or `init` in the case of the initial element.
+      Calls the function `func` on the result of the previous function call and each array element
+      of `arr`, or `init` in the case of the initial element.
 
       Traverses `arr` from right to left.
     "#},
@@ -1969,8 +1954,7 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: Some(10),
     doc: indoc! {"
-      `std.range(from, to)` returns an array of ascending numbers between `from` and `to`,
-      inclusively.
+      Returns an array of ascending numbers between `from` and `to`, inclusively.
 
       Raises if `from` or `to` are not integers.
     "},
@@ -1987,8 +1971,7 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: Some(15),
     doc: indoc! {r#"
-      `std.repeat(what, count)` repeats an array or a string `what` a number of times specified by
-      an integer `count`.
+      Repeats an array or a string `what` a number of times specified by an integer `count`.
     "#},
     examples: &[
       r#" std.repeat([1, 2], 3) == [1, 2, 1, 2, 1, 2] "#,
@@ -2010,8 +1993,8 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: Some(10),
     doc: indoc! {r#"
-      `std.slice(indexable, index, end, step)` selects the elements of `indexable`, an array or a
-      string, from `index` to `end` with `step`, and returns an array or a string respectively.
+      Selects the elements of `indexable`, an array or a string, from `index` to `end` with `step`,
+      and returns an array or a string respectively.
 
       Note that it's recommended to use dedicated slicing syntax both for arrays and strings,
       e.g. `arr[0:4:1]` instead of `std.slice(arr, 0, 4, 1)`.
@@ -2030,8 +2013,10 @@ pub const FNS: [Fn; 126] = [
     total: false,
     available_since: Some(10),
     doc: indoc! {r#"
-      For `std.join(sep, arr)`, if `sep` is a string, then `arr` must be an array of strings,
-      in which case they are concatenated with `sep` used as a delimiter.
+      Joins the elements of `arr` together, each separated by `sep`.
+
+      If `sep` is a string, then `arr` must be an array of strings, in which case they are
+      concatenated with `sep` used as a delimiter.
 
       If `sep` is an array, then `arr` must be an array of arrays, in which case the arrays are
       concatenated in the same way, to produce a single array.
@@ -2101,7 +2086,7 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: Some(10),
     doc: indoc! {r#"
-      `std.sort(arr, keyF=id)` sorts the array using the `<=` operator.
+      Sorts the array using the `<=` operator.
 
       The optional argument `keyF` is a single argument function used to extract comparison key from
       each array element.
@@ -2131,7 +2116,7 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: Some(10),
     doc: indoc! {"
-      `std.uniq(arr, keyF=id)` removes successive duplicates.
+      Removes successive duplicates.
 
       When given a sorted array, removes all duplicates.
 
@@ -2147,7 +2132,7 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: Some(19),
     doc: indoc! {"
-      `std.all(arr)` returns whether all elements of the input array are `true`.
+      Returns whether all elements of the input array are `true`.
 
       Raises if `arr` is not an array, or `arr` contains non-boolean values.
     "},
@@ -2165,7 +2150,7 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: Some(19),
     doc: indoc! {"
-      `std.any(arr)` returns whether any element of `arr` is `true`.
+      Returns whether any element of `arr` is `true`.
 
       Raises if `arr` is not an array, or `arr` contains non-boolean values.
     "},
@@ -2211,7 +2196,7 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: Some(10),
     doc: indoc! {"
-      `std.set(arr, keyF=id)` returns a sorted array with no duplicates, i.e. a set.
+      Returns a sorted array with no duplicates, i.e. a set.
 
       It is equivalent to `std.uniq(std.sort(arr))`.
 
@@ -2227,7 +2212,7 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: Some(10),
     doc: indoc! {"
-      `std.setInter(a, b, keyF=id)` is the set intersection operation (values in both `a` and `b`).
+      Returns the set containing values that are in both `a` and `b`.
 
       `a` and `b` must be sets, i.e. sorted arrays with no duplicates. If that is not the case, this
       function will quietly return non-meaningful results.
@@ -2244,7 +2229,7 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: Some(10),
     doc: indoc! {r#"
-      `std.setUnion(a, b, keyF=id)` is the set union operation (values in any of `a` or `b`).
+      Returns the set containing values that are in either `a` or `b`.
 
       Note that `+` on sets will simply concatenate the arrays, possibly forming an array that is
       not a set (due to not being ordered without duplicates).
@@ -2273,7 +2258,7 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: Some(10),
     doc: indoc! {"
-      `std.setDiff(a, b, keyF=id)` is the set difference operation (values in `a` but not `b`).
+      Returns the set containing values that are in `a` but not `b`.
 
       `a` and `b` must be sets, i.e. sorted arrays with no duplicates. If that is not the case, this
       function will quietly return non-meaningful results.
@@ -2290,7 +2275,7 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: Some(10),
     doc: indoc! {"
-      `std.setMember(x, s, keyF=id)` whether `x` is a member of `s`.
+      Returns whether `x` is a member of `s`.
 
       `s` must be a set, i.e. a sorted array with no duplicates. If that is not the case, this
       function will quietly return non-meaningful results.
@@ -2326,8 +2311,7 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: Some(10),
     doc: indoc! {"
-      `std.base64DecodeBytes(str)` decodes the given base64 string into an array of bytes
-      (number values).
+      Decodes the given base64 string into an array of bytes (number values).
 
       Currently assumes the input string has no line breaks and is padded to a multiple of 4
       (with the `=` character). In other words, it consumes the output of `base64`.
@@ -2399,7 +2383,7 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: Some(10),
     doc: indoc! {"
-      `std.mergePatch(target, patch)` applies `patch` to `target` according to
+      Applies `patch` to `target` according to
       [RFC7396](https://tools.ietf.org/html/rfc7396).
     "},
     examples: &[
@@ -2423,8 +2407,7 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: Some(11),
     doc: indoc! {r#"
-      `std.trace(str, rest)` outputs the given string `str` to stderr and returns `rest` as the
-      result.
+      Outputs the given string `str` to stderr and returns `rest`.
 
       ```jsonnet
       local choose(c, yes, no) =
@@ -2475,9 +2458,9 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: None,
     doc: indoc! {"
-      `std.objectHasEx(obj, fname, hidden)` is the same as:
+      Identical to:
 
-      - `std.objectHasAll(obj, fname)` when `hidden` is `true`
+      - `std.objectHasAll(obj, fname)` when `hidden` is `true`;
       - `std.objectHas(obj, fname)` when `hidden` is `false`.
     "},
     examples: &[
