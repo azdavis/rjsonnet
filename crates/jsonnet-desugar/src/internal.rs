@@ -154,6 +154,9 @@ pub(crate) fn get_expr(st: &mut St, cx: Cx<'_>, expr: Option<ast::Expr>, in_obj:
         ast::ImportKind::ImportbinKw => ImportKind::Binary,
       };
       let import_str = expr.string()?;
+      if matches!(import_str.kind, ast::StringKind::TextBlock) {
+        st.err_token(&import_str.token, error::Kind::ImportTextBlock);
+      }
       let import_str = jsonnet_ast_escape::get(&import_str);
       let import_path = std::path::Path::new(import_str.as_str());
       let full_path = jsonnet_resolve_import::get(import_path, cx.dirs.iter(), cx.fs);
@@ -422,7 +425,7 @@ fn get_object_comp(st: &mut St, cx: Cx<'_>, inside: ast::Object, in_obj: bool) -
         if let Some(vis) = field.visibility() {
           let is_colon = matches!(vis.kind, ast::VisibilityKind::Colon);
           if !is_colon {
-            st.err_token(vis.token, error::Kind::ObjectCompVisibility);
+            st.err_token(&vis.token, error::Kind::ObjectCompVisibility);
           }
         }
         let name = get_expr(st, cx, name.expr(), in_obj);

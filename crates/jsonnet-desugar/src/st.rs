@@ -68,7 +68,7 @@ impl St {
     self.err_(node.syntax().text_range(), kind);
   }
 
-  pub(crate) fn err_token(&mut self, tok: SyntaxToken, kind: error::Kind) {
+  pub(crate) fn err_token(&mut self, tok: &SyntaxToken, kind: error::Kind) {
     self.err_(tok.text_range(), kind);
   }
 

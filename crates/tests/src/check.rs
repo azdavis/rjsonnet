@@ -134,10 +134,12 @@ impl<'a> Input<'a> {
       if let Some((range, ds)) = ds_map.iter().next() {
         let n = ds.len();
         let m = ds.iter().next().expect("didn't clear out empty sets");
+        // "cannot import a text block" also causes a import path not found error
         let is_ok = matches!(jsonnet.kind, OutcomeKind::PreEvalError)
           && !jsonnet.outcome.is_empty()
           && n == 1
-          && ds_map.len() == 1
+          && (ds_map.len() == 1
+            || (ds_map.len() == 2 && jsonnet.outcome == "cannot import a text block"))
           && m.contains(jsonnet.outcome);
         if is_ok {
           ds_map.clear();

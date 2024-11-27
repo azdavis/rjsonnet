@@ -255,3 +255,15 @@ fn invalid_subscript() {
   )
   .check();
 }
+
+#[test]
+fn import_text_block() {
+  JsonnetInput::pre_eval_error_one(
+    r#"
+import |||
+  bad.txt
+|||"#,
+    "cannot import a text block",
+  )
+  .check();
+}
