@@ -145,14 +145,6 @@ version = "0.1.0"
 source = "git+https://github.com/azdavis/language-util.git#8d471f5783437803c171b17bd4d654cb07d0e756"
 
 [[package]]
-name = "code-h2-md-map"
-version = "0.1.0"
-source = "git+https://github.com/azdavis/language-util.git#8d471f5783437803c171b17bd4d654cb07d0e756"
-dependencies = [
- "fast-hash",
-]
-
-[[package]]
 name = "colorchoice"
 version = "1.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -688,11 +680,19 @@ dependencies = [
 name = "jsonnet-syntax"
 version = "0.7.2"
 dependencies = [
- "code-h2-md-map",
+ "jsonnet-token",
  "rowan",
  "rustc-hash",
  "syntax-gen",
  "token",
+]
+
+[[package]]
+name = "jsonnet-token"
+version = "0.7.2"
+dependencies = [
+ "indoc",
+ "rustc-hash",
 ]
 
 [[package]]
@@ -1128,6 +1128,7 @@ dependencies = [
  "jsonnet-eval",
  "jsonnet-expr",
  "jsonnet-std-sig",
+ "jsonnet-token",
  "jsonnet-ty",
  "jsonnet-val",
  "lang-srv-state",

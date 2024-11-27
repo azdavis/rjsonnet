@@ -32,7 +32,6 @@ serde_json = "1.0.108"
 text-size = "1.1.1"
 # language util
 apply-changes.git = "https://github.com/azdavis/language-util.git"
-code-h2-md-map.git = "https://github.com/azdavis/language-util.git"
 event-parse.git = "https://github.com/azdavis/language-util.git"
 panic-hook.git = "https://github.com/azdavis/language-util.git"
 paths.git = "https://github.com/azdavis/language-util.git"

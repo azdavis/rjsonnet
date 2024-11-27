@@ -74,6 +74,10 @@ A resolver for import paths.
 
 Rust code describing the standard library functions.
 
+### `crates/jsonnet-token`
+
+Rust code describing the tokens.
+
 ## Overall crates
 
 These tie everything else together.

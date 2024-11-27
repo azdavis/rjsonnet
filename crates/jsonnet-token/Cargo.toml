@@ -1,5 +1,5 @@
 [package]
-name = "jsonnet-syntax"
+name = "jsonnet-token"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -9,15 +9,11 @@ publish.workspace = true
 workspace = true
 
 [lib]
-test = false
+test = true
 doctest = false
 
 [dependencies]
-rowan.workspace = true
-token.workspace = true
+indoc.workspace = true
 
-[build-dependencies]
+[dev-dependencies]
 rustc-hash.workspace = true
-syntax-gen.workspace = true
-
-jsonnet-token.path = "../jsonnet-token"

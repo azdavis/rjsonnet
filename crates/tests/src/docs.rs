@@ -1,10 +1,25 @@
 //! Tests to make sure the code examples in the docs work.
 
+use jsonnet_token::Error;
+
 use crate::check::{markdown, JsonnetInput};
 
 #[test]
 fn tokens() {
-  markdown::check(include_str!("../../../docs/tokens.md"));
+  for tok in jsonnet_token::ALL {
+    for purpose in tok.purposes {
+      let mut ex = purpose.example.trim().to_owned();
+      if ex.ends_with(';') {
+        ex.push_str("null");
+      }
+      match purpose.outcome {
+        Ok(()) => JsonnetInput::manifest(&ex, "").check(),
+        Err(Error::Eval(e)) => JsonnetInput::eval_error(&ex, e).check(),
+        Err(Error::PreEval(e)) => JsonnetInput::pre_eval_error_one(&ex, e).check(),
+        Err(Error::StackOverflow) => {}
+      }
+    }
+  }
 }
 
 #[test]
