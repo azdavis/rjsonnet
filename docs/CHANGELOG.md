@@ -7,6 +7,7 @@ Things under "main" are not released yet.
 - Allow `std.isFunction` and similar to learn that variables have function type.
 - Add more examples to std lib docs.
 - Improve handling of invalid text blocks.
+- Error on invalid `super` usage.
 
 ## v0.7.2
 

@@ -19,6 +19,6 @@ pub fn get(
 ) -> Desugar {
   let mut st = st::St::default();
   let cx = cx::Cx { dirs, fs };
-  let top = internal::get_expr(&mut st, cx, root, false);
+  let top = internal::get_expr(&mut st, cx, root, false, false);
   st.finish(top)
 }

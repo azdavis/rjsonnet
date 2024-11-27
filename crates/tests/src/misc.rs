@@ -267,3 +267,23 @@ import |||
   )
   .check();
 }
+
+#[test]
+fn invalid_super() {
+  JsonnetInput::pre_eval_error(
+    r#"
+{ c: 3 } + {
+  a: 1,
+  b:
+    local guy =
+      if std.extVar("x") == "1" then
+        super
+##      ^^^^^ diagnostic: `super` must be used with `.`, `[]`, or `in`
+      else
+        {};
+    "c" in guy
+}
+"#,
+  )
+  .check();
+}

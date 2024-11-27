@@ -30,6 +30,7 @@ pub(crate) enum Kind {
   PathNotFound(String),
   PositionalArgAfterNamedArg,
   ImportTextBlock,
+  InvalidSuper,
 }
 
 impl fmt::Display for Error {
@@ -54,6 +55,7 @@ impl fmt::Display for Error {
         f.write_str("positional arguments must not appear after named arguments")
       }
       Kind::ImportTextBlock => f.write_str("cannot import a text block"),
+      Kind::InvalidSuper => f.write_str("`super` must be used with `.`, `[]`, or `in`"),
     }
   }
 }
