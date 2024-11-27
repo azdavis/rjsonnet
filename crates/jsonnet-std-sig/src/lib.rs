@@ -109,8 +109,8 @@ pub enum Ty {
   Uint,
   /// A string like `"foo"` or `"bar"` or `""`.
   Str,
-  /// A string that is known statically.
-  StaticStr,
+  /// A string that is interned.
+  StrInterned,
   /// An array with any contents, like `["hi", 3, null, false]`.
   ArrAny,
   /// An array of booleans, like `[false, true]`.
@@ -191,7 +191,7 @@ pub const FNS: [Fn; 126] = [
   Fn {
     name: S::named("type", "type_"),
     implemented: true,
-    sig: sig(&[req("x", Ty::Any)], Ty::StaticStr),
+    sig: sig(&[req("x", Ty::Any)], Ty::StrInterned),
     total: true,
     available_since: Some(10),
     doc: indoc! {r#"
@@ -342,7 +342,7 @@ pub const FNS: [Fn; 126] = [
     sig: sig(
       &[
         req("o", Ty::Obj),
-        req("f", Ty::Str),
+        req("f", Ty::StrInterned),
         opt("default", Ty::Any, "null"),
         opt("inc_hidden", Ty::Bool, "true"),
       ],

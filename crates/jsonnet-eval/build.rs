@@ -154,8 +154,13 @@ fn mk_call_std_arm(func: &jsonnet_std_sig::Fn) -> proc_macro2::TokenStream {
         let #name = util::get_num(&#name, args.#name.unwrap_or(expr))?;
         let #name = util::get_uint(#name, args.#name.unwrap_or(expr))?;
       },
-      Ty::Str => q! { let #name = util::get_str(&#name, cx.str_ar, args.#name.unwrap_or(expr))?; },
-      Ty::StaticStr => unreachable!("cannot know fn arg vals statically"),
+      Ty::Str => q! {
+        let #name = util::get_str(&#name, args.#name.unwrap_or(expr))?;
+        let #name = cx.str_ar.get(#name);
+      },
+      Ty::StrInterned => {
+        q! { let #name = util::get_str(&#name, args.#name.unwrap_or(expr))?; }
+      }
       Ty::ArrAny => q! { let #name = util::get_arr(&#name, args.#name.unwrap_or(expr))?; },
       Ty::ArrBool => todo!("conv param ArrBool"),
       Ty::ArrNum => todo!("conv param ArrNum"),
@@ -184,7 +189,7 @@ fn mk_call_std_arm(func: &jsonnet_std_sig::Fn) -> proc_macro2::TokenStream {
   });
   let conv_res = match func.sig.ret {
     Ty::Any | Ty::StrOrArrAny | Ty::StrOrArrNum | Ty::NumOrNull | Ty::NumOrStr => q! { Ok(res) },
-    Ty::True | Ty::Bool | Ty::StaticStr => q! { Ok(res.into()) },
+    Ty::True | Ty::Bool | Ty::StrInterned => q! { Ok(res.into()) },
     Ty::Str => q! { Ok(util::mk_str(cx.str_ar, res)) },
     Ty::Num => q! { util::mk_num(res, expr) },
     Ty::Uint => q! { Ok(finite_float::Float::from(res).into()) },
