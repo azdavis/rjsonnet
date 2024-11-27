@@ -8,6 +8,7 @@ Things under "main" are not released yet.
 - Add more examples to std lib docs.
 - Improve handling of invalid text blocks.
 - Error on invalid `super` usage.
+- Error on invalid `import` with a text block.
 - Support flow typing for checking object field membership.
 
 ## v0.7.2
