@@ -27,7 +27,7 @@ pub struct Init {
 /// An adaptor between file system traits.
 pub(crate) struct FsAdapter<'a, F>(pub(crate) &'a F);
 
-impl<'a, F> jsonnet_resolve_import::FileSystem for FsAdapter<'a, F>
+impl<F> jsonnet_resolve_import::FileSystem for FsAdapter<'_, F>
 where
   F: paths::FileSystem,
 {

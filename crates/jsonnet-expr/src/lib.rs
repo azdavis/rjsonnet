@@ -385,7 +385,7 @@ impl StdField {
   }
 }
 
-impl<'a> TryFrom<&'a Str> for StdField {
+impl TryFrom<&Str> for StdField {
   type Error = ();
 
   fn try_from(s: &Str) -> Result<Self, Self::Error> {

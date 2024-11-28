@@ -35,7 +35,7 @@ impl<'a> DisplayExpr<'a> {
   }
 }
 
-impl<'a> fmt::Display for DisplayExpr<'a> {
+impl fmt::Display for DisplayExpr<'_> {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     let Some(e) = self.e else { return f.write_str("_") };
     match &self.expr_ar[e] {

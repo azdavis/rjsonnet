@@ -104,13 +104,13 @@ struct TyDisplay<'a> {
   stuff: Stuff<'a>,
 }
 
-impl<'a> TyDisplay<'a> {
+impl TyDisplay<'_> {
   fn with(self, ty: Ty, prec: Prec) -> Self {
     Self { ty, prec, ..self }
   }
 }
 
-impl<'a> fmt::Display for TyDisplay<'a> {
+impl fmt::Display for TyDisplay<'_> {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     let data =
       self.stuff.global.0.data(self.ty, false).or_else(|| self.stuff.local?.0.data(self.ty, true));
@@ -209,7 +209,7 @@ struct FnDisplay<'a> {
   stuff: Stuff<'a>,
 }
 
-impl<'a> fmt::Display for FnDisplay<'a> {
+impl fmt::Display for FnDisplay<'_> {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     let needs_paren = self.prec > Prec::Min;
     if needs_paren {
@@ -255,7 +255,7 @@ struct FieldDisplay<'a> {
   stuff: Stuff<'a>,
 }
 
-impl<'a> fmt::Display for FieldDisplay<'a> {
+impl fmt::Display for FieldDisplay<'_> {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     self.stuff.str_ar.get(self.key).fmt(f)?;
     f.write_str(": ")?;
@@ -269,7 +269,7 @@ struct ParamDisplay<'a> {
   stuff: Stuff<'a>,
 }
 
-impl<'a> fmt::Display for ParamDisplay<'a> {
+impl fmt::Display for ParamDisplay<'_> {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     self.param.id.display(self.stuff.str_ar).fmt(f)?;
     if !self.param.required {

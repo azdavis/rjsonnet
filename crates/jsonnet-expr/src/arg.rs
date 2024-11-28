@@ -95,7 +95,7 @@ struct DisplayIds<'a> {
   ids: &'a [Id],
 }
 
-impl<'a> fmt::Display for DisplayIds<'a> {
+impl fmt::Display for DisplayIds<'_> {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     let mut iter = self.ids.iter();
     let Some(fst) = iter.next() else {

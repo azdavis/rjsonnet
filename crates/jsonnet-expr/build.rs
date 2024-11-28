@@ -248,7 +248,7 @@ fn main() {
       }
 
       #[expect(clippy::too_many_lines)]
-      impl<'a> TryFrom<&'a Str> for StdFn {
+      impl TryFrom<&Str> for StdFn {
         type Error = ();
 
         fn try_from(s: &Str) -> Result<Self, Self::Error> {
