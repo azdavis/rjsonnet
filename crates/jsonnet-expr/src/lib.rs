@@ -106,7 +106,7 @@ pub enum ExprData {
   },
 }
 
-const _: () = assert!(std::mem::size_of::<ExprData>() == 80);
+const _: () = assert!(std::mem::size_of::<ExprData>() == 72);
 
 impl ExprData {
   pub fn apply(&mut self, subst: &Subst) {
