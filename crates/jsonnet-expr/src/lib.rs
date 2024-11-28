@@ -13,16 +13,61 @@ pub mod display;
 mod subst;
 
 pub use generated::StdFn;
-pub use la_arena::{Arena, ArenaMap, Idx};
 pub use subst::Subst;
 
 use generated::{BuiltinStr, NotBuiltinStr};
 use rustc_hash::FxHashMap;
 use std::collections::hash_map::Entry;
 
-pub type ExprMust = Idx<ExprData>;
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct ExprMust(la_arena::Idx<ExprData>);
+
 pub type Expr = Option<ExprMust>;
-pub type ExprArena = Arena<ExprData>;
+
+#[derive(Debug, Default, Clone)]
+pub struct ExprArena(la_arena::Arena<ExprData>);
+
+impl std::ops::Index<ExprMust> for ExprArena {
+  type Output = ExprData;
+
+  fn index(&self, index: ExprMust) -> &Self::Output {
+    &self.0[index.0]
+  }
+}
+
+impl ExprArena {
+  pub fn alloc(&mut self, data: ExprData) -> ExprMust {
+    ExprMust(self.0.alloc(data))
+  }
+
+  pub fn iter(&self) -> impl Iterator<Item = (ExprMust, &ExprData)> {
+    self.0.iter().map(|(a, b)| (ExprMust(a), b))
+  }
+
+  pub fn iter_mut(&mut self) -> impl Iterator<Item = (ExprMust, &mut ExprData)> {
+    self.0.iter_mut().map(|(a, b)| (ExprMust(a), b))
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct ExprMap<T>(la_arena::ArenaMap<la_arena::Idx<ExprData>, T>);
+
+impl<T> Default for ExprMap<T> {
+  fn default() -> Self {
+    Self(la_arena::ArenaMap::default())
+  }
+}
+
+impl<T> ExprMap<T> {
+  pub fn insert(&mut self, key: ExprMust, val: T) {
+    self.0.insert(key.0, val);
+  }
+
+  #[must_use]
+  pub fn get(&self, key: ExprMust) -> Option<&T> {
+    self.0.get(key.0)
+  }
+}
 
 /// Artifacts for combining.
 #[derive(Debug, Default)]

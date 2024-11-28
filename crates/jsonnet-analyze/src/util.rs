@@ -259,7 +259,7 @@ pub(crate) fn expr_range(
   kind: Option<def::ExprDefKind>,
 ) -> text_size::TextRange {
   let maybe_more_precise = kind.and_then(|kind| expr_def_range(pointers, root, expr, kind));
-  maybe_more_precise.unwrap_or_else(|| pointers.get_ptr(expr).text_range())
+  maybe_more_precise.or_else(|| Some(pointers.get_ptr(expr)?.text_range())).unwrap_or_default()
 }
 
 fn expr_def_range(
@@ -268,7 +268,7 @@ fn expr_def_range(
   expr: jsonnet_expr::ExprMust,
   kind: def::ExprDefKind,
 ) -> Option<text_size::TextRange> {
-  let node_ptr = pointers.get_ptr(expr);
+  let node_ptr = pointers.get_ptr(expr)?;
   match kind {
     def::ExprDefKind::ObjectCompId => {
       let obj = node_ptr.cast::<jsonnet_syntax::ast::Object>()?;

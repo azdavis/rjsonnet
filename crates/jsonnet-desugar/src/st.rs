@@ -10,7 +10,7 @@ use text_size::TextRange;
 #[derive(Debug, Default)]
 pub struct Pointers {
   ptr_to_idx: FxHashMap<ast::SyntaxNodePtr, jsonnet_expr::ExprMust>,
-  idx_to_ptr: jsonnet_expr::ArenaMap<jsonnet_expr::ExprMust, ast::SyntaxNodePtr>,
+  idx_to_ptr: jsonnet_expr::ExprMap<ast::SyntaxNodePtr>,
 }
 
 impl Pointers {
@@ -22,8 +22,8 @@ impl Pointers {
 
   /// Gets the syntax node pointer for the expr. Both must exist.
   #[must_use]
-  pub fn get_ptr(&self, e: jsonnet_expr::ExprMust) -> ast::SyntaxNodePtr {
-    self.idx_to_ptr[e]
+  pub fn get_ptr(&self, e: jsonnet_expr::ExprMust) -> Option<ast::SyntaxNodePtr> {
+    self.idx_to_ptr.get(e).copied()
   }
 
   /// Maybe gets an expression for a syntax node pointer.
