@@ -423,7 +423,6 @@ fn cmp_val(expr: ExprMust, cx: Cx<'_>, lhs: &Val, rhs: &Val) -> Result<Ordering>
   }
 }
 
-/// TODO could this call manifest?
 pub(crate) fn eq_val(expr: ExprMust, cx: Cx<'_>, lhs: &Val, rhs: &Val) -> Result<bool> {
   match (lhs, rhs) {
     (Val::Prim(lhs), Val::Prim(rhs)) => Ok(lhs == rhs),

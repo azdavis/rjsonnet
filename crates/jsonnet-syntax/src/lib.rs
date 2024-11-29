@@ -39,7 +39,6 @@ impl Root {
   }
 }
 
-/// TODO fill in?
 fn custom_node_range(_: kind::SyntaxNode) -> Option<rowan::TextRange> {
   None
 }

@@ -103,7 +103,6 @@ fn main() {
         }
       }
 
-      // TODO: make this faster with phf?
       impl std::str::FromStr for BuiltinStr {
         type Err = NotBuiltinStr;
 

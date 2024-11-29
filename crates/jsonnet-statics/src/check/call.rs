@@ -25,7 +25,6 @@ pub(crate) fn get(
       let sig = ty::StdFnSig::get(std_fn);
       let mut params = FxHashMap::<Id, (ExprMust, ty::Ty)>::default();
       let named_args = named_args.clone();
-      // TODO only insert when we need to do extra checks?
       get_regular(st, expr, fn_expr, sig.params, pos_args, named_args, &mut |id, expr, ty| {
         params.insert(id, (expr, ty));
       });

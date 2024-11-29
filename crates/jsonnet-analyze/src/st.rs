@@ -79,8 +79,6 @@ impl WithFs {
     }
   }
 
-  /// TODO there is no easy way to do this caching without repeatedly getting the same file if you
-  /// want BOTH the expr AND the artifacts
   fn get_file_artifacts<'fa, F>(
     &mut self,
     file_artifacts: &'fa mut PathMap<util::FileArtifacts>,
@@ -130,7 +128,6 @@ impl WithFs {
           }
           if self.file_tys.contains_key(&path_id) {
             log::info!("already cached");
-            // TODO: invalidate cache when files change on disk.
             continue;
           }
           if !cur.insert(path_id) {
@@ -419,12 +416,9 @@ impl lang_srv_state::State for St {
     let mut init = util::Init::default();
     let pwd = fs.current_dir();
     let mut logger_env = env_logger::Env::default();
-    // TODO is it correct to use pwd here or should we be using the root dir from the language
-    // server init object (which is NOT the `val` init object passed to us here)?
     if let Ok(pwd) = &pwd {
       init.relative_to = Some(pwd.to_owned());
     }
-    // TODO report errors from bad init object
     if let Some(serde_json::Value::Object(obj)) = val {
       if let Some(filter) = obj.get("log_filter").and_then(serde_json::Value::as_str) {
         if !filter.is_empty() {
@@ -634,7 +628,6 @@ impl lang_srv_state::State for St {
       let ts = arts.syntax.pos_db.text_size_utf16(pos)?;
       let root = arts.syntax.root.clone().into_ast()?;
       let mut tmp = jsonnet_syntax::node_token(root.syntax(), ts)?;
-      // TODO complete not just with dot
       if tmp.kind() != jsonnet_syntax::kind::SyntaxKind::Dot {
         return None;
       }

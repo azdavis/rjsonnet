@@ -8,7 +8,7 @@ use std::fmt;
 
 /// Displays an expression, sort of. Mostly for debugging. (We already derive Debug.)
 ///
-/// TODO handle precedence better, fix trailing commas
+/// Doesn't have great handling for precedence or trailing commas
 #[must_use]
 pub fn expr<'a>(
   e: Expr,

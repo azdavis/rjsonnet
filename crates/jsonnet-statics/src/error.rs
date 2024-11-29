@@ -38,11 +38,14 @@ impl Error {
   #[must_use]
   pub fn severity(&self) -> diagnostic::Severity {
     match self.kind {
+      // these static checks happen before eval, i.e. if they are present, we cannot eval. so they
+      // are errors.
       Kind::NotInScope(_)
       | Kind::DuplicateFieldName(_)
       | Kind::DuplicateNamedArg(_)
       | Kind::DuplicateBinding(_, _, _) => diagnostic::Severity::Error,
-      // TODO: make some/all type-checker warnings errors? (once we have more confidence)
+      // it may be possible to eval the jsonnet  without handling these, so we consider them
+      // warnings. e.g. if the call with the missing/extra argument etc doesn't get eval'd.
       Kind::Unused(_, _)
       | Kind::Unify(_)
       | Kind::MissingArgument(_, _)
