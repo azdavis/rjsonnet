@@ -147,8 +147,6 @@ pub enum ExprData {
   },
 }
 
-const _: () = assert!(std::mem::size_of::<ExprData>() == 72);
-
 impl ExprData {
   pub fn apply(&mut self, subst: &Subst) {
     match self {
@@ -288,4 +286,9 @@ impl TryFrom<&Str> for StdField {
       Err(()) => Err(()),
     }
   }
+}
+
+#[test]
+fn size() {
+  assert_eq!(std::mem::size_of::<ExprData>(), 72);
 }
