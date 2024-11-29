@@ -1,9 +1,6 @@
 //! Displaying various things.
 
-use super::{
-  BinaryOp, CopyStrRepr, Expr, ExprArena, ExprData, Id, ImportKind, Prim, StrArena, UnaryOp,
-  Visibility,
-};
+use super::{BinaryOp, Expr, ExprArena, ExprData, ImportKind, Prim, StrArena, UnaryOp, Visibility};
 use std::fmt;
 
 /// Displays an expression, sort of. Mostly for debugging. (We already derive Debug.)
@@ -207,27 +204,6 @@ impl fmt::Display for DisplayPrim<'_> {
         f.write_str("\"")
       }
       Prim::Number(n) => n.fmt(f),
-    }
-  }
-}
-
-impl Id {
-  #[must_use]
-  pub fn display(self, ar: &StrArena) -> impl fmt::Display + '_ {
-    DisplayCopyStrRepr { repr: self.0, ar }
-  }
-}
-
-struct DisplayCopyStrRepr<'a> {
-  repr: CopyStrRepr,
-  ar: &'a StrArena,
-}
-
-impl fmt::Display for DisplayCopyStrRepr<'_> {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    match self.repr {
-      CopyStrRepr::Builtin(bs) => bs.as_static_str().fmt(f),
-      CopyStrRepr::Idx(idx) => self.ar.get_idx(idx).fmt(f),
     }
   }
 }
