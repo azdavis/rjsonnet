@@ -223,9 +223,7 @@ pub const FNS: [Fn; 126] = [
     sig: V_ANY_RET_BOOL,
     total: true,
     available_since: None,
-    doc: indoc! {"
-      Returns whether the argument is an array.
-    "},
+    doc: "Returns whether the argument is an array.",
     examples: &["std.isArray([1, 2])", "std.isArray([])", "!std.isArray(null)", "!std.isArray(4)"],
   },
   Fn {
@@ -234,9 +232,7 @@ pub const FNS: [Fn; 126] = [
     sig: V_ANY_RET_BOOL,
     total: true,
     available_since: None,
-    doc: indoc! {"
-      Returns whether the argument is a boolean.
-    "},
+    doc: "Returns whether the argument is a boolean.",
     examples: &[
       "std.isBoolean(true)",
       "std.isBoolean(false)",
@@ -250,9 +246,7 @@ pub const FNS: [Fn; 126] = [
     sig: V_ANY_RET_BOOL,
     total: true,
     available_since: None,
-    doc: indoc! {"
-      Returns whether the argument is a function.
-    "},
+    doc: "Returns whether the argument is a function.",
     examples: &[
       "std.isFunction(function(x) x + 1)",
       "std.isFunction(std.mod)",
@@ -266,9 +260,7 @@ pub const FNS: [Fn; 126] = [
     sig: V_ANY_RET_BOOL,
     total: true,
     available_since: None,
-    doc: indoc! {"
-      Returns whether the argument is a number.
-    "},
+    doc: "Returns whether the argument is a number.",
     examples: &[
       "std.isNumber(3)",
       "std.isNumber(-123.345)",
@@ -282,9 +274,7 @@ pub const FNS: [Fn; 126] = [
     sig: V_ANY_RET_BOOL,
     total: true,
     available_since: None,
-    doc: indoc! {"
-      Returns whether the argument is an object.
-    "},
+    doc: "Returns whether the argument is an object.",
     examples: &[
       "std.isObject({})",
       "std.isObject({ a: 1 } + { b: 2 })",
@@ -298,9 +288,7 @@ pub const FNS: [Fn; 126] = [
     sig: V_ANY_RET_BOOL,
     total: true,
     available_since: None,
-    doc: indoc! {"
-      Returns whether the argument is a string.
-    "},
+    doc: "Returns whether the argument is a string.",
     examples: &[
       r#" std.isString("hi") "#,
       r#" std.isString("") "#,
