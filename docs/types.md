@@ -32,6 +32,14 @@ The type that is the union of `true` and `false` is shown as `boolean`.
 
 `T[]` is the type of arrays where the elements have type `T`.
 
+### Set types
+
+`set[T]` is the type of sets where the elements have type `T`.
+
+At runtime, sets are represented as sorted, duplicate-free arrays. Thus, for a type T, the type `set[T]` "decays" to the type `T[]`. For instance, if you have `x` with type `set[T]`, and your function `f` accepts a `T[]`, you may pass `x` to `f`.
+
+This is called "subtyping" in programming language theory jargon.
+
 ### Object types
 
 `{ foo: T1, bar: T2 }` is the type of an object with two known fields: `foo` of type `T1`, and `bar` of type `T2`, and no unknown fields.

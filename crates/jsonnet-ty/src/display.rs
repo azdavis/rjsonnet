@@ -128,8 +128,14 @@ impl fmt::Display for TyDisplay<'_> {
         Prim::Number => f.write_str("number"),
       },
       Data::Array(arr) => {
-        self.with(arr.elem, Prec::Array).fmt(f)?;
-        f.write_str("[]")
+        if arr.is_set {
+          f.write_str("set[")?;
+          self.with(arr.elem, Prec::Min).fmt(f)?;
+          f.write_str("]")
+        } else {
+          self.with(arr.elem, Prec::Array).fmt(f)?;
+          f.write_str("[]")
+        }
       }
       Data::Object(obj) => {
         let [cur_level, new_level, rec_level] = increase_level(obj.known.len(), self.stuff.level);

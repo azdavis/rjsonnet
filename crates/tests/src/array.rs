@@ -29,3 +29,19 @@ fn plus() {
   )
   .check();
 }
+
+/// TODO remove `if false` once std fns implemented
+#[test]
+fn set() {
+  JsonnetInput::manifest(
+    r"
+local xs = std.set([1, 2]);
+local ys = [2, 3];
+if false then
+  std.setInter(xs, ys)
+##                 ^^ diagnostic: incompatible types; expected `set[any]`; found `number[]`
+",
+    "null",
+  )
+  .check();
+}

@@ -118,13 +118,25 @@ pub enum Prim {
 pub struct Array {
   /// The type of elements in the array.
   pub elem: Ty,
+  /// Whether this array is a set, i.e. known at runtime to be sorted and duplicate-free.
+  ///
+  /// We treat regular array types and "set" array types mostly the same in the type system, but we
+  /// do use this info in a few places, primarily to make sure the "set operation" std functions
+  /// only operate on known sets.
+  pub is_set: bool,
 }
 
 impl Array {
-  /// Returns a new array type.
+  /// Returns a new (non-set) array type.
   #[must_use]
   pub fn new(elem: Ty) -> Self {
-    Self { elem }
+    Self { elem, is_set: false }
+  }
+
+  /// Returns a new "set" array type.
+  #[must_use]
+  pub fn set(elem: Ty) -> Self {
+    Self { elem, is_set: true }
   }
 
   fn apply(&mut self, subst: &Subst) {

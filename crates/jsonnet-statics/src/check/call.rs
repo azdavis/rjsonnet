@@ -152,9 +152,15 @@ fn maybe_extra_checks(
       st.unify(arr_expr, sep_ty, arr.elem);
       Some(arr.elem)
     }
-    StdFn::reverse | StdFn::sort | StdFn::uniq | StdFn::set | StdFn::filter => {
+    StdFn::reverse | StdFn::sort | StdFn::uniq | StdFn::filter => {
       let &(_, arr_ty) = params.get(&Id::arr)?;
       Some(arr_ty)
+    }
+    StdFn::set => {
+      let &(_, arr_ty) = params.get(&Id::arr)?;
+      // TODO handle unions
+      let &ty::Data::Array(arr) = st.tys.data(arr_ty) else { return None };
+      Some(st.tys.get(ty::Data::Array(ty::Array::set(arr.elem))))
     }
     StdFn::assertEqual => {
       let &(_, lhs_ty) = params.get(&Id::a)?;

@@ -161,7 +161,9 @@ fn mk_call_std_arm(func: &jsonnet_std_sig::Fn) -> proc_macro2::TokenStream {
       Ty::StrInterned => {
         q! { let #name = util::get_str(&#name, args.#name.unwrap_or(expr))?; }
       }
-      Ty::ArrAny => q! { let #name = util::get_arr(&#name, args.#name.unwrap_or(expr))?; },
+      Ty::ArrAny | Ty::SetAny => {
+        q! { let #name = util::get_arr(&#name, args.#name.unwrap_or(expr))?; }
+      }
       Ty::ArrBool => todo!("conv param ArrBool"),
       Ty::ArrNum => todo!("conv param ArrNum"),
       Ty::ArrStr => todo!("conv param ArrStr"),
@@ -193,7 +195,7 @@ fn mk_call_std_arm(func: &jsonnet_std_sig::Fn) -> proc_macro2::TokenStream {
     Ty::Str => q! { Ok(util::mk_str(cx.str_ar, res)) },
     Ty::Num => q! { util::mk_num(res, expr) },
     Ty::Uint => q! { Ok(finite_float::Float::from(res).into()) },
-    Ty::ArrAny => todo!("conv ret ArrAny"),
+    Ty::ArrAny | Ty::SetAny => todo!("conv ret ArrAny/SetAny"),
     Ty::ArrBool => todo!("conv ret ArrBool"),
     Ty::ArrNum => todo!("conv ret ArrNum"),
     Ty::ArrStr => todo!("conv ret ArrStr"),

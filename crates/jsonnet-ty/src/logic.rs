@@ -22,11 +22,11 @@ pub fn and(tys: &mut MutStore<'_>, x: Ty, y: Ty) -> Ty {
       always!(x != y, "should have returned already if x == y");
       Ty::NEVER
     }
-    (Data::Array(x), Data::Array(y)) => {
+    (&Data::Array(x), &Data::Array(y)) => {
       let elem = and(tys, x.elem, y.elem);
       // NOTE: see discussion of object fields for why we do not return never even if the elem is of
       // type never.
-      tys.get(Data::Array(Array { elem }))
+      tys.get(Data::Array(Array { elem, is_set: x.is_set && y.is_set }))
     }
     (Data::Object(x), Data::Object(y)) => {
       if definitely_lacks(x, y) || definitely_lacks(y, x) {
@@ -99,7 +99,9 @@ pub fn minus(tys: &mut MutStore<'_>, x: Ty, y: Ty) -> Ty {
     }
     (Data::Array(x), Data::Array(y)) => {
       let elem = minus(tys, x.elem, y.elem);
-      tys.get(Data::Array(Array { elem }))
+      // NOTE: there's probably something more complicated we could do to determine whether the
+      // result type should be a set, but it's conservatively correct to just never have it be.
+      tys.get(Data::Array(Array::new(elem)))
     }
     (Data::Object(x), Data::Object(y)) => {
       let mut known = x.known.clone();

@@ -72,11 +72,17 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
         let ty = get(st, ar, arg);
         tys.insert(ty);
       }
-      // having `[]` have type `never[]` is technically right, but causes some strangeness, e.g.
-      // with the special-case typing of `std.join`. i suppose it might also be a bit jarring for
-      // users to see the `never`, which rarely comes up in user code.
+      // we say `[]` has type `any[]`.
+      //
+      // having `[]` have type `never[]` would technically be right, but causes some strangeness,
+      // e.g. with the special-case typing of `std.join`. i suppose it might also be a bit jarring
+      // for users to see the `never`, which rarely comes up in user code.
+      //
+      // we could also have it be type `set[any]`, since all sets are arrays, and the empty array is
+      // the empty set. but using `[]` as an empty array seems more common. if a user needs the
+      // empty set explicitly, they can use `std.set([])`.
       let elem = if tys.is_empty() { ty::Ty::ANY } else { st.tys.get(ty::Data::Union(tys)) };
-      st.tys.get(ty::Data::Array(ty::Array { elem }))
+      st.tys.get(ty::Data::Array(ty::Array::new(elem)))
     }
     ExprData::Subscript { on, idx } => {
       let on_ty = get(st, ar, *on);

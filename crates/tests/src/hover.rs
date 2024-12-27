@@ -282,3 +282,22 @@ local f(x) =
   )
   .check();
 }
+
+/// TODO remove `if false` once std fns implemented
+#[test]
+fn set() {
+  JsonnetInput::manifest(
+    r"
+local singleton(x) = std.set([x]);
+if false then
+##          v hover: (x: any) => set[any]
+  local a = singleton(3);
+##      ^ hover: set[any]
+  local b = std.set([3]);
+##      ^ hover: set[number]
+  {a: a, b: b }
+",
+    "null",
+  )
+  .check();
+}

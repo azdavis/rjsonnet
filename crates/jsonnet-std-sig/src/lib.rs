@@ -121,6 +121,8 @@ pub enum Ty {
   ArrStr,
   /// An array of `{ key: string, value: any }`.
   ArrKv,
+  /// A set with any contents.
+  SetAny,
   /// An object with arbitrary fields.
   Obj,
   /// A string or an array of anything.
@@ -177,7 +179,7 @@ const ARR_HOF1: Sig = sig(&[req("func", Ty::Hof1), req("arr", Ty::ArrAny)], Ty::
 const FOLD: Sig =
   sig(&[req("func", Ty::Hof2), req("arr", Ty::ArrAny), req("init", Ty::Any)], Ty::Any);
 const ARR_KEY_F: Sig = sig(&[req("arr", Ty::ArrAny), KEY_F], Ty::ArrAny);
-const BINARY_SET_FN: Sig = sig(&[req("a", Ty::ArrAny), req("b", Ty::ArrAny), KEY_F], Ty::ArrAny);
+const BINARY_SET_FN: Sig = sig(&[req("a", Ty::SetAny), req("b", Ty::SetAny), KEY_F], Ty::SetAny);
 
 /// The std fns.
 pub const FNS: [Fn; 126] = [
@@ -2244,7 +2246,7 @@ pub const FNS: [Fn; 126] = [
   Fn {
     name: S::new("set"),
     implemented: false,
-    sig: ARR_KEY_F,
+    sig: sig(&[req("arr", Ty::ArrAny), KEY_F], Ty::SetAny),
     total: true,
     available_since: Some(10),
     doc: indoc! {"
@@ -2331,7 +2333,7 @@ pub const FNS: [Fn; 126] = [
   Fn {
     name: S::new("setMember"),
     implemented: false,
-    sig: sig(&[req("x", Ty::Any), req("arr", Ty::ArrAny), KEY_F], Ty::Bool),
+    sig: sig(&[req("x", Ty::Any), req("arr", Ty::SetAny), KEY_F], Ty::Bool),
     total: true,
     available_since: Some(10),
     doc: indoc! {"
