@@ -7,7 +7,7 @@ fn arr_num() {
   JsonnetInput::manifest(
     r"
 [1, 2, 3]
-##      ^ hover: number[]
+##      ^ hover: array[number]
 ",
     r"
 [1, 2, 3]

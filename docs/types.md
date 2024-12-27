@@ -6,7 +6,7 @@ rjsonnet supports type inference, including across imported files, and on local 
 
 Although we don't introduce new syntax to the source language, we do use a certain syntax to report types to the user.
 
-The syntax is roughly that of TypeScript's type syntax.
+The syntax is similar to that of TypeScript's type syntax.
 
 ### Unknown type
 
@@ -30,13 +30,13 @@ The type that is the union of `true` and `false` is shown as `boolean`.
 
 ### Array types
 
-`T[]` is the type of arrays where the elements have type `T`.
+`array[T]` is the type of arrays where the elements have type `T`.
 
 ### Set types
 
 `set[T]` is the type of sets where the elements have type `T`.
 
-At runtime, sets are represented as sorted, duplicate-free arrays. Thus, for a type T, the type `set[T]` "decays" to the type `T[]`. For instance, if you have `x` with type `set[T]`, and your function `f` accepts a `T[]`, you may pass `x` to `f`.
+At runtime, sets are represented as sorted, duplicate-free arrays. Thus, for a type T, the type `set[T]` "decays" to the type `array[T]`. For instance, if you have `x` with type `set[T]`, and your function `f` accepts a `array[T]`, you may pass `x` to `f`.
 
 This is called "subtyping" in programming language theory jargon.
 
@@ -89,12 +89,6 @@ Union types bind stronger than function types. This means 1 and 2 below are equi
 1. `(x: boolean) => number | string`
 2. `(x: boolean) => (number | string)`
 3. `((x: boolean) => number) | string`
-
-Array types bind stronger than union types. This means 1 and 2 below are equivalent, and distinct from 3.
-
-1. `number | string[]`
-2. `number | (string[])`
-3. `(number | string)[]`
 
 ## Annotations
 

@@ -39,7 +39,7 @@ local xs = std.set([1, 2]);
 local ys = [2, 3];
 if false then
   std.setInter(xs, ys)
-##                 ^^ diagnostic: incompatible types; expected `set[any]`; found `number[]`
+##                 ^^ diagnostic: incompatible types; expected `set[any]`; found `array[number]`
 ",
     "null",
   )
