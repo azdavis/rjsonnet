@@ -232,7 +232,7 @@ pub const FNS: [Fn; 126] = [
     sig: V_ANY_RET_BOOL,
     total: true,
     available_since: None,
-    doc: "Returns whether the argument is a boolean.",
+    doc: "Returns whether the argument is a boolean, i.e. `true` or `false`.",
     examples: &[
       "std.isBoolean(true)",
       "std.isBoolean(false)",
