@@ -121,15 +121,15 @@ pub(crate) fn get(cx: Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
       get_call(cx, env, expr, func, positional, named)
     }
     ExprData::Id(id) => match env.get(*id) {
-      None => Err(error::Error::Exec { expr, kind: error::Kind::NotInScope(*id) }),
+      None => Err(error::Error::Exec { expr, kind: error::Kind::UndefinedVar(*id) }),
       Some(got) => match got {
         Get::Self_ => match env.this() {
           Some(this) => Ok(Val::Object(this.clone())),
-          None => Err(error::Error::Exec { expr, kind: error::Kind::NotInScope(*id) }),
+          None => Err(error::Error::Exec { expr, kind: error::Kind::UndefinedVar(*id) }),
         },
         Get::Super => match env.this() {
           Some(this) => Ok(Val::Object(this.parent())),
-          None => Err(error::Error::Exec { expr, kind: error::Kind::NotInScope(*id) }),
+          None => Err(error::Error::Exec { expr, kind: error::Kind::UndefinedVar(*id) }),
         },
         Get::Std => Ok(Val::Object(Object::std_lib())),
         Get::Expr(env, expr) => get(cx, env, expr),

@@ -44,7 +44,7 @@ pub enum Kind {
   Infinite(finite_float::Infinite),
   User(Str),
   /// should be caught in statics
-  NotInScope(Id),
+  UndefinedVar(Id),
   Cycle(jsonnet_val::jsonnet::Cycle),
   IdxOutOfRange(usize),
   IdxNotUtf8Boundary(usize),
@@ -88,7 +88,7 @@ impl fmt::Display for DisplayError<'_> {
         Kind::Arg(ek) => ek.display(self.ar).fmt(f),
         Kind::Infinite(inf) => write!(f, "infinite number: {inf}"),
         Kind::User(s) => write!(f, "explicit `error`: {}", self.ar.get(s)),
-        Kind::NotInScope(id) => write!(f, "not in scope: `{}`", id.display(self.ar)),
+        Kind::UndefinedVar(id) => write!(f, "undefined variable: `{}`", id.display(self.ar)),
         Kind::Cycle(cycle) => {
           let first_and_last = self.display_path(cycle.first_and_last);
           write!(f, "import cycle: {first_and_last} -> ")?;

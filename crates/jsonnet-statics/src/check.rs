@@ -102,7 +102,7 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
         st.note_usage(expr, def);
         ty
       } else {
-        st.err(expr, error::Kind::NotInScope(*id));
+        st.err(expr, error::Kind::UndefinedVar(*id));
         ty::Ty::ANY
       }
     }

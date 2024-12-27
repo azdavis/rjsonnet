@@ -40,7 +40,7 @@ impl Error {
     match self.kind {
       // these static checks happen before eval, i.e. if they are present, we cannot eval. so they
       // are errors.
-      Kind::NotInScope(_)
+      Kind::UndefinedVar(_)
       | Kind::DuplicateFieldName(_)
       | Kind::DuplicateNamedArg(_)
       | Kind::DuplicateBinding(_, _, _) => diagnostic::Severity::Error,
@@ -70,7 +70,7 @@ impl Error {
         a.apply(ty_subst);
         b.apply(ty_subst);
       }
-      Kind::NotInScope(_)
+      Kind::UndefinedVar(_)
       | Kind::DuplicateNamedArg(_)
       | Kind::DuplicateBinding(_, _, _)
       | Kind::Unused(_, _)
@@ -101,7 +101,7 @@ pub(crate) enum Unify {
 
 #[derive(Debug)]
 pub(crate) enum Kind {
-  NotInScope(Id),
+  UndefinedVar(Id),
   DuplicateFieldName(Str),
   DuplicateNamedArg(Id),
   DuplicateBinding(Id, usize, def::ExprDefKindMulti),
@@ -132,7 +132,7 @@ struct Display<'a> {
 impl fmt::Display for Display<'_> {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     match &self.kind {
-      Kind::NotInScope(id) => write!(f, "not in scope: `{}`", id.display(self.str_ar)),
+      Kind::UndefinedVar(id) => write!(f, "undefined variable: `{}`", id.display(self.str_ar)),
       Kind::DuplicateFieldName(s) => write!(f, "duplicate field name: `{}`", self.str_ar.get(s)),
       Kind::DuplicateNamedArg(id) => {
         write!(f, "duplicate named argument: `{}`", id.display(self.str_ar))

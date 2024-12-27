@@ -195,7 +195,7 @@ local sub(x, y) = x - y;
 
 /// TODO fix. this is actually supposed to be allowed (wild)
 #[test]
-#[should_panic = "not in scope: `a`"]
+#[should_panic = "undefined variable: `a`"]
 fn default_arg_is_other_arg() {
   JsonnetInput::manifest(
     r"
@@ -249,7 +249,7 @@ local
 
 isOdd(4)
 "#,
-    "not in scope: `isEven`",
+    "undefined variable: `isEven`",
   )
   .check();
 }
