@@ -39,7 +39,7 @@ pub enum Kind {
   ArrayIdxOutOfRange,
   DuplicateField(Str),
   IncompatibleTypes,
-  FieldNotDefined(Str),
+  NoSuchField(Str),
   Arg(arg::ErrorKind),
   Infinite(finite_float::Infinite),
   User(Str),
@@ -82,8 +82,8 @@ impl fmt::Display for DisplayError<'_> {
         Kind::ArrayIdxOutOfRange => f.write_str("array index out of range"),
         Kind::DuplicateField(x) => write!(f, "duplicate field: `{}`", self.ar.get(x)),
         Kind::IncompatibleTypes => f.write_str("incompatible types"),
-        Kind::FieldNotDefined(name) => {
-          write!(f, "field `{}` not defined", self.ar.get(name))
+        Kind::NoSuchField(name) => {
+          write!(f, "no such field: `{}`", self.ar.get(name))
         }
         Kind::Arg(ek) => ek.display(self.ar).fmt(f),
         Kind::Infinite(inf) => write!(f, "infinite number: {inf}"),

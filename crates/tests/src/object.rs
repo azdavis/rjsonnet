@@ -211,7 +211,7 @@ local f(x) =
     else
       {};
   obj.foo;
-##^^^^^^^ diagnostic: missing field: `foo`
+##^^^^^^^ diagnostic: no such field: `foo`
 
 f(true)
 "#,

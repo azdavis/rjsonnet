@@ -69,10 +69,7 @@ pub(crate) fn get(cx: Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
           return Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes });
         };
         let Some((_, field)) = object.get_field(&name) else {
-          return Err(error::Error::Exec {
-            expr,
-            kind: error::Kind::FieldNotDefined(name.clone()),
-          });
+          return Err(error::Error::Exec { expr, kind: error::Kind::NoSuchField(name.clone()) });
         };
         for (env, assert) in object.asserts() {
           get(cx, &env, assert)?;

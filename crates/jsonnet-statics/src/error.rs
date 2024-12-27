@@ -80,7 +80,7 @@ impl Error {
       | Kind::Unify(
         Unify::WantOptionalParamGotRequired(_)
         | Unify::ExtraRequiredParam(_)
-        | Unify::MissingField(_)
+        | Unify::NoSuchField(_)
         | Unify::MismatchedParamNames(_, _)
         | Unify::NotEnoughParams(_, _),
       ) => {}
@@ -92,7 +92,7 @@ impl Error {
 #[derive(Debug)]
 pub(crate) enum Unify {
   Incompatible(ty::Ty, ty::Ty),
-  MissingField(Str),
+  NoSuchField(Str),
   NotEnoughParams(usize, usize),
   MismatchedParamNames(Id, Id),
   WantOptionalParamGotRequired(Id),
@@ -159,7 +159,7 @@ impl fmt::Display for Display<'_> {
           writeln!(f, "  expected `{want}`")?;
           write!(f, "     found `{got}`")
         }
-        Unify::MissingField(s) => write!(f, "missing field: `{}`", self.str_ar.get(s)),
+        Unify::NoSuchField(s) => write!(f, "no such field: `{}`", self.str_ar.get(s)),
         Unify::NotEnoughParams(want, got) => {
           f.write_str("not enough parameters\n")?;
           writeln!(f, "  expected at least {want}")?;

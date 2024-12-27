@@ -56,7 +56,7 @@ pub(crate) fn get(st: &mut St, store: &ty::MutStore<'_>, want: ty::Ty, got: ty::
       for (name, w) in &want.known {
         let Some(g) = got.known.get(name) else {
           if !got.has_unknown {
-            st.err(error::Unify::MissingField(name.clone()));
+            st.err(error::Unify::NoSuchField(name.clone()));
           }
           continue;
         };

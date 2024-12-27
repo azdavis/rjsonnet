@@ -314,7 +314,7 @@ fn get_subscript(
             None => {
               if !obj.has_unknown {
                 // this would result in a eval-time error if evaluated.
-                st.err(idx_expr, error::Kind::Unify(error::Unify::MissingField(s.clone())));
+                st.err(idx_expr, error::Kind::Unify(error::Unify::NoSuchField(s.clone())));
               }
               ty::Ty::ANY
             }
