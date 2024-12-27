@@ -58,8 +58,7 @@ fn slash(text: &str, delim: u8) -> String {
   if sp_st.cur().is_some_and(|x| x == delim) {
     sp_st.bump();
   } else {
-    let delim = delim.escape_ascii();
-    always!(false, "no {delim} present");
+    always!(false, "no {} present", delim.escape_ascii());
     return String::new();
   }
   jsonnet_escape::slash(&mut sp_st, &mut out, delim);
@@ -84,8 +83,7 @@ fn verbatim(text: &str, delim: u8) -> String {
   if sp_st.cur().is_some_and(|x| x == delim) {
     sp_st.bump();
   } else {
-    let delim = delim.escape_ascii();
-    always!(false, "no {delim} present");
+    always!(false, "no {} present", delim.escape_ascii());
     return String::new();
   }
   jsonnet_escape::verbatim(&mut sp_st, &mut out, delim);

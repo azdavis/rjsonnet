@@ -385,8 +385,7 @@ pub(crate) fn path_parent_must(path: &paths::CleanPath) -> &paths::CleanPath {
   if let Some(x) = path.parent() {
     x
   } else {
-    let p = path.as_path().display();
-    always!(false, "no parent for {p}");
+    always!(false, "no parent for {}", path.as_path().display());
     path
   }
 }

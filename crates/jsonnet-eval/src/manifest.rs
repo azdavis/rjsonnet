@@ -22,9 +22,12 @@ pub fn get(cx: Cx<'_>, val: jsonnet::Val) -> error::Result<json::Val> {
         if matches!(vis, jsonnet_expr::Visibility::Hidden) {
           continue;
         }
-        let jsonnet::Field::Expr(env, expr) = field else {
-          always!(false, "non-hidden std field");
-          continue;
+        let (env, expr) = match field {
+          jsonnet::Field::Expr(env, expr) => (env, expr),
+          jsonnet::Field::Std(_) => {
+            always!(false, "non-hidden std field");
+            continue;
+          }
         };
         let val = get_(cx, &env, expr)?;
         always!(val_fields.insert(name, val).is_none());
