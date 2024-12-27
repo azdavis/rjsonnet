@@ -4,8 +4,8 @@ Things under "main" are not released yet.
 
 ## v0.7.4
 
-- Improve token doc.
-- Add more examples to doc.
+- Improve token docs.
+- Add more examples to docs.
 - Add handling for set types, which "decay" to array types.
 
 ## v0.7.3
