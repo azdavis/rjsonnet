@@ -132,7 +132,13 @@ struct Display<'a> {
 impl fmt::Display for Display<'_> {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     match &self.kind {
-      Kind::UndefinedVar(id) => write!(f, "undefined variable: `{}`", id.display(self.str_ar)),
+      Kind::UndefinedVar(id) => {
+        write!(f, "undefined variable: `{}`", id.display(self.str_ar))?;
+        if let Some(suggest) = suggestion(self.str_ar.get_id(*id)) {
+          write!(f, "; did you mean `{suggest}`?")?;
+        }
+        Ok(())
+      }
       Kind::DuplicateFieldName(s) => write!(f, "duplicate field name: `{}`", self.str_ar.get(s)),
       Kind::DuplicateNamedArg(id) => {
         write!(f, "duplicate named argument: `{}`", id.display(self.str_ar))
@@ -208,4 +214,19 @@ impl fmt::Display for Display<'_> {
       },
     }
   }
+}
+
+fn suggestion(s: &str) -> Option<&'static str> {
+  let ret = match s {
+    "True" | "TRUE" | "YES" => "true",
+    "False" | "FALSE" | "NO" => "false",
+    "undefined" | "None" | "nil" | "NULL" => "null",
+    "elif" | "elsif" => "else if",
+    "func" | "fn" => "function",
+    "var" | "let" | "const" => "local",
+    "require" | "include" => "import",
+    "this" => "self",
+    _ => return None,
+  };
+  Some(ret)
 }

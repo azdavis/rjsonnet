@@ -121,12 +121,17 @@ impl StrArena {
 
   #[must_use]
   pub fn get<'a>(&'a self, s: &'a Str) -> &'a str {
-    match &s.0 {
-      StrRepr::Copy(repr) => match repr {
-        CopyStrRepr::Builtin(b) => b.as_static_str(),
-        CopyStrRepr::Idx(idx) => self.get_idx(*idx),
-      },
-      StrRepr::Alloc(s) => s.as_ref(),
+    match s.0 {
+      StrRepr::Copy(repr) => self.get_id(Id(repr)),
+      StrRepr::Alloc(ref s) => s.as_ref(),
+    }
+  }
+
+  #[must_use]
+  pub fn get_id(&self, id: Id) -> &str {
+    match id.0 {
+      CopyStrRepr::Builtin(builtin) => builtin.as_static_str(),
+      CopyStrRepr::Idx(idx) => self.get_idx(idx),
     }
   }
 }
