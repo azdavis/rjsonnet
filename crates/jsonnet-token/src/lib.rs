@@ -274,7 +274,7 @@ pub const ALL: [Token; 51] = [
     text: ")",
     purposes: &[TokenPurpose {
       doc: indoc! {"
-        The companion of `(`. Closes an sub-expression or parameter or argument list.
+        The companion of `(`.
       "},
       example: indoc! {r#"
         assert 1 + 2 * 3 == 7;
@@ -447,7 +447,7 @@ pub const ALL: [Token; 51] = [
     text: "]",
     purposes: &[TokenPurpose {
       doc: indoc! {"
-        The companion of `[`. Closes an array or array subscript.
+        The companion of `[`.
       "},
       example: indoc! {r#"
         local xs = [1, 5, 7];
@@ -500,7 +500,7 @@ pub const ALL: [Token; 51] = [
     text: "}",
     purposes: &[TokenPurpose {
       doc: indoc! {"
-        The companion of `{`. Closes an object or object comprehension.
+        The companion of `{`.
       "},
       example: indoc! {r#"
         {a: 1, b: 2}
