@@ -1,0 +1,53 @@
+{
+  "scopeName": "source.jsonnet-ty",
+  "patterns": [
+    { "include": "#slashSlashComment" },
+    { "include": "#hashComment" },
+    { "include": "#blockComment" },
+    { "include": "#singleQuotedString" },
+    { "include": "#doubleQuotedString" },
+    { "include": "#constant" },
+    { "include": "#typeName" }
+  ],
+  "repository": {
+    "slashSlashComment": {
+      "name": "comment.line.slash.jsonnet-ty",
+      "begin": "//",
+      "end": "$"
+    },
+    "hashComment": {
+      "name": "comment.line.hash.jsonnet-ty",
+      "begin": "#",
+      "end": "$"
+    },
+    "blockComment": {
+      "name": "comment.block.jsonnet-ty",
+      "begin": "/\\*",
+      "end": "\\*/"
+    },
+    "singleQuotedString": {
+      "name": "string.quoted.single.jsonnet-ty",
+      "begin": "'",
+      "end": "'",
+      "patterns": [{ "include": "#escape" }]
+    },
+    "doubleQuotedString": {
+      "name": "string.quoted.double.jsonnet-ty",
+      "begin": "\"",
+      "end": "\"",
+      "patterns": [{ "include": "#escape" }]
+    },
+    "escape": {
+      "name": "constant.character.escape.jsonnet-ty",
+      "match": "\\\\[\"'\\\\/bfnrt]"
+    },
+    "constant": {
+      "name": "constant.language.jsonnet-ty",
+      "match": "\\b(true|false|null)\\b"
+    },
+    "typeName": {
+      "name": "entity.name.type.jsonnet-ty",
+      "match": "\\b(any|string|number|boolean|never|object|array|set)\\b"
+    }
+  }
+}

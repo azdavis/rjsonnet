@@ -86,6 +86,16 @@
           "Jsonnet"
         ],
         "configuration": "languages/jsonnet/language-configuration.json"
+      },
+      {
+        "id": "jsonnet-ty",
+        "extensions": [
+          ".jsonnet-ty"
+        ],
+        "aliases": [
+          "Jsonnet Type"
+        ],
+        "configuration": "languages/jsonnet-ty/language-configuration.json"
       }
     ],
     "grammars": [
@@ -93,6 +103,11 @@
         "language": "jsonnet",
         "scopeName": "source.jsonnet",
         "path": "languages/jsonnet/syntax.json"
+      },
+      {
+        "language": "jsonnet-ty",
+        "scopeName": "source.jsonnet-ty",
+        "path": "languages/jsonnet-ty/syntax.json"
       }
     ],
     "snippets": [

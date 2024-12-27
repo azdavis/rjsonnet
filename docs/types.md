@@ -6,8 +6,6 @@ rjsonnet supports type inference, including across imported files, and on local 
 
 Although we don't introduce new syntax to the source language, we do use a certain syntax to report types to the user.
 
-The syntax is similar to that of TypeScript's type syntax.
-
 ### Unknown type
 
 `any` is the "type" of things that we don't know the type of.

@@ -571,7 +571,7 @@ impl lang_srv_state::State for St {
       let wa = &self.with_fs.artifacts;
       let ty = arts.expr_tys.get(&expr)?;
       let ty = ty.display(self.multi_line, &wa.statics, None, &wa.syntax.strings);
-      Some(format!("type:\n```ts\n{ty}\n```"))
+      Some(format!("type:\n```jsonnet-ty\n{ty}\n```"))
     });
     let from_std_field = match const_eval::get(self, fs, path_id, expr) {
       Some(const_eval::ConstEval::Std(Some(x))) => Some(x.doc()),
