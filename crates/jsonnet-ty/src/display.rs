@@ -127,8 +127,8 @@ impl fmt::Display for TyDisplay<'_> {
         Prim::String => f.write_str("string"),
         Prim::Number => f.write_str("number"),
       },
-      Data::Array(ty) => {
-        self.with(*ty, Prec::Array).fmt(f)?;
+      Data::Array(arr) => {
+        self.with(arr.elem, Prec::Array).fmt(f)?;
         f.write_str("[]")
       }
       Data::Object(obj) => {

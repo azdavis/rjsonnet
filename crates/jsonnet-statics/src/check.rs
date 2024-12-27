@@ -75,8 +75,8 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
       // having `[]` have type `never[]` is technically right, but causes some strangeness, e.g.
       // with the special-case typing of `std.join`. i suppose it might also be a bit jarring for
       // users to see the `never`, which rarely comes up in user code.
-      let elem_ty = if tys.is_empty() { ty::Ty::ANY } else { st.tys.get(ty::Data::Union(tys)) };
-      st.tys.get(ty::Data::Array(elem_ty))
+      let elem = if tys.is_empty() { ty::Ty::ANY } else { st.tys.get(ty::Data::Union(tys)) };
+      st.tys.get(ty::Data::Array(ty::Array { elem }))
     }
     ExprData::Subscript { on, idx } => {
       let on_ty = get(st, ar, *on);
@@ -242,9 +242,9 @@ fn get_add(st: &mut st::St<'_>, expr: ExprMust, lhs_ty: ty::Ty, rhs_ty: ty::Ty) 
     // if any operand is string, coerce the other to string.
     (ty::Data::Prim(ty::Prim::String), _) | (_, ty::Data::Prim(ty::Prim::String)) => ty::Ty::STRING,
     // concat arrays.
-    (ty::Data::Array(lhs_elem), ty::Data::Array(rhs_elem)) => {
-      let elem = st.tys.get(ty::Data::mk_union([*lhs_elem, *rhs_elem]));
-      st.tys.get(ty::Data::Array(elem))
+    (ty::Data::Array(lhs), ty::Data::Array(rhs)) => {
+      let elem = st.tys.get(ty::Data::mk_union([lhs.elem, rhs.elem]));
+      st.tys.get(ty::Data::Array(ty::Array::new(elem)))
     }
     // add object fields.
     (ty::Data::Object(lhs_obj), ty::Data::Object(rhs_obj)) => {
@@ -293,9 +293,9 @@ fn get_subscript(
       ty::Ty::ANY
     }
     // array indexing
-    ty::Data::Array(elem_ty) => {
+    ty::Data::Array(arr) => {
       st.unify(idx_expr, ty::Ty::NUMBER, idx_ty);
-      elem_ty
+      arr.elem
     }
     // object field get
     ty::Data::Object(obj) => {
@@ -368,7 +368,7 @@ fn is_orderable(st: &st::St<'_>, ty: ty::Ty) -> bool {
     ty::Data::Prim(ty::Prim::True | ty::Prim::False | ty::Prim::Null)
     | ty::Data::Object(_)
     | ty::Data::Fn(_) => false,
-    ty::Data::Array(ty) => is_orderable(st, *ty),
+    ty::Data::Array(arr) => is_orderable(st, arr.elem),
     ty::Data::Union(tys) => tys.iter().all(|&ty| is_orderable(st, ty)),
   }
 }

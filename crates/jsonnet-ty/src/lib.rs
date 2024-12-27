@@ -23,7 +23,7 @@ pub enum Data {
   /// A primitive type.
   Prim(Prim),
   /// An array of elements, where each element has the given type.
-  Array(Ty),
+  Array(Array),
   /// An object, possibly with known and unknown fields.
   Object(Object),
   /// A function type.
@@ -40,7 +40,7 @@ pub enum Data {
 impl Data {
   fn apply(&mut self, subst: &Subst) {
     match self {
-      Data::Array(ty) => ty.apply(subst),
+      Data::Array(arr) => arr.apply(subst),
       Data::Object(object) => object.apply(subst),
       Data::Fn(f) => f.apply(subst),
       Data::Union(parts) => {
@@ -60,7 +60,7 @@ impl Data {
   fn has_local(&self) -> bool {
     match self {
       Data::Prim(_) => false,
-      Data::Array(ty) => ty.is_local(),
+      Data::Array(arr) => arr.has_local(),
       Data::Object(object) => object.has_local(),
       Data::Fn(f) => f.has_local(),
       Data::Union(parts) => parts.iter().any(|x| x.is_local()),
@@ -111,6 +111,29 @@ pub enum Prim {
   String,
   /// A number.
   Number,
+}
+
+/// An array type.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct Array {
+  /// The type of elements in the array.
+  pub elem: Ty,
+}
+
+impl Array {
+  /// Returns a new array type.
+  #[must_use]
+  pub fn new(elem: Ty) -> Self {
+    Self { elem }
+  }
+
+  fn apply(&mut self, subst: &Subst) {
+    self.elem.apply(subst);
+  }
+
+  fn has_local(self) -> bool {
+    self.elem.is_local()
+  }
 }
 
 /// An object type.
@@ -553,7 +576,7 @@ impl Subst {
           match data {
             // known to all already exist in the global store.
             Data::Prim(_) | Data::Fn(Fn::Std(_) | Fn::Hof(_) | Fn::Unknown) => {}
-            Data::Array(ty) => work.push(Action::start(*ty)),
+            Data::Array(arr) => work.push(Action::start(arr.elem)),
             Data::Object(object) => {
               let iter = object.known.values().map(|&t| Action::start(t));
               work.extend(iter);

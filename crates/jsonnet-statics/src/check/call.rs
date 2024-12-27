@@ -105,8 +105,8 @@ fn maybe_extra_checks(
       None
     }
     StdFn::objectValues | StdFn::objectValuesAll => {
-      let val_ty = object_values(st, params)?;
-      Some(st.tys.get(ty::Data::Array(val_ty)))
+      let elem = object_values(st, params)?;
+      Some(st.tys.get(ty::Data::Array(ty::Array::new(elem))))
     }
     StdFn::objectKeysValues | StdFn::objectKeysValuesAll => {
       let val_ty = object_values(st, params)?;
@@ -115,7 +115,7 @@ fn maybe_extra_checks(
         has_unknown: false,
       };
       let elem = st.tys.get(ty::Data::Object(obj));
-      Some(st.tys.get(ty::Data::Array(elem)))
+      Some(st.tys.get(ty::Data::Array(ty::Array::new(elem))))
     }
     StdFn::map => {
       let &(_, func_ty) = params.get(&Id::func)?;
@@ -147,10 +147,10 @@ fn maybe_extra_checks(
       let &(_, sep_ty) = params.get(&Id::sep)?;
       let &(arr_expr, arr_ty) = params.get(&Id::arr)?;
       // TODO handle unions
-      let &ty::Data::Array(elem_ty) = st.tys.data(arr_ty) else { return None };
-      st.unify(arr_expr, ty::Ty::STRING_OR_ARRAY_ANY, elem_ty);
-      st.unify(arr_expr, sep_ty, elem_ty);
-      Some(elem_ty)
+      let &ty::Data::Array(arr) = st.tys.data(arr_ty) else { return None };
+      st.unify(arr_expr, ty::Ty::STRING_OR_ARRAY_ANY, arr.elem);
+      st.unify(arr_expr, sep_ty, arr.elem);
+      Some(arr.elem)
     }
     StdFn::reverse | StdFn::sort | StdFn::uniq | StdFn::set | StdFn::filter => {
       let &(_, arr_ty) = params.get(&Id::arr)?;
@@ -173,7 +173,7 @@ fn maybe_extra_checks(
       // TODO handle unions
       let ty::Data::Fn(func) = st.tys.data(func_ty) else { return None };
       let (_, ret) = func.parts();
-      Some(st.tys.get(ty::Data::Array(ret)))
+      Some(st.tys.get(ty::Data::Array(ty::Array::new(ret))))
     }
     StdFn::slice => {
       let &(_, indexable_ty) = params.get(&Id::indexable)?;
@@ -192,8 +192,8 @@ fn maybe_extra_checks(
         ty::Data::Prim(ty::Prim::String) => {
           st.unify(x_expr, ty::Ty::STRING, x_ty);
         }
-        ty::Data::Array(elem_ty) => {
-          st.unify(x_expr, *elem_ty, x_ty);
+        ty::Data::Array(arr) => {
+          st.unify(x_expr, arr.elem, x_ty);
         }
         _ => {}
       }
@@ -202,16 +202,16 @@ fn maybe_extra_checks(
     StdFn::count => {
       let &(_, arr_ty) = params.get(&Id::arr)?;
       let &(x_expr, x_ty) = params.get(&Id::x)?;
-      if let ty::Data::Array(elem_ty) = st.tys.data(arr_ty) {
-        st.unify(x_expr, *elem_ty, x_ty);
+      if let ty::Data::Array(arr) = st.tys.data(arr_ty) {
+        st.unify(x_expr, arr.elem, x_ty);
       }
       None
     }
     StdFn::find => {
       let &(value_expr, value_ty) = params.get(&Id::value)?;
       let &(_, arr_ty) = params.get(&Id::arr)?;
-      if let ty::Data::Array(elem_ty) = st.tys.data(arr_ty) {
-        st.unify(value_expr, *elem_ty, value_ty);
+      if let ty::Data::Array(arr) = st.tys.data(arr_ty) {
+        st.unify(value_expr, arr.elem, value_ty);
       }
       None
     }
@@ -228,7 +228,7 @@ fn maybe_extra_checks(
       let (Some(&[ac_param, x_param]), func_ret) = func.parts() else { return None };
       st.unify(init_expr, ac_param.ty, init_ty);
       st.unify(init_expr, func_ret, init_ty);
-      let want_arr_ty = st.tys.get(ty::Data::Array(x_param.ty));
+      let want_arr_ty = st.tys.get(ty::Data::Array(ty::Array::new(x_param.ty)));
       st.unify(arr_expr, want_arr_ty, arr_ty);
       Some(st.tys.get(ty::Data::mk_union([ac_param.ty, func_ret, init_ty])))
     }
@@ -246,9 +246,9 @@ fn check_map(
   let ty::Data::Fn(func) = st.tys.data(func_ty) else { return None };
   // NOTE no need to emit error when not 1 param, covered by unify with Hof
   let (Some(&[func_param]), func_ret_ty) = func.parts() else { return None };
-  let param_arr_ty = st.tys.get(ty::Data::Array(func_param.ty));
+  let param_arr_ty = st.tys.get(ty::Data::Array(ty::Array::new(func_param.ty)));
   st.unify(arr_expr, param_arr_ty, arr_ty);
-  Some(st.tys.get(ty::Data::Array(func_ret_ty)))
+  Some(st.tys.get(ty::Data::Array(ty::Array::new(func_ret_ty))))
 }
 
 fn length_ok(st: &st::St<'_>, ty: ty::Ty) -> bool {

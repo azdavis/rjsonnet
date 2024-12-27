@@ -1,6 +1,6 @@
 //! Logical operations with types.
 
-use crate::{Data, MutStore, Object, Prim, Ty, Union};
+use crate::{Array, Data, MutStore, Object, Prim, Ty, Union};
 use always::always;
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -23,10 +23,10 @@ pub fn and(tys: &mut MutStore<'_>, x: Ty, y: Ty) -> Ty {
       Ty::NEVER
     }
     (Data::Array(x), Data::Array(y)) => {
-      let elem = and(tys, *x, *y);
+      let elem = and(tys, x.elem, y.elem);
       // NOTE: see discussion of object fields for why we do not return never even if the elem is of
       // type never.
-      tys.get(Data::Array(elem))
+      tys.get(Data::Array(Array { elem }))
     }
     (Data::Object(x), Data::Object(y)) => {
       if definitely_lacks(x, y) || definitely_lacks(y, x) {
@@ -98,8 +98,8 @@ pub fn minus(tys: &mut MutStore<'_>, x: Ty, y: Ty) -> Ty {
       x
     }
     (Data::Array(x), Data::Array(y)) => {
-      let elem = minus(tys, *x, *y);
-      tys.get(Data::Array(elem))
+      let elem = minus(tys, x.elem, y.elem);
+      tys.get(Data::Array(Array { elem }))
     }
     (Data::Object(x), Data::Object(y)) => {
       let mut known = x.known.clone();

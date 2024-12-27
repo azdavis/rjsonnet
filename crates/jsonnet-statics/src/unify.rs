@@ -51,7 +51,9 @@ pub(crate) fn get(st: &mut St, store: &ty::MutStore<'_>, want: ty::Ty, got: ty::
         st.err(error::Unify::Incompatible(want, got));
       }
     }
-    (ty::Data::Array(want), ty::Data::Array(got)) => get(st, store, *want, *got),
+    (&ty::Data::Array(ty::Array { elem: want }), &ty::Data::Array(ty::Array { elem: got })) => {
+      get(st, store, want, got);
+    }
     (ty::Data::Object(want), ty::Data::Object(got)) => {
       for (name, w) in &want.known {
         let Some(g) = got.known.get(name) else {
