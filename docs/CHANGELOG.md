@@ -2,6 +2,12 @@
 
 Things under "main" are not released yet.
 
+## v0.7.4
+
+- Improve token doc.
+- Add more examples to doc.
+- Add handling for set types, which "decay" to array types.
+
 ## v0.7.3
 
 - Allow `std.isFunction` and similar to learn that variables have function type.
