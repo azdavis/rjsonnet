@@ -1855,7 +1855,7 @@ pub const FNS: [Fn; 126] = [
     "},
     examples: &[
       r#" std.map(function(x) x + 1, [2, 4]) == [3, 5] "#,
-      r#" std.map(function(x) error "oh no", []) "#,
+      r#" std.map(function(x) error "oh no", []) == [] "#,
     ],
   },
   Fn {
@@ -1872,7 +1872,7 @@ pub const FNS: [Fn; 126] = [
     "},
     examples: &[
       r#" std.mapWithIndex(function(i, x) x + i, [2, 4]) == [2, 5] "#,
-      r#" std.mapWithIndex(function(i, x) error "oh no", []) "#,
+      r#" std.mapWithIndex(function(i, x) error "oh no", []) == [] "#,
     ],
   },
   Fn {
