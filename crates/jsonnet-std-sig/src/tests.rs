@@ -30,12 +30,8 @@ fn ok() {
         | "base64Decode"
         | "trace"
     );
-    let has_enough_when_not_exempt = has_enough != is_exempt;
-    assert!(
-      has_enough_when_not_exempt,
-      "either have examples and not exempt, or have no examples and exempt: `{}`",
-      f.name.content(),
-    );
+    let ok = has_enough != is_exempt;
+    assert!(ok, "either make enough examples or mark exempt: `{}`", f.name.content());
 
     for example in f.examples {
       let want = format!("std.{}(", f.name.content());
