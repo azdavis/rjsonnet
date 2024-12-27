@@ -908,7 +908,7 @@ pub const FNS: [Fn; 126] = [
 
       Returns `true` if so, else throws an error message.
     "},
-    examples: &["std.assertEqual(2 + 2, 4)"],
+    examples: &["std.assertEqual(2 + 2, 4)", "std.assertEqual(12 - 34, -22)"],
   },
   Fn {
     name: S::new("toString"),
@@ -1112,7 +1112,10 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {r#"
       Identical to `std.splitLimit(str, c, maxsplits)`, but will split from right to left.
     "#},
-    examples: &[r#" std.splitLimitR("/foo/bar", "/", 1) == ["/foo", "bar"] "#],
+    examples: &[
+      r#" std.splitLimitR("/foo/bar", "/", 1) == ["/foo", "bar"] "#,
+      r#" std.splitLimitR("/foo/bar", "/", 2) == ["", "foo", "bar"] "#,
+    ],
   },
   Fn {
     name: S::new("strReplace"),
@@ -1123,10 +1126,14 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {r#"
       Replaces all occurrences of string `from` with string `to` in `str`.
     "#},
-    examples: &[indoc! {r#"
-      std.strReplace("I like to skate with my skateboard", "skate", "surf")
-        == "I like to surf with my surfboard"
-    "#}],
+    examples: &[
+      r#"  std.strReplace("pet the dog", "dog", "cat") == "pet the cat" "#,
+      r#"  std.strReplace("pet the dog", "fish", "unicorn") == "pet the dog" "#,
+      indoc! {r#"
+        std.strReplace("I like to skate with my skateboard", "skate", "surf")
+          == "I like to surf with my surfboard"
+      "#},
+    ],
   },
   Fn {
     name: S::new("isEmpty"),
@@ -1230,7 +1237,10 @@ pub const FNS: [Fn; 126] = [
 
       This allows injection of arbitrary strings as arguments of commands in bash scripts.
     "#},
-    examples: &[r#" std.escapeStringBash("echo 'hi'") == "'echo '\"'\"'hi'\"'\"''" "#],
+    examples: &[
+      r#" std.escapeStringBash("echo 'hi'") == "'echo '\"'\"'hi'\"'\"''" "#,
+      r#" std.escapeStringBash("ls -l") == "'ls -l'" "#,
+    ],
   },
   Fn {
     name: S::new("escapeStringDollars"),
@@ -1244,7 +1254,10 @@ pub const FNS: [Fn; 126] = [
       This allows injection of arbitrary strings into systems that use `$` for string
       interpolation, like Terraform.
     "},
-    examples: &[r#" std.escapeStringDollars("1 + $x") == "1 + $$x" "#],
+    examples: &[
+      r#" std.escapeStringDollars("1 + $x") == "1 + $$x" "#,
+      r#" std.escapeStringDollars("hi there") == "hi there" "#,
+    ],
   },
   Fn {
     name: S::new("escapeStringJson"),
@@ -1257,10 +1270,13 @@ pub const FNS: [Fn; 126] = [
 
       This adds quotes, escapes backslashes, and escapes unprintable characters.
     "#},
-    examples: &[indoc! {r#"
-      "{name: %s}" % std.escapeStringJson("Multiline\nc:\\path")
-        == "{name: \"Multiline\\nc:\\\\path\"}"
-    "#}],
+    examples: &[
+      indoc! {r#"
+        "{name: %s}" % std.escapeStringJson("Multiline\nc:\\path")
+          == "{name: \"Multiline\\nc:\\\\path\"}"
+      "#},
+      r#" std.escapeStringJson("hi") == '"hi"' "#,
+    ],
   },
   Fn {
     name: S::new("escapeStringPython"),
@@ -1273,10 +1289,13 @@ pub const FNS: [Fn; 126] = [
 
       This is an alias for `escapeStringJson`.
     "},
-    examples: &[indoc! {r#"
-      "{name: %s}" % std.escapeStringPython("Multiline\nc:\\path")
-        == "{name: \"Multiline\\nc:\\\\path\"}"
-    "#}],
+    examples: &[
+      indoc! {r#"
+        "{name: %s}" % std.escapeStringPython("Multiline\nc:\\path")
+          == "{name: \"Multiline\\nc:\\\\path\"}"
+      "#},
+      r#" std.escapeStringPython("hi") == '"hi"' "#,
+    ],
   },
   Fn {
     name: S::new("escapeStringXml"),
@@ -1367,7 +1386,10 @@ pub const FNS: [Fn; 126] = [
       The parser does not support YAML documents with scalar values at the root. The root node of a
       YAML document must start with either a YAML sequence or map to be successfully parsed.
     "#},
-    examples: &[r#" std.parseYaml("foo: bar") == { "foo": "bar" } "#],
+    examples: &[
+      r#" std.parseYaml("foo: bar") == { "foo": "bar" } "#,
+      r#" std.parseYaml([1, 2]) == [1, 2] "#,
+    ],
   },
   Fn {
     name: S::new("encodeUTF8"),
@@ -1378,7 +1400,10 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       Encode a string using UTF8. Returns an array of numbers representing bytes.
     "},
-    examples: &[r#" std.encodeUTF8("hey") == [104, 101, 121] "#],
+    examples: &[
+      r#" std.encodeUTF8("hey") == [104, 101, 121] "#,
+      r#" std.encodeUTF8("あ") == [227, 129, 130] "#,
+    ],
   },
   Fn {
     name: S::new("decodeUTF8"),
@@ -1389,7 +1414,10 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       Decode an array of numbers representing bytes using UTF8. Returns a string.
     "},
-    examples: &[r#" std.decodeUTF8([104, 101, 121]) == "hey" "#],
+    examples: &[
+      r#" std.decodeUTF8([104, 101, 121]) == "hey" "#,
+      r#" std.decodeUTF8([227, 129, 130]) == "あ" "#,
+    ],
   },
   Fn {
     name: S::new("manifestIni"),
@@ -1761,7 +1789,10 @@ pub const FNS: [Fn; 126] = [
       `func` is a function that takes a single parameter, the index of the element it should
       initialize.
     "},
-    examples: &[r#" std.makeArray(3, function(x) x * x) == [0, 1, 4] "#],
+    examples: &[
+      r#" std.makeArray(3, function(x) x * x) == [0, 1, 4] "#,
+      r#" std.makeArray(0, function(x) error "called on %d" % x) == [] "#,
+    ],
   },
   Fn {
     name: S::new("member"),
@@ -1854,16 +1885,25 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       First filters with `filter_func`, then maps with `map_func`, the given array `arr`.
     "},
-    examples: &[indoc! {"
-      std.filterMap(
-        function(x) x > 3,
-        function(x) x + 2,
-        [1, 6, 2, 5],
-      ) == [
-        8,
-        7,
-      ]
-    "}],
+    examples: &[
+      indoc! {"
+        std.filterMap(
+          function(x) x > 3,
+          function(x) x + 2,
+          [1, 6, 2, 5],
+        ) == [
+          8,
+          7,
+        ]
+      "},
+      indoc! {r#"
+        std.filterMap(
+          function(x) false,
+          function(x) error "oh no",
+          [1, 6, 2, 5],
+        ) == []
+      "#},
+    ],
   },
   Fn {
     name: S::new("flatMap"),
@@ -1910,7 +1950,10 @@ pub const FNS: [Fn; 126] = [
       Returns a new array containing all the elements of `arr` for which the `func` function returns
       `true`.
     "},
-    examples: &[" std.filter(function(x) x > 3, [1, 6, 2, 8, 3, 8]) == [6, 8, 8] "],
+    examples: &[
+      " std.filter(function(x) x > 3, [1, 6, 2, 8, 3, 8]) == [6, 8, 8] ",
+      " std.filter(function(x) false, [1, 6, 2, 8, 3, 8]) == [] ",
+    ],
   },
   Fn {
     name: S::new("foldl"),
@@ -1924,10 +1967,13 @@ pub const FNS: [Fn; 126] = [
 
       Traverses `arr` from left to right.
     "#},
-    examples: &[indoc! {r#"
-      std.foldl(function(ac, x) "(%s %s)" % [ac, x], ["a", "b", "c"], "_")
-        == "(((_ a) b) c)"
-    "#}],
+    examples: &[
+      indoc! {r#"
+        std.foldl(function(ac, x) "(%s %s)" % [ac, x], ["a", "b", "c"], "_")
+          == "(((_ a) b) c)"
+      "#},
+      r" std.foldl(function(ac, x) ac + x, [1, 2, 3], 0) == 6 ",
+    ],
   },
   Fn {
     name: S::new("foldr"),
@@ -1941,10 +1987,13 @@ pub const FNS: [Fn; 126] = [
 
       Traverses `arr` from right to left.
     "#},
-    examples: &[indoc! {r#"
-      std.foldr(function(ac, x) "(%s %s)" % [ac, x], ["a", "b", "c"], "_")
-        == "(((_ c) b) a)"
-    "#}],
+    examples: &[
+      indoc! {r#"
+        std.foldr(function(ac, x) "(%s %s)" % [ac, x], ["a", "b", "c"], "_")
+          == "(((_ c) b) a)"
+      "#},
+      r" std.foldr(function(ac, x) ac + x, [1, 2, 3], 0) == 6 ",
+    ],
   },
   Fn {
     name: S::new("range"),
@@ -2058,10 +2107,14 @@ pub const FNS: [Fn; 126] = [
 
       Does not recursively flatten deeply nested arrays.
     "},
-    examples: &[indoc! {"
-      std.flattenArrays([[1, 2], [3], [[4], [5, 6]]])
-        == [1, 2, 3, [4], [5, 6]]
-      "}],
+    examples: &[
+      indoc! {"
+        std.flattenArrays([[1, 2], [3], [[4], [5, 6]]])
+          == [1, 2, 3, [4], [5, 6]]
+      "},
+      "std.flattenArrays([]) == []",
+      "std.flattenArrays([[]]) == []",
+    ],
   },
   Fn {
     name: S::new("reverse"),
@@ -2202,7 +2255,7 @@ pub const FNS: [Fn; 126] = [
       The optional `keyF` function can be used to extract a key to use from each element. This key
       is used for the purpose of identifying uniqueness.
     "},
-    examples: &[r#" std.set([1, 6, 2, 6]) == [1, 2, 6] "#],
+    examples: &[r#" std.set([1, 6, 2, 6]) == [1, 2, 6] "#, r#" std.set([]) == [] "#],
   },
   Fn {
     name: S::new("setInter"),
@@ -2219,7 +2272,11 @@ pub const FNS: [Fn; 126] = [
       The optional `keyF` function can be used to extract a key to use from each element. This key
       is used for the purpose of identifying uniqueness.
     "},
-    examples: &[r#" std.setInter([1, 2], [2, 3]) == [2] "#],
+    examples: &[
+      r#" std.setInter([1, 2], [2, 3]) == [2] "#,
+      r#" std.setInter([1, 2], []) == []"#,
+      r#" std.setInter([], [1, 2]) == []"#,
+    ],
   },
   Fn {
     name: S::new("setUnion"),
@@ -2265,7 +2322,11 @@ pub const FNS: [Fn; 126] = [
       The optional `keyF` function can be used to extract a key to use from each element. This key
       is used for the purpose of identifying uniqueness.
     "},
-    examples: &[r#" std.setDiff([1, 2], [2, 3]) == [1] "#],
+    examples: &[
+      r#" std.setDiff([1, 2], [2, 3]) == [1] "#,
+      r#" std.setDiff([1, 2], []) == [1, 2] "#,
+      r#" std.setDiff([], [1, 2]) == [] "#,
+    ],
   },
   Fn {
     name: S::new("setMember"),
@@ -2301,7 +2362,10 @@ pub const FNS: [Fn; 126] = [
 
       The resulting string has no line breaks.
     "},
-    examples: &[r#" std.base64("hello world") == "aGVsbG8gd29ybGQ=" "#],
+    examples: &[
+      r#" std.base64("hello world") == "aGVsbG8gd29ybGQ=" "#,
+      r#" std.base64("") == "" "#,
+    ],
   },
   Fn {
     name: S::new("base64DecodeBytes"),
@@ -2315,7 +2379,10 @@ pub const FNS: [Fn; 126] = [
       Currently assumes the input string has no line breaks and is padded to a multiple of 4
       (with the `=` character). In other words, it consumes the output of `base64`.
     "},
-    examples: &[r#" std.decodeUTF8(std.base64DecodeBytes("aGVsbG8gd29ybGQ=")) == "hello world" "#],
+    examples: &[
+      r#" std.decodeUTF8(std.base64DecodeBytes("aGVsbG8gd29ybGQ=")) == "hello world" "#,
+      r#" std.base64DecodeBytes("") == [] "#,
+    ],
   },
   Fn {
     name: S::new("base64Decode"),
@@ -2341,7 +2408,10 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       Encodes the given value into an MD5 string.
     "},
-    examples: &[r#" std.md5("hello world") == "5eb63bbbe01eeed093cb22bb8f5acdc3" "#],
+    examples: &[
+      r#" std.md5("hello world") == "5eb63bbbe01eeed093cb22bb8f5acdc3" "#,
+      r#" std.md5("") == "d41d8cd98f00b204e9800998ecf8427e" "#,
+    ],
   },
   Fn {
     name: S::new("xor"),

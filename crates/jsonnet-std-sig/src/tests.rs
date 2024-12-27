@@ -11,7 +11,7 @@ fn ok() {
     assert!(ident.insert(f.name.ident()), "duplicate ident: {}", f.name.ident());
     assert!(content.insert(f.name.content()), "duplicate content: {}", f.name.content());
 
-    let has_enough = !f.examples.is_empty();
+    let has_enough = f.examples.len() >= 2;
     let is_exempt = matches!(
       f.name.content(),
       "extVar"
