@@ -432,16 +432,59 @@ pub const ALL: [Token; 51] = [
   },
   Token {
     text: "[",
-    purposes: &[TokenPurpose {
-      doc: indoc! {"
-        Begin an array or array subscript.
-      "},
-      example: indoc! {r#"
-        local xs = [1, 5, 7];
-        assert xs[1] - 1 == 4;
-      "#},
-      outcome: Ok(()),
-    }],
+    purposes: &[
+      TokenPurpose {
+        doc: indoc! {"
+          Begin an array.
+        "},
+        example: indoc! {r#"
+          assert std.length([1, 5, 7]) == 3;
+        "#},
+        outcome: Ok(()),
+      },
+      TokenPurpose {
+        doc: indoc! {"
+          Begin an array subscript.
+        "},
+        example: indoc! {r#"
+          local xs = [1, 5, 7];
+          assert xs[1] == 5;
+        "#},
+        outcome: Ok(()),
+      },
+      TokenPurpose {
+        doc: indoc! {"
+          Begin a computed object field.
+
+          When the expression in the `[...]` evaluates to `null`, the field is not added to the
+          object, and the value is not evaluated.
+
+          This fact, combined with the fact that the `else` branch in an `if` expression defaults to
+          `null`, can be used to succinctly define optional fields on an object.
+        "},
+        example: indoc! {r#"
+          local mk(foo, bar) = {
+            quz: 1,
+            [foo]: std.length(foo),
+            [if bar then "bar"]: 2,
+          };
+
+          assert mk(null, false) == {
+            quz: 1,
+          };
+          assert mk("hello", false) == {
+            quz: 1,
+            hello: 5,
+          };
+          assert mk("yes", true) == {
+            quz: 1,
+            yes: 3,
+            bar: 2,
+          };
+        "#},
+        outcome: Err(Error::Eval("not yet implemented: object-object equality")),
+      },
+    ],
   },
   Token {
     text: "]",
