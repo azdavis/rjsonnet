@@ -2,6 +2,10 @@
 
 Things under "main" are not released yet.
 
+## main
+
+- Improve display of object types with non-identifier field names.
+
 ## v0.7.5
 
 - Improve type syntax highlighting.

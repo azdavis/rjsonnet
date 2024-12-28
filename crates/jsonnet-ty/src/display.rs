@@ -267,10 +267,21 @@ impl fmt::Display for FieldDisplay<'_> {
     if key_is_ident {
       key.fmt(f)?;
     } else {
-      // TODO handle escapes
-      f.write_str("\"")?;
-      key.fmt(f)?;
-      f.write_str("\"")?;
+      f.write_char('"')?;
+      for &b in key_bs {
+        match b {
+          b'"' => f.write_str("\\\"")?,
+          b'\\' => f.write_str("\\\\")?,
+          8 => f.write_str("\\b")?,
+          12 => f.write_str("\\f")?,
+          10 => f.write_str("\\n")?,
+          13 => f.write_str("\\r")?,
+          9 => f.write_str("\\t")?,
+          // NOTE: no effort to try to output \uXXXX
+          _ => f.write_char(b as char)?,
+        }
+      }
+      f.write_char('"')?;
     }
     f.write_str(": ")?;
     TyDisplay { ty: self.ty, prec: Prec::Min, stuff: self.stuff }.fmt(f)

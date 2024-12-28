@@ -306,11 +306,25 @@ if false then
 fn non_ident_field() {
   JsonnetInput::manifest(
     r#"
-{ "foo bar": 3 }
-##             ^ hover: { "foo bar": number }
+  { "foo bar": 3, "the-field": 4 }
+##^ hover: { "foo bar": number, "the-field": number }
 "#,
     r#"
-{ "foo bar": 3 }
+{ "foo bar": 3, "the-field": 4 }
+"#,
+  )
+  .check();
+}
+
+#[test]
+fn escaped_field() {
+  JsonnetInput::manifest(
+    r#"
+  { "do\nut\bar\test\"\false\\": 3 }
+##^ hover: { "do\nut\bar\test\"\false\\": number }
+"#,
+    r#"
+{ "do\nut\bar\test\"\false\\": 3 }
 "#,
   )
   .check();
