@@ -7,6 +7,7 @@ mod array;
 mod check;
 mod comment;
 mod def;
+mod did_you_mean;
 mod docs;
 mod dupe;
 mod flow;
