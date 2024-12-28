@@ -132,10 +132,10 @@ pub enum Ty {
   NumOrNull,
   /// A number or a string.
   NumOrStr,
-  /// A HOF with 1 param.
-  Hof1,
-  /// A HOF with 2 params.
-  Hof2,
+  /// A function with 1 param.
+  Fn1,
+  /// A function with 2 params.
+  Fn2,
 }
 
 const fn req(name: &'static str, ty: Ty) -> Param {
@@ -156,7 +156,7 @@ macro_rules! epsilon_eq {
   };
 }
 
-const KEY_F: Param = opt("keyF", Ty::Hof1, "function(x) x");
+const KEY_F: Param = opt("keyF", Ty::Fn1, "function(x) x");
 const V_ANY_RET_BOOL: Sig = sig(&[req("v", Ty::Any)], Ty::Bool);
 const X_NUM_RET_NUM: Sig = sig(&[req("x", Ty::Num)], Ty::Num);
 const N_NUM_RET_NUM: Sig = sig(&[req("n", Ty::Num)], Ty::Num);
@@ -174,9 +174,9 @@ const OBJ_FIELDS: Sig = sig(&[req("o", Ty::Obj)], Ty::ArrStr);
 const OBJ_VALUES: Sig = sig(&[req("o", Ty::Obj)], Ty::ArrAny);
 const OBJ_KEYS_VALUES: Sig = sig(&[req("o", Ty::Obj)], Ty::ArrKv);
 const MANIFEST_JSON: Sig = sig(&[req("value", Ty::Any)], Ty::Str);
-const ARR_HOF1: Sig = sig(&[req("func", Ty::Hof1), req("arr", Ty::ArrAny)], Ty::ArrAny);
+const ARR_HOF1: Sig = sig(&[req("func", Ty::Fn1), req("arr", Ty::ArrAny)], Ty::ArrAny);
 const FOLD: Sig =
-  sig(&[req("func", Ty::Hof2), req("arr", Ty::ArrAny), req("init", Ty::Any)], Ty::Any);
+  sig(&[req("func", Ty::Fn2), req("arr", Ty::ArrAny), req("init", Ty::Any)], Ty::Any);
 const ARR_KEY_F: Sig = sig(&[req("arr", Ty::ArrAny), KEY_F], Ty::ArrAny);
 const BINARY_SET_FN: Sig = sig(&[req("a", Ty::SetAny), req("b", Ty::SetAny), KEY_F], Ty::SetAny);
 
@@ -509,7 +509,7 @@ pub const FNS: [Fn; 126] = [
   Fn {
     name: S::new("mapWithKey"),
     implemented: false,
-    sig: sig(&[req("func", Ty::Hof2), req("obj", Ty::Obj)], Ty::Obj),
+    sig: sig(&[req("func", Ty::Fn2), req("obj", Ty::Obj)], Ty::Obj),
     total: true,
     available_since: Some(10),
     doc: indoc! {"
@@ -1781,7 +1781,7 @@ pub const FNS: [Fn; 126] = [
   Fn {
     name: S::new("makeArray"),
     implemented: false,
-    sig: sig(&[req("sz", Ty::Uint), req("func", Ty::Hof1)], Ty::ArrAny),
+    sig: sig(&[req("sz", Ty::Uint), req("func", Ty::Fn1)], Ty::ArrAny),
     total: true,
     available_since: Some(10),
     doc: indoc! {"
@@ -1860,7 +1860,7 @@ pub const FNS: [Fn; 126] = [
   Fn {
     name: S::new("mapWithIndex"),
     implemented: false,
-    sig: sig(&[req("func", Ty::Hof2), req("arr", Ty::ArrAny)], Ty::ArrAny),
+    sig: sig(&[req("func", Ty::Fn2), req("arr", Ty::ArrAny)], Ty::ArrAny),
     total: true,
     available_since: Some(10),
     doc: indoc! {"
@@ -1878,7 +1878,7 @@ pub const FNS: [Fn; 126] = [
     name: S::new("filterMap"),
     implemented: false,
     sig: sig(
-      &[req("filter_func", Ty::Hof1), req("map_func", Ty::Hof1), req("arr", Ty::ArrAny)],
+      &[req("filter_func", Ty::Fn1), req("map_func", Ty::Fn1), req("arr", Ty::ArrAny)],
       Ty::ArrAny,
     ),
     total: true,
@@ -1909,7 +1909,7 @@ pub const FNS: [Fn; 126] = [
   Fn {
     name: S::new("flatMap"),
     implemented: false,
-    sig: sig(&[req("func", Ty::Hof1), req("arr", Ty::StrOrArrAny)], Ty::StrOrArrAny),
+    sig: sig(&[req("func", Ty::Fn1), req("arr", Ty::StrOrArrAny)], Ty::StrOrArrAny),
     total: true,
     available_since: Some(10),
     doc: indoc! {r#"

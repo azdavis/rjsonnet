@@ -30,8 +30,8 @@ pub(crate) fn get(
       });
       maybe_extra_checks(st, std_fn, &params).unwrap_or(sig.ret)
     }
-    ty::Data::Fn(ty::Fn::Hof(_)) => {
-      always!(false, "should never call a HOF");
+    ty::Data::Fn(ty::Fn::StdParam(_)) => {
+      always!(false, "should never call a StdParam");
       ty::Ty::ANY
     }
     ty::Data::Union(tys) => {
@@ -250,7 +250,7 @@ fn check_map(
 ) -> Option<ty::Ty> {
   // TODO handle unions
   let ty::Data::Fn(func) = st.tys.data(func_ty) else { return None };
-  // NOTE no need to emit error when not 1 param, covered by unify with Hof
+  // NOTE no need to emit error when not 1 param, covered by unify
   let (Some(&[func_param]), func_ret_ty) = func.parts() else { return None };
   let param_arr_ty = st.tys.get(ty::Data::Array(ty::Array::new(func_param.ty)));
   st.unify(arr_expr, param_arr_ty, arr_ty);

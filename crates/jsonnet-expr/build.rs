@@ -27,7 +27,13 @@ fn main() {
     S::named("self", "self_"),
     S::named("super", "super_"),
     S::named("$", "dollar"),
-    // these are used for hof params which are never called by name.
+    // these are used as the param names for a function f, which is itself a param for a std
+    // function. it is known that this function f will always be called with only positional params,
+    // never named params. so the param names for f are intensionally not utterable in user code.
+    //
+    // this allows user code to be more permissive. when a user makes a function g that they pass as
+    // the argument value for the param f of the std function, the user may choose any param name(s)
+    // for that user-written function g.
     S::named("$x", "x_unutterable"),
     S::named("$y", "y_unutterable"),
   ];

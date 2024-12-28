@@ -26,8 +26,8 @@ fn main() {
     (ident("STRING_OR_ARRAY_ANY"), q!(Data::mk_union([Ty::STRING, Ty::ARRAY_ANY]))),
     (ident("NUMBER_OR_NULL"), q!(Data::mk_union([Ty::NUMBER, Ty::NULL]))),
     (ident("NUMBER_OR_STRING"), q!(Data::mk_union([Ty::NUMBER, Ty::STRING]))),
-    (ident("HOF_1"), q!(Data::Fn(super::Fn::Hof(super::HofParams::One)))),
-    (ident("HOF_2"), q!(Data::Fn(super::Fn::Hof(super::HofParams::Two)))),
+    (ident("STD_PARAM_FN1"), q!(Data::Fn(super::Fn::StdParam(super::ParamCount::One)))),
+    (ident("STD_PARAM_FN2"), q!(Data::Fn(super::Fn::StdParam(super::ParamCount::Two)))),
     (ident("UNKNOWN_FN"), q!(Data::Fn(super::Fn::Unknown))),
     (ident("OBJECT"), q!(Data::Object(super::Object::unknown()))),
     (
@@ -166,8 +166,8 @@ fn mk_ty(ty: Ty) -> proc_macro2::TokenStream {
     Ty::StrOrArrNum => q!(Ty::STRING_OR_ARRAY_NUMBER),
     Ty::NumOrNull => q!(Ty::NUMBER_OR_NULL),
     Ty::NumOrStr => q!(Ty::NUMBER_OR_STRING),
-    Ty::Hof1 => q!(Ty::HOF_1),
-    Ty::Hof2 => q!(Ty::HOF_2),
+    Ty::Fn1 => q!(Ty::STD_PARAM_FN1),
+    Ty::Fn2 => q!(Ty::STD_PARAM_FN2),
   }
 }
 

@@ -191,13 +191,11 @@ pub enum Fn {
   Regular(RegularFn),
   /// A standard library function.
   Std(jsonnet_expr::StdFn),
-  /// A higher-order function known to never have named params or optional params, only a given
-  /// number of required positional params.
+  /// A function known to never have named params or optional params, only a given number of
+  /// required positional params. The params and return type are not known (aka any).
   ///
-  /// Only used for std fn types, not writeable in user code.
-  ///
-  /// The params and return type are not known (aka any).
-  Hof(HofParams),
+  /// Only used as the type of parameters in std fns, not writeable in user code.
+  StdParam(ParamCount),
   /// A function for which the number of params or return type is not known at all. This is the type
   /// of locals that are checked with `std.isFunction`.
   Unknown,
@@ -207,14 +205,14 @@ impl Fn {
   fn apply(&mut self, subst: &Subst) {
     match self {
       Fn::Regular(f) => f.apply(subst),
-      Fn::Std(_) | Fn::Hof(_) | Fn::Unknown => {}
+      Fn::Std(_) | Fn::StdParam(_) | Fn::Unknown => {}
     }
   }
 
   fn has_local(&self) -> bool {
     match self {
       Fn::Regular(f) => f.has_local(),
-      Fn::Std(_) | Fn::Hof(_) | Fn::Unknown => false,
+      Fn::Std(_) | Fn::StdParam(_) | Fn::Unknown => false,
     }
   }
 
@@ -227,10 +225,10 @@ impl Fn {
         let sig = StdFnSig::get(*func);
         (Some(sig.params), sig.ret)
       }
-      Fn::Hof(hof) => {
-        let params = match hof {
-          HofParams::One => [Param::X].as_slice(),
-          HofParams::Two => [Param::X, Param::Y].as_slice(),
+      Fn::StdParam(param_count) => {
+        let params = match param_count {
+          ParamCount::One => [Param::X].as_slice(),
+          ParamCount::Two => [Param::X, Param::Y].as_slice(),
         };
         (Some(params), Ty::ANY)
       }
@@ -239,22 +237,22 @@ impl Fn {
   }
 }
 
-/// A number of arguments a HOF can take.
+/// A number of params a std param fn has.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum HofParams {
-  /// 1
+pub enum ParamCount {
+  /// 1 param.
   One,
-  /// 2
+  /// 2 params.
   Two,
 }
 
-impl HofParams {
+impl ParamCount {
   /// Converts this to a usize.
   #[must_use]
   pub fn to_usize(self) -> usize {
     match self {
-      HofParams::One => 1,
-      HofParams::Two => 2,
+      ParamCount::One => 1,
+      ParamCount::Two => 2,
     }
   }
 }
@@ -423,7 +421,7 @@ impl<'a> MutStore<'a> {
       Data::Fn(Fn::Std(f)) => Ty::std_fn(f),
       Data::Fn(Fn::Unknown) => Ty::UNKNOWN_FN,
       // go directly to get inner.
-      Data::Array(_) | Data::Object(_) | Data::Fn(Fn::Regular(_) | Fn::Hof(_)) => {
+      Data::Array(_) | Data::Object(_) | Data::Fn(Fn::Regular(_) | Fn::StdParam(_)) => {
         self.get_inner(data)
       }
       // the interesting case.
@@ -587,7 +585,7 @@ impl Subst {
           work.push(Action::end(ty));
           match data {
             // known to all already exist in the global store.
-            Data::Prim(_) | Data::Fn(Fn::Std(_) | Fn::Hof(_) | Fn::Unknown) => {}
+            Data::Prim(_) | Data::Fn(Fn::Std(_) | Fn::StdParam(_) | Fn::Unknown) => {}
             Data::Array(arr) => work.push(Action::start(arr.elem)),
             Data::Object(object) => {
               let iter = object.known.values().map(|&t| Action::start(t));
