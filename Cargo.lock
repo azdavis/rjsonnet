@@ -708,6 +708,7 @@ version = "0.7.5"
 dependencies = [
  "always",
  "jsonnet-expr",
+ "jsonnet-ident",
  "jsonnet-std-sig",
  "proc-macro2",
  "quote",

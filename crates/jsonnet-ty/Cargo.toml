@@ -17,6 +17,7 @@ rustc-hash.workspace = true
 
 always.path = "../always"
 jsonnet-expr.path = "../jsonnet-expr"
+jsonnet-ident.path = "../jsonnet-ident"
 
 [build-dependencies]
 proc-macro2.workspace = true

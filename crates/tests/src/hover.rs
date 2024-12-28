@@ -301,3 +301,17 @@ if false then
   )
   .check();
 }
+
+#[test]
+fn non_ident_field() {
+  JsonnetInput::manifest(
+    r#"
+{ "foo bar": 3 }
+##             ^ hover: { "foo bar": number }
+"#,
+    r#"
+{ "foo bar": 3 }
+"#,
+  )
+  .check();
+}

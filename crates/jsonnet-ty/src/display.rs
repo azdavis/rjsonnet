@@ -259,7 +259,19 @@ struct FieldDisplay<'a> {
 
 impl fmt::Display for FieldDisplay<'_> {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    self.stuff.str_ar.get(self.key).fmt(f)?;
+    let key = self.stuff.str_ar.get(self.key);
+    let key_bs = key.as_bytes();
+    let key_is_ident = key_bs.split_first().is_some_and(|(&fst, rest)| {
+      jsonnet_ident::is_start(fst) && rest.iter().copied().all(jsonnet_ident::is_continue)
+    });
+    if key_is_ident {
+      key.fmt(f)?;
+    } else {
+      // TODO handle escapes
+      f.write_str("\"")?;
+      key.fmt(f)?;
+      f.write_str("\"")?;
+    }
     f.write_str(": ")?;
     TyDisplay { ty: self.ty, prec: Prec::Min, stuff: self.stuff }.fmt(f)
   }
