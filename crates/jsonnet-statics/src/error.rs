@@ -43,7 +43,7 @@ impl Error {
     match self.kind {
       // these static checks happen before eval, i.e. if they are present, we cannot eval. so they
       // are errors.
-      Kind::UndefinedVar(_)
+      Kind::UndefinedVar(..)
       | Kind::DuplicateFieldName(_)
       | Kind::DuplicateNamedArg(_)
       | Kind::DuplicateBinding(_, _, _) => diagnostic::Severity::Error,
@@ -73,7 +73,7 @@ impl Error {
         a.apply(ty_subst);
         b.apply(ty_subst);
       }
-      Kind::UndefinedVar(_)
+      Kind::UndefinedVar(_, _)
       | Kind::DuplicateNamedArg(_)
       | Kind::DuplicateBinding(_, _, _)
       | Kind::Unused(_, _)
@@ -95,7 +95,7 @@ impl Error {
 #[derive(Debug)]
 pub(crate) enum Unify {
   Incompatible(ty::Ty, ty::Ty),
-  NoSuchField(Str, Option<Str>),
+  NoSuchField(Str, Option<String>),
   NotEnoughParams(usize, usize),
   MismatchedParamNames(Id, Id),
   WantOptionalParamGotRequired(Id),
@@ -111,14 +111,14 @@ impl Unify {
     if obj.has_unknown {
       return None;
     }
-    let suggest = suggestion::approx(str_ar, str_ar.get(no_such), obj.known.keys());
+    let suggest = suggestion::approx(str_ar.get(no_such), obj.known.keys().map(|x| str_ar.get(x)));
     Some(Self::NoSuchField(no_such.clone(), suggest))
   }
 }
 
 #[derive(Debug)]
 pub(crate) enum Kind {
-  UndefinedVar(Id),
+  UndefinedVar(Id, Option<String>),
   DuplicateFieldName(Str),
   DuplicateNamedArg(Id),
   DuplicateBinding(Id, usize, def::ExprDefKindMulti),
@@ -149,9 +149,9 @@ struct Display<'a> {
 impl fmt::Display for Display<'_> {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     match &self.kind {
-      Kind::UndefinedVar(id) => {
+      Kind::UndefinedVar(id, suggest) => {
         write!(f, "undefined variable: `{}`", id.display(self.str_ar))?;
-        if let Some(suggest) = suggestion::exact(self.str_ar.get_id(*id)) {
+        if let Some(suggest) = suggest {
           write!(f, "; did you mean `{suggest}`?")?;
         }
         Ok(())
@@ -185,7 +185,7 @@ impl fmt::Display for Display<'_> {
         Unify::NoSuchField(no_such, suggest) => {
           write!(f, "no such field: `{}`", self.str_ar.get(no_such))?;
           if let Some(suggest) = suggest {
-            write!(f, "; did you mean `{}`?", self.str_ar.get(suggest))?;
+            write!(f, "; did you mean `{suggest}`?")?;
           }
           Ok(())
         }

@@ -193,4 +193,11 @@ impl Scope {
       always!(stack.is_empty());
     }
   }
+
+  pub(crate) fn all_str<'ar>(
+    &self,
+    str_ar: &'ar jsonnet_expr::StrArena,
+  ) -> impl Iterator<Item = &'ar str> + use<'_, 'ar> {
+    self.store.iter().map(|(&id, _)| str_ar.get_id(id))
+  }
 }

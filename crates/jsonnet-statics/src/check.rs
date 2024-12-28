@@ -2,7 +2,7 @@
 
 mod call;
 
-use crate::{error, facts, scope, st};
+use crate::{error, facts, scope, st, suggestion};
 use always::always;
 use jsonnet_expr::{def, BinaryOp, Expr, ExprArena, ExprData, ExprMust, Id, Prim, UnaryOp};
 use jsonnet_ty as ty;
@@ -108,7 +108,11 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
         st.note_usage(expr, def);
         ty
       } else {
-        st.err(expr, error::Kind::UndefinedVar(*id));
+        let suggest = match suggestion::exact(st.str_ar.get_id(*id)) {
+          Some(x) => Some(x.to_owned()),
+          None => suggestion::approx(st.str_ar.get_id(*id), st.scope.all_str(st.str_ar)),
+        };
+        st.err(expr, error::Kind::UndefinedVar(*id, suggest));
         ty::Ty::ANY
       }
     }

@@ -1,7 +1,6 @@
 //! Suggestions for possible misspellings/confusions.
 
-use jsonnet_expr::Str;
-
+/// Returns an exact suggestion from a pre-written table of possible confusions.
 pub(crate) fn exact(s: &str) -> Option<&'static str> {
   let ret = match s {
     "True" | "TRUE" | "YES" => "true",
@@ -17,18 +16,14 @@ pub(crate) fn exact(s: &str) -> Option<&'static str> {
   Some(ret)
 }
 
-pub(crate) fn approx<'a, I>(
-  str_ar: &jsonnet_expr::StrArena,
-  target: &str,
-  candidates: I,
-) -> Option<Str>
+/// Returns the best suggestion from the candidates that passes a certain goodness threshold.
+pub(crate) fn approx<'a, I>(target: &str, candidates: I) -> Option<String>
 where
-  I: Iterator<Item = &'a Str>,
+  I: Iterator<Item = &'a str>,
 {
   let mut candidates: Vec<_> = candidates
     .filter_map(|c| {
-      let c_s = str_ar.get(c);
-      let n = strsim::normalized_damerau_levenshtein(target, c_s);
+      let n = strsim::normalized_damerau_levenshtein(target, c);
       // arbitrary-ish threshold
       if n <= 0.7 {
         return None;
@@ -38,5 +33,5 @@ where
     })
     .collect();
   candidates.sort_unstable();
-  candidates.first().map(|&(_, c)| c.clone())
+  candidates.first().map(|&(_, c)| c.to_owned())
 }
