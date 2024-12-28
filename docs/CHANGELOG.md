@@ -2,6 +2,12 @@
 
 Things under "main" are not released yet.
 
+## v0.7.5
+
+- Improve type syntax highlighting.
+- Use `array[T]` instead of `T[]` for array types.
+- Add did-you-mean suggestions for unknown fields and undefined variables.
+
 ## v0.7.4
 
 - Improve token docs.
