@@ -24,7 +24,7 @@ They are:
 
 These are fairly self-explanatory. Notably, the values `true`, `false`, and `null` have their own types.
 
-The type that is the union of `true` and `false` is shown as `boolean`.
+`boolean` is the type that is the union of `true` and `false`.
 
 ### Array types
 
@@ -34,7 +34,7 @@ The type that is the union of `true` and `false` is shown as `boolean`.
 
 `set[T]` is the type of sets where the elements have type `T`.
 
-At runtime, sets are represented as sorted, duplicate-free arrays. Thus, for a type T, the type `set[T]` "decays" to the type `array[T]`. For instance, if you have `x` with type `set[T]`, and your function `f` accepts a `array[T]`, you may pass `x` to `f`.
+At runtime, sets are represented as sorted, duplicate-free arrays. Thus, for a type `T`, the type `set[T]` "decays" to the type `array[T]`. For instance, if you have `x` with type `set[T]`, and your function `f` accepts a `array[T]`, you may pass `x` to `f`.
 
 This is called "subtyping" in programming language theory jargon.
 
@@ -44,7 +44,7 @@ This is called "subtyping" in programming language theory jargon.
 
 If an object may have unknown fields, an extra `...` is added at the end.
 
-`object` is the type of an object with no known fields that may have unknown fields. It is equivalent to `{ ... }`, but we prefer to show it as the former.
+`object` is the type of an object with no known fields that may have unknown fields. It is equivalent to `{ ... }`, but we prefer to show it as the former. It is distinct from `{}`, the type of the object known to have no fields.
 
 ### Union types
 
