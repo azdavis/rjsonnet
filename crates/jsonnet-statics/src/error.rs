@@ -2,6 +2,7 @@
 
 #![allow(clippy::too_many_lines)]
 
+use crate::suggestion;
 use jsonnet_expr::{def, ExprMust, Id, Str};
 use jsonnet_ty as ty;
 use std::fmt;
@@ -110,23 +111,7 @@ impl Unify {
     if obj.has_unknown {
       return None;
     }
-    let no_such_s = str_ar.get(no_such);
-    let mut candidates: Vec<_> = obj
-      .known
-      .keys()
-      .filter_map(|x| {
-        let x_s = str_ar.get(x);
-        let n = strsim::normalized_damerau_levenshtein(no_such_s, x_s);
-        // arbitrary-ish threshold
-        if n <= 0.7 {
-          return None;
-        }
-        let n = finite_float::Float::always_from_f64(n);
-        Some((std::cmp::Reverse(n), x))
-      })
-      .collect();
-    candidates.sort_unstable();
-    let suggest = candidates.first().map(|&(_, x)| x.clone());
+    let suggest = suggestion::approx(str_ar, str_ar.get(no_such), obj.known.keys());
     Some(Self::NoSuchField(no_such.clone(), suggest))
   }
 }
@@ -166,7 +151,7 @@ impl fmt::Display for Display<'_> {
     match &self.kind {
       Kind::UndefinedVar(id) => {
         write!(f, "undefined variable: `{}`", id.display(self.str_ar))?;
-        if let Some(suggest) = suggestion(self.str_ar.get_id(*id)) {
+        if let Some(suggest) = suggestion::exact(self.str_ar.get_id(*id)) {
           write!(f, "; did you mean `{suggest}`?")?;
         }
         Ok(())
@@ -252,19 +237,4 @@ impl fmt::Display for Display<'_> {
       },
     }
   }
-}
-
-fn suggestion(s: &str) -> Option<&'static str> {
-  let ret = match s {
-    "True" | "TRUE" | "YES" => "true",
-    "False" | "FALSE" | "NO" => "false",
-    "undefined" | "None" | "nil" | "NULL" => "null",
-    "elif" | "elsif" => "else if",
-    "func" | "fn" => "function",
-    "var" | "let" | "const" => "local",
-    "require" | "include" => "import",
-    "this" => "self",
-    _ => return None,
-  };
-  Some(ret)
 }

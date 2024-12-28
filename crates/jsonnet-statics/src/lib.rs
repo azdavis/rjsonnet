@@ -3,6 +3,7 @@
 mod check;
 mod facts;
 mod scope;
+mod suggestion;
 mod unify;
 
 pub mod error;
