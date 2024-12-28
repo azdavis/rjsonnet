@@ -616,11 +616,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "jsonnet-ident"
+version = "0.7.5"
+
+[[package]]
 name = "jsonnet-lex"
 version = "0.7.5"
 dependencies = [
  "always",
  "jsonnet-escape",
+ "jsonnet-ident",
  "jsonnet-syntax",
  "str-process",
  "text-size",

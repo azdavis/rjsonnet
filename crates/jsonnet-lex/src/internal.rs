@@ -52,10 +52,10 @@ pub(crate) fn token(st: &mut St<'_>, out: &mut error::Output, b: u8) -> SK {
   if let Some(&(_, sk)) = SK::PUNCTUATION.iter().find(|&(bs, _)| st.eat_prefix(bs)) {
     return sk;
   }
-  if b.is_ascii_alphabetic() || b == b'_' {
+  if jsonnet_ident::is_start(b) {
     let start = st.mark();
     st.bump();
-    st.bump_while(|b| b.is_ascii_alphanumeric() || b == b'_');
+    st.bump_while(jsonnet_ident::is_continue);
     return SK::keyword(st.non_empty_since(start)).unwrap_or(SK::Id);
   }
   if b.is_ascii_digit() {

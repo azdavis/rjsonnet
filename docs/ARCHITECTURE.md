@@ -58,6 +58,10 @@ Statically analyze an expression, checking for things like if every variable usa
 
 These implement Jsonnet-specific things, but aren't really "big" enough to be a full stage.
 
+### `crates/jsonnet-ident`
+
+Some helpers concerning identifiers.
+
 ### `crates/jsonnet-escape`
 
 Handles string escape sequences, like `\n` and `\r`.

@@ -1,4 +1,4 @@
-//! Dealing with Jsonnet string escapes.
+//! Dealing with string escapes.
 
 use std::fmt;
 use str_process::St;
