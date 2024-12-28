@@ -267,7 +267,7 @@ impl fmt::Display for FieldDisplay<'_> {
     if key_is_ident {
       key.fmt(f)?;
     } else {
-      f.write_char('"')?;
+      f.write_str("\"")?;
       for &b in key_bs {
         match b {
           b'"' => f.write_str("\\\"")?,
@@ -281,7 +281,7 @@ impl fmt::Display for FieldDisplay<'_> {
           _ => f.write_char(b as char)?,
         }
       }
-      f.write_char('"')?;
+      f.write_str("\"")?;
     }
     f.write_str(": ")?;
     TyDisplay { ty: self.ty, prec: Prec::Min, stuff: self.stuff }.fmt(f)
