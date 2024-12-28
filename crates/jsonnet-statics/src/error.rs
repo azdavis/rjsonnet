@@ -1,5 +1,7 @@
 //! Static errors.
 
+#![allow(clippy::too_many_lines)]
+
 use jsonnet_expr::{def, ExprMust, Id, Str};
 use jsonnet_ty as ty;
 use std::fmt;
@@ -80,7 +82,7 @@ impl Error {
       | Kind::Unify(
         Unify::WantOptionalParamGotRequired(_)
         | Unify::ExtraRequiredParam(_)
-        | Unify::NoSuchField(_)
+        | Unify::NoSuchField(..)
         | Unify::MismatchedParamNames(_, _)
         | Unify::NotEnoughParams(_, _),
       ) => {}
@@ -92,11 +94,41 @@ impl Error {
 #[derive(Debug)]
 pub(crate) enum Unify {
   Incompatible(ty::Ty, ty::Ty),
-  NoSuchField(Str),
+  NoSuchField(Str, Option<Str>),
   NotEnoughParams(usize, usize),
   MismatchedParamNames(Id, Id),
   WantOptionalParamGotRequired(Id),
   ExtraRequiredParam(Id),
+}
+
+impl Unify {
+  pub(crate) fn no_such_field(
+    str_ar: &jsonnet_expr::StrArena,
+    obj: &jsonnet_ty::Object,
+    no_such: &Str,
+  ) -> Option<Self> {
+    if obj.has_unknown {
+      return None;
+    }
+    let no_such_s = str_ar.get(no_such);
+    let mut candidates: Vec<_> = obj
+      .known
+      .keys()
+      .filter_map(|x| {
+        let x_s = str_ar.get(x);
+        let n = strsim::normalized_damerau_levenshtein(no_such_s, x_s);
+        // arbitrary-ish threshold
+        if n <= 0.7 {
+          return None;
+        }
+        let n = finite_float::Float::always_from_f64(n);
+        Some((std::cmp::Reverse(n), x))
+      })
+      .collect();
+    candidates.sort_unstable();
+    let suggest = candidates.first().map(|&(_, x)| x.clone());
+    Some(Self::NoSuchField(no_such.clone(), suggest))
+  }
 }
 
 #[derive(Debug)]
@@ -165,7 +197,13 @@ impl fmt::Display for Display<'_> {
           writeln!(f, "  expected `{want}`")?;
           write!(f, "     found `{got}`")
         }
-        Unify::NoSuchField(s) => write!(f, "no such field: `{}`", self.str_ar.get(s)),
+        Unify::NoSuchField(no_such, suggest) => {
+          write!(f, "no such field: `{}`", self.str_ar.get(no_such))?;
+          if let Some(suggest) = suggest {
+            write!(f, "; did you mean `{}`?", self.str_ar.get(suggest))?;
+          }
+          Ok(())
+        }
         Unify::NotEnoughParams(want, got) => {
           f.write_str("not enough parameters\n")?;
           writeln!(f, "  expected at least {want}")?;

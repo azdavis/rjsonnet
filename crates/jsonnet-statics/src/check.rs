@@ -318,9 +318,9 @@ fn get_subscript(
             Some(&ty) => ty,
             // we don't know the type.
             None => {
-              if !obj.has_unknown {
+              if let Some(u) = error::Unify::no_such_field(st.str_ar, &obj, s) {
                 // this would result in a eval-time error if evaluated.
-                st.err(idx_expr, error::Kind::Unify(error::Unify::NoSuchField(s.clone())));
+                st.err(idx_expr, error::Kind::Unify(u));
               }
               ty::Ty::ANY
             }

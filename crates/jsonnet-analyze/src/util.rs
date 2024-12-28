@@ -205,7 +205,7 @@ impl StaticsFileToCombine {
     artifacts: &GlobalArtifacts,
     file_tys: &paths::PathMap<jsonnet_ty::Ty>,
   ) -> Self {
-    let st = jsonnet_statics::st::St::new(&artifacts.statics, file_tys);
+    let st = jsonnet_statics::st::St::new(&artifacts.statics, file_tys, &artifacts.syntax.strings);
     let (statics, to_combine) = jsonnet_statics::get(st, &syntax.exprs.ar, syntax.exprs.top);
     Self { file: StaticsFile { syntax, statics }, to_combine }
   }

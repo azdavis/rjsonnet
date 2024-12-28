@@ -23,6 +23,8 @@ pub struct St<'a> {
   statics: Statics,
   /// The types of other files.
   other_files: &'a PathMap<ty::Ty>,
+  /// The strings.
+  pub(crate) str_ar: &'a jsonnet_expr::StrArena,
   /// The things in scope.
   pub(crate) scope: Scope,
   /// A store for all the types.
@@ -32,10 +34,15 @@ pub struct St<'a> {
 impl<'a> St<'a> {
   /// Make a new state.
   #[must_use]
-  pub fn new(tys: &'a ty::GlobalStore, other_files: &'a PathMap<ty::Ty>) -> Self {
+  pub fn new(
+    tys: &'a ty::GlobalStore,
+    other_files: &'a PathMap<ty::Ty>,
+    str_ar: &'a jsonnet_expr::StrArena,
+  ) -> Self {
     Self {
       statics: Statics::default(),
       other_files,
+      str_ar,
       scope: Scope::default(),
       tys: ty::MutStore::new(tys),
     }
@@ -72,7 +79,7 @@ impl<'a> St<'a> {
   }
 
   pub(crate) fn unify(&mut self, expr: ExprMust, want: ty::Ty, got: ty::Ty) {
-    let mut st = unify::St::default();
+    let mut st = unify::St::new(self.str_ar);
     unify::get(&mut st, &self.tys, want, got);
     for u in st.finish() {
       self.err(expr, error::Kind::Unify(u));

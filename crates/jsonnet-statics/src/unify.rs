@@ -5,12 +5,17 @@ use always::always;
 use drop_bomb::DebugDropBomb;
 use jsonnet_ty as ty;
 
-#[derive(Debug, Default)]
-pub(crate) struct St {
+#[derive(Debug)]
+pub(crate) struct St<'a> {
+  str_ar: &'a jsonnet_expr::StrArena,
   errors: Vec<error::Unify>,
 }
 
-impl St {
+impl<'a> St<'a> {
+  pub(crate) fn new(str_ar: &'a jsonnet_expr::StrArena) -> St<'a> {
+    Self { str_ar, errors: Vec::new() }
+  }
+
   pub(crate) fn finish(self) -> Vec<error::Unify> {
     self.errors
   }
@@ -39,7 +44,7 @@ struct Marker {
 
 /// this checks and unifies `want` is compatible with `got`, but allows `got` to be more specific
 /// than `want`. aka, got should be a subtype of want, i suppose.
-pub(crate) fn get(st: &mut St, store: &ty::MutStore<'_>, want: ty::Ty, got: ty::Ty) {
+pub(crate) fn get(st: &mut St<'_>, store: &ty::MutStore<'_>, want: ty::Ty, got: ty::Ty) {
   // speed up simple cases (correctness is maintained if these are removed)
   if want == got || want == ty::Ty::ANY || got == ty::Ty::ANY {
     return;
@@ -67,8 +72,8 @@ pub(crate) fn get(st: &mut St, store: &ty::MutStore<'_>, want: ty::Ty, got: ty::
     (ty::Data::Object(want), ty::Data::Object(got)) => {
       for (name, w) in &want.known {
         let Some(g) = got.known.get(name) else {
-          if !got.has_unknown {
-            st.err(error::Unify::NoSuchField(name.clone()));
+          if let Some(u) = error::Unify::no_such_field(st.str_ar, got, name) {
+            st.err(u);
           }
           continue;
         };
