@@ -12,3 +12,16 @@ std.type(3)
   )
   .check();
 }
+
+// TODO need to lazily evaluate std function arguments just like regular function arguments
+#[test]
+#[should_panic = "not yet implemented: get"]
+fn get() {
+  JsonnetInput::manifest(
+    r#"
+std.get({a: 1}, "a", error "no")
+"#,
+    "1",
+  )
+  .check();
+}
