@@ -1,17 +1,8 @@
-//! Processing facts to determine the types of identifiers.
-//!
-//! Each fact about a variable `$var` must be one of:
-//!
-//! - `std.isTY($var)` where TY is one of Number, String, Boolean, Array, Object, or Function
-//! - `std.type($var) == "S"` where S is one of number, string, boolean, array, object, function, or
-//!   null
-//! - `std.objectHas(All)($var, "FIELD")` where FIELD is a field name
-//! - `$var == LIT` where LIT is some literal (`null`, `3`, `"hi"`, `false`, etc)
+//! Processing facts to determine the types of identifiers. see the public-facing types docs.
 //!
 //! caveats:
 //!
-//! - cannot do `local isNumber = std.isNumber` beforehand, must literally get the field off
-//!   `std`
+//! - cannot do `local isNumber = std.isNumber` beforehand, must literally get the field off `std`
 //! - support for named params to fns may be incomplete
 //!
 //! on the bright side:

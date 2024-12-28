@@ -114,3 +114,45 @@ This will be inferred to have type:
 ```
 (a: string | number, b: boolean) => string
 ```
+
+## Flow typing
+
+rjsonnet supports flow typing, where the type of variables is narrowed in different branches of `if` expressions based on certain tests on the variable.
+
+Consider this example, where the type of `x` is narrowed in different `then` and `else` branches based on the `if` conditions:
+
+```jsonnet
+local f(x) =
+  if std.isObject(x) then
+    if "foo" in x then
+      if std.isNumber(x.foo) then
+        x.foo
+##      ^ type: { foo: number, ... }
+      else
+        std.length(x.foo)
+##                 ^ type: { foo: any, ... }
+    else
+      std.length(x)
+##               ^ type: object
+  else
+    std.length(x)
+##             ^ type: any
+;
+```
+
+The supported conditional tests on some expression `expr` are:
+
+- `std.isTYPE(expr)`, where `TYPE` is one of `Number`, `String`, `Boolean`, `Array`, `Object`, or `Function`
+- `std.type(expr) == STR`, where `STR` is one of `"number"`, `"string"`, `"boolean"`, `"array"`, `"object"`, `"function"`, or `"null"`
+- `STR in expr`, where `STR` is a literal string
+- `std.objectHas(expr, STR)`, where `STR` is a literal string
+- `std.objectHasAll(expr, STR)`, where `STR` is a literal string
+- `expr == LIT` where `LIT` is a literal (`null`, `3`, `"hi"`, `false`, etc)
+- `a && b`, where `a` and `b` are tests
+- `a || b`, where `a` and `b` are tests
+
+`expr` must be a chain (possibly length 0) of object field subscripts with known field names, ending with a variable. For example, expr could be a variable `x`, or a field-get `x.y`, or a 2-chained field get `x["y"].z`, etc.
+
+Support for passing named arguments to the std functions in the conditional tests is minimal.
+
+These conditional tests are the same ones supported in `assert`s, which, when at the very beginning of a function, serve as type annotations for the function parameters.
