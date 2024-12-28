@@ -83,7 +83,7 @@ impl Error {
       | Kind::Unify(
         Unify::WantOptionalParamGotRequired(_)
         | Unify::ExtraRequiredParam(_)
-        | Unify::NoSuchField(..)
+        | Unify::NoSuchField(_, _)
         | Unify::MismatchedParamNames(_, _)
         | Unify::NotEnoughParams(_, _),
       ) => {}
