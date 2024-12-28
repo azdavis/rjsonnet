@@ -25,7 +25,7 @@ where
     .filter_map(|c| {
       let n = strsim::normalized_damerau_levenshtein(target, c);
       // arbitrary-ish threshold
-      if n <= 0.7 {
+      if n <= 0.6 {
         return None;
       }
       let n = finite_float::Float::always_from_f64(n);
