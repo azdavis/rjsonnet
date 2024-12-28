@@ -60,9 +60,8 @@ pub struct Fn {
   pub available_since: Option<u8>,
   /// The documentation.
   pub doc: &'static str,
-  /// Some examples to show in the doc.
-  ///
-  /// A list of Jsonnet expression that should all evaluate to `true`.
+  /// Some examples to show in the doc. Each element is a Jsonnet expression that should evaluate to
+  /// `true`.
   pub examples: &'static [&'static str],
 }
 
