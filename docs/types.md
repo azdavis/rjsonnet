@@ -97,7 +97,7 @@ Contrary to other languages like OCaml, Haskell, and Standard ML, rjsonnet does 
 However, you can "annotate" a function's parameter's types with `assert`s like this:
 
 ```jsonnet
-local f(a, b) =
+function(a, b)
   assert std.isNumber(a) || std.isString(a);
   assert std.isBoolean(b);
   if a == 3 && b then
@@ -106,7 +106,6 @@ local f(a, b) =
     a
   else
     std.toString(b)
-;
 ```
 
 This will be inferred to have type:
@@ -122,7 +121,7 @@ rjsonnet supports flow typing, where the type of variables is narrowed in differ
 Consider this example, where the type of `x` is narrowed in different `then` and `else` branches based on the `if` conditions:
 
 ```jsonnet
-local f(x) =
+function(x)
   if std.isObject(x) then
     if "foo" in x then
       if std.isNumber(x.foo) then
@@ -137,7 +136,6 @@ local f(x) =
   else
     std.length(x)
 ##             ^ type: any
-;
 ```
 
 The supported conditional tests on some expression `expr` are:

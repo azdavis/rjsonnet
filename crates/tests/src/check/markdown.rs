@@ -23,7 +23,7 @@ pub(crate) fn check(contents: &str) {
           if ac.trim_end().ends_with(';') {
             ac.push_str("null");
           }
-          JsonnetInput::manifest(ac.as_str(), "").check();
+          JsonnetInput::manifest_or_fn(ac.as_str(), "").check();
           ac.clear();
           inside = false;
         }

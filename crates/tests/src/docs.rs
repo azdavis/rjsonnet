@@ -39,3 +39,8 @@ fn std_lib() {
     }
   }
 }
+
+#[test]
+fn types() {
+  markdown::check(include_str!("../../../docs/types.md"));
+}

@@ -163,11 +163,16 @@ pub(crate) struct JsonnetInput<'a> {
 impl<'a> JsonnetInput<'a> {
   /// when json is the empty string, allow anything as the manifested value
   pub(crate) fn manifest(text: &'a str, json: &'a str) -> Self {
-    Self { text, outcome: json, kind: OutcomeKind::Manifest }
+    Self { text, outcome: json, kind: OutcomeKind::Manifest { fn_ok: false } }
+  }
+
+  /// either manifest, or a function
+  pub(crate) fn manifest_or_fn(text: &'a str, json: &'a str) -> Self {
+    Self { text, outcome: json, kind: OutcomeKind::Manifest { fn_ok: true } }
   }
 
   pub(crate) fn manifest_self(text: &'a str) -> Self {
-    Self { text, outcome: text, kind: OutcomeKind::Manifest }
+    Self { text, outcome: text, kind: OutcomeKind::Manifest { fn_ok: false } }
   }
 
   pub(crate) fn string(text: &'a str, string: &'a str) -> Self {
@@ -203,7 +208,7 @@ impl<'a> JsonnetInput<'a> {
   ) {
     let want = self.outcome;
     match (self.kind, st.get_json(path_id)) {
-      (OutcomeKind::Manifest, Ok(got)) => {
+      (OutcomeKind::Manifest { .. }, Ok(got)) => {
         if want.is_empty() {
           // allow manifesting to anything at all
           return;
@@ -246,9 +251,16 @@ impl<'a> JsonnetInput<'a> {
       (OutcomeKind::EvalError | OutcomeKind::PreEvalError, Ok(got)) => {
         panic!("{path_str}: unexpected lack of error, got json: {got:?}")
       }
-      (OutcomeKind::Manifest | OutcomeKind::String, Err(err)) => {
+      (OutcomeKind::String, Err(err)) => {
         let got = err.display(st.strings(), st.paths(), Some(pwd));
         panic!("{path_str}: failed to get json: {got}");
+      }
+      (OutcomeKind::Manifest { fn_ok }, Err(err)) => {
+        let ok = fn_ok && matches!(err, jsonnet_eval::error::Error::ManifestFn);
+        if !ok {
+          let got = err.display(st.strings(), st.paths(), Some(pwd));
+          panic!("{path_str}: failed to get json: {got}");
+        }
       }
     }
   }
@@ -256,7 +268,7 @@ impl<'a> JsonnetInput<'a> {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum OutcomeKind {
-  Manifest,
+  Manifest { fn_ok: bool },
   String,
   EvalError,
   PreEvalError,

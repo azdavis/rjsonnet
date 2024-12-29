@@ -181,7 +181,7 @@ pub(crate) enum Kind {
   Use,
   /// A diagnostic.
   Diagnostic,
-  /// A hover.
+  /// A hover. (aliased as "type")
   Hover,
 }
 
@@ -197,15 +197,15 @@ impl Kind {
 }
 
 impl std::str::FromStr for Kind {
-  type Err = ();
+  type Err = String;
 
   fn from_str(s: &str) -> Result<Self, Self::Err> {
     let ret = match s {
       "def" => Kind::Def,
       "use" => Kind::Use,
       "diagnostic" => Kind::Diagnostic,
-      "hover" => Kind::Hover,
-      _ => return Err(()),
+      "hover" | "type" => Kind::Hover,
+      _ => return Err(s.to_owned()),
     };
     Ok(ret)
   }
