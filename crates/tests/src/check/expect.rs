@@ -34,24 +34,7 @@ impl File {
 /// See [`get_one`].
 const COMMENT_START: &str = "##";
 
-/// Parses expectation comments from a line of text. The line will be the following in order:
-///
-/// - zero or more of any character
-/// - the string `COMMENT_START` (the comment start)
-/// - zero or more spaces
-/// - one arrow character (^ or v or V)
-///   - ^ points at the line above
-///   - v points at the line below
-///   - V points at the line below, but the range must be zero-width
-/// - zero or more non-spaces (the column range for the arrow. usually these are all the same as the
-///   arrow character.)
-/// - one space
-/// - one or more of any character (the message)
-/// - zero or more whitespace
-///
-/// If so, this returns `Some((line, col_range, msg))`, else returns `None`.
-///
-/// Note the arrows might be a little wonky with non-ascii.
+/// Parses expectation comments from a line of text.
 fn get_one(line_n: usize, line_s: &str) -> Option<(Region, Expect)> {
   let (before, inner) = line_s.split_once(COMMENT_START)?;
   let non_space_idx = inner.find(|c| c != ' ')?;
