@@ -5,6 +5,7 @@ Things under "main" are not released yet.
 ## main
 
 - Improve display of object types with non-identifier field names.
+- Improve typing for `std.prune`.
 
 ## v0.7.5
 

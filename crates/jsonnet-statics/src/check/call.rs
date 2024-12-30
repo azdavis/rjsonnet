@@ -238,7 +238,71 @@ fn maybe_extra_checks(
       st.unify(arr_expr, want_arr_ty, arr_ty);
       Some(st.tys.get(ty::Data::mk_union([ac_param.ty, func_ret, init_ty])))
     }
+    StdFn::prune => {
+      let &(_, ty) = params.get(&Id::a)?;
+      // special cases:
+      //
+      // - std.prune(null) == null
+      // - std.prune({}) == {}
+      //
+      // in both cases, the input type is the output type (not pruned).
+      let is_special_case = match st.tys.data(ty) {
+        ty::Data::Prim(ty::Prim::Null) => true,
+        ty::Data::Object(obj) => !obj.has_unknown && obj.known.is_empty(),
+        _ => false,
+      };
+      let ret = if is_special_case { ty } else { prune(&mut st.tys, ty) };
+      Some(ret)
+    }
     _ => None,
+  }
+}
+
+/// recursively remove nulls and (known) zero-length objects from the ty. we have no type-level
+/// representation of zero length arrays, so no attempt is made to remove those.
+fn prune(tys: &mut ty::MutStore<'_>, ty: ty::Ty) -> ty::Ty {
+  match tys.data(ty) {
+    ty::Data::Prim(prim) => match prim {
+      // remove null
+      ty::Prim::Null => ty::Ty::NEVER,
+      // leave alone
+      ty::Prim::Any | ty::Prim::True | ty::Prim::False | ty::Prim::String | ty::Prim::Number => ty,
+    },
+    // leave alone
+    ty::Data::Fn(_) => ty,
+    // just recur; not statically known if array is length zero
+    ty::Data::Array(arr) => {
+      // probably is sorted even after pruning (based on the definition of pruning), but let's
+      // conservatively say it's not.
+      let elem = prune(tys, arr.elem);
+      let arr = ty::Array::new(elem);
+      tys.get(ty::Data::Array(arr))
+    }
+    ty::Data::Object(obj) => {
+      // need unique access to tys
+      let obj = obj.clone();
+      if !obj.has_unknown && obj.known.is_empty() {
+        // remove zero-length object
+        ty::Ty::NEVER
+      } else {
+        // recur
+        let iter = obj.known.into_iter().filter_map(|(key, ty)| {
+          let ty = prune(tys, ty);
+          let is_inhabited =
+            if let ty::Data::Union(parts) = tys.data(ty) { !parts.is_empty() } else { true };
+          is_inhabited.then_some((key, ty))
+        });
+        let obj = ty::Object { known: iter.collect(), has_unknown: obj.has_unknown };
+        tys.get(ty::Data::Object(obj))
+      }
+    }
+    ty::Data::Union(parts) => {
+      // need unique access to tys
+      let parts = parts.clone();
+      let iter = parts.into_iter().map(|ty| prune(tys, ty));
+      let u = ty::Data::Union(iter.collect());
+      tys.get(u)
+    }
   }
 }
 
