@@ -277,7 +277,7 @@ fn get_add(st: &mut st::St<'_>, expr: ExprMust, lhs_ty: ty::Ty, rhs_ty: ty::Ty) 
       st.tys.get(u)
     }
     _ => {
-      st.err(expr, error::Kind::Invalid(lhs_ty, error::Invalid::Plus(rhs_ty)));
+      st.err(expr, error::Kind::Invalid(lhs_ty, error::Invalid::Add(rhs_ty)));
       ty::Ty::ANY
     }
   }

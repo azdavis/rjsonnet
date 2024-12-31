@@ -47,7 +47,7 @@ impl Error {
       | Kind::DuplicateFieldName(_)
       | Kind::DuplicateNamedArg(_)
       | Kind::DuplicateBinding(_, _, _) => diagnostic::Severity::Error,
-      // it may be possible to eval the jsonnet  without handling these, so we consider them
+      // it may be possible to eval the jsonnet without handling these, so we consider them
       // warnings. e.g. if the call with the missing/extra argument etc doesn't get eval'd.
       Kind::Unused(_, _)
       | Kind::Unify(_)
@@ -69,7 +69,7 @@ impl Error {
       {
         ty.apply(ty_subst);
       }
-      Kind::Unify(Unify::Incompatible(a, b)) | Kind::Invalid(a, Invalid::Plus(b)) => {
+      Kind::Unify(Unify::Incompatible(a, b)) | Kind::Invalid(a, Invalid::Add(b)) => {
         a.apply(ty_subst);
         b.apply(ty_subst);
       }
@@ -136,7 +136,7 @@ pub(crate) enum Invalid {
   Call,
   Subscript,
   Length,
-  Plus(ty::Ty),
+  Add(ty::Ty),
 }
 
 struct Display<'a> {
@@ -227,7 +227,7 @@ impl fmt::Display for Display<'_> {
           let ty = ty.display(self.multi_line, self.store, None, self.str_ar);
           write!(f, "not a type which has length: `{ty}`")
         }
-        Invalid::Plus(rhs) => {
+        Invalid::Add(rhs) => {
           let ty = ty.display(self.multi_line, self.store, None, self.str_ar);
           let rhs = rhs.display(self.multi_line, self.store, None, self.str_ar);
           f.write_str("not a pair of types that can be added with `+`\n")?;
