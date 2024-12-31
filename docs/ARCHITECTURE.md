@@ -54,6 +54,8 @@ Statically analyze an expression, checking for things like if every variable usa
 
 ### `crates/jsonnet-eval`
 
+Evaluate jsonnet.
+
 ## Helper crates
 
 These implement Jsonnet-specific things, but aren't really "big" enough to be a full stage.
