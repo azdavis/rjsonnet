@@ -253,7 +253,12 @@ fn get_add(st: &mut st::St<'_>, expr: ExprMust, lhs_ty: ty::Ty, rhs_ty: ty::Ty) 
     (ty::Data::Prim(ty::Prim::String), _) | (_, ty::Data::Prim(ty::Prim::String)) => ty::Ty::STRING,
     // concat arrays.
     (ty::Data::Array(lhs), ty::Data::Array(rhs)) => {
+      // compute this first for borrow checker
+      let both_set = lhs.is_set && rhs.is_set;
       let elem = st.tys.get(ty::Data::mk_union([lhs.elem, rhs.elem]));
+      if both_set {
+        st.err(expr, error::Kind::AddSets);
+      }
       st.tys.get(ty::Data::Array(ty::Array::new(elem)))
     }
     // add object fields.

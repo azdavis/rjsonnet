@@ -54,7 +54,8 @@ impl Error {
       | Kind::MissingArgument(_, _)
       | Kind::ExtraPositionalArgument(_)
       | Kind::ExtraNamedArgument(_)
-      | Kind::Invalid(_, _) => diagnostic::Severity::Warning,
+      | Kind::Invalid(_, _)
+      | Kind::AddSets => diagnostic::Severity::Warning,
     }
   }
 
@@ -86,7 +87,8 @@ impl Error {
         | Unify::NoSuchField(_, _)
         | Unify::MismatchedParamNames(_, _)
         | Unify::NotEnoughParams(_, _),
-      ) => {}
+      )
+      | Kind::AddSets => {}
     }
   }
 }
@@ -128,6 +130,7 @@ pub(crate) enum Kind {
   ExtraNamedArgument(Id),
   Unify(Unify),
   Invalid(ty::Ty, Invalid),
+  AddSets,
 }
 
 #[derive(Debug)]
@@ -235,6 +238,7 @@ impl fmt::Display for Display<'_> {
           write!(f, "  right: `{rhs}`")
         }
       },
+      Kind::AddSets => f.write_str("adding two sets will result in a non-set"),
     }
   }
 }
