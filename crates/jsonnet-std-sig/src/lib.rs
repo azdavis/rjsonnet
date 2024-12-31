@@ -1822,7 +1822,7 @@ pub const FNS: [Fn; 126] = [
   Fn {
     name: S::new("count"),
     implemented: false,
-    sig: sig(&[req("arr", Ty::ArrAny), req("x", Ty::Any)], Ty::Num),
+    sig: sig(&[req("arr", Ty::ArrAny), req("x", Ty::Any)], Ty::Uint),
     total: true,
     available_since: Some(10),
     doc: indoc! {"
