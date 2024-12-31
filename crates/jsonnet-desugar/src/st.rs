@@ -20,7 +20,7 @@ impl Pointers {
     self.idx_to_ptr.insert(e, ptr);
   }
 
-  /// Gets the syntax node pointer for the expr. Both must exist.
+  /// Gets the syntax node pointer for the expr.
   #[must_use]
   pub fn get_ptr(&self, e: jsonnet_expr::ExprMust) -> Option<ast::SyntaxNodePtr> {
     self.idx_to_ptr.get(e).copied()
