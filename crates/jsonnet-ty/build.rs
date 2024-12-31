@@ -130,14 +130,14 @@ fn main() {
     }
 
     impl StdFnSig {
-      #[expect(clippy::too_many_lines)]
       #[doc = "Get the signature for the std fn."]
       #[must_use]
-      // NOTE: this lint is mostly not triggered because to generate the arms we iter over the
-      // unique sigs, instead of iter'ing over the std fns (some of which share sigs). But it is
-      // triggered sometimes because we have some std sig Ty variants that encode extra information
-      // (like Uint) but then map to identical statics tys as other ones (like Num).
-      #[expect(clippy::match_same_arms)]
+      // NOTE: we almost entirely avoid triggering the match_same_arms lint because to generate the
+      // arms we iter over the unique sigs, instead of iter'ing over the std fns (some of which
+      // share sigs). but despite our efforts, it is still triggered sometimes, because we have some
+      // std sig Ty variants that encode extra information (like Uint) but then map to identical
+      // statics tys as other ones (like Num).
+      #[expect(clippy::too_many_lines, clippy::match_same_arms)]
       pub fn get(f: StdFn) -> Self {
         match f {
           #(#std_fn_sig_arms,)*

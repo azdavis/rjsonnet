@@ -138,18 +138,24 @@ pub enum Ty {
   Fn2,
 }
 
+/// Short for "required".
 const fn req(name: &'static str, ty: Ty) -> Param {
   Param { name, ty, default: None }
 }
 
+/// Short for "optional".
 const fn opt(name: &'static str, ty: Ty, default: &'static str) -> Param {
   Param { name, ty, default: Some(default) }
 }
 
+/// Short for "signature".
 const fn sig(params: &'static [Param], ret: Ty) -> Sig {
   Sig { params, ret }
 }
 
+/// Given `(func, arg, res)`, returns a static string of a Jsonnet expression that evaluates to
+/// whether the std `func` applied to `arg` returns a number that is epsilon-equal (i.e. very close)
+/// to `res`.
 macro_rules! epsilon_eq {
   ($name:expr, $arg: expr, $res:expr) => {
     concat!("std.abs(std.", $name, "(", $arg, ") - ", $res, ") <= 0.01")
