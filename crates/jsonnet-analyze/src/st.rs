@@ -221,7 +221,6 @@ impl WithFs {
       let all_levels_count: usize = ret.iter().map(paths::PathSet::len).sum();
       assert_eq!(all_levels_count, done.len());
     }
-    // ret.reverse();
     if let Some(fst) = ret.first_mut() {
       always!(fst.remove(&root_path_id));
       always!(fst.is_empty());
