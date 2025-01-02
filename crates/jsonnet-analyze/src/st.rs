@@ -3,7 +3,7 @@
 use crate::util::{GlobalArtifacts, PathIoError, Result};
 use crate::{const_eval, util};
 use always::always;
-use jsonnet_syntax::ast::AstNode as _;
+use jsonnet_syntax::{ast::AstNode as _, kind::SyntaxKind};
 use jsonnet_ty::display::MultiLine;
 use paths::{PathId, PathMap};
 use rayon::iter::{IntoParallelIterator as _, ParallelIterator as _};
@@ -628,10 +628,10 @@ impl lang_srv_state::State for St {
       let ts = arts.syntax.pos_db.text_size_utf16(pos)?;
       let root = arts.syntax.root.clone().into_ast()?;
       let mut tmp = jsonnet_syntax::node_token(root.syntax(), ts)?;
-      if tmp.kind() != jsonnet_syntax::kind::SyntaxKind::Dot {
+      if tmp.kind() != SyntaxKind::Dot {
         return None;
       }
-      while tmp.kind() != jsonnet_syntax::kind::SyntaxKind::Id {
+      while tmp.kind() != SyntaxKind::Id {
         tmp = tmp.prev_token()?;
       }
       tmp
@@ -791,7 +791,7 @@ fn get_cur_param(
       Some(x) => break x,
       None => match tmp.parent() {
         Some(x) => tmp = x,
-        None => return matches!(tok.kind(), jsonnet_syntax::kind::SyntaxKind::LRound).then_some(0),
+        None => return matches!(tok.kind(), SyntaxKind::LRound).then_some(0),
       },
     };
   };
@@ -811,7 +811,7 @@ fn get_cur_param(
         return None;
       }
       if a.syntax().text_range() == arg.syntax().text_range() {
-        let pos = if tok.kind() == jsonnet_syntax::kind::SyntaxKind::Comma { idx + 1 } else { idx };
+        let pos = if tok.kind() == SyntaxKind::Comma { idx + 1 } else { idx };
         return Some(pos);
       }
     }
