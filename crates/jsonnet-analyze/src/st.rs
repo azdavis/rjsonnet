@@ -106,9 +106,18 @@ impl WithFs {
   ///
   /// - `ret` will be non-empty.
   /// - `ret[0]` will be empty.
-  /// - if `root_path_id` depends on x, then exists i in 0 ≤ i < |ret| where x in `ret[i]`
+  /// - if exists x where `root_path_id` depends on x, then exists i in 0 ≤ i < |ret| where x in
+  ///   `ret[i]`.
   /// - for all i in 0 ≤ i < |ret|, for all x in `ret[i]`, if exists y where x depends on y, then
-  //    exists j in i < j ≤ |ret| where y in `ret[j]`
+  ///   exists j in i < j ≤ |ret| where y in `ret[j]`.
+  ///
+  /// this means that:
+  ///
+  /// - the "leaves" are at the back of the returned vec.
+  /// - processing the vec sequentially in reverse order will mean that when we process a path, we
+  ///   have already proceeded all of its dependencies.
+  /// - it is possible to parallelize processing over each set in the vec, since no files in each
+  ///   set depend on one another.
   fn topological_sort<F>(
     &mut self,
     fs: &F,
