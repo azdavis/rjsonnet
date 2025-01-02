@@ -222,8 +222,8 @@ impl WithFs {
       assert_eq!(all_levels_count, done.len());
     }
     if let Some(fst) = ret.first_mut() {
-      always!(fst.remove(&root_path_id));
-      always!(fst.is_empty());
+      always!(fst.remove(&root_path_id), "root should be in first level");
+      always!(fst.is_empty(), "only root should be in first level");
     } else {
       always!(false, "should have a first level");
     }
