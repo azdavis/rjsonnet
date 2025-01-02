@@ -231,7 +231,6 @@ impl WithFs {
 
   /// ensures `orig_path_id` and its transitive dependencies have their type info loaded into the
   /// cache.
-  #[allow(clippy::too_many_lines)]
   fn ensure_import_tys_cached<F>(&mut self, fs: &F, orig_path_id: PathId, contents: Option<&str>)
   where
     F: Sync + paths::FileSystem,
