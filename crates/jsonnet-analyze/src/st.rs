@@ -97,27 +97,34 @@ impl WithFs {
     }
   }
 
-  #[allow(clippy::too_many_lines)]
-  fn ensure_import_tys_cached<F>(
+  /// returns a topological sort of `root_path_id` and its dependencies.
+  ///
+  /// the contents of `root_path_id` are taken to be `root_contents` if provided, and read from the
+  /// fs if not. all other files (transitive dependencies) are always read from the fs.
+  ///
+  /// INVARIANTS:
+  ///
+  /// - `ret` will be non-empty.
+  /// - `ret[0]` will be empty.
+  /// - if `root_path_id` depends on x, then exists i in 0 ≤ i < |ret| where x in `ret[i]`
+  /// - for all i in 0 ≤ i < |ret|, for all x in `ret[i]`, if exists y where x depends on y, then
+  //    exists j in i < j ≤ |ret| where y in `ret[j]`
+  fn topological_sort<F>(
     &mut self,
     fs: &F,
-    orig_path_id: PathId,
-    mut contents: Option<&str>,
-  ) where
+    root_path_id: PathId,
+    mut root_contents: Option<&str>,
+  ) -> Vec<paths::PathSet>
+  where
     F: Sync + paths::FileSystem,
   {
-    log::debug!(
-      "ensure_import_tys_cached {:?} {}",
-      orig_path_id,
-      self.display_path_id(orig_path_id)
-    );
-    self.file_tys.remove(&orig_path_id);
-    let mut work = vec![Action::start(orig_path_id)];
+    self.file_tys.remove(&root_path_id);
+    let mut work = vec![Action::start(root_path_id)];
     let mut cur = paths::PathSet::default();
     let mut done = paths::PathSet::default();
     // INVARIANT: level_idx = how many Ends are in work.
     let mut level_idx = 0usize;
-    let mut levels = Vec::<paths::PathSet>::new();
+    let mut ret = Vec::<paths::PathSet>::new();
     while let Some(Action(path_id, kind)) = work.pop() {
       log::debug!("{kind:?} {path_id:?} {}", self.display_path_id(path_id));
       match kind {
@@ -139,9 +146,9 @@ impl WithFs {
           let path = self.artifacts.syntax.paths.get_path(path_id);
           let parent = util::path_parent_must(path);
           let fs_contents: String;
-          let contents = match contents.take() {
+          let contents = match root_contents.take() {
             Some(x) => {
-              always!(path_id == orig_path_id);
+              always!(path_id == root_path_id);
               x
             }
             None => match fs.read_to_string(path.as_path()) {
@@ -183,11 +190,11 @@ impl WithFs {
             }
             Some(x) => x,
           };
-          if level_idx >= levels.len() {
-            levels.resize_with(level_idx + 1, paths::PathSet::default);
+          if level_idx >= ret.len() {
+            ret.resize_with(level_idx + 1, paths::PathSet::default);
           }
-          let Some(level) = levels.get_mut(level_idx) else {
-            always!(false, "levels should have been resized to len at least level + 1");
+          let Some(level) = ret.get_mut(level_idx) else {
+            always!(false, "ret should have been resized to len at least level + 1");
             continue;
           };
           level.insert(path_id);
@@ -199,23 +206,35 @@ impl WithFs {
     always!(level_idx == 0);
     always!(cur.is_empty());
     if cfg!(debug_assertions) {
-      let all_levels: paths::PathSet = levels.iter().flatten().copied().collect();
+      let all_levels: paths::PathSet = ret.iter().flatten().copied().collect();
       assert_eq!(all_levels, done);
-      let all_levels_count: usize = levels.iter().map(paths::PathSet::len).sum();
+      // combined with above, ensures no duplicates across levels
+      let all_levels_count: usize = ret.iter().map(paths::PathSet::len).sum();
       assert_eq!(all_levels_count, done.len());
     }
-    if let Some(fst) = levels.first_mut() {
-      // remove the original path id since we handle that specially, outside of this fn. e.g. we
-      // want ALL of its artifacts. this fn is just for caching the types.
-      always!(fst.remove(&orig_path_id));
+    // ret.reverse();
+    if let Some(fst) = ret.first_mut() {
+      always!(fst.remove(&root_path_id));
+      always!(fst.is_empty());
     } else {
       always!(false, "should have a first level");
     }
-    drop(work);
-    drop(cur);
-    drop(done);
+    ret
+  }
+
+  #[allow(clippy::too_many_lines)]
+  fn ensure_import_tys_cached<F>(&mut self, fs: &F, orig_path_id: PathId, contents: Option<&str>)
+  where
+    F: Sync + paths::FileSystem,
+  {
+    log::debug!(
+      "ensure_import_tys_cached {:?} {}",
+      orig_path_id,
+      self.display_path_id(orig_path_id)
+    );
+    let levels = self.topological_sort(fs, orig_path_id, contents);
     log::debug!("levels: {levels:?}");
-    // reverse so we do the leaves first. TODO ask for less analysis to just get the types
+    // TODO allow asking for less analysis to just get the types, not the diagnostics
     for level in levels.into_iter().rev() {
       // par
       let syntax_files = level.into_par_iter().filter_map(|path_id| {
