@@ -105,7 +105,7 @@ impl WithFs {
   /// INVARIANTS:
   ///
   /// - `ret` will be non-empty.
-  /// - `ret[0]` will be empty.
+  /// - `ret[0]` will be empty. (it would have contained `root_path_id` alone, but we remove it)
   /// - if exists x where `root_path_id` depends on x, then exists i in 0 ≤ i < |ret| where x in
   ///   `ret[i]`.
   /// - for all i in 0 ≤ i < |ret|, for all x in `ret[i]`, if exists y where x depends on y, then
