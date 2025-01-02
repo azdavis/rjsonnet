@@ -25,10 +25,10 @@ fn go<S: lang_srv_state::State>(
 ) -> ControlFlowResult<lsp_server::Response> {
   req = try_req::<lsp_types::request::HoverRequest, _, _>(req, |id, params| {
     let (path, pos) = convert::text_doc_position(&params.text_document_position_params)?;
-    let result = srv.st.hover(&srv.fs, path, pos).map(|text| lsp_types::Hover {
+    let result = srv.st.hover(&srv.fs, path, pos).map(|value| lsp_types::Hover {
       contents: lsp_types::HoverContents::Markup(lsp_types::MarkupContent {
         kind: lsp_types::MarkupKind::Markdown,
-        value: text,
+        value,
       }),
       range: None,
     });
