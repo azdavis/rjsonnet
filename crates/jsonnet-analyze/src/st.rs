@@ -131,7 +131,7 @@ impl WithFs {
     let mut work = vec![TopoSortAction::start(root_path_id)];
     let mut cur = paths::PathSet::default();
     let mut done = paths::PathSet::default();
-    // INVARIANT: `level_idx` == how many `TopoSortActionKind::End`s are in `work`.
+    // INVARIANT: `level_idx` == how many `End`s are in `work`.
     let mut level_idx = 0usize;
     let mut ret = Vec::<paths::PathSet>::new();
     while let Some(TopoSortAction(path_id, kind)) = work.pop() {
@@ -194,7 +194,7 @@ impl WithFs {
         TopoSortActionKind::End => {
           level_idx = match level_idx.checked_sub(1) {
             None => {
-              always!(false, "End should have a matching Start");
+              always!(false, "`End` should have a matching `Start`");
               continue;
             }
             Some(x) => x,
@@ -203,23 +203,22 @@ impl WithFs {
             ret.resize_with(level_idx + 1, paths::PathSet::default);
           }
           let Some(level) = ret.get_mut(level_idx) else {
-            always!(false, "ret should have been resized to len at least level + 1");
+            always!(false, "`ret` should have been resized to at least `{}`", level_idx + 1);
             continue;
           };
           level.insert(path_id);
-          always!(cur.remove(&path_id), "should only End when in cur");
-          always!(done.insert(path_id), "should not End if already done");
+          always!(cur.remove(&path_id), "should only `End` when in `cur`");
+          always!(done.insert(path_id), "should not `End` if already done");
         }
       }
     }
-    always!(level_idx == 0);
-    always!(cur.is_empty());
+    always!(level_idx == 0, "should return to starting level");
+    always!(cur.is_empty(), "should not have any in progress");
     if cfg!(debug_assertions) {
       let all_levels: paths::PathSet = ret.iter().flatten().copied().collect();
-      assert_eq!(all_levels, done);
-      // combined with above, ensures no duplicates across levels
+      assert_eq!(all_levels, done, "everything done should be in the levels");
       let all_levels_count: usize = ret.iter().map(paths::PathSet::len).sum();
-      assert_eq!(all_levels_count, done.len());
+      assert_eq!(all_levels_count, done.len(), "should have no duplicates across levels");
     }
     if let Some(fst) = ret.first_mut() {
       always!(fst.remove(&root_path_id), "root should be in first level");
