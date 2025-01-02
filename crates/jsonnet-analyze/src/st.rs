@@ -222,6 +222,8 @@ impl WithFs {
     ret
   }
 
+  /// ensures `orig_path_id` and its transitive dependencies have their type info loaded into the
+  /// cache.
   #[allow(clippy::too_many_lines)]
   fn ensure_import_tys_cached<F>(&mut self, fs: &F, orig_path_id: PathId, contents: Option<&str>)
   where
@@ -236,7 +238,7 @@ impl WithFs {
     log::debug!("levels: {levels:?}");
     // TODO allow asking for less analysis to just get the types, not the diagnostics
     for level in levels.into_iter().rev() {
-      // par
+      // parallel
       let syntax_files = level.into_par_iter().filter_map(|path_id| {
         let path = self.artifacts.syntax.paths.get_path(path_id);
         let res = util::SyntaxFileToCombine::from_fs(path, &self.root_dirs, fs).ok()?;
@@ -245,16 +247,16 @@ impl WithFs {
       // unzip so we don't have to carry around the path_id unchanged in the next few
       // transformations, in which order will be preserved.
       let (order, syntax_files): (Vec<_>, Vec<_>) = syntax_files.unzip();
-      // seq
+      // sequential
       let syntax_files = syntax_files.into_iter().map(|res| res.combine(&mut self.artifacts));
       let syntax_files: Vec<_> = syntax_files.collect();
-      // par
+      // parallel
       let statics_files = syntax_files
         .into_par_iter()
         .map(|res| util::StaticsFileToCombine::new(res, &self.artifacts, &self.file_tys));
       let statics_files: Vec<_> = statics_files.collect();
       always!(order.len() == statics_files.len());
-      // seq
+      // sequential
       let new_file_tys = order.into_iter().zip(statics_files).filter_map(|(path_id, res)| {
         let res = res.combine(&mut self.artifacts);
         let top_expr = res.syntax.exprs.top?;
