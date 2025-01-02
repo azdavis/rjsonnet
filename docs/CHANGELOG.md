@@ -6,6 +6,7 @@ Things under "main" are not released yet.
 
 - Improve display of object types with non-identifier field names.
 - Improve typing for `std.prune`.
+- Warn when adding two sets with `+`.
 
 ## v0.7.5
 
