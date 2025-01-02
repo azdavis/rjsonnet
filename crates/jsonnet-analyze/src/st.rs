@@ -650,14 +650,24 @@ impl lang_srv_state::State for St {
       arts.syntax.pointers.get_idx(ptr)?
     };
     let &ty = arts.expr_tys.get(&expr)?;
+    let expr_is_std = matches!(
+      const_eval::get(self, fs, path_id, Some(expr)),
+      Some(const_eval::ConstEval::Std(None))
+    );
     let wa = &self.with_fs.artifacts;
     let fields = wa.statics.object_fields(ty)?;
     let fields = fields.iter().map(|(&name, &ty)| {
+      let doc = if expr_is_std {
+        jsonnet_expr::StdField::try_from(name).ok().map(|x| x.doc().to_owned())
+      } else {
+        None
+      };
       let ty = ty.display(self.multi_line, &wa.statics, None, &wa.syntax.strings);
       lang_srv_state::CompletionItem {
         name: wa.syntax.strings.get(name).to_owned(),
         ty: ty.to_string(),
         kind: lang_srv_state::CompletionItemKind::Field,
+        doc,
       }
     });
     Some(fields.collect())

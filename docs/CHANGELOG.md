@@ -8,6 +8,7 @@ Things under "main" are not released yet.
 - Improve typing for `std.prune`.
 - Warn when adding two sets with `+`.
 - Improve logic for when to show completions.
+- Show documentation for std fields in completions.
 
 ## v0.7.5
 

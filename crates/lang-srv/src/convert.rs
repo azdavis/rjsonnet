@@ -86,7 +86,12 @@ pub(crate) fn completion(c: lang_srv_state::CompletionItem) -> lsp_types::Comple
     label_details: None,
     kind: Some(kind),
     detail: Some(c.ty),
-    documentation: None,
+    documentation: c.doc.map(|value| {
+      lsp_types::Documentation::MarkupContent(lsp_types::MarkupContent {
+        kind: lsp_types::MarkupKind::Markdown,
+        value,
+      })
+    }),
     deprecated: None,
     preselect: None,
     sort_text: None,

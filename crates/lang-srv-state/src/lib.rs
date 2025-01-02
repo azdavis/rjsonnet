@@ -113,6 +113,8 @@ pub struct CompletionItem {
   pub ty: String,
   /// The kind.
   pub kind: CompletionItemKind,
+  /// The documentation, as Markdown.
+  pub doc: Option<String>,
 }
 
 /// A kind of completion item.
