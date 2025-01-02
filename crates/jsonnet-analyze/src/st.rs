@@ -131,7 +131,7 @@ impl WithFs {
     let mut work = vec![TopoSortAction::start(root_path_id)];
     let mut cur = paths::PathSet::default();
     let mut done = paths::PathSet::default();
-    // INVARIANT: level_idx = how many Ends are in work.
+    // INVARIANT: `level_idx` == how many `TopoSortActionKind::End`s are in `work`.
     let mut level_idx = 0usize;
     let mut ret = Vec::<paths::PathSet>::new();
     while let Some(TopoSortAction(path_id, kind)) = work.pop() {
