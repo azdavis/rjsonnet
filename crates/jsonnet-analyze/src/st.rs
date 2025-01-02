@@ -627,12 +627,20 @@ impl lang_srv_state::State for St {
     let tok = {
       let ts = arts.syntax.pos_db.text_size_utf16(pos)?;
       let root = arts.syntax.root.clone().into_ast()?;
-      let mut tmp = jsonnet_syntax::node_token(root.syntax(), ts)?;
-      if tmp.kind() != SyntaxKind::Dot {
+      let cur = jsonnet_syntax::node_token(root.syntax(), ts)?;
+      let prev = cur.prev_token()?;
+      let tmp = match cur.kind() {
+        SyntaxKind::Dot => prev,
+        SyntaxKind::Id => {
+          if prev.kind() != SyntaxKind::Dot {
+            return None;
+          }
+          prev.prev_token()?
+        }
+        _ => return None,
+      };
+      if tmp.kind() != SyntaxKind::Id {
         return None;
-      }
-      while tmp.kind() != SyntaxKind::Id {
-        tmp = tmp.prev_token()?;
       }
       tmp
     };
