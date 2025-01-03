@@ -25,9 +25,9 @@ An implementation of [Jsonnet][] in [Rust][], which aims to conform to the [spec
 
 ![auto-complete](/img/4-auto-complete.png)
 
-### Signature help
+### Type annotations and signature help
 
-![auto-complete](/img/5-sig-help.png)
+![sig-help](/img/5-sig-help.png)
 
 ### Flow typing
 
