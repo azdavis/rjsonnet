@@ -2,6 +2,10 @@
 
 Things under "main" are not released yet.
 
+## main
+
+- Tweak some diagnostic messages.
+
 ## v0.7.6
 
 - Improve display of object types with non-identifier field names.

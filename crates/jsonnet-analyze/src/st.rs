@@ -113,9 +113,9 @@ impl WithFs {
   ///
   /// this means that:
   ///
-  /// - the "leaves" are at the back of the returned vec.
-  /// - processing the vec sequentially in reverse order will mean that when we process a path, we
-  ///   have already proceeded all of its dependencies.
+  /// - the "leaves" are at the end of the returned vec.
+  /// - processing the vec sequentially in **reverse** order will mean that when we process a path,
+  ///   we have already proceeded all of its dependencies.
   /// - it is possible to parallelize processing over each set in the vec, since no files in each
   ///   set depend on one another.
   fn topological_sort<F>(

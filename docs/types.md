@@ -146,6 +146,7 @@ The supported conditional tests on some expression `expr` are:
 - `std.objectHas(expr, STR)`, where `STR` is a literal string
 - `std.objectHasAll(expr, STR)`, where `STR` is a literal string
 - `expr == LIT`, where `LIT` is a literal (`null`, `3`, `"hi"`, `false`, etc)
+- `!a`, where `a` is a test
 - `a && b`, where `a` and `b` are tests
 - `a || b`, where `a` and `b` are tests
 

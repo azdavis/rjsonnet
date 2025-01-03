@@ -1,20 +1,9 @@
-//! Processing facts to determine the types of identifiers. see the public-facing types docs.
+//! Determining statically knowable information about the run-time behavior of certain expressions.
 //!
-//! caveats:
-//!
-//! - cannot do `local isNumber = std.isNumber` beforehand, must literally get the field off `std`
-//! - support for named params to fns may be incomplete
-//!
-//! on the bright side:
-//!
-//! - can chain the facts with `a && b` (or `if a then b else false`, which is what `&&` desugars
-//!   to)
-//! - can chain the facts with `a || b` (or `if a then true else b`, which is what `||`
-//!   desugars to); when both a and b are about the same variable, will union the types
-//! - "FIELD" in $var desugars to a call to `std.objectHasAll`, so that works
-//! - checking we get from `std` is NOT syntactic, we do an env lookup. so we won't trick this by
-//!   doing `local std = wtf` beforehand, and also it'll still work with `local foo = std` and then
-//!   asserting with `foo.isTY` etc.
+//! Note: cannot do e.g. `local isNumber = std.isNumber` beforehand, must literally get the field
+//! off `std`. On the bright side, checking we get from `std` is NOT syntactic, we do an env lookup.
+//! so we won't trick this by doing `local std = wtf` beforehand, and also it'll still work with
+//! `local foo = std` and then asserting with `foo.isTY` etc.
 
 use crate::scope::{Fact, Facts, Scope};
 use jsonnet_expr::{Expr, ExprArena, ExprData, ExprMust, Id, Prim, Str};
@@ -24,9 +13,9 @@ use std::collections::BTreeMap;
 /// Collects facts that are always true in the expression because otherwise the expression diverges
 /// (i.e. it `error`s).
 ///
-/// - asserts all be at the beginning of the expression, so cannot e.g. introduce new local
+/// - asserts must all be at the beginning of the expression, so cannot e.g. introduce new local
 ///   variables
-/// - since asserts are lowered to `if cond then ... else error ...`, we check for that. so if the
+/// - since `assert c; e` is lowered to `if c then e else error ...`, we check for that. so if the
 ///   user wrote that itself in the concrete syntax, that also works.
 pub(crate) fn get_always(
   tys: &mut ty::MutStore<'_>,
@@ -49,6 +38,7 @@ pub(crate) fn get_always(
   ac
 }
 
+/// Collects facts from desugared `assert`s, i.e. `if`s where the `else` diverges.
 fn get_assert(
   tys: &mut ty::MutStore<'_>,
   scope: &Scope,
@@ -64,7 +54,7 @@ fn get_assert(
   }
 }
 
-/// Process facts from a single if-cond.
+/// Collects facts from a single `if` condition.
 pub(crate) fn get_cond(
   tys: &mut ty::MutStore<'_>,
   scope: &Scope,
@@ -141,7 +131,7 @@ pub(crate) fn get_cond(
   }
 }
 
-/// Handles a call to a `std.isTY` function.
+/// Collects facts from call to a `std.isTYPE` function.
 fn get_is_ty(
   tys: &mut ty::MutStore<'_>,
   ar: &ExprArena,
@@ -164,7 +154,7 @@ fn get_is_ty(
   ac.add(tys, id, Fact::total(ty));
 }
 
-/// Process `std.type($var) == "TYPE"`, where TYPE is number, string, etc.
+/// Collects facts from `std.type(expr) == STR`, where `STR` is `"number"`, `"string"`, etc.
 fn get_ty_eq(
   tys: &mut ty::MutStore<'_>,
   scope: &Scope,
@@ -208,7 +198,7 @@ fn get_ty_eq(
   ac.add(tys, id, Fact::total(ty));
 }
 
-/// Process `$var == LIT`, where LIT is some literal.
+/// Collects facts from `expr == LIT`, where `LIT` is some literal (`null`, `3`, `"hi"`, etc).
 fn get_eq_lit(
   tys: &mut ty::MutStore<'_>,
   ar: &ExprArena,
@@ -232,7 +222,8 @@ fn get_eq_lit(
   ac.add(tys, id, Fact::with_partiality(ty, partial));
 }
 
-/// follow subscripts towards an id at the end, updating the ty as we go.
+/// Follows subscripts towards a single final identifier at the end, while updating the ty that we
+/// will ascribe to that final identifier.
 fn follow_subscripts(
   tys: &mut ty::MutStore<'_>,
   ar: &ExprArena,
