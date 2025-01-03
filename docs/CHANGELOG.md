@@ -2,7 +2,7 @@
 
 Things under "main" are not released yet.
 
-## main
+## v0.7.7
 
 - Tweak some diagnostic messages.
 - Warn on some unreachable code cases.
