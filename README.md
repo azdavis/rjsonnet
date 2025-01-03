@@ -17,7 +17,7 @@ An implementation of [Jsonnet][] in [Rust][], which aims to conform to the [spec
 
 ![peek-def](/img/2-peek-def.png)
 
-### Hover for type and standard library documentation
+### Hover for type, standard library docs, and typechecking
 
 ![std-lib](/img/3-std-lib-doc-hover.png)
 
