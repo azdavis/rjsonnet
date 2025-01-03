@@ -68,7 +68,7 @@ impl Fact {
   }
 
   pub(crate) const fn with_partiality(ty: ty::Ty, partial: bool) -> Self {
-    Self { kind: FactKind::Ty(TyFact { is: ty, is_not: ty::Ty::NEVER }), partial }
+    Self { kind: FactKind::Ty(TyFact::new(ty)), partial }
   }
 
   pub(crate) fn and(self, tys: &mut ty::MutStore<'_>, other: Self) -> Self {
@@ -127,6 +127,12 @@ enum FactKind {
 struct TyFact {
   is: ty::Ty,
   is_not: ty::Ty,
+}
+
+impl TyFact {
+  const fn new(is: ty::Ty) -> Self {
+    Self { is, is_not: ty::Ty::NEVER }
+  }
 }
 
 /// Info about the identifiers currently in scope.
