@@ -54,8 +54,7 @@ impl Facts {
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct Fact {
-  and: ty::Ty,
-  minus: ty::Ty,
+  kind: FactKind,
   partial: bool,
 }
 
@@ -69,46 +68,65 @@ impl Fact {
   }
 
   pub(crate) const fn with_partiality(ty: ty::Ty, partial: bool) -> Self {
-    Self { and: ty, minus: ty::Ty::NEVER, partial }
+    Self { kind: FactKind::Ty(TyFact { is: ty, is_not: ty::Ty::NEVER }), partial }
   }
 
   pub(crate) fn and(self, tys: &mut ty::MutStore<'_>, other: Self) -> Self {
-    Self {
-      and: ty::logic::and(tys, self.and, other.and),
-      // de morgan's laws
-      minus: tys.get(ty::Data::mk_union([self.minus, other.minus])),
-      partial: self.partial && other.partial,
-    }
+    let kind = match (self.kind, other.kind) {
+      (FactKind::Ty(this), FactKind::Ty(other)) => FactKind::Ty(TyFact {
+        is: ty::logic::and(tys, this.is, other.is),
+        // de morgan's laws
+        is_not: tys.get(ty::Data::mk_union([this.is_not, other.is_not])),
+      }),
+    };
+    Self { kind, partial: self.partial && other.partial }
   }
 
   pub(crate) fn or(self, tys: &mut ty::MutStore<'_>, other: Self) -> Self {
-    Self {
-      and: tys.get(ty::Data::mk_union([self.and, other.and])),
-      // de morgan's laws
-      minus: ty::logic::and(tys, self.minus, other.minus),
-      partial: self.partial || other.partial,
-    }
+    let kind = match (self.kind, other.kind) {
+      (FactKind::Ty(this), FactKind::Ty(other)) => FactKind::Ty(TyFact {
+        is: tys.get(ty::Data::mk_union([this.is, other.is])),
+        // de morgan's laws
+        is_not: ty::logic::and(tys, this.is_not, other.is_not),
+      }),
+    };
+    Self { kind, partial: self.partial || other.partial }
   }
 
   pub(crate) fn negate(self) -> Self {
     if self.partial {
-      Self::partial(ty::Ty::ANY)
-    } else {
-      Self {
-        // we don't do self.and = minus(ANY, self.minus) because we don't support minus(ANY, ...).
-        and: ty::Ty::ANY,
-        // need to make sure not to minus everything, leaving nothing aka never.
-        minus: if self.and == ty::Ty::ANY { ty::Ty::NEVER } else { self.and },
-        partial: false,
-      }
+      return Self::partial(ty::Ty::ANY);
     }
+    let kind = match self.kind {
+      FactKind::Ty(this) => FactKind::Ty(TyFact {
+        // we don't do self.and = minus(ANY, self.minus) because we don't support minus(ANY, ...).
+        is: ty::Ty::ANY,
+        // need to make sure not to minus everything, leaving nothing aka never.
+        is_not: if this.is == ty::Ty::ANY { ty::Ty::NEVER } else { this.is },
+      }),
+    };
+    Self { kind, partial: false }
   }
 
   /// for when we don't need to do ty logic with the fact, we know it's straight-up the whole truth,
   /// as in [`crate::facts::get_always`].
   pub(crate) fn into_ty(self, tys: &mut ty::MutStore<'_>) -> ty::Ty {
-    ty::logic::minus(tys, self.and, self.minus)
+    let (is, is_not) = match self.kind {
+      FactKind::Ty(this) => (this.is, this.is_not),
+    };
+    ty::logic::minus(tys, is, is_not)
   }
+}
+
+#[derive(Debug, Clone, Copy)]
+enum FactKind {
+  Ty(TyFact),
+}
+
+#[derive(Debug, Clone, Copy)]
+struct TyFact {
+  is: ty::Ty,
+  is_not: ty::Ty,
 }
 
 /// Info about the identifiers currently in scope.
@@ -168,8 +186,11 @@ impl Scope {
         always!(false, "should not have empty ty stack");
         continue;
       };
-      let ty = ty::logic::and(tys, ty, fact.and);
-      let ty = ty::logic::minus(tys, ty, fact.minus);
+      let (is, is_not) = match fact.kind {
+        FactKind::Ty(this) => (this.is, this.is_not),
+      };
+      let ty = ty::logic::and(tys, ty, is);
+      let ty = ty::logic::minus(tys, ty, is_not);
       defined_id.tys.push(ty);
     }
   }
