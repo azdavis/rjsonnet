@@ -120,8 +120,7 @@ impl<'a> Input<'a> {
       let (path_id, ds) = st.open(fs, path.clone(), jsonnet.text.to_owned());
       let mut ds_map = FxHashMap::<text_pos::RangeUtf16, FxHashSet<String>>::default();
       for d in ds {
-        let message = make_one_line(&d.message);
-        ds_map.entry(d.range).or_default().insert(message);
+        ds_map.entry(d.range).or_default().insert(d.message);
       }
 
       st.get_all_deps(fs, path_id).expect("get all deps");
@@ -232,8 +231,6 @@ impl<'a> JsonnetInput<'a> {
 
       (OutcomeKind::EvalError, Err(err)) => {
         let got = err.display(st.strings(), st.paths(), Some(pwd)).to_string();
-        let got = make_one_line(&got);
-        let got = got.as_str();
         assert!(
           got.contains(want),
           "{path_str}: got error does not contain want: want {want}, got {got}"
@@ -272,21 +269,4 @@ enum OutcomeKind {
   String,
   EvalError,
   PreEvalError,
-}
-
-/// this is a bit annoying, but i don't want to pull in iter tools just for intersperse or join or
-/// whatever it's called. the real long term solution to get rid of this is probably a setting for
-/// the error displaying family of functions for how many lines of output we want.
-fn make_one_line(s: &str) -> String {
-  let mut ret = String::with_capacity(s.len());
-  let mut first = true;
-  for line in s.lines() {
-    if first {
-      first = false;
-    } else {
-      ret.push_str("; ");
-    }
-    ret.push_str(line.trim());
-  }
-  ret
 }

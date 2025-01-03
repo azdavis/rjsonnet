@@ -4,7 +4,7 @@
 
 use crate::suggestion;
 use jsonnet_expr::{def, ExprMust, Id, Str};
-use jsonnet_ty as ty;
+use jsonnet_ty::{self as ty, display::MultiLine};
 use std::fmt;
 
 /// An error.
@@ -19,7 +19,7 @@ impl Error {
   #[must_use]
   pub fn display<'a>(
     &'a self,
-    multi_line: ty::display::MultiLine,
+    multi_line: MultiLine,
     store: &'a ty::GlobalStore,
     str_ar: &'a jsonnet_expr::StrArena,
   ) -> impl fmt::Display + 'a {
@@ -155,7 +155,11 @@ impl fmt::Display for Display<'_> {
       Kind::UndefinedVar(id, suggest) => {
         write!(f, "undefined variable: `{}`", id.display(self.str_ar))?;
         if let Some(suggest) = suggest {
-          write!(f, "; did you mean `{suggest}`?")?;
+          match self.multi_line {
+            MultiLine::MustNot => f.write_str("; ")?,
+            MultiLine::May => f.write_str("\n      ")?,
+          }
+          write!(f, "did you mean: `{suggest}`?")?;
         }
         Ok(())
       }
@@ -170,7 +174,12 @@ impl fmt::Display for Display<'_> {
       Kind::MissingArg(id, ty) => {
         let id = id.display(self.str_ar);
         let ty = ty.display(self.multi_line, self.store, None, self.str_ar);
-        write!(f, "missing argument: `{id}` with type: `{ty}`")
+        write!(f, "missing argument: `{id}`")?;
+        match self.multi_line {
+          MultiLine::MustNot => f.write_str(" ")?,
+          MultiLine::May => f.write_str("\n       ")?,
+        }
+        write!(f, "with type: `{ty}`")
       }
       Kind::ExtraPositionalArg(n) => write!(f, "extra positional argument: {n}"),
       Kind::ExtraNamedArg(id) => {
@@ -181,28 +190,56 @@ impl fmt::Display for Display<'_> {
         Unify::Incompatible(want, got) => {
           let want = want.display(self.multi_line, self.store, None, self.str_ar);
           let got = got.display(self.multi_line, self.store, None, self.str_ar);
-          f.write_str("incompatible types\n")?;
-          writeln!(f, "  expected `{want}`")?;
-          write!(f, "     found `{got}`")
+          f.write_str("incompatible types")?;
+          match self.multi_line {
+            MultiLine::MustNot => f.write_str("; ")?,
+            MultiLine::May => f.write_str("\n  ")?,
+          }
+          write!(f, "expected `{want}`")?;
+          match self.multi_line {
+            MultiLine::MustNot => f.write_str("; ")?,
+            MultiLine::May => f.write_str("\n     ")?,
+          }
+          write!(f, "found `{got}`")
         }
         Unify::NoSuchField(no_such, suggest) => {
           write!(f, "no such field: `{}`", self.str_ar.get(no_such))?;
           if let Some(suggest) = suggest {
-            write!(f, "; did you mean `{suggest}`?")?;
+            match self.multi_line {
+              MultiLine::MustNot => f.write_str("; ")?,
+              MultiLine::May => f.write_str("\n ")?,
+            }
+            write!(f, "did you mean: `{suggest}`?")?;
           }
           Ok(())
         }
         Unify::NotEnoughParams(want, got) => {
-          f.write_str("not enough parameters\n")?;
-          writeln!(f, "  expected at least {want}")?;
-          write!(f, "   found only up to {got}")
+          f.write_str("not enough parameters")?;
+          match self.multi_line {
+            MultiLine::MustNot => f.write_str("; ")?,
+            MultiLine::May => f.write_str("\n  ")?,
+          }
+          write!(f, "expected at least {want}")?;
+          match self.multi_line {
+            MultiLine::MustNot => f.write_str("; ")?,
+            MultiLine::May => f.write_str("\n      ")?,
+          }
+          write!(f, "found up to {got}")
         }
         Unify::MismatchedParamNames(want, got) => {
           f.write_str("mismatched parameter names\n")?;
+          match self.multi_line {
+            MultiLine::MustNot => f.write_str("; ")?,
+            MultiLine::May => f.write_str("\n  ")?,
+          }
           let want = want.display(self.str_ar);
+          write!(f, "  expected `{want}`")?;
+          match self.multi_line {
+            MultiLine::MustNot => f.write_str("; ")?,
+            MultiLine::May => f.write_str("\n     ")?,
+          }
           let got = got.display(self.str_ar);
-          writeln!(f, "  expected `{want}`")?;
-          write!(f, "     found `{got}`")
+          write!(f, "found `{got}`")
         }
         Unify::WantOptionalParamGotRequired(id) => {
           let id = id.display(self.str_ar);
@@ -233,12 +270,29 @@ impl fmt::Display for Display<'_> {
         Invalid::Add(rhs) => {
           let ty = ty.display(self.multi_line, self.store, None, self.str_ar);
           let rhs = rhs.display(self.multi_line, self.store, None, self.str_ar);
-          f.write_str("not a pair of types that can be added with `+`\n")?;
-          writeln!(f, "  left:  `{ty}`")?;
-          write!(f, "  right: `{rhs}`")
+          f.write_str("not a pair of types that can be added with `+`")?;
+          match self.multi_line {
+            MultiLine::MustNot => f.write_str("; ")?,
+            MultiLine::May => f.write_str("\n   ")?,
+          }
+          write!(f, "left: `{ty}`")?;
+          match self.multi_line {
+            MultiLine::MustNot => f.write_str("; ")?,
+            MultiLine::May => f.write_str("\n  ")?,
+          }
+          write!(f, "right: `{rhs}`")
         }
       },
       Kind::AddSets => f.write_str("adding two sets will result in a non-set"),
     }
   }
 }
+
+// impl fmt::Display for MultiLine {
+//   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//     match self {
+//       MultiLine::MustNot => f.write_str("; "),
+//       MultiLine::May => f.write_str("\n"),
+//     }
+//   }
+// }
