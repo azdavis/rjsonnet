@@ -72,12 +72,15 @@ pub(crate) fn get_cond(
       }
       let ExprData::Prim(Prim::String(func_name)) = &ar[idx] else { return };
       match *func_name {
-        Str::isArray => get_is_ty(tys, ar, ac, positional, named, ty::Ty::ARRAY_ANY),
-        Str::isBoolean => get_is_ty(tys, ar, ac, positional, named, ty::Ty::BOOL),
-        Str::isNumber => get_is_ty(tys, ar, ac, positional, named, ty::Ty::NUMBER),
-        Str::isObject => get_is_ty(tys, ar, ac, positional, named, ty::Ty::OBJECT),
-        Str::isString => get_is_ty(tys, ar, ac, positional, named, ty::Ty::STRING),
-        Str::isFunction => get_is_ty(tys, ar, ac, positional, named, ty::Ty::UNKNOWN_FN),
+        Str::isArray => get_is_ty(tys, ar, ac, positional, named, ty::Ty::ARRAY_ANY, false),
+        Str::isBoolean => get_is_ty(tys, ar, ac, positional, named, ty::Ty::BOOL, false),
+        Str::isNumber => get_is_ty(tys, ar, ac, positional, named, ty::Ty::NUMBER, false),
+        Str::isInteger | Str::isDecimal | Str::isEven | Str::isOdd => {
+          get_is_ty(tys, ar, ac, positional, named, ty::Ty::NUMBER, true);
+        }
+        Str::isObject => get_is_ty(tys, ar, ac, positional, named, ty::Ty::OBJECT, false),
+        Str::isString => get_is_ty(tys, ar, ac, positional, named, ty::Ty::STRING, false),
+        Str::isFunction => get_is_ty(tys, ar, ac, positional, named, ty::Ty::UNKNOWN_FN, false),
         Str::objectHas | Str::objectHasAll => {
           // TODO handle named params (including mixed positional/named)
           let (&[Some(obj), Some(field)], []) = (&positional[..], &named[..]) else { return };
@@ -139,6 +142,7 @@ fn get_is_ty(
   positional: &[Expr],
   named: &[(Id, Expr)],
   mut ty: ty::Ty,
+  partial: bool,
 ) {
   let param = match (positional, named) {
     (&[Some(x)], []) => x,
@@ -151,7 +155,7 @@ fn get_is_ty(
     _ => return,
   };
   let Some(id) = follow_subscripts(tys, ar, param, &mut ty) else { return };
-  ac.add(tys, id, Fact::total(ty));
+  ac.add(tys, id, Fact::with_partiality(ty, partial));
 }
 
 /// Collects facts from `std.type(expr) == STR`, where `STR` is `"number"`, `"string"`, etc.
