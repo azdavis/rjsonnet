@@ -158,6 +158,36 @@ fn get_is_ty(
   ac.add(tys, id, Fact::with_partiality(ty, partial));
 }
 
+fn get_std_fn_param(
+  scope: &Scope,
+  ar: &ExprArena,
+  call: ExprMust,
+  fn_name: &Str,
+  param_name: Id,
+) -> Expr {
+  let ExprData::Call { func: Some(func), positional, named } = &ar[call] else { return None };
+  let ExprData::Subscript { on: Some(on), idx: Some(idx) } = ar[*func] else { return None };
+  let ExprData::Id(std_id) = &ar[on] else { return None };
+  if !scope.is_std(*std_id) {
+    return None;
+  }
+  let ExprData::Prim(Prim::String(func_name)) = &ar[idx] else { return None };
+  if func_name != fn_name {
+    return None;
+  }
+  let param = match (&positional[..], &named[..]) {
+    (&[Some(x)], []) => x,
+    ([], &[(id, Some(x))]) => {
+      if id != param_name {
+        return None;
+      }
+      x
+    }
+    _ => return None,
+  };
+  Some(param)
+}
+
 /// Collects facts from `std.type(expr) == STR`, where `STR` is `"number"`, `"string"`, etc.
 fn get_ty_eq(
   tys: &mut ty::MutStore<'_>,
@@ -167,26 +197,7 @@ fn get_ty_eq(
   call: ExprMust,
   type_str: ExprMust,
 ) {
-  let ExprData::Call { func: Some(func), positional, named } = &ar[call] else { return };
-  let ExprData::Subscript { on: Some(on), idx: Some(idx) } = ar[*func] else { return };
-  let ExprData::Id(std_id) = &ar[on] else { return };
-  if !scope.is_std(*std_id) {
-    return;
-  }
-  let ExprData::Prim(Prim::String(func_name)) = &ar[idx] else { return };
-  if *func_name != Str::type_ {
-    return;
-  }
-  let param = match (&positional[..], &named[..]) {
-    (&[Some(x)], []) => x,
-    ([], &[(id, Some(x))]) => {
-      if id != Id::x {
-        return;
-      }
-      x
-    }
-    _ => return,
-  };
+  let Some(param) = get_std_fn_param(scope, ar, call, &Str::type_, Id::x) else { return };
   let ExprData::Prim(Prim::String(type_str)) = &ar[type_str] else { return };
   let mut ty = match *type_str {
     Str::array => ty::Ty::ARRAY_ANY,
