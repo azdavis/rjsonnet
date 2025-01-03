@@ -57,11 +57,14 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
       st.tys.get(ty::Data::Object(obj))
     }
     ExprData::ObjectComp { name, body, id, ary } => {
-      get(st, ar, *ary);
+      let ary_ty = get(st, ar, *ary);
+      must_reachable(st, expr, ary_ty);
       st.scope.define(*id, ty::Ty::ANY, def::Def::Expr(expr, def::ExprDefKind::ObjectCompId));
-      get(st, ar, *name);
+      let name_ty = get(st, ar, *name);
+      must_reachable(st, expr, name_ty);
       st.define_self_super();
-      get(st, ar, *body);
+      let body_ty = get(st, ar, *body);
+      must_reachable(st, expr, body_ty);
       st.undefine(*id);
       st.undefine_self_super();
       ty::Ty::OBJECT
@@ -86,7 +89,9 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
     }
     ExprData::Subscript { on, idx } => {
       let on_ty = get(st, ar, *on);
+      must_reachable(st, expr, on_ty);
       let idx_ty = get(st, ar, *idx);
+      must_reachable(st, expr, idx_ty);
       get_subscript(st, ar, on_ty, idx_ty, expr, *on, *idx)
     }
     ExprData::Call { func, positional, named } => {
@@ -168,6 +173,7 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
     }
     ExprData::If { cond, yes, no } => {
       let cond_ty = get(st, ar, *cond);
+      must_reachable(st, expr, cond_ty);
       st.unify(cond.unwrap_or(expr), ty::Ty::BOOL, cond_ty);
       let mut fs = scope::Facts::default();
       facts::get_cond(&mut st.tys, &st.scope, ar, &mut fs, *cond);
@@ -193,17 +199,23 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
         | BinaryOp::BitXor
         | BinaryOp::BitOr
         | BinaryOp::BitAnd => {
+          must_reachable(st, expr, lhs_ty);
+          must_reachable(st, expr, rhs_ty);
           st.unify(lhs.unwrap_or(expr), ty::Ty::NUMBER, lhs_ty);
           st.unify(rhs.unwrap_or(expr), ty::Ty::NUMBER, rhs_ty);
           ty::Ty::NUMBER
         }
         BinaryOp::Eq => {
+          must_reachable(st, expr, lhs_ty);
+          must_reachable(st, expr, rhs_ty);
           st.unify(rhs.unwrap_or(expr), lhs_ty, rhs_ty);
           ty::Ty::BOOL
         }
         BinaryOp::Lt | BinaryOp::LtEq | BinaryOp::Gt | BinaryOp::GtEq => {
           // TODO something about how the lhs_ty and rhs_ty need to be "similar" somehow (both
           // numbers or both strings, etc)
+          must_reachable(st, expr, lhs_ty);
+          must_reachable(st, expr, rhs_ty);
           if !is_orderable(st, lhs_ty) {
             st.err(lhs.unwrap_or(expr), error::Kind::Invalid(lhs_ty, error::Invalid::OrdCmp));
           }
@@ -216,6 +228,7 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
     }
     ExprData::UnaryOp { inner, op } => {
       let inner_ty = get(st, ar, *inner);
+      must_reachable(st, expr, inner_ty);
       let e = inner.unwrap_or(expr);
       let want = match op {
         UnaryOp::Neg | UnaryOp::Pos | UnaryOp::BitNot => ty::Ty::NUMBER,
@@ -225,7 +238,8 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
       want
     }
     ExprData::Error(inner) => {
-      get(st, ar, *inner);
+      let inner_ty = get(st, ar, *inner);
+      must_reachable(st, expr, inner_ty);
       ty::Ty::NEVER
     }
     ExprData::Import { kind, path } => match kind {
@@ -242,6 +256,13 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
   // huge problem.
   st.insert_expr_ty(expr, ret);
   ret
+}
+
+fn must_reachable(st: &mut st::St<'_>, expr: ExprMust, ty: jsonnet_ty::Ty) {
+  let ty::Data::Union(parts) = st.tys.data(ty) else { return };
+  if parts.is_empty() {
+    st.err(expr, error::Kind::Unreachable);
+  }
 }
 
 fn get_add(st: &mut st::St<'_>, expr: ExprMust, lhs_ty: ty::Ty, rhs_ty: ty::Ty) -> ty::Ty {

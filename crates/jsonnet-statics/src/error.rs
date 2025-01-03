@@ -55,7 +55,8 @@ impl Error {
       | Kind::ExtraPositionalArg(_)
       | Kind::ExtraNamedArg(_)
       | Kind::Invalid(_, _)
-      | Kind::AddSets => diagnostic::Severity::Warning,
+      | Kind::AddSets
+      | Kind::Unreachable => diagnostic::Severity::Warning,
     }
   }
 
@@ -88,7 +89,8 @@ impl Error {
         | Unify::MismatchedParamNames(_, _)
         | Unify::NotEnoughParams(_, _),
       )
-      | Kind::AddSets => {}
+      | Kind::AddSets
+      | Kind::Unreachable => {}
     }
   }
 }
@@ -131,6 +133,7 @@ pub(crate) enum Kind {
   Unify(Unify),
   Invalid(ty::Ty, Invalid),
   AddSets,
+  Unreachable,
 }
 
 #[derive(Debug)]
@@ -284,6 +287,7 @@ impl fmt::Display for Display<'_> {
         }
       },
       Kind::AddSets => f.write_str("adding two sets will result in a non-set"),
+      Kind::Unreachable => f.write_str("unreachable code"),
     }
   }
 }

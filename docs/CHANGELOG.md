@@ -5,6 +5,7 @@ Things under "main" are not released yet.
 ## main
 
 - Tweak some diagnostic messages.
+- Warn on some unreachable code cases.
 
 ## v0.7.6
 
