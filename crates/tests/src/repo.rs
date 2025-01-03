@@ -398,7 +398,7 @@ fn cargo_toml() {
           assert!(workspace);
           assert_eq!(rhs, "true");
         }
-        _ => unreachable!("unknown dot_what: {dot_what}"),
+        _ => panic!("unknown dot_what: {dot_what}"),
       }
       ps.push(pkg);
     }
