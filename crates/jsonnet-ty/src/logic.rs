@@ -69,7 +69,8 @@ fn definitely_lacks(x: &Object, y: &Object) -> bool {
 ///
 /// (a || b) && c == (a && c) || (b && c)
 fn union_and(tys: &mut MutStore<'_>, xs: Union, y: Ty) -> Ty {
-  let u = Data::Union(xs.into_iter().map(|x| and(tys, x, y)).collect());
+  let iter = xs.into_iter().map(|x| and(tys, x, y));
+  let u = Data::Union(iter.collect());
   tys.get(u)
 }
 
