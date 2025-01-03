@@ -60,7 +60,7 @@ impl<'a> St<'a> {
 
   pub(crate) fn undefine(&mut self, id: Id) {
     if let Some((e, k)) = self.scope.undefine(id) {
-      self.err(e, error::Kind::Unused(id, k));
+      self.err(e, error::Kind::UnusedVar(id, k));
     }
   }
 

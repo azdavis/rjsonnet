@@ -75,16 +75,16 @@ fn get_regular<F>(
       }
       None => {
         if param.required {
-          st.err(fn_expr.unwrap_or(expr), error::Kind::MissingArgument(param.id, param.ty));
+          st.err(fn_expr.unwrap_or(expr), error::Kind::MissingArg(param.id, param.ty));
         }
       }
     }
   }
   for (idx, &(arg, _)) in pos_args.iter().enumerate().skip(params.len()) {
-    st.err(arg.unwrap_or(expr), error::Kind::ExtraPositionalArgument(idx + 1));
+    st.err(arg.unwrap_or(expr), error::Kind::ExtraPositionalArg(idx + 1));
   }
   for (id, (arg, _)) in named_args {
-    st.err(arg.unwrap_or(expr), error::Kind::ExtraNamedArgument(id));
+    st.err(arg.unwrap_or(expr), error::Kind::ExtraNamedArg(id));
   }
 }
 

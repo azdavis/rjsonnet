@@ -189,7 +189,7 @@ func(1)
 fn object_assert_3() {
   JsonnetInput::manifest(
     r#"
-##         v diagnostic: unused: `x`
+##         v diagnostic: unused variable: `x`
 local func(x) = {
 ##    ^ hover: (x: any) => { thing: number }
   local x = 123,
@@ -213,7 +213,7 @@ fn eq_lit() {
   JsonnetInput::manifest(
     r#"
 local mkTrue(x) = true;
-##           ^ diagnostic: unused: `x`
+##           ^ diagnostic: unused variable: `x`
 
 local f(x) =
 ##    ^ hover: (x: any) => number

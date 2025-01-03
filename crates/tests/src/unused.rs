@@ -7,7 +7,7 @@ fn fn_param() {
   JsonnetInput::manifest(
     r"
 local uh = function(x) 3;
-##                  ^ diagnostic: unused: `x`
+##                  ^ diagnostic: unused variable: `x`
 uh(4)
 ",
     "3",
@@ -20,7 +20,7 @@ fn local() {
   JsonnetInput::manifest(
     r"
 local y = 3;
-##    ^ diagnostic: unused: `y`
+##    ^ diagnostic: unused variable: `y`
 {}
 ",
     "{}",
@@ -33,7 +33,7 @@ fn local_param() {
   JsonnetInput::manifest(
     r"
 local f(x) = 3;
-##      ^ diagnostic: unused: `x`
+##      ^ diagnostic: unused variable: `x`
 f(0)
 ",
     "3",
@@ -47,7 +47,7 @@ fn in_all_fields() {
     r#"
 {
   local a = 1,
-##      ^ diagnostic: unused: `a`
+##      ^ diagnostic: unused variable: `a`
   b: "hi",
   c: 3,
 }
@@ -68,7 +68,7 @@ fn no_field() {
     r#"
 {
   local a = 1,
-##      ^ diagnostic: unused: `a`
+##      ^ diagnostic: unused variable: `a`
 }
 "#,
     "{}",
@@ -81,7 +81,7 @@ fn array_comp() {
   JsonnetInput::eval_error(
     r#"
 [3 for x in []]
-##     ^ diagnostic: unused: `x`
+##     ^ diagnostic: unused variable: `x`
 "#,
     "not yet implemented: makeArray",
   )
@@ -95,7 +95,7 @@ fn object_comp() {
 {
   local no = k,
   [k]: false,
-##^^^^^^^^^^ diagnostic: unused: `no`
+##^^^^^^^^^^ diagnostic: unused variable: `no`
   for k in ["a", "b"]
 }
 "#,
@@ -106,7 +106,7 @@ fn object_comp() {
 
 // TODO the var is used, but not in both places.
 #[test]
-#[should_panic = "unused: `x`"]
+#[should_panic = "unused variable: `x`"]
 fn object_comp_only_key() {
   JsonnetInput::manifest(
     r#"
@@ -126,7 +126,7 @@ fn object_comp_only_key() {
 
 // TODO the var is used, but not in both places.
 #[test]
-#[should_panic = "unused: `x`"]
+#[should_panic = "unused variable: `x`"]
 fn object_comp_only_val() {
   JsonnetInput::manifest(
     r#"

@@ -220,9 +220,9 @@ fn same_fn_ty() {
   JsonnetInput::manifest(
     r#"
 local foo() = null;
-##    ^^^ diagnostic: unused: `foo`
+##    ^^^ diagnostic: unused variable: `foo`
 local bar() = 1;
-##    ^^^ diagnostic: unused: `bar`
+##    ^^^ diagnostic: unused variable: `bar`
 local quz() = 2;
 
 quz()

@@ -36,7 +36,7 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
           continue;
         };
         if obj.known.insert(s.clone(), ty::Ty::ANY).is_some() {
-          st.err(key, error::Kind::DuplicateFieldName(s.clone()));
+          st.err(key, error::Kind::DuplicateField(s.clone()));
         }
       }
       st.define_self_super();
@@ -130,7 +130,7 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
         let mut tmp = FxHashMap::<Id, ty::Ty>::default();
         for (idx, &(id, rhs)) in params.iter().enumerate() {
           if tmp.insert(id, ty::Ty::ANY).is_some() {
-            st.err(rhs.flatten().unwrap_or(expr), error::Kind::DuplicateBinding(id, idx, m));
+            st.err(rhs.flatten().unwrap_or(expr), error::Kind::DuplicateVar(id, idx, m));
           }
         }
         let fs = facts::get_always(&mut st.tys, &st.scope, ar, *body);
@@ -367,7 +367,7 @@ fn define_binds(
   for (idx, &(bind, _)) in binds.iter().enumerate() {
     st.scope.define(bind, ty::Ty::ANY, def::Def::Expr(expr, def::ExprDefKind::Multi(idx, m)));
     if !bound_ids.insert(bind) {
-      st.err(expr, error::Kind::DuplicateBinding(bind, idx, m));
+      st.err(expr, error::Kind::DuplicateVar(bind, idx, m));
     }
   }
   for &(lhs, rhs) in binds {

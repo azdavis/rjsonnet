@@ -30,8 +30,8 @@ impl Error {
   #[must_use]
   pub fn expr_and_def(&self) -> (ExprMust, Option<def::ExprDefKind>) {
     let with_expr = match self.kind {
-      Kind::Unused(_, k) => Some(k),
-      Kind::DuplicateBinding(_, n, m) => Some(def::ExprDefKind::Multi(n, m)),
+      Kind::UnusedVar(_, k) => Some(k),
+      Kind::DuplicateVar(_, n, m) => Some(def::ExprDefKind::Multi(n, m)),
       _ => None,
     };
     (self.expr, with_expr)
@@ -44,16 +44,16 @@ impl Error {
       // these static checks happen before eval, i.e. if they are present, we cannot eval. so they
       // are errors.
       Kind::UndefinedVar(..)
-      | Kind::DuplicateFieldName(_)
+      | Kind::DuplicateField(_)
       | Kind::DuplicateNamedArg(_)
-      | Kind::DuplicateBinding(_, _, _) => diagnostic::Severity::Error,
+      | Kind::DuplicateVar(_, _, _) => diagnostic::Severity::Error,
       // it may be possible to eval the jsonnet without handling these, so we consider them
       // warnings. e.g. if the call with the missing/extra argument etc doesn't get eval'd.
-      Kind::Unused(_, _)
+      Kind::UnusedVar(_, _)
       | Kind::Unify(_)
-      | Kind::MissingArgument(_, _)
-      | Kind::ExtraPositionalArgument(_)
-      | Kind::ExtraNamedArgument(_)
+      | Kind::MissingArg(_, _)
+      | Kind::ExtraPositionalArg(_)
+      | Kind::ExtraNamedArg(_)
       | Kind::Invalid(_, _)
       | Kind::AddSets => diagnostic::Severity::Warning,
     }
@@ -65,7 +65,7 @@ impl Error {
   /// syntax artifacts.
   pub fn apply(&mut self, ty_subst: &ty::Subst) {
     match &mut self.kind {
-      Kind::MissingArgument(_, ty)
+      Kind::MissingArg(_, ty)
       | Kind::Invalid(ty, Invalid::Call | Invalid::Length | Invalid::OrdCmp | Invalid::Subscript) =>
       {
         ty.apply(ty_subst);
@@ -76,11 +76,11 @@ impl Error {
       }
       Kind::UndefinedVar(_, _)
       | Kind::DuplicateNamedArg(_)
-      | Kind::DuplicateBinding(_, _, _)
-      | Kind::Unused(_, _)
-      | Kind::ExtraNamedArgument(_)
-      | Kind::DuplicateFieldName(_)
-      | Kind::ExtraPositionalArgument(_)
+      | Kind::DuplicateVar(_, _, _)
+      | Kind::UnusedVar(_, _)
+      | Kind::ExtraNamedArg(_)
+      | Kind::DuplicateField(_)
+      | Kind::ExtraPositionalArg(_)
       | Kind::Unify(
         Unify::WantOptionalParamGotRequired(_)
         | Unify::ExtraRequiredParam(_)
@@ -121,13 +121,13 @@ impl Unify {
 #[derive(Debug)]
 pub(crate) enum Kind {
   UndefinedVar(Id, Option<String>),
-  DuplicateFieldName(Str),
+  DuplicateField(Str),
   DuplicateNamedArg(Id),
-  DuplicateBinding(Id, usize, def::ExprDefKindMulti),
-  Unused(Id, def::ExprDefKind),
-  MissingArgument(Id, ty::Ty),
-  ExtraPositionalArgument(usize),
-  ExtraNamedArgument(Id),
+  DuplicateVar(Id, usize, def::ExprDefKindMulti),
+  UnusedVar(Id, def::ExprDefKind),
+  MissingArg(Id, ty::Ty),
+  ExtraPositionalArg(usize),
+  ExtraNamedArg(Id),
   Unify(Unify),
   Invalid(ty::Ty, Invalid),
   AddSets,
@@ -159,21 +159,21 @@ impl fmt::Display for Display<'_> {
         }
         Ok(())
       }
-      Kind::DuplicateFieldName(s) => write!(f, "duplicate field name: `{}`", self.str_ar.get(s)),
+      Kind::DuplicateField(s) => write!(f, "duplicate field: `{}`", self.str_ar.get(s)),
       Kind::DuplicateNamedArg(id) => {
         write!(f, "duplicate named argument: `{}`", id.display(self.str_ar))
       }
-      Kind::DuplicateBinding(id, _, _) => {
-        write!(f, "duplicate binding: `{}`", id.display(self.str_ar))
+      Kind::DuplicateVar(id, _, _) => {
+        write!(f, "duplicate variable: `{}`", id.display(self.str_ar))
       }
-      Kind::Unused(id, _) => write!(f, "unused: `{}`", id.display(self.str_ar)),
-      Kind::MissingArgument(id, ty) => {
+      Kind::UnusedVar(id, _) => write!(f, "unused variable: `{}`", id.display(self.str_ar)),
+      Kind::MissingArg(id, ty) => {
         let id = id.display(self.str_ar);
         let ty = ty.display(self.multi_line, self.store, None, self.str_ar);
         write!(f, "missing argument: `{id}` with type: `{ty}`")
       }
-      Kind::ExtraPositionalArgument(n) => write!(f, "extra positional argument: {n}"),
-      Kind::ExtraNamedArgument(id) => {
+      Kind::ExtraPositionalArg(n) => write!(f, "extra positional argument: {n}"),
+      Kind::ExtraNamedArg(id) => {
         let id = id.display(self.str_ar);
         write!(f, "extra named argument: `{id}`")
       }

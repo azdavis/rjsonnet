@@ -6,9 +6,9 @@ use crate::check::JsonnetInput;
 fn local() {
   JsonnetInput::pre_eval_error(
     r"
-##    v diagnostic: unused: `x`
+##    v diagnostic: unused variable: `x`
 local x = 3, x = 3;
-##           ^ diagnostic: duplicate binding: `x`
+##           ^ diagnostic: duplicate variable: `x`
 x
 ",
   )
@@ -21,9 +21,9 @@ fn object_local() {
     r"
 {
   local x = 3,
-##      ^ diagnostic: unused: `x`
+##      ^ diagnostic: unused variable: `x`
   local x = 3,
-##      ^ diagnostic: duplicate binding: `x`
+##      ^ diagnostic: duplicate variable: `x`
   a: x,
 }
 ",
@@ -38,7 +38,7 @@ fn field() {
 {
   a: 1,
   a: 2,
-##^ diagnostic: duplicate field name: `a`
+##^ diagnostic: duplicate field: `a`
 }
 ",
   )
@@ -49,9 +49,9 @@ fn field() {
 fn param() {
   JsonnetInput::pre_eval_error(
     r"
-##           v diagnostic: duplicate binding: `x`
+##           v diagnostic: duplicate variable: `x`
 local bad(x, x) = x;
-##        ^ diagnostic: unused: `x`
+##        ^ diagnostic: unused variable: `x`
   bad(1)
 ##^^^ diagnostic: missing argument: `x` with type: `any`
 ",
