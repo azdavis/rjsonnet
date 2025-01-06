@@ -60,7 +60,7 @@ pub fn and(tys: &mut MutStore<'_>, x: Ty, y: Ty) -> Ty {
   }
 }
 
-/// returns whether the first object is known to definitely lack w.r.t. the second.
+/// returns whether `x` is known to definitely lack a field that is in `y`.
 fn definitely_lacks(x: &Object, y: &Object) -> bool {
   !x.has_unknown && y.known.keys().any(|k| !x.known.contains_key(k))
 }
@@ -129,7 +129,7 @@ pub fn with_len(tys: &mut MutStore<'_>, ty: Ty, n: usize) -> Ty {
 
 /// Returns the type that is x minus anything in y.
 ///
-/// When such a type doesn't exist, e.g. when `x == y`, returns `never`
+/// When such a type doesn't exist, e.g. when `x == y`, returns `never`.
 ///
 /// It's kind of like `x && !y`, where `!y` is like the union of everything EXCEPT `y`.
 ///
