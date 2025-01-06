@@ -4,6 +4,7 @@ Things under "main" are not released yet.
 
 ## main
 
+- Bring back ability to analyze flow types with `==` to a literal that is not the only value of that type.
 - Improve object flow typing with `std.length`.
 - Support `std.objectHasEx` in flow typing.
 

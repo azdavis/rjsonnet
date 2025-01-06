@@ -151,7 +151,7 @@ The supported conditional tests on some expression `expr` are:
 - `std.objectHasAll(expr, STR)`, where `STR` is a literal string
 - `std.objectHasEx(expr, STR, hidden)`, where `STR` is a literal string and `hidden` is an expression
 - `std.length(x) == NUM` where `NUM` is a literal number
-- `expr == LIT`, where `LIT` is `null`, `true`, or `false`
+- `expr == LIT`, where `LIT` is a literal
 - `!a`, where `a` is a test
 - `a && b`, where `a` and `b` are tests
 - `a || b`, where `a` and `b` are tests

@@ -5,7 +5,7 @@
 //! so we won't trick this by doing `local std = wtf` beforehand, and also it'll still work with
 //! `local foo = std` and then asserting with `foo.isTY` etc.
 
-use crate::facts::data::{Fact, Facts};
+use crate::facts::data::{Fact, Facts, Totality};
 use crate::scope::Scope;
 use jsonnet_expr::{Expr, ExprArena, ExprData, ExprMust, Id, Prim, Str};
 
@@ -54,12 +54,15 @@ pub(crate) fn get_cond(scope: &Scope, ar: &ExprArena, ac: &mut Facts, cond: Expr
       }
       let ExprData::Prim(Prim::String(func_name)) = &ar[idx] else { return };
       match *func_name {
-        Str::isArray => get_is_ty(ar, ac, pos, named, Fact::array()),
+        Str::isArray => get_is_ty(ar, ac, pos, named, Fact::array(Totality::Total)),
         Str::isBoolean => get_is_ty(ar, ac, pos, named, Fact::boolean()),
-        Str::isNumber => get_is_ty(ar, ac, pos, named, Fact::number()),
-        Str::isObject => get_is_ty(ar, ac, pos, named, Fact::object()),
-        Str::isString => get_is_ty(ar, ac, pos, named, Fact::string()),
+        Str::isNumber => get_is_ty(ar, ac, pos, named, Fact::number(Totality::Total)),
+        Str::isObject => get_is_ty(ar, ac, pos, named, Fact::object(Totality::Total)),
+        Str::isString => get_is_ty(ar, ac, pos, named, Fact::string(Totality::Total)),
         Str::isFunction => get_is_ty(ar, ac, pos, named, Fact::function()),
+        Str::isEven | Str::isOdd | Str::isInteger | Str::isDecimal => {
+          get_is_ty(ar, ac, pos, named, Fact::number(Totality::Partial));
+        }
         Str::objectHas | Str::objectHasAll => {
           // TODO handle named params (including mixed pos/named)
           let (&[Some(obj), Some(field)], []) = (&pos[..], &named[..]) else { return };
@@ -177,11 +180,11 @@ fn get_ty_eq(scope: &Scope, ar: &ExprArena, ac: &mut Facts, call: ExprMust, type
   let Some(param) = get_std_fn_param(scope, ar, call, &Str::type_, Id::x) else { return };
   let ExprData::Prim(Prim::String(type_str)) = &ar[type_str] else { return };
   let fact = match *type_str {
-    Str::array => Fact::array(),
+    Str::array => Fact::array(Totality::Total),
     Str::boolean => Fact::boolean(),
-    Str::number => Fact::number(),
-    Str::object => Fact::object(),
-    Str::string => Fact::string(),
+    Str::number => Fact::number(Totality::Total),
+    Str::object => Fact::object(Totality::Total),
+    Str::string => Fact::string(Totality::Total),
     Str::function => Fact::function(),
     Str::null => Fact::null(),
     _ => return,
@@ -207,17 +210,22 @@ pub(crate) fn get_uint(n: f64) -> Option<usize> {
 
 /// Collects facts from `expr == LIT`, where `LIT` is some literal (`null`, `3`, `"hi"`, etc).
 fn get_eq_lit(ar: &ExprArena, ac: &mut Facts, var: ExprMust, lit: ExprMust) {
-  let ExprData::Prim(prim) = &ar[lit] else { return };
-  let fact = match prim {
-    Prim::Null => Fact::null(),
-    Prim::Bool(b) => {
-      if *b {
-        Fact::true_()
-      } else {
-        Fact::false_()
+  let fact = match &ar[lit] {
+    ExprData::Prim(prim) => match prim {
+      Prim::Null => Fact::null(),
+      Prim::Bool(b) => {
+        if *b {
+          Fact::true_()
+        } else {
+          Fact::false_()
+        }
       }
-    }
-    Prim::String(_) | Prim::Number(_) => return,
+      Prim::String(_) => Fact::string(Totality::Partial),
+      Prim::Number(_) => Fact::number(Totality::Partial),
+    },
+    ExprData::Array(_) => Fact::array(Totality::Partial),
+    ExprData::Object { .. } | ExprData::ObjectComp { .. } => Fact::object(Totality::Partial),
+    _ => return,
   };
   add_fact(ar, ac, var, fact);
 }

@@ -46,39 +46,39 @@ pub(crate) struct Fact(Repr);
 
 impl Fact {
   pub(crate) fn null() -> Self {
-    Self(Prim::Null.into())
+    Self(Repr::Prim(Prim::Null, Totality::Total))
   }
 
   pub(crate) fn true_() -> Self {
-    Self(Prim::True.into())
+    Self(Repr::Prim(Prim::True, Totality::Total))
   }
 
   pub(crate) fn false_() -> Self {
-    Self(Prim::False.into())
+    Self(Repr::Prim(Prim::False, Totality::Total))
   }
 
   pub(crate) fn boolean() -> Self {
-    Self(Repr::Or(Box::new(Prim::True.into()), Box::new(Prim::False.into())))
+    Self::true_().or(Self::false_())
   }
 
-  pub(crate) fn number() -> Self {
-    Self(Prim::Number.into())
+  pub(crate) fn number(tot: Totality) -> Self {
+    Self(Repr::Prim(Prim::Number, tot))
   }
 
-  pub(crate) fn string() -> Self {
-    Self(Prim::String.into())
+  pub(crate) fn string(tot: Totality) -> Self {
+    Self(Repr::Prim(Prim::String, tot))
   }
 
   pub(crate) fn function() -> Self {
-    Self(Prim::Function.into())
+    Self(Repr::Prim(Prim::Function, Totality::Total))
   }
 
-  pub(crate) fn array() -> Self {
-    Self(Prim::Array.into())
+  pub(crate) fn array(tot: Totality) -> Self {
+    Self(Repr::Prim(Prim::Array, tot))
   }
 
-  pub(crate) fn object() -> Self {
-    Self(Prim::Object.into())
+  pub(crate) fn object(tot: Totality) -> Self {
+    Self(Repr::Prim(Prim::Object, tot))
   }
 
   pub(crate) fn has_field(field: Str) -> Self {
@@ -115,7 +115,7 @@ impl Fact {
 
   /// returns `*self`, putting in its old place a "dummy" fact that should be overwritten later.
   fn take(&mut self) -> Self {
-    let mut ret = Self(Repr::Prim(Prim::Null));
+    let mut ret = Self(Repr::Len(0));
     std::mem::swap(self, &mut ret);
     ret
   }
@@ -123,7 +123,7 @@ impl Fact {
 
 #[derive(Debug, Clone)]
 enum Repr {
-  Prim(Prim),
+  Prim(Prim, Totality),
   Field(Field),
   Len(usize),
   And(Box<Repr>, Box<Repr>),
@@ -134,7 +134,7 @@ enum Repr {
 impl Repr {
   fn apply_to(self, tys: &mut ty::MutStore<'_>, ty: ty::Ty) -> ty::Ty {
     match self {
-      Repr::Prim(prim) => ty::logic::and(tys, ty, prim.as_ty()),
+      Repr::Prim(prim, _) => ty::logic::and(tys, ty, prim.as_ty()),
       Repr::Field(f) => {
         let obj_ty = f.into_ty(tys);
         ty::logic::and(tys, ty, obj_ty)
@@ -157,7 +157,11 @@ impl Repr {
 
   fn apply_not(self, tys: &mut ty::MutStore<'_>, ty: ty::Ty) -> ty::Ty {
     match self {
-      Repr::Prim(prim) => ty::logic::minus(tys, ty, prim.as_ty()),
+      Repr::Prim(prim, tot) => match tot {
+        Totality::Total => ty::logic::minus(tys, ty, prim.as_ty()),
+        // ignore
+        Totality::Partial => ty,
+      },
       Repr::Field(f) => {
         let obj_ty = f.into_ty(tys);
         ty::logic::minus(tys, ty, obj_ty)
@@ -209,12 +213,6 @@ impl Prim {
   }
 }
 
-impl From<Prim> for Repr {
-  fn from(value: Prim) -> Self {
-    Self::Prim(value)
-  }
-}
-
 #[derive(Debug, Clone)]
 struct Field {
   /// INVARIANT: non-empty.
@@ -233,4 +231,10 @@ impl Field {
       }))
     })
   }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub(crate) enum Totality {
+  Total,
+  Partial,
 }

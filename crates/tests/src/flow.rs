@@ -311,3 +311,78 @@ else if std.length(f) == 2 then
   )
   .check();
 }
+
+#[test]
+fn partial_1() {
+  JsonnetInput::manifest(
+    r#"
+local f(x) =
+  if std.isDecimal(x) then
+    x + 0.5
+##  ^ type: number
+  else if std.isInteger(x) then
+    x + 1
+##  ^ type: number
+;
+
+local n = f(5);
+##        ^ type: (x: any) => null | number
+
+if n == null then 5 else n + 2
+##                       ^ type: number
+"#,
+    "8",
+  )
+  .check();
+}
+
+#[test]
+fn partial_2() {
+  JsonnetInput::manifest(
+    r#"
+local f(x) =
+  assert std.isString(x);
+  if x == "hi" then
+    "hey"
+  else if x == "bye" then
+    "see ya"
+  else
+    x
+##  ^ type: string
+;
+
+local s = f("hello");
+##        ^ type: (x: string) => string
+
+std.length(s)
+"#,
+    "5",
+  )
+  .check();
+}
+
+#[test]
+fn partial_3() {
+  JsonnetInput::manifest(
+    r#"
+local f(x) =
+  if x == "hi" then
+    std.length(x)
+##             ^ type: string
+  else if x == "bye" then
+    std.length(x)
+##             ^ type: string
+  else
+    x
+##  ^ type: any
+;
+
+local s = f("hello");
+##        ^ type: (x: any) => any
+
+std.length(s)
+"#,
+    "5",
+  )
+  .check();
+}
