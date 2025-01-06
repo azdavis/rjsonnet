@@ -5,6 +5,7 @@ Things under "main" are not released yet.
 ## main
 
 - Improve object flow typing with `std.length`.
+- Support `std.objectHasEx` in flow typing.
 
 ## v0.7.8
 

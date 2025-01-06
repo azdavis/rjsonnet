@@ -67,6 +67,13 @@ pub(crate) fn get_cond(scope: &Scope, ar: &ExprArena, ac: &mut Facts, cond: Expr
           let fact = Fact::has_field(field.clone());
           add_fact(ar, ac, obj, fact);
         }
+        Str::objectHasEx => {
+          // TODO handle named params (including mixed pos/named)
+          let (&[Some(obj), Some(field), Some(_)], []) = (&pos[..], &named[..]) else { return };
+          let ExprData::Prim(Prim::String(field)) = &ar[field] else { return };
+          let fact = Fact::has_field(field.clone());
+          add_fact(ar, ac, obj, fact);
+        }
         _ => {}
       }
     }
