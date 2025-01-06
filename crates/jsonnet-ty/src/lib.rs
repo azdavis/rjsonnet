@@ -291,8 +291,12 @@ pub struct Param {
 }
 
 impl Param {
-  const X: Self = Self { id: Id::x_unutterable, ty: Ty::ANY, required: true };
-  const Y: Self = Self { id: Id::y_unutterable, ty: Ty::ANY, required: true };
+  const X: Self = Self::required_any(Id::x_unutterable);
+  const Y: Self = Self::required_any(Id::y_unutterable);
+
+  const fn required_any(id: Id) -> Self {
+    Self { id, ty: Ty::ANY, required: true }
+  }
 
   fn apply(&mut self, subst: &Subst) {
     self.ty.apply(subst);
