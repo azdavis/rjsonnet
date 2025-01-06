@@ -209,39 +209,6 @@ func(3)
 }
 
 #[test]
-fn eq_lit() {
-  JsonnetInput::manifest(
-    r#"
-local mkTrue(x) = true;
-##           ^ diagnostic: unused variable: `x`
-
-local f(x) =
-##    ^ hover: (x: any) => number
-  if x == "hi" then
-    assert mkTrue(x);
-##                ^ hover: string
-    1
-  else if x == "bye" then
-    assert mkTrue(x);
-##                ^ hover: string
-    2
-  else if x == 5 then
-    assert mkTrue(x);
-##                ^ hover: number
-    3
-  else
-    std.length(x)
-##             ^ hover: any
-;
-
-f("hi")
-"#,
-    "1",
-  )
-  .check();
-}
-
-#[test]
 fn eq_lit_assert() {
   JsonnetInput::manifest(
     r#"

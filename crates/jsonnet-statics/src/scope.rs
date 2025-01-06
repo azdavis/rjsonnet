@@ -71,7 +71,7 @@ impl Scope {
         always!(false, "should not have empty ty stack");
         continue;
       };
-      let fact = fact.clone().and(tys, Fact::ty_total(ty));
+      let fact = fact.clone().and(tys, Fact::ty(ty));
       let ty = fact.into_ty(tys);
       defined_id.tys.push(ty);
     }

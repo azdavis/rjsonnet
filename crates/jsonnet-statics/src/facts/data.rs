@@ -44,28 +44,18 @@ impl Facts {
 #[derive(Debug, Clone)]
 pub(crate) struct Fact {
   kind: FactKind,
-  totality: Totality,
 }
 
 impl Fact {
   /// returns `*self`, putting in its old place a "dummy" fact that should be overwritten later.
   fn take(&mut self) -> Self {
-    let mut ret =
-      Fact { kind: FactKind::Ty(TyFact::new(ty::Ty::NEVER)), totality: Totality::Partial };
+    let mut ret = Fact { kind: FactKind::Ty(TyFact::new(ty::Ty::NEVER)) };
     std::mem::swap(self, &mut ret);
     ret
   }
 
-  pub(crate) const fn ty_partial(ty: ty::Ty) -> Self {
-    Self::ty(ty, Totality::Partial)
-  }
-
-  pub(crate) const fn ty_total(ty: ty::Ty) -> Self {
-    Self::ty(ty, Totality::Total)
-  }
-
-  pub(crate) const fn ty(ty: ty::Ty, totality: Totality) -> Self {
-    Self { kind: FactKind::Ty(TyFact::new(ty)), totality }
+  pub(crate) const fn ty(ty: ty::Ty) -> Self {
+    Self { kind: FactKind::Ty(TyFact::new(ty)) }
   }
 
   pub(crate) fn and(self, tys: &mut ty::MutStore<'_>, other: Self) -> Self {
@@ -76,11 +66,7 @@ impl Fact {
         is_not: tys.get(ty::Data::mk_union([this.is_not, other.is_not])),
       }),
     };
-    let totality = match (self.totality, other.totality) {
-      (Totality::Partial, Totality::Partial) => Totality::Partial,
-      _ => Totality::Total,
-    };
-    Self { kind, totality }
+    Self { kind }
   }
 
   pub(crate) fn or(self, tys: &mut ty::MutStore<'_>, other: Self) -> Self {
@@ -91,18 +77,10 @@ impl Fact {
         is_not: ty::logic::and(tys, this.is_not, other.is_not),
       }),
     };
-    let totality = match (self.totality, other.totality) {
-      (Totality::Total, Totality::Total) => Totality::Total,
-      _ => Totality::Partial,
-    };
-    Self { kind, totality }
+    Self { kind }
   }
 
   pub(crate) fn not(self) -> Self {
-    match self.totality {
-      Totality::Partial => return Self::ty_partial(ty::Ty::ANY),
-      Totality::Total => {}
-    }
     let kind = match self.kind {
       FactKind::Ty(this) => FactKind::Ty(TyFact {
         // we don't do self.is = minus(ANY, self.is_not) because we don't support minus(ANY, ...).
@@ -111,7 +89,7 @@ impl Fact {
         is_not: if this.is == ty::Ty::ANY { ty::Ty::NEVER } else { this.is },
       }),
     };
-    Self { kind, totality: Totality::Total }
+    Self { kind }
   }
 
   pub(crate) fn into_ty(self, tys: &mut ty::MutStore<'_>) -> ty::Ty {
@@ -137,10 +115,4 @@ impl TyFact {
   const fn new(is: ty::Ty) -> Self {
     Self { is, is_not: ty::Ty::NEVER }
   }
-}
-
-#[derive(Debug, Clone, Copy)]
-pub(crate) enum Totality {
-  Total,
-  Partial,
 }

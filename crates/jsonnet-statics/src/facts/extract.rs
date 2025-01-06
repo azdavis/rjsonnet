@@ -5,7 +5,7 @@
 //! so we won't trick this by doing `local std = wtf` beforehand, and also it'll still work with
 //! `local foo = std` and then asserting with `foo.isTY` etc.
 
-use crate::facts::data::{Fact, Facts, Totality};
+use crate::facts::data::{Fact, Facts};
 use crate::scope::Scope;
 use jsonnet_expr::{Expr, ExprArena, ExprData, ExprMust, Id, Prim, Str};
 use jsonnet_ty as ty;
@@ -73,15 +73,12 @@ pub(crate) fn get_cond(
       }
       let ExprData::Prim(Prim::String(func_name)) = &ar[idx] else { return };
       match *func_name {
-        Str::isArray => get_is_ty(tys, ar, ac, pos, named, ty::Ty::ARRAY_ANY, Totality::Total),
-        Str::isBoolean => get_is_ty(tys, ar, ac, pos, named, ty::Ty::BOOL, Totality::Total),
-        Str::isNumber => get_is_ty(tys, ar, ac, pos, named, ty::Ty::NUMBER, Totality::Total),
-        Str::isInteger | Str::isDecimal | Str::isEven | Str::isOdd => {
-          get_is_ty(tys, ar, ac, pos, named, ty::Ty::NUMBER, Totality::Partial);
-        }
-        Str::isObject => get_is_ty(tys, ar, ac, pos, named, ty::Ty::OBJECT, Totality::Total),
-        Str::isString => get_is_ty(tys, ar, ac, pos, named, ty::Ty::STRING, Totality::Total),
-        Str::isFunction => get_is_ty(tys, ar, ac, pos, named, ty::Ty::UNKNOWN_FN, Totality::Total),
+        Str::isArray => get_is_ty(tys, ar, ac, pos, named, ty::Ty::ARRAY_ANY),
+        Str::isBoolean => get_is_ty(tys, ar, ac, pos, named, ty::Ty::BOOL),
+        Str::isNumber => get_is_ty(tys, ar, ac, pos, named, ty::Ty::NUMBER),
+        Str::isObject => get_is_ty(tys, ar, ac, pos, named, ty::Ty::OBJECT),
+        Str::isString => get_is_ty(tys, ar, ac, pos, named, ty::Ty::STRING),
+        Str::isFunction => get_is_ty(tys, ar, ac, pos, named, ty::Ty::UNKNOWN_FN),
         Str::objectHas | Str::objectHasAll => {
           // TODO handle named params (including mixed pos/named)
           let (&[Some(obj), Some(field)], []) = (&pos[..], &named[..]) else { return };
@@ -91,7 +88,7 @@ pub(crate) fn get_cond(
             has_unknown: true,
           }));
           let Some(id) = follow_subscripts(tys, ar, obj, &mut ty) else { return };
-          ac.add(tys, id, Fact::ty_total(ty));
+          ac.add(tys, id, Fact::ty(ty));
         }
         _ => {}
       }
@@ -145,7 +142,6 @@ fn get_is_ty(
   positional: &[Expr],
   named: &[(Id, Expr)],
   mut ty: ty::Ty,
-  tot: Totality,
 ) {
   let param = match (positional, named) {
     (&[Some(x)], []) => x,
@@ -158,7 +154,7 @@ fn get_is_ty(
     _ => return,
   };
   let Some(id) = follow_subscripts(tys, ar, param, &mut ty) else { return };
-  ac.add(tys, id, Fact::ty(ty, tot));
+  ac.add(tys, id, Fact::ty(ty));
 }
 
 fn get_std_fn_param(
@@ -213,7 +209,7 @@ fn get_ty_eq(
     _ => return,
   };
   let Some(id) = follow_subscripts(tys, ar, param, &mut ty) else { return };
-  ac.add(tys, id, Fact::ty_total(ty));
+  ac.add(tys, id, Fact::ty(ty));
 }
 
 /// Collects facts from `expr == LIT`, where `LIT` is some literal (`null`, `3`, `"hi"`, etc).
@@ -224,20 +220,20 @@ fn get_eq_lit(
   var: ExprMust,
   lit: ExprMust,
 ) {
-  let (mut ty, tot) = match &ar[lit] {
-    ExprData::Prim(prim) => match prim {
-      Prim::Null => (ty::Ty::NULL, Totality::Total),
-      Prim::Bool(b) => (if *b { ty::Ty::TRUE } else { ty::Ty::FALSE }, Totality::Total),
-      Prim::String(_) => (ty::Ty::STRING, Totality::Partial),
-      Prim::Number(_) => (ty::Ty::NUMBER, Totality::Partial),
-    },
-    ExprData::Object { .. } | ExprData::ObjectComp { .. } => (ty::Ty::OBJECT, Totality::Partial),
-    ExprData::Array(_) => (ty::Ty::ARRAY_ANY, Totality::Partial),
-    ExprData::Error(_) => (ty::Ty::NEVER, Totality::Total),
-    _ => return,
+  let ExprData::Prim(prim) = &ar[lit] else { return };
+  let mut ty = match prim {
+    Prim::Null => ty::Ty::NULL,
+    Prim::Bool(b) => {
+      if *b {
+        ty::Ty::TRUE
+      } else {
+        ty::Ty::FALSE
+      }
+    }
+    Prim::String(_) | Prim::Number(_) => return,
   };
   let Some(id) = follow_subscripts(tys, ar, var, &mut ty) else { return };
-  ac.add(tys, id, Fact::ty(ty, tot));
+  ac.add(tys, id, Fact::ty(ty));
 }
 
 /// Follows subscripts towards a single final identifier at the end, while updating the ty that we
