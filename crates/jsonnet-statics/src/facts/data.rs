@@ -78,7 +78,7 @@ impl Fact {
   }
 
   pub(crate) fn boolean() -> Self {
-    Self::ty(ty::Ty::BOOL)
+    Self::ty(ty::Ty::BOOLEAN)
   }
 
   pub(crate) fn number() -> Self {

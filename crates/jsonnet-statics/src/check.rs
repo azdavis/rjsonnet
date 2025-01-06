@@ -175,7 +175,7 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
     ExprData::If { cond, yes, no } => {
       let cond_ty = get(st, ar, *cond);
       must_reachable(st, expr, cond_ty);
-      st.unify(cond.unwrap_or(expr), ty::Ty::BOOL, cond_ty);
+      st.unify(cond.unwrap_or(expr), ty::Ty::BOOLEAN, cond_ty);
       let mut fs = facts::data::Facts::default();
       facts::extract::get_cond(&mut st.tys, &st.scope, ar, &mut fs, *cond);
       st.scope.add_facts(&mut st.tys, &fs);
@@ -210,7 +210,7 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
           must_reachable(st, expr, lhs_ty);
           must_reachable(st, expr, rhs_ty);
           st.unify(rhs.unwrap_or(expr), lhs_ty, rhs_ty);
-          ty::Ty::BOOL
+          ty::Ty::BOOLEAN
         }
         BinaryOp::Lt | BinaryOp::LtEq | BinaryOp::Gt | BinaryOp::GtEq => {
           // TODO something about how the lhs_ty and rhs_ty need to be "similar" somehow (both
@@ -223,7 +223,7 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
           if !is_orderable(st, rhs_ty) {
             st.err(rhs.unwrap_or(expr), error::Kind::Invalid(rhs_ty, error::Invalid::OrdCmp));
           }
-          ty::Ty::BOOL
+          ty::Ty::BOOLEAN
         }
       }
     }
@@ -233,7 +233,7 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
       let e = inner.unwrap_or(expr);
       let want = match op {
         UnaryOp::Neg | UnaryOp::Pos | UnaryOp::BitNot => ty::Ty::NUMBER,
-        UnaryOp::LogicalNot => ty::Ty::BOOL,
+        UnaryOp::LogicalNot => ty::Ty::BOOLEAN,
       };
       st.unify(e, want, inner_ty);
       want
