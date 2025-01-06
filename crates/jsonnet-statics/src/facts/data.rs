@@ -1,6 +1,5 @@
 //! The data model for facts.
 
-use always::always;
 use jsonnet_expr::{Id, Str};
 use jsonnet_ty as ty;
 use std::collections::{hash_map::Entry, BTreeMap};
@@ -43,109 +42,187 @@ impl Facts {
 }
 
 #[derive(Debug, Clone)]
-pub(crate) struct Fact {
-  is: ty::Ty,
-  is_not: ty::Ty,
-}
+pub(crate) struct Fact(Repr);
 
-#[expect(clippy::needless_pass_by_value)]
 impl Fact {
   pub(crate) fn null() -> Self {
-    Self::ty(ty::Ty::NULL)
+    Self(Prim::Null.into())
   }
 
   pub(crate) fn true_() -> Self {
-    Self::ty(ty::Ty::TRUE)
+    Self(Prim::True.into())
   }
 
   pub(crate) fn false_() -> Self {
-    Self::ty(ty::Ty::FALSE)
+    Self(Prim::False.into())
   }
 
   pub(crate) fn boolean() -> Self {
-    Self::ty(ty::Ty::BOOLEAN)
+    Self(Repr::Or(Box::new(Prim::True.into()), Box::new(Prim::False.into())))
   }
 
   pub(crate) fn number() -> Self {
-    Self::ty(ty::Ty::NUMBER)
+    Self(Prim::Number.into())
   }
 
   pub(crate) fn string() -> Self {
-    Self::ty(ty::Ty::STRING)
+    Self(Prim::String.into())
   }
 
   pub(crate) fn function() -> Self {
-    Self::ty(ty::Ty::UNKNOWN_FN)
+    Self(Prim::Function.into())
   }
 
   pub(crate) fn array() -> Self {
-    Self::ty(ty::Ty::ARRAY_ANY)
+    Self(Prim::Array.into())
   }
 
   pub(crate) fn object() -> Self {
-    Self::ty(ty::Ty::OBJECT)
+    Self(Prim::Object.into())
   }
 
   pub(crate) fn has_field(tys: &mut ty::MutStore<'_>, field: Str) -> Self {
-    let ty = tys.get(ty::Data::Object(ty::Object {
-      known: BTreeMap::from([(field, ty::Ty::ANY)]),
-      has_unknown: true,
-    }));
-    Self::ty(ty)
+    Self(Repr::Field(Field { path: vec![field], inner: None }))
   }
 
-  pub(crate) fn for_path(mut self, tys: &mut ty::MutStore<'_>, path: Vec<Str>) -> Self {
-    always!(self.is_not == ty::Ty::NEVER);
-    for field in path {
-      self.is = tys.get(ty::Data::Object(ty::Object {
-        known: BTreeMap::from([(field, self.is)]),
-        has_unknown: true,
-      }));
+  pub(crate) fn for_path(self, tys: &mut ty::MutStore<'_>, path: Vec<Str>) -> Self {
+    if path.is_empty() {
+      self
+    } else {
+      Self(Repr::Field(Field { path, inner: Some(Box::new(self.0)) }))
     }
-    self
   }
 
   pub(crate) fn and(self, tys: &mut ty::MutStore<'_>, other: Self) -> Self {
-    Self {
-      is: ty::logic::and(tys, self.is, other.is),
-      // de morgan's laws
-      is_not: tys.get(ty::Data::mk_union([self.is_not, other.is_not])),
-    }
+    Self(Repr::And(Box::new(self.0), Box::new(other.0)))
   }
 
   pub(crate) fn or(self, tys: &mut ty::MutStore<'_>, other: Self) -> Self {
-    Self {
-      is: tys.get(ty::Data::mk_union([self.is, other.is])),
-      // de morgan's laws
-      is_not: ty::logic::and(tys, self.is_not, other.is_not),
-    }
+    Self(Repr::Or(Box::new(self.0), Box::new(other.0)))
   }
 
   pub(crate) fn not(self) -> Self {
-    Self {
-      // we don't do self.is = minus(ANY, self.is_not) because we don't support minus(ANY, ...).
-      is: ty::Ty::ANY,
-      // need to make sure not to minus everything, leaving nothing aka never.
-      //
-      // TODO: this is wrong. it should be distributing the not among the && and the || (de morgan's
-      // laws).
-      is_not: if self.is == ty::Ty::ANY { ty::Ty::NEVER } else { self.is },
-    }
+    Self(Repr::Not(Box::new(self.0)))
   }
 
-  pub(crate) fn apply_to(&self, tys: &mut ty::MutStore<'_>, ty: &mut ty::Ty) {
-    *ty = ty::logic::and(tys, *ty, self.is);
-    *ty = ty::logic::minus(tys, *ty, self.is_not);
+  pub(crate) fn apply_to(self, tys: &mut ty::MutStore<'_>, ty: &mut ty::Ty) {
+    *ty = self.0.apply_to(tys, *ty);
   }
 
   /// returns `*self`, putting in its old place a "dummy" fact that should be overwritten later.
   fn take(&mut self) -> Self {
-    let mut ret = Self { is: ty::Ty::ANY, is_not: ty::Ty::ANY };
+    let mut ret = Self(Repr::Prim(Prim::Null));
     std::mem::swap(self, &mut ret);
     ret
   }
+}
 
-  const fn ty(ty: ty::Ty) -> Self {
-    Self { is: ty, is_not: ty::Ty::NEVER }
+#[derive(Debug, Clone)]
+enum Repr {
+  Prim(Prim),
+  Field(Field),
+  And(Box<Repr>, Box<Repr>),
+  Or(Box<Repr>, Box<Repr>),
+  Not(Box<Repr>),
+}
+
+impl Repr {
+  fn apply_to(self, tys: &mut ty::MutStore<'_>, ty: ty::Ty) -> ty::Ty {
+    match self {
+      Repr::Prim(prim) => ty::logic::and(tys, ty, prim.as_ty()),
+      Repr::Field(f) => {
+        let obj_ty = f.into_ty(tys);
+        ty::logic::and(tys, ty, obj_ty)
+      }
+      Repr::And(lhs, rhs) => {
+        // apply both
+        let ty = lhs.apply_to(tys, ty);
+        rhs.apply_to(tys, ty)
+      }
+      Repr::Or(lhs, rhs) => {
+        // distribute: a && (b || c) == (a && b) || (a && c)
+        let t1 = lhs.apply_to(tys, ty);
+        let t2 = rhs.apply_to(tys, ty);
+        tys.get(ty::Data::mk_union([t1, t2]))
+      }
+      Repr::Not(inner) => inner.apply_not(tys, ty),
+    }
+  }
+
+  fn apply_not(self, tys: &mut ty::MutStore<'_>, ty: ty::Ty) -> ty::Ty {
+    match self {
+      Repr::Prim(prim) => ty::logic::minus(tys, ty, prim.as_ty()),
+      Repr::Field(f) => {
+        let obj_ty = f.into_ty(tys);
+        ty::logic::minus(tys, ty, obj_ty)
+      }
+      // de morgan's laws: !(a && b) == !a || !b. see the Or case from apply_to
+      Repr::And(lhs, rhs) => {
+        let t1 = lhs.apply_not(tys, ty);
+        let t2 = rhs.apply_not(tys, ty);
+        tys.get(ty::Data::mk_union([t1, t2]))
+      }
+      // de morgan's laws: !(a || b) == !a && !b. see the And case from apply_to
+      Repr::Or(lhs, rhs) => {
+        let ty = lhs.apply_not(tys, ty);
+        rhs.apply_not(tys, ty)
+      }
+      // double negative
+      Repr::Not(inner) => inner.apply_to(tys, ty),
+    }
+  }
+}
+
+/// all values fall into exactly one prim
+#[derive(Debug, Clone)]
+enum Prim {
+  Null,
+  True,
+  False,
+  Number,
+  String,
+  Function,
+  Array,
+  Object,
+}
+
+impl Prim {
+  fn as_ty(&self) -> ty::Ty {
+    match self {
+      Prim::Null => ty::Ty::NULL,
+      Prim::True => ty::Ty::TRUE,
+      Prim::False => ty::Ty::FALSE,
+      Prim::Number => ty::Ty::NUMBER,
+      Prim::String => ty::Ty::STRING,
+      Prim::Function => ty::Ty::UNKNOWN_FN,
+      Prim::Array => ty::Ty::ARRAY_ANY,
+      Prim::Object => ty::Ty::OBJECT,
+    }
+  }
+}
+
+impl From<Prim> for Repr {
+  fn from(value: Prim) -> Self {
+    Self::Prim(value)
+  }
+}
+
+#[derive(Debug, Clone)]
+struct Field {
+  /// INVARIANT: non-empty.
+  path: Vec<Str>,
+  /// If this is None, simply asserts the field exists.
+  inner: Option<Box<Repr>>,
+}
+
+impl Field {
+  fn into_ty(self, tys: &mut ty::MutStore<'_>) -> ty::Ty {
+    let field_ty = self.inner.map_or(ty::Ty::ANY, |inner| inner.apply_to(tys, ty::Ty::ANY));
+    self.path.into_iter().fold(field_ty, |ac, field| {
+      tys.get(ty::Data::Object(ty::Object {
+        known: BTreeMap::from([(field, ac)]),
+        has_unknown: true,
+      }))
+    })
   }
 }

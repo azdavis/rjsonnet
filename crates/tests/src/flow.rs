@@ -58,8 +58,7 @@ local f(x) =
 ##  ^ hover: number
   else
     assert x == null;
-##         ^ hover: null | number
-#            ... not great, but `if !c then a else b` is bad style anyway.
+##         ^ hover: null
     assert x == null;
 ##         ^ hover: null
     0;
@@ -159,16 +158,14 @@ local f(obj) =
   .check();
 }
 
-// TODO fix interaction with && and !
 #[test]
-#[should_panic = "foo: never"]
 fn not_and() {
   JsonnetInput::manifest(
     r#"
 local f(x) =
   if std.isObject(x) && "foo" in x && !("foo" in x && "bar" in x) then
     x.foo
-##  ^^^^^ type: any
+##    ^^^ type: any
 ;
 
 f(null)
@@ -178,9 +175,7 @@ f(null)
   .check();
 }
 
-// TODO fix interaction with || and !
 #[test]
-#[should_panic = "foo: any"]
 fn not_or() {
   JsonnetInput::manifest(
     r#"

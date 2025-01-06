@@ -72,7 +72,7 @@ impl Scope {
         continue;
       };
       let mut ty = *ty;
-      fact.apply_to(tys, &mut ty);
+      fact.clone().apply_to(tys, &mut ty);
       defined_id.tys.push(ty);
     }
   }
