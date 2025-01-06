@@ -91,7 +91,7 @@ pub(crate) fn get_cond(
             has_unknown: true,
           }));
           let Some(id) = follow_subscripts(tys, ar, obj, &mut ty) else { return };
-          ac.add(tys, id, Fact::total(ty));
+          ac.add(tys, id, Fact::ty_total(ty));
         }
         _ => {}
       }
@@ -156,7 +156,7 @@ fn get_is_ty(
     _ => return,
   };
   let Some(id) = follow_subscripts(tys, ar, param, &mut ty) else { return };
-  ac.add(tys, id, Fact::with_totality(ty, tot));
+  ac.add(tys, id, Fact::ty(ty, tot));
 }
 
 fn get_std_fn_param(
@@ -211,7 +211,7 @@ fn get_ty_eq(
     _ => return,
   };
   let Some(id) = follow_subscripts(tys, ar, param, &mut ty) else { return };
-  ac.add(tys, id, Fact::total(ty));
+  ac.add(tys, id, Fact::ty_total(ty));
 }
 
 /// Collects facts from `expr == LIT`, where `LIT` is some literal (`null`, `3`, `"hi"`, etc).
@@ -235,7 +235,7 @@ fn get_eq_lit(
     _ => return,
   };
   let Some(id) = follow_subscripts(tys, ar, var, &mut ty) else { return };
-  ac.add(tys, id, Fact::with_totality(ty, tot));
+  ac.add(tys, id, Fact::ty(ty, tot));
 }
 
 /// Follows subscripts towards a single final identifier at the end, while updating the ty that we

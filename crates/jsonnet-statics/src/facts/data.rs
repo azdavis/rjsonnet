@@ -56,15 +56,15 @@ impl Fact {
     ret
   }
 
-  pub(crate) const fn partial(ty: ty::Ty) -> Self {
-    Self::with_totality(ty, Totality::Partial)
+  pub(crate) const fn ty_partial(ty: ty::Ty) -> Self {
+    Self::ty(ty, Totality::Partial)
   }
 
-  pub(crate) const fn total(ty: ty::Ty) -> Self {
-    Self::with_totality(ty, Totality::Total)
+  pub(crate) const fn ty_total(ty: ty::Ty) -> Self {
+    Self::ty(ty, Totality::Total)
   }
 
-  pub(crate) const fn with_totality(ty: ty::Ty, totality: Totality) -> Self {
+  pub(crate) const fn ty(ty: ty::Ty, totality: Totality) -> Self {
     Self { kind: FactKind::Ty(TyFact::new(ty)), totality }
   }
 
@@ -100,7 +100,7 @@ impl Fact {
 
   pub(crate) fn not(self) -> Self {
     match self.totality {
-      Totality::Partial => return Self::partial(ty::Ty::ANY),
+      Totality::Partial => return Self::ty_partial(ty::Ty::ANY),
       Totality::Total => {}
     }
     let kind = match self.kind {
