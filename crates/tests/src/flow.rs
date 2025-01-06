@@ -176,11 +176,28 @@ f(null)
 }
 
 #[test]
-fn not_or() {
+fn not_or_1() {
   JsonnetInput::manifest(
     r#"
 local f(x) =
   if std.isObject(x) && "foo" in x && !("foo" in x || "bar" in x) then
+    x
+##  ^ type: never
+;
+
+f(null)
+"#,
+    "null",
+  )
+  .check();
+}
+
+#[test]
+fn not_or_2() {
+  JsonnetInput::manifest(
+    r#"
+local f(x) =
+  if std.isObject(x) && "foo" in x && !("foo" in x || std.length(x) == 5) then
     x
 ##  ^ type: never
 ;
