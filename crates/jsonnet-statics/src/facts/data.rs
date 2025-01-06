@@ -44,27 +44,28 @@ impl Facts {
 #[derive(Debug, Clone)]
 pub(crate) struct Fact {
   kind: FactKind,
-  partial: bool,
+  totality: Totality,
 }
 
 impl Fact {
   /// returns `*self`, putting in its old place a "dummy" fact that should be overwritten later.
   fn take(&mut self) -> Self {
-    let mut ret = Fact { kind: FactKind::Ty(TyFact::new(ty::Ty::NEVER)), partial: false };
+    let mut ret =
+      Fact { kind: FactKind::Ty(TyFact::new(ty::Ty::NEVER)), totality: Totality::Partial };
     std::mem::swap(self, &mut ret);
     ret
   }
 
   pub(crate) const fn partial(ty: ty::Ty) -> Self {
-    Self::with_partiality(ty, true)
+    Self::with_totality(ty, Totality::Partial)
   }
 
   pub(crate) const fn total(ty: ty::Ty) -> Self {
-    Self::with_partiality(ty, false)
+    Self::with_totality(ty, Totality::Total)
   }
 
-  pub(crate) const fn with_partiality(ty: ty::Ty, partial: bool) -> Self {
-    Self { kind: FactKind::Ty(TyFact::new(ty)), partial }
+  pub(crate) const fn with_totality(ty: ty::Ty, totality: Totality) -> Self {
+    Self { kind: FactKind::Ty(TyFact::new(ty)), totality }
   }
 
   pub(crate) fn and(self, tys: &mut ty::MutStore<'_>, other: Self) -> Self {
@@ -75,7 +76,11 @@ impl Fact {
         is_not: tys.get(ty::Data::mk_union([this.is_not, other.is_not])),
       }),
     };
-    Self { kind, partial: self.partial && other.partial }
+    let totality = match (self.totality, other.totality) {
+      (Totality::Partial, Totality::Partial) => Totality::Partial,
+      _ => Totality::Total,
+    };
+    Self { kind, totality }
   }
 
   pub(crate) fn or(self, tys: &mut ty::MutStore<'_>, other: Self) -> Self {
@@ -86,12 +91,17 @@ impl Fact {
         is_not: ty::logic::and(tys, this.is_not, other.is_not),
       }),
     };
-    Self { kind, partial: self.partial || other.partial }
+    let totality = match (self.totality, other.totality) {
+      (Totality::Total, Totality::Total) => Totality::Total,
+      _ => Totality::Partial,
+    };
+    Self { kind, totality }
   }
 
   pub(crate) fn negate(self) -> Self {
-    if self.partial {
-      return Self::partial(ty::Ty::ANY);
+    match self.totality {
+      Totality::Partial => return Self::partial(ty::Ty::ANY),
+      Totality::Total => {}
     }
     let kind = match self.kind {
       FactKind::Ty(this) => FactKind::Ty(TyFact {
@@ -101,7 +111,7 @@ impl Fact {
         is_not: if this.is == ty::Ty::ANY { ty::Ty::NEVER } else { this.is },
       }),
     };
-    Self { kind, partial: false }
+    Self { kind, totality: Totality::Total }
   }
 
   pub(crate) fn into_ty(self, tys: &mut ty::MutStore<'_>) -> ty::Ty {
@@ -127,4 +137,10 @@ impl TyFact {
   const fn new(is: ty::Ty) -> Self {
     Self { is, is_not: ty::Ty::NEVER }
   }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub(crate) enum Totality {
+  Total,
+  Partial,
 }
