@@ -105,11 +105,10 @@ pub fn with_len(tys: &mut MutStore<'_>, ty: Ty, n: usize) -> Ty {
         } else {
           Ty::NEVER
         }
+      } else if n > Param::UNUTTERABLE.len() {
+        // we don't have infinite of these
+        return ty;
       } else {
-        if n > Param::UNUTTERABLE.len() {
-          // we don't have infinite of these
-          return ty;
-        }
         let f = RegularFn { params: Param::UNUTTERABLE.iter().copied().take(n).collect(), ret };
         tys.get(Data::Fn(Fn::Regular(f)))
       }
