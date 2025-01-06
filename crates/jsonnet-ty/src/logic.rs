@@ -1,6 +1,6 @@
 //! Logical operations with types.
 
-use crate::{Array, Data, MutStore, Object, Prim, Ty, Union};
+use crate::{Array, Data, Fn, MutStore, Object, Param, Prim, RegularFn, Ty, Union};
 use always::always;
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -71,6 +71,59 @@ fn union_and(tys: &mut MutStore<'_>, xs: Union, y: Ty) -> Ty {
   let iter = xs.into_iter().map(|x| and(tys, x, y));
   let u = Data::Union(iter.collect());
   tys.get(u)
+}
+
+/// Returns the type that is `ty` and has length `n`.
+///
+/// When such a type doesn't exist, e.g. when `ty` is `number`, returns `never`.
+pub fn with_len(tys: &mut MutStore<'_>, ty: Ty, n: usize) -> Ty {
+  match tys.data(ty) {
+    Data::Prim(prim) => match prim {
+      Prim::Any => Ty::ANY,
+      // no special type for strings with known length
+      Prim::String => Ty::STRING,
+      // these do not have length
+      Prim::True | Prim::False | Prim::Null | Prim::Number => Ty::NEVER,
+    },
+    // no tuple types
+    Data::Array(_) => ty,
+    Data::Object(obj) => {
+      if obj.has_unknown && obj.known.len() == n {
+        // known to have exactly the known fields and no more
+        let obj = Object { known: obj.known.clone(), has_unknown: false };
+        tys.get(Data::Object(obj))
+      } else {
+        ty
+      }
+    }
+    Data::Fn(func) => {
+      let (params, ret) = func.parts();
+      if let Some(params) = params {
+        let required = params.iter().filter(|x| x.required).count();
+        if required == n {
+          ty
+        } else {
+          Ty::NEVER
+        }
+      } else {
+        let params = match n {
+          0 => vec![],
+          1 => vec![Param::X],
+          2 => vec![Param::X, Param::Y],
+          // we don't have infinite of these
+          _ => return ty,
+        };
+        let f = RegularFn { params, ret };
+        tys.get(Data::Fn(Fn::Regular(f)))
+      }
+    }
+    Data::Union(xs) => {
+      let xs = xs.clone();
+      let iter = xs.into_iter().map(|ty| with_len(tys, ty, n));
+      let u = Data::Union(iter.collect());
+      tys.get(u)
+    }
+  }
 }
 
 /// Returns the type that is x minus anything in y.

@@ -125,8 +125,12 @@ function(x)
   if std.isObject(x) then
     if "foo" in x then
       if std.isNumber(x.foo) then
-        x.foo
-##      ^ type: { foo: number, ... }
+        if std.length(x) == 1 then
+          x.foo + 4
+##        ^ type: { foo: number }
+        else
+          x.foo
+##        ^ type: { foo: number, ... }
       else
         std.length(x.foo)
 ##                 ^ type: { foo: any, ... }
@@ -145,7 +149,8 @@ The supported conditional tests on some expression `expr` are:
 - `STR in expr`, where `STR` is a literal string
 - `std.objectHas(expr, STR)`, where `STR` is a literal string
 - `std.objectHasAll(expr, STR)`, where `STR` is a literal string
-- `expr == LIT`, where `LIT` is a literal (`null`, `3`, `"hi"`, `false`, etc)
+- `std.length(x) == NUM` where `NUM` is a literal number
+- `expr == LIT`, where `LIT` is `null`, `true`, or `false`
 - `!a`, where `a` is a test
 - `a && b`, where `a` and `b` are tests
 - `a || b`, where `a` and `b` are tests

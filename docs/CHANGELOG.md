@@ -6,6 +6,7 @@ Things under "main" are not released yet.
 
 - Remove ability to analyze flow types with `==` to a literal that is not the only value of that type, e.g. `x == 3`. This still allows for flow typing information for cases like `x == null` and `x != null`.
 - Improve correctness of flow typing in other cases.
+- Allow `std.length` to affect flow typing, e.g. by marking object as not having unknown fields.
 
 ## v0.7.7
 

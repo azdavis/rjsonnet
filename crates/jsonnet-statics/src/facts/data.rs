@@ -93,6 +93,10 @@ impl Fact {
     }
   }
 
+  pub(crate) fn has_len(n: usize) -> Self {
+    Self(Repr::Len(n))
+  }
+
   pub(crate) fn and(self, other: Self) -> Self {
     Self(Repr::And(Box::new(self.0), Box::new(other.0)))
   }
@@ -121,6 +125,7 @@ impl Fact {
 enum Repr {
   Prim(Prim),
   Field(Field),
+  Len(usize),
   And(Box<Repr>, Box<Repr>),
   Or(Box<Repr>, Box<Repr>),
   Not(Box<Repr>),
@@ -134,6 +139,7 @@ impl Repr {
         let obj_ty = f.into_ty(tys);
         ty::logic::and(tys, ty, obj_ty)
       }
+      Repr::Len(n) => ty::logic::with_len(tys, ty, n),
       Repr::And(lhs, rhs) => {
         // apply both
         let ty = lhs.apply_to(tys, ty);
@@ -156,6 +162,8 @@ impl Repr {
         let obj_ty = f.into_ty(tys);
         ty::logic::minus(tys, ty, obj_ty)
       }
+      // ignore
+      Repr::Len(_) => ty,
       // de morgan's laws: !(a && b) == !a || !b. see the Or case from apply_to
       Repr::And(lhs, rhs) => {
         let t1 = lhs.apply_not(tys, ty);

@@ -191,3 +191,79 @@ f(null)
   )
   .check();
 }
+
+#[test]
+fn len_obj() {
+  JsonnetInput::manifest(
+    r#"
+local f(x) =
+  if std.isObject(x) then
+    if "a" in x && std.isString(x.a) then
+      if "b" in x && std.isNumber(x.b) then
+        if std.length(x) == 2 then
+          std.length(x.a) + x.b
+##                   ^ type: { a: string, b: number }
+        else
+          x
+##        ^ type: { a: string, b: number, ... }
+      else
+        x
+##      ^ type: { a: string, ... }
+    else
+      x
+##    ^ type: object
+  else
+    x
+##  ^ type: any
+;
+
+f(null)
+"#,
+    "null",
+  )
+  .check();
+}
+
+#[test]
+fn len_fn_unknown() {
+  JsonnetInput::manifest(
+    r#"
+local f(x) =
+  if std.isFunction(x) then
+    if std.length(x) == 2 then
+      x(3, 5)
+##    ^ type: ($x: any, $y: any) => any
+    else
+      x
+##    ^ type: (...) => any
+  else
+    x
+##  ^ type: any
+;
+
+f(null)
+"#,
+    "null",
+  )
+  .check();
+}
+
+#[test]
+fn len_fn_known() {
+  JsonnetInput::manifest(
+    r#"
+local f(x, y) = if x then y;
+
+if std.length(f) == 1 then
+  f
+##^ type: never
+else if std.length(f) == 3 then
+  f
+##^ type: never
+else if std.length(f) == 2 then
+  f(true, 5)
+"#,
+    "5",
+  )
+  .check();
+}

@@ -97,6 +97,9 @@ pub(crate) fn get_cond(scope: &Scope, ar: &ExprArena, ac: &mut Facts, cond: Expr
       get_ty_eq(scope, ar, ac, lhs, rhs);
       get_ty_eq(scope, ar, ac, rhs, lhs);
       // same with this one.
+      get_len_eq(scope, ar, ac, lhs, rhs);
+      get_len_eq(scope, ar, ac, rhs, lhs);
+      // and this one.
       get_eq_lit(ar, ac, lhs, rhs);
       get_eq_lit(ar, ac, rhs, lhs);
     }
@@ -177,6 +180,22 @@ fn get_ty_eq(scope: &Scope, ar: &ExprArena, ac: &mut Facts, call: ExprMust, type
     _ => return,
   };
   add_fact(ar, ac, param, fact);
+}
+
+fn get_len_eq(scope: &Scope, ar: &ExprArena, ac: &mut Facts, call: ExprMust, n: ExprMust) {
+  let Some(param) = get_std_fn_param(scope, ar, call, &Str::length, Id::x) else { return };
+  let ExprData::Prim(Prim::Number(n)) = &ar[n] else { return };
+  let Some(n) = get_uint(n.value()) else { return };
+  add_fact(ar, ac, param, Fact::has_len(n));
+}
+
+#[expect(clippy::float_cmp, clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+pub(crate) fn get_uint(n: f64) -> Option<usize> {
+  if n >= 0.0 && n.trunc() == n {
+    Some(n as usize)
+  } else {
+    None
+  }
 }
 
 /// Collects facts from `expr == LIT`, where `LIT` is some literal (`null`, `3`, `"hi"`, etc).
