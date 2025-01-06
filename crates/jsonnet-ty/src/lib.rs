@@ -293,6 +293,13 @@ pub struct Param {
 impl Param {
   const A: Self = Self::required_any(Id::a_unutterable);
   const B: Self = Self::required_any(Id::b_unutterable);
+  const UNUTTERABLE: [Self; 5] = [
+    Self::A,
+    Self::B,
+    Self::required_any(Id::c_unutterable),
+    Self::required_any(Id::d_unutterable),
+    Self::required_any(Id::e_unutterable),
+  ];
 
   const fn required_any(id: Id) -> Self {
     Self { id, ty: Ty::ANY, required: true }

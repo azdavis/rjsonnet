@@ -34,8 +34,14 @@ fn main() {
     // this allows user code to be more permissive. when a user makes a function g that they pass as
     // the argument value for the param f of the std function, the user may choose any param name(s)
     // for that user-written function g.
+    //
+    // these are also used for functions which do not have known parameter names, but are known via
+    // flow typing to have a certain number of parameters.
     S::named("$a", "a_unutterable"),
     S::named("$b", "b_unutterable"),
+    S::named("$c", "c_unutterable"),
+    S::named("$d", "d_unutterable"),
+    S::named("$e", "e_unutterable"),
   ];
   let messages = [
     S::named("Assertion failed", "ASSERTION_FAILED"),

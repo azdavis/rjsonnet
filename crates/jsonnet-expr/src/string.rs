@@ -152,7 +152,12 @@ impl Id {
     matches!(
       self.0,
       CopyStrRepr::Builtin(
-        BuiltinStr::std_unutterable | BuiltinStr::a_unutterable | BuiltinStr::b_unutterable
+        BuiltinStr::std_unutterable
+          | BuiltinStr::a_unutterable
+          | BuiltinStr::b_unutterable
+          | BuiltinStr::c_unutterable
+          | BuiltinStr::d_unutterable
+          | BuiltinStr::e_unutterable
       )
     )
   }
