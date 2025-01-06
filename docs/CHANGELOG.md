@@ -2,7 +2,7 @@
 
 Things under "main" are not released yet.
 
-## main
+## v0.7.8
 
 - Remove ability to analyze flow types with `==` to a literal that is not the only value of that type, e.g. `x == 3`. This still allows for flow typing information for cases like `x == null` and `x != null`.
 - Improve correctness of flow typing in other cases.
