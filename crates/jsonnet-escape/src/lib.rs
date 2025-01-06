@@ -78,7 +78,7 @@ where
         for _ in 0..4 {
           let Some(b) = st.cur() else { break };
           st.bump();
-          let minus = if b.is_ascii_digit() {
+          let off = if b.is_ascii_digit() {
             b'0'
           } else if b.is_ascii_lowercase() {
             b'a'
@@ -88,7 +88,7 @@ where
             out.err(st.cur_idx(), Error::NotHexDigit);
             continue;
           };
-          out.byte(b - minus);
+          out.byte(b - off);
         }
       }
       _ => out.err(st.cur_idx(), Error::InvalidEscape),
