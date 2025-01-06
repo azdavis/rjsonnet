@@ -1,10 +1,10 @@
 //! See [`Scope`].
 
+use crate::facts::data::{Fact, Facts};
 use always::always;
 use jsonnet_expr::{def, ExprMust, Id};
 use jsonnet_ty as ty;
 use rustc_hash::FxHashMap;
-use std::collections::hash_map::Entry;
 
 #[derive(Debug)]
 struct DefinedId {
@@ -12,127 +12,6 @@ struct DefinedId {
   tys: Vec<ty::Ty>,
   def: def::Def,
   usages: usize,
-}
-
-#[derive(Debug, Default)]
-pub(crate) struct Facts {
-  store: rustc_hash::FxHashMap<Id, Fact>,
-}
-
-impl Facts {
-  pub(crate) fn add(&mut self, tys: &mut ty::MutStore<'_>, id: Id, fact: Fact) {
-    match self.store.entry(id) {
-      Entry::Occupied(mut entry) => {
-        let old = entry.get();
-        let new = old.and(tys, fact);
-        entry.insert(new);
-      }
-      Entry::Vacant(entry) => {
-        entry.insert(fact);
-      }
-    }
-  }
-
-  pub(crate) fn into_iter(self) -> impl Iterator<Item = (Id, Fact)> {
-    self.store.into_iter()
-  }
-
-  pub(crate) fn get(&self, id: Id) -> Option<&Fact> {
-    self.store.get(&id)
-  }
-
-  pub(crate) fn remove(&mut self, id: Id) {
-    self.store.remove(&id);
-  }
-
-  pub(crate) fn negate(&mut self) {
-    for f in self.store.values_mut() {
-      *f = f.negate();
-    }
-  }
-}
-
-#[derive(Debug, Clone, Copy)]
-pub(crate) struct Fact {
-  kind: FactKind,
-  partial: bool,
-}
-
-impl Fact {
-  pub(crate) const fn partial(ty: ty::Ty) -> Self {
-    Self::with_partiality(ty, true)
-  }
-
-  pub(crate) const fn total(ty: ty::Ty) -> Self {
-    Self::with_partiality(ty, false)
-  }
-
-  pub(crate) const fn with_partiality(ty: ty::Ty, partial: bool) -> Self {
-    Self { kind: FactKind::Ty(TyFact::new(ty)), partial }
-  }
-
-  pub(crate) fn and(self, tys: &mut ty::MutStore<'_>, other: Self) -> Self {
-    let kind = match (self.kind, other.kind) {
-      (FactKind::Ty(this), FactKind::Ty(other)) => FactKind::Ty(TyFact {
-        is: ty::logic::and(tys, this.is, other.is),
-        // de morgan's laws
-        is_not: tys.get(ty::Data::mk_union([this.is_not, other.is_not])),
-      }),
-    };
-    Self { kind, partial: self.partial && other.partial }
-  }
-
-  pub(crate) fn or(self, tys: &mut ty::MutStore<'_>, other: Self) -> Self {
-    let kind = match (self.kind, other.kind) {
-      (FactKind::Ty(this), FactKind::Ty(other)) => FactKind::Ty(TyFact {
-        is: tys.get(ty::Data::mk_union([this.is, other.is])),
-        // de morgan's laws
-        is_not: ty::logic::and(tys, this.is_not, other.is_not),
-      }),
-    };
-    Self { kind, partial: self.partial || other.partial }
-  }
-
-  pub(crate) fn negate(self) -> Self {
-    if self.partial {
-      return Self::partial(ty::Ty::ANY);
-    }
-    let kind = match self.kind {
-      FactKind::Ty(this) => FactKind::Ty(TyFact {
-        // we don't do self.and = minus(ANY, self.minus) because we don't support minus(ANY, ...).
-        is: ty::Ty::ANY,
-        // need to make sure not to minus everything, leaving nothing aka never.
-        is_not: if this.is == ty::Ty::ANY { ty::Ty::NEVER } else { this.is },
-      }),
-    };
-    Self { kind, partial: false }
-  }
-
-  /// for when we don't need to do ty logic with the fact, we know it's straight-up the whole truth,
-  /// as in [`crate::facts::get_always`].
-  pub(crate) fn into_ty(self, tys: &mut ty::MutStore<'_>) -> ty::Ty {
-    let (is, is_not) = match self.kind {
-      FactKind::Ty(this) => (this.is, this.is_not),
-    };
-    ty::logic::minus(tys, is, is_not)
-  }
-}
-
-#[derive(Debug, Clone, Copy)]
-enum FactKind {
-  Ty(TyFact),
-}
-
-#[derive(Debug, Clone, Copy)]
-struct TyFact {
-  is: ty::Ty,
-  is_not: ty::Ty,
-}
-
-impl TyFact {
-  const fn new(is: ty::Ty) -> Self {
-    Self { is, is_not: ty::Ty::NEVER }
-  }
 }
 
 /// Info about the identifiers currently in scope.
@@ -185,24 +64,21 @@ impl Scope {
   }
 
   pub(crate) fn add_facts(&mut self, tys: &mut ty::MutStore<'_>, fs: &Facts) {
-    for (&id, fact) in &fs.store {
+    for (&id, &fact) in fs.iter() {
       let Some(stack) = self.store.get_mut(&id) else { continue };
       let Some(defined_id) = stack.last_mut() else { continue };
       let Some(&ty) = defined_id.tys.last() else {
         always!(false, "should not have empty ty stack");
         continue;
       };
-      let (is, is_not) = match fact.kind {
-        FactKind::Ty(this) => (this.is, this.is_not),
-      };
-      let ty = ty::logic::and(tys, ty, is);
-      let ty = ty::logic::minus(tys, ty, is_not);
+      let fact = fact.and(tys, Fact::total(ty));
+      let ty = fact.into_ty(tys);
       defined_id.tys.push(ty);
     }
   }
 
   pub(crate) fn remove_facts(&mut self, fs: &Facts) {
-    for &id in fs.store.keys() {
+    for (&id, _) in fs.iter() {
       let Some(stack) = self.store.get_mut(&id) else { continue };
       let Some(defined_id) = stack.last_mut() else { continue };
       always!(defined_id.tys.pop().is_some(), "should not have empty ty stack");

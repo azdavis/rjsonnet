@@ -2,7 +2,7 @@
 
 mod call;
 
-use crate::{error, facts, scope, st, suggestion};
+use crate::{error, facts, st, suggestion};
 use always::always;
 use jsonnet_expr::{def, BinaryOp, Expr, ExprArena, ExprData, ExprMust, Id, Prim, UnaryOp};
 use jsonnet_ty as ty;
@@ -138,7 +138,7 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
             st.err(rhs.flatten().unwrap_or(expr), error::Kind::DuplicateVar(id, idx, m));
           }
         }
-        let fs = facts::get_always(&mut st.tys, &st.scope, ar, *body);
+        let fs = facts::extract::get_always(&mut st.tys, &st.scope, ar, *body);
         for (id, fact) in fs.into_iter() {
           if let Some(cur) = tmp.get_mut(&id) {
             always!(*cur == ty::Ty::ANY, "fn param tys should be Any before the facts");
@@ -176,8 +176,8 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
       let cond_ty = get(st, ar, *cond);
       must_reachable(st, expr, cond_ty);
       st.unify(cond.unwrap_or(expr), ty::Ty::BOOL, cond_ty);
-      let mut fs = scope::Facts::default();
-      facts::get_cond(&mut st.tys, &st.scope, ar, &mut fs, *cond);
+      let mut fs = facts::data::Facts::default();
+      facts::extract::get_cond(&mut st.tys, &st.scope, ar, &mut fs, *cond);
       st.scope.add_facts(&mut st.tys, &fs);
       let yes_ty = get(st, ar, *yes);
       st.scope.remove_facts(&fs);
