@@ -128,7 +128,7 @@ pub(crate) fn get_cond(
       let mut neg = Facts::default();
       get_cond(tys, scope, ar, &mut neg, inner);
       for (id, fact) in neg.into_iter() {
-        ac.add(tys, id, fact.negate());
+        ac.add(tys, id, fact.not());
       }
     }
     _ => {}

@@ -28,7 +28,7 @@ impl Facts {
 
   pub(crate) fn negate(&mut self) {
     for f in self.store.values_mut() {
-      *f = f.take().negate();
+      *f = f.take().not();
     }
   }
 
@@ -98,7 +98,7 @@ impl Fact {
     Self { kind, totality }
   }
 
-  pub(crate) fn negate(self) -> Self {
+  pub(crate) fn not(self) -> Self {
     match self.totality {
       Totality::Partial => return Self::partial(ty::Ty::ANY),
       Totality::Total => {}
