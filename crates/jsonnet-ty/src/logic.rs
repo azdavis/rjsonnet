@@ -2,6 +2,7 @@
 
 use crate::{Array, Data, Fn, MutStore, Object, Param, Prim, RegularFn, Ty, Union};
 use always::always;
+use std::cmp::Ordering;
 use std::collections::{BTreeMap, BTreeSet};
 
 /// Returns the type that is BOTH `x` AND `y`.
@@ -87,15 +88,19 @@ pub fn with_len(tys: &mut MutStore<'_>, ty: Ty, n: usize) -> Ty {
     },
     // no tuple types
     Data::Array(_) => ty,
-    Data::Object(obj) => {
-      if obj.has_unknown && obj.known.len() == n {
-        // known to have exactly the known fields and no more
+    Data::Object(obj) => match (obj.known.len().cmp(&n), obj.has_unknown) {
+      // 1. there may be unknown fields
+      // 2. already have no unknown fields
+      (Ordering::Less, true) | (Ordering::Equal, false) => ty,
+      // known to have exactly the known fields and no more
+      (Ordering::Equal, true) => {
         let obj = Object { known: obj.known.clone(), has_unknown: false };
         tys.get(Data::Object(obj))
-      } else {
-        ty
       }
-    }
+      // 1. can't have fewer known fields if no unknown fields
+      // 2. known to have more fields than n
+      (Ordering::Less, false) | (Ordering::Greater, _) => Ty::NEVER,
+    },
     Data::Fn(func) => {
       let (params, ret) = func.parts();
       if let Some(params) = params {

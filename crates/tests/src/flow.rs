@@ -193,7 +193,7 @@ f(null)
 }
 
 #[test]
-fn len_obj() {
+fn len_obj_unknown() {
   JsonnetInput::manifest(
     r#"
 local f(x) =
@@ -203,6 +203,12 @@ local f(x) =
         if std.length(x) == 2 then
           std.length(x.a) + x.b
 ##                   ^ type: { a: string, b: number }
+        else if std.length(x) == 1 then
+          x
+##        ^ type: never
+        else if std.length(x) == 3 then
+          x
+##        ^ type: { a: string, b: number, ... }
         else
           x
 ##        ^ type: { a: string, b: number, ... }
@@ -220,6 +226,27 @@ local f(x) =
 f(null)
 "#,
     "null",
+  )
+  .check();
+}
+
+#[test]
+fn len_obj_known() {
+  JsonnetInput::manifest(
+    r#"
+local x = { a: 1, b: "hi" };
+
+if std.length(x) == 1 then
+  x
+##^ type: never
+else if std.length(x) == 3 then
+  x
+##^ type: never
+else if std.length(x) == 2 then
+  x.a
+##  ^ type: number
+"#,
+    "1",
   )
   .check();
 }
