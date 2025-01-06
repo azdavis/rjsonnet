@@ -126,6 +126,9 @@ impl Fact {
       // we don't do self.is = minus(ANY, self.is_not) because we don't support minus(ANY, ...).
       is: ty::Ty::ANY,
       // need to make sure not to minus everything, leaving nothing aka never.
+      //
+      // TODO: this is wrong. it should be distributing the not among the && and the || (de morgan's
+      // laws).
       is_not: if self.is == ty::Ty::ANY { ty::Ty::NEVER } else { self.is },
     }
   }
