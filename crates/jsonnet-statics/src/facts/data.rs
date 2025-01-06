@@ -1,8 +1,9 @@
 //! The data model for facts.
 
-use jsonnet_expr::Id;
+use always::always;
+use jsonnet_expr::{Id, Str};
 use jsonnet_ty as ty;
-use std::collections::hash_map::Entry;
+use std::collections::{hash_map::Entry, BTreeMap};
 
 #[derive(Debug, Default)]
 pub(crate) struct Facts {
@@ -58,6 +59,17 @@ impl Fact {
 
   pub(crate) const fn ty(ty: ty::Ty) -> Self {
     Self { is: ty, is_not: ty::Ty::NEVER }
+  }
+
+  pub(crate) fn for_path(mut self, tys: &mut ty::MutStore<'_>, path: Vec<Str>) -> Self {
+    always!(self.is_not == ty::Ty::NEVER);
+    for field in path {
+      self.is = tys.get(ty::Data::Object(ty::Object {
+        known: BTreeMap::from([(field, self.is)]),
+        has_unknown: true,
+      }));
+    }
+    self
   }
 
   pub(crate) fn and(self, tys: &mut ty::MutStore<'_>, other: Self) -> Self {
