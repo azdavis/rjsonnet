@@ -109,7 +109,7 @@ pub(crate) fn get_cond(
         get_cond(tys, scope, ar, &mut fst, cond);
         get_cond(tys, scope, ar, &mut snd, Some(no));
         for (id, fst) in fst.into_iter() {
-          let Some(&snd) = snd.get(id) else { continue };
+          let Some(snd) = snd.remove(id) else { continue };
           let fact = fst.or(tys, snd);
           ac.add(tys, id, fact);
         }

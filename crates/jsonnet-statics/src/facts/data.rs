@@ -13,9 +13,8 @@ impl Facts {
   pub(crate) fn add(&mut self, tys: &mut ty::MutStore<'_>, id: Id, fact: Fact) {
     match self.store.entry(id) {
       Entry::Occupied(mut entry) => {
-        let old = entry.get();
-        let new = old.and(tys, fact);
-        entry.insert(new);
+        let old = entry.get_mut();
+        *old = old.take().and(tys, fact);
       }
       Entry::Vacant(entry) => {
         entry.insert(fact);
@@ -23,17 +22,13 @@ impl Facts {
     }
   }
 
-  pub(crate) fn get(&self, id: Id) -> Option<&Fact> {
-    self.store.get(&id)
-  }
-
-  pub(crate) fn remove(&mut self, id: Id) {
-    self.store.remove(&id);
+  pub(crate) fn remove(&mut self, id: Id) -> Option<Fact> {
+    self.store.remove(&id)
   }
 
   pub(crate) fn negate(&mut self) {
     for f in self.store.values_mut() {
-      *f = f.negate();
+      *f = f.take().negate();
     }
   }
 
@@ -46,13 +41,20 @@ impl Facts {
   }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub(crate) struct Fact {
   kind: FactKind,
   partial: bool,
 }
 
 impl Fact {
+  /// returns `*self`, putting in its old place a "dummy" fact that should be overwritten later.
+  fn take(&mut self) -> Self {
+    let mut ret = Fact { kind: FactKind::Ty(TyFact::new(ty::Ty::NEVER)), partial: false };
+    std::mem::swap(self, &mut ret);
+    ret
+  }
+
   pub(crate) const fn partial(ty: ty::Ty) -> Self {
     Self::with_partiality(ty, true)
   }
@@ -110,12 +112,12 @@ impl Fact {
   }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 enum FactKind {
   Ty(TyFact),
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 struct TyFact {
   is: ty::Ty,
   is_not: ty::Ty,

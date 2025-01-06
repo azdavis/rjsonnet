@@ -64,14 +64,14 @@ impl Scope {
   }
 
   pub(crate) fn add_facts(&mut self, tys: &mut ty::MutStore<'_>, fs: &Facts) {
-    for (&id, &fact) in fs.iter() {
+    for (&id, fact) in fs.iter() {
       let Some(stack) = self.store.get_mut(&id) else { continue };
       let Some(defined_id) = stack.last_mut() else { continue };
       let Some(&ty) = defined_id.tys.last() else {
         always!(false, "should not have empty ty stack");
         continue;
       };
-      let fact = fact.and(tys, Fact::total(ty));
+      let fact = fact.clone().and(tys, Fact::total(ty));
       let ty = fact.into_ty(tys);
       defined_id.tys.push(ty);
     }
