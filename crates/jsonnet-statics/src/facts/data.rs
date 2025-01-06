@@ -50,17 +50,6 @@ pub(crate) struct Fact {
 
 #[expect(clippy::needless_pass_by_value)]
 impl Fact {
-  /// returns `*self`, putting in its old place a "dummy" fact that should be overwritten later.
-  fn take(&mut self) -> Self {
-    let mut ret = Self { is: ty::Ty::ANY, is_not: ty::Ty::ANY };
-    std::mem::swap(self, &mut ret);
-    ret
-  }
-
-  const fn ty(ty: ty::Ty) -> Self {
-    Self { is: ty, is_not: ty::Ty::NEVER }
-  }
-
   pub(crate) fn null() -> Self {
     Self::ty(ty::Ty::NULL)
   }
@@ -73,10 +62,6 @@ impl Fact {
     Self::ty(ty::Ty::FALSE)
   }
 
-  pub(crate) fn array() -> Self {
-    Self::ty(ty::Ty::ARRAY_ANY)
-  }
-
   pub(crate) fn boolean() -> Self {
     Self::ty(ty::Ty::BOOLEAN)
   }
@@ -85,16 +70,20 @@ impl Fact {
     Self::ty(ty::Ty::NUMBER)
   }
 
-  pub(crate) fn object() -> Self {
-    Self::ty(ty::Ty::OBJECT)
-  }
-
   pub(crate) fn string() -> Self {
     Self::ty(ty::Ty::STRING)
   }
 
   pub(crate) fn function() -> Self {
     Self::ty(ty::Ty::UNKNOWN_FN)
+  }
+
+  pub(crate) fn array() -> Self {
+    Self::ty(ty::Ty::ARRAY_ANY)
+  }
+
+  pub(crate) fn object() -> Self {
+    Self::ty(ty::Ty::OBJECT)
   }
 
   pub(crate) fn has_field(tys: &mut ty::MutStore<'_>, field: Str) -> Self {
@@ -144,5 +133,16 @@ impl Fact {
   pub(crate) fn apply_to(&self, tys: &mut ty::MutStore<'_>, ty: &mut ty::Ty) {
     *ty = ty::logic::and(tys, *ty, self.is);
     *ty = ty::logic::minus(tys, *ty, self.is_not);
+  }
+
+  /// returns `*self`, putting in its old place a "dummy" fact that should be overwritten later.
+  fn take(&mut self) -> Self {
+    let mut ret = Self { is: ty::Ty::ANY, is_not: ty::Ty::ANY };
+    std::mem::swap(self, &mut ret);
+    ret
+  }
+
+  const fn ty(ty: ty::Ty) -> Self {
+    Self { is: ty, is_not: ty::Ty::NEVER }
   }
 }
