@@ -227,8 +227,8 @@ impl Fn {
       }
       Fn::StdParam(param_count) => {
         let params = match param_count {
-          ParamCount::One => [Param::X].as_slice(),
-          ParamCount::Two => [Param::X, Param::Y].as_slice(),
+          ParamCount::One => [Param::A].as_slice(),
+          ParamCount::Two => [Param::A, Param::B].as_slice(),
         };
         (Some(params), Ty::ANY)
       }
@@ -291,8 +291,8 @@ pub struct Param {
 }
 
 impl Param {
-  const X: Self = Self::required_any(Id::x_unutterable);
-  const Y: Self = Self::required_any(Id::y_unutterable);
+  const A: Self = Self::required_any(Id::a_unutterable);
+  const B: Self = Self::required_any(Id::b_unutterable);
 
   const fn required_any(id: Id) -> Self {
     Self { id, ty: Ty::ANY, required: true }

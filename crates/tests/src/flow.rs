@@ -232,7 +232,7 @@ local f(x) =
   if std.isFunction(x) then
     if std.length(x) == 2 then
       x(3, 5)
-##    ^ type: ($x: any, $y: any) => any
+##    ^ type: ($a: any, $b: any) => any
     else
       x
 ##    ^ type: (...) => any

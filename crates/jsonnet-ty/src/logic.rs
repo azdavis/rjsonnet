@@ -108,8 +108,8 @@ pub fn with_len(tys: &mut MutStore<'_>, ty: Ty, n: usize) -> Ty {
       } else {
         let params = match n {
           0 => vec![],
-          1 => vec![Param::X],
-          2 => vec![Param::X, Param::Y],
+          1 => vec![Param::A],
+          2 => vec![Param::A, Param::B],
           // we don't have infinite of these
           _ => return ty,
         };
