@@ -185,7 +185,7 @@ fn not_or() {
   JsonnetInput::manifest(
     r#"
 local f(x) =
-  if std.isObject(x) && "foo" in x && !("foo" in x || std.length(x) == 4) then
+  if std.isObject(x) && "foo" in x && !("foo" in x || "bar" in x) then
     x
 ##  ^ type: never
 ;
