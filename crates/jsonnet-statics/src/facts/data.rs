@@ -43,76 +43,49 @@ impl Facts {
 
 #[derive(Debug, Clone)]
 pub(crate) struct Fact {
-  kind: FactKind,
+  is: ty::Ty,
+  is_not: ty::Ty,
 }
 
+#[expect(clippy::needless_pass_by_value)]
 impl Fact {
   /// returns `*self`, putting in its old place a "dummy" fact that should be overwritten later.
   fn take(&mut self) -> Self {
-    let mut ret = Fact { kind: FactKind::Ty(TyFact::new(ty::Ty::NEVER)) };
+    let mut ret = Self { is: ty::Ty::ANY, is_not: ty::Ty::ANY };
     std::mem::swap(self, &mut ret);
     ret
   }
 
   pub(crate) const fn ty(ty: ty::Ty) -> Self {
-    Self { kind: FactKind::Ty(TyFact::new(ty)) }
+    Self { is: ty, is_not: ty::Ty::NEVER }
   }
 
   pub(crate) fn and(self, tys: &mut ty::MutStore<'_>, other: Self) -> Self {
-    let kind = match (self.kind, other.kind) {
-      (FactKind::Ty(this), FactKind::Ty(other)) => FactKind::Ty(TyFact {
-        is: ty::logic::and(tys, this.is, other.is),
-        // de morgan's laws
-        is_not: tys.get(ty::Data::mk_union([this.is_not, other.is_not])),
-      }),
-    };
-    Self { kind }
+    Self {
+      is: ty::logic::and(tys, self.is, other.is),
+      // de morgan's laws
+      is_not: tys.get(ty::Data::mk_union([self.is_not, other.is_not])),
+    }
   }
 
   pub(crate) fn or(self, tys: &mut ty::MutStore<'_>, other: Self) -> Self {
-    let kind = match (self.kind, other.kind) {
-      (FactKind::Ty(this), FactKind::Ty(other)) => FactKind::Ty(TyFact {
-        is: tys.get(ty::Data::mk_union([this.is, other.is])),
-        // de morgan's laws
-        is_not: ty::logic::and(tys, this.is_not, other.is_not),
-      }),
-    };
-    Self { kind }
+    Self {
+      is: tys.get(ty::Data::mk_union([self.is, other.is])),
+      // de morgan's laws
+      is_not: ty::logic::and(tys, self.is_not, other.is_not),
+    }
   }
 
   pub(crate) fn not(self) -> Self {
-    let kind = match self.kind {
-      FactKind::Ty(this) => FactKind::Ty(TyFact {
-        // we don't do self.is = minus(ANY, self.is_not) because we don't support minus(ANY, ...).
-        is: ty::Ty::ANY,
-        // need to make sure not to minus everything, leaving nothing aka never.
-        is_not: if this.is == ty::Ty::ANY { ty::Ty::NEVER } else { this.is },
-      }),
-    };
-    Self { kind }
+    Self {
+      // we don't do self.is = minus(ANY, self.is_not) because we don't support minus(ANY, ...).
+      is: ty::Ty::ANY,
+      // need to make sure not to minus everything, leaving nothing aka never.
+      is_not: if self.is == ty::Ty::ANY { ty::Ty::NEVER } else { self.is },
+    }
   }
 
   pub(crate) fn into_ty(self, tys: &mut ty::MutStore<'_>) -> ty::Ty {
-    let (is, is_not) = match self.kind {
-      FactKind::Ty(this) => (this.is, this.is_not),
-    };
-    ty::logic::minus(tys, is, is_not)
-  }
-}
-
-#[derive(Debug, Clone)]
-enum FactKind {
-  Ty(TyFact),
-}
-
-#[derive(Debug, Clone)]
-struct TyFact {
-  is: ty::Ty,
-  is_not: ty::Ty,
-}
-
-impl TyFact {
-  const fn new(is: ty::Ty) -> Self {
-    Self { is, is_not: ty::Ty::NEVER }
+    ty::logic::minus(tys, self.is, self.is_not)
   }
 }
