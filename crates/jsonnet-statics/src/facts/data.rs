@@ -10,11 +10,11 @@ pub(crate) struct Facts {
 }
 
 impl Facts {
-  pub(crate) fn add(&mut self, tys: &mut ty::MutStore<'_>, id: Id, fact: Fact) {
+  pub(crate) fn add(&mut self, id: Id, fact: Fact) {
     match self.store.entry(id) {
       Entry::Occupied(mut entry) => {
         let old = entry.get_mut();
-        *old = old.take().and(tys, fact);
+        *old = old.take().and(fact);
       }
       Entry::Vacant(entry) => {
         entry.insert(fact);
@@ -81,11 +81,11 @@ impl Fact {
     Self(Prim::Object.into())
   }
 
-  pub(crate) fn has_field(tys: &mut ty::MutStore<'_>, field: Str) -> Self {
+  pub(crate) fn has_field(field: Str) -> Self {
     Self(Repr::Field(Field { path: vec![field], inner: None }))
   }
 
-  pub(crate) fn for_path(self, tys: &mut ty::MutStore<'_>, path: Vec<Str>) -> Self {
+  pub(crate) fn for_path(self, path: Vec<Str>) -> Self {
     if path.is_empty() {
       self
     } else {
@@ -93,11 +93,11 @@ impl Fact {
     }
   }
 
-  pub(crate) fn and(self, tys: &mut ty::MutStore<'_>, other: Self) -> Self {
+  pub(crate) fn and(self, other: Self) -> Self {
     Self(Repr::And(Box::new(self.0), Box::new(other.0)))
   }
 
-  pub(crate) fn or(self, tys: &mut ty::MutStore<'_>, other: Self) -> Self {
+  pub(crate) fn or(self, other: Self) -> Self {
     Self(Repr::Or(Box::new(self.0), Box::new(other.0)))
   }
 

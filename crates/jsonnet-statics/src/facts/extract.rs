@@ -8,7 +8,6 @@
 use crate::facts::data::{Fact, Facts};
 use crate::scope::Scope;
 use jsonnet_expr::{Expr, ExprArena, ExprData, ExprMust, Id, Prim, Str};
-use jsonnet_ty as ty;
 
 /// Collects facts that are always true in the expression because otherwise the expression diverges
 /// (i.e. it `error`s).
@@ -17,51 +16,34 @@ use jsonnet_ty as ty;
 ///   variables
 /// - since `assert c; e` is lowered to `if c then e else error ...`, we check for that. so if the
 ///   user wrote that itself in the concrete syntax, that also works.
-pub(crate) fn get_always(
-  tys: &mut ty::MutStore<'_>,
-  scope: &Scope,
-  ar: &ExprArena,
-  body: Expr,
-) -> Facts {
+pub(crate) fn get_always(scope: &Scope, ar: &ExprArena, body: Expr) -> Facts {
   let mut ac = Facts::default();
   let Some(body) = body else { return ac };
   if let ExprData::Object { binds, asserts, .. } = &ar[body] {
     for &a in asserts {
-      get_assert(tys, scope, ar, &mut ac, a);
+      get_assert(scope, ar, &mut ac, a);
     }
     for &(id, _) in binds {
       ac.remove(id);
     }
   } else {
-    get_assert(tys, scope, ar, &mut ac, Some(body));
+    get_assert(scope, ar, &mut ac, Some(body));
   }
   ac
 }
 
 /// Collects facts from desugared `assert`s, i.e. `if`s where the `else` diverges.
-fn get_assert(
-  tys: &mut ty::MutStore<'_>,
-  scope: &Scope,
-  ar: &ExprArena,
-  ac: &mut Facts,
-  mut body: Expr,
-) {
+fn get_assert(scope: &Scope, ar: &ExprArena, ac: &mut Facts, mut body: Expr) {
   while let Some(b) = body {
     let ExprData::If { cond, yes, no: Some(no) } = ar[b] else { break };
     let ExprData::Error(_) = &ar[no] else { break };
     body = yes;
-    get_cond(tys, scope, ar, ac, cond);
+    get_cond(scope, ar, ac, cond);
   }
 }
 
 /// Collects facts from a single `if` condition.
-pub(crate) fn get_cond(
-  tys: &mut ty::MutStore<'_>,
-  scope: &Scope,
-  ar: &ExprArena,
-  ac: &mut Facts,
-  cond: Expr,
-) {
+pub(crate) fn get_cond(scope: &Scope, ar: &ExprArena, ac: &mut Facts, cond: Expr) {
   let Some(cond) = cond else { return };
   match &ar[cond] {
     ExprData::Call { func: Some(func), positional: pos, named } => {
@@ -72,18 +54,18 @@ pub(crate) fn get_cond(
       }
       let ExprData::Prim(Prim::String(func_name)) = &ar[idx] else { return };
       match *func_name {
-        Str::isArray => get_is_ty(tys, ar, ac, pos, named, Fact::array()),
-        Str::isBoolean => get_is_ty(tys, ar, ac, pos, named, Fact::boolean()),
-        Str::isNumber => get_is_ty(tys, ar, ac, pos, named, Fact::number()),
-        Str::isObject => get_is_ty(tys, ar, ac, pos, named, Fact::object()),
-        Str::isString => get_is_ty(tys, ar, ac, pos, named, Fact::string()),
-        Str::isFunction => get_is_ty(tys, ar, ac, pos, named, Fact::function()),
+        Str::isArray => get_is_ty(ar, ac, pos, named, Fact::array()),
+        Str::isBoolean => get_is_ty(ar, ac, pos, named, Fact::boolean()),
+        Str::isNumber => get_is_ty(ar, ac, pos, named, Fact::number()),
+        Str::isObject => get_is_ty(ar, ac, pos, named, Fact::object()),
+        Str::isString => get_is_ty(ar, ac, pos, named, Fact::string()),
+        Str::isFunction => get_is_ty(ar, ac, pos, named, Fact::function()),
         Str::objectHas | Str::objectHasAll => {
           // TODO handle named params (including mixed pos/named)
           let (&[Some(obj), Some(field)], []) = (&pos[..], &named[..]) else { return };
           let ExprData::Prim(Prim::String(field)) = &ar[field] else { return };
-          let fact = Fact::has_field(tys, field.clone());
-          add_fact(tys, ar, ac, obj, fact);
+          let fact = Fact::has_field(field.clone());
+          add_fact(ar, ac, obj, fact);
         }
         _ => {}
       }
@@ -92,37 +74,37 @@ pub(crate) fn get_cond(
     &ExprData::If { cond, yes: Some(yes), no: Some(no) } => {
       if let ExprData::Prim(Prim::Bool(false)) | ExprData::Error(_) = &ar[no] {
         // if it looks like a desugared `&&`, then just do both in sequence.
-        get_cond(tys, scope, ar, ac, cond);
-        get_cond(tys, scope, ar, ac, Some(yes));
+        get_cond(scope, ar, ac, cond);
+        get_cond(scope, ar, ac, Some(yes));
       } else if let ExprData::Prim(Prim::Bool(true)) = &ar[yes] {
         // if it looks like a desugared `||`, then do the union.
         let mut fst = Facts::default();
         let mut snd = Facts::default();
-        get_cond(tys, scope, ar, &mut fst, cond);
-        get_cond(tys, scope, ar, &mut snd, Some(no));
+        get_cond(scope, ar, &mut fst, cond);
+        get_cond(scope, ar, &mut snd, Some(no));
         for (id, fst) in fst.into_iter() {
           // we require both sides of the `||` have specific facts about the same variable, since
           // the "base-case" fact is that it is anything, which isn't that useful.
           let Some(snd) = snd.remove(id) else { continue };
-          let fact = fst.or(tys, snd);
-          ac.add(tys, id, fact);
+          let fact = fst.or(snd);
+          ac.add(id, fact);
         }
       }
     }
     &ExprData::BinaryOp { lhs: Some(lhs), op: jsonnet_expr::BinaryOp::Eq, rhs: Some(rhs) } => {
       // do both sides. if one works, the other won't, but we'll just return. this allows for both
       // `std.type(x) == "TYPE"` and `"TYPE" == std.type(x)`.
-      get_ty_eq(tys, scope, ar, ac, lhs, rhs);
-      get_ty_eq(tys, scope, ar, ac, rhs, lhs);
+      get_ty_eq(scope, ar, ac, lhs, rhs);
+      get_ty_eq(scope, ar, ac, rhs, lhs);
       // same with this one.
-      get_eq_lit(tys, ar, ac, lhs, rhs);
-      get_eq_lit(tys, ar, ac, rhs, lhs);
+      get_eq_lit(ar, ac, lhs, rhs);
+      get_eq_lit(ar, ac, rhs, lhs);
     }
     &ExprData::UnaryOp { op: jsonnet_expr::UnaryOp::LogicalNot, inner } => {
       let mut neg = Facts::default();
-      get_cond(tys, scope, ar, &mut neg, inner);
+      get_cond(scope, ar, &mut neg, inner);
       for (id, fact) in neg.into_iter() {
-        ac.add(tys, id, fact.not());
+        ac.add(id, fact.not());
       }
     }
     _ => {}
@@ -131,7 +113,6 @@ pub(crate) fn get_cond(
 
 /// Collects facts from call to a `std.isTYPE` function.
 fn get_is_ty(
-  tys: &mut ty::MutStore<'_>,
   ar: &ExprArena,
   ac: &mut Facts,
   positional: &[Expr],
@@ -148,7 +129,7 @@ fn get_is_ty(
     }
     _ => return,
   };
-  add_fact(tys, ar, ac, param, fact);
+  add_fact(ar, ac, param, fact);
 }
 
 fn get_std_fn_param(
@@ -182,14 +163,7 @@ fn get_std_fn_param(
 }
 
 /// Collects facts from `std.type(expr) == STR`, where `STR` is `"number"`, `"string"`, etc.
-fn get_ty_eq(
-  tys: &mut ty::MutStore<'_>,
-  scope: &Scope,
-  ar: &ExprArena,
-  ac: &mut Facts,
-  call: ExprMust,
-  type_str: ExprMust,
-) {
+fn get_ty_eq(scope: &Scope, ar: &ExprArena, ac: &mut Facts, call: ExprMust, type_str: ExprMust) {
   let Some(param) = get_std_fn_param(scope, ar, call, &Str::type_, Id::x) else { return };
   let ExprData::Prim(Prim::String(type_str)) = &ar[type_str] else { return };
   let fact = match *type_str {
@@ -202,17 +176,11 @@ fn get_ty_eq(
     Str::null => Fact::null(),
     _ => return,
   };
-  add_fact(tys, ar, ac, param, fact);
+  add_fact(ar, ac, param, fact);
 }
 
 /// Collects facts from `expr == LIT`, where `LIT` is some literal (`null`, `3`, `"hi"`, etc).
-fn get_eq_lit(
-  tys: &mut ty::MutStore<'_>,
-  ar: &ExprArena,
-  ac: &mut Facts,
-  var: ExprMust,
-  lit: ExprMust,
-) {
+fn get_eq_lit(ar: &ExprArena, ac: &mut Facts, var: ExprMust, lit: ExprMust) {
   let ExprData::Prim(prim) = &ar[lit] else { return };
   let fact = match prim {
     Prim::Null => Fact::null(),
@@ -225,16 +193,10 @@ fn get_eq_lit(
     }
     Prim::String(_) | Prim::Number(_) => return,
   };
-  add_fact(tys, ar, ac, var, fact);
+  add_fact(ar, ac, var, fact);
 }
 
-fn add_fact(
-  tys: &mut ty::MutStore<'_>,
-  ar: &ExprArena,
-  ac: &mut Facts,
-  mut expr: ExprMust,
-  fact: Fact,
-) {
+fn add_fact(ar: &ExprArena, ac: &mut Facts, mut expr: ExprMust, fact: Fact) {
   let mut path = Vec::<Str>::new();
   let id = loop {
     match ar[expr] {
@@ -247,6 +209,6 @@ fn add_fact(
       _ => return,
     }
   };
-  let fact = fact.for_path(tys, path);
-  ac.add(tys, id, fact);
+  let fact = fact.for_path(path);
+  ac.add(id, fact);
 }
