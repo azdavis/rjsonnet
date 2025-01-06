@@ -85,7 +85,8 @@ impl Fact {
     }
   }
 
-  pub(crate) fn into_ty(self, tys: &mut ty::MutStore<'_>) -> ty::Ty {
-    ty::logic::minus(tys, self.is, self.is_not)
+  pub(crate) fn apply_to(&self, tys: &mut ty::MutStore<'_>, ty: &mut ty::Ty) {
+    *ty = ty::logic::and(tys, *ty, self.is);
+    *ty = ty::logic::minus(tys, *ty, self.is_not);
   }
 }

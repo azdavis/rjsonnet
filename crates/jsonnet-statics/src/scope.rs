@@ -1,6 +1,6 @@
 //! See [`Scope`].
 
-use crate::facts::data::{Fact, Facts};
+use crate::facts::data::Facts;
 use always::always;
 use jsonnet_expr::{def, ExprMust, Id};
 use jsonnet_ty as ty;
@@ -67,12 +67,12 @@ impl Scope {
     for (&id, fact) in fs.iter() {
       let Some(stack) = self.store.get_mut(&id) else { continue };
       let Some(defined_id) = stack.last_mut() else { continue };
-      let Some(&ty) = defined_id.tys.last() else {
+      let Some(ty) = defined_id.tys.last() else {
         always!(false, "should not have empty ty stack");
         continue;
       };
-      let fact = fact.clone().and(tys, Fact::ty(ty));
-      let ty = fact.into_ty(tys);
+      let mut ty = *ty;
+      fact.apply_to(tys, &mut ty);
       defined_id.tys.push(ty);
     }
   }

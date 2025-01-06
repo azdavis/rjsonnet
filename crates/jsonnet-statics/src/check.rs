@@ -142,7 +142,7 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
         for (id, fact) in fs.into_iter() {
           if let Some(cur) = tmp.get_mut(&id) {
             always!(*cur == ty::Ty::ANY, "fn param tys should be Any before the facts");
-            *cur = fact.into_ty(&mut st.tys);
+            fact.apply_to(&mut st.tys, cur);
           }
           // ignore facts about non-params.
         }
