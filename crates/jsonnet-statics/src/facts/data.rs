@@ -57,8 +57,52 @@ impl Fact {
     ret
   }
 
-  pub(crate) const fn ty(ty: ty::Ty) -> Self {
+  const fn ty(ty: ty::Ty) -> Self {
     Self { is: ty, is_not: ty::Ty::NEVER }
+  }
+
+  pub(crate) fn null() -> Self {
+    Self::ty(ty::Ty::NULL)
+  }
+
+  pub(crate) fn true_() -> Self {
+    Self::ty(ty::Ty::TRUE)
+  }
+
+  pub(crate) fn false_() -> Self {
+    Self::ty(ty::Ty::FALSE)
+  }
+
+  pub(crate) fn array() -> Self {
+    Self::ty(ty::Ty::ARRAY_ANY)
+  }
+
+  pub(crate) fn boolean() -> Self {
+    Self::ty(ty::Ty::BOOL)
+  }
+
+  pub(crate) fn number() -> Self {
+    Self::ty(ty::Ty::NUMBER)
+  }
+
+  pub(crate) fn object() -> Self {
+    Self::ty(ty::Ty::OBJECT)
+  }
+
+  pub(crate) fn string() -> Self {
+    Self::ty(ty::Ty::STRING)
+  }
+
+  pub(crate) fn function() -> Self {
+    Self::ty(ty::Ty::UNKNOWN_FN)
+  }
+
+  pub(crate) fn has_field(tys: &mut ty::MutStore<'_>, field: Str) -> Self {
+    let ty = tys.get(ty::Data::Object(ty::Object {
+      known: BTreeMap::from([(field, ty::Ty::ANY)]),
+      has_unknown: true,
+    }));
+    Self::ty(ty)
   }
 
   pub(crate) fn for_path(mut self, tys: &mut ty::MutStore<'_>, path: Vec<Str>) -> Self {

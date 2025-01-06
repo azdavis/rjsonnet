@@ -9,7 +9,6 @@ use crate::facts::data::{Fact, Facts};
 use crate::scope::Scope;
 use jsonnet_expr::{Expr, ExprArena, ExprData, ExprMust, Id, Prim, Str};
 use jsonnet_ty as ty;
-use std::collections::BTreeMap;
 
 /// Collects facts that are always true in the expression because otherwise the expression diverges
 /// (i.e. it `error`s).
@@ -73,21 +72,18 @@ pub(crate) fn get_cond(
       }
       let ExprData::Prim(Prim::String(func_name)) = &ar[idx] else { return };
       match *func_name {
-        Str::isArray => get_is_ty(tys, ar, ac, pos, named, ty::Ty::ARRAY_ANY),
-        Str::isBoolean => get_is_ty(tys, ar, ac, pos, named, ty::Ty::BOOL),
-        Str::isNumber => get_is_ty(tys, ar, ac, pos, named, ty::Ty::NUMBER),
-        Str::isObject => get_is_ty(tys, ar, ac, pos, named, ty::Ty::OBJECT),
-        Str::isString => get_is_ty(tys, ar, ac, pos, named, ty::Ty::STRING),
-        Str::isFunction => get_is_ty(tys, ar, ac, pos, named, ty::Ty::UNKNOWN_FN),
+        Str::isArray => get_is_ty(tys, ar, ac, pos, named, Fact::array()),
+        Str::isBoolean => get_is_ty(tys, ar, ac, pos, named, Fact::boolean()),
+        Str::isNumber => get_is_ty(tys, ar, ac, pos, named, Fact::number()),
+        Str::isObject => get_is_ty(tys, ar, ac, pos, named, Fact::object()),
+        Str::isString => get_is_ty(tys, ar, ac, pos, named, Fact::string()),
+        Str::isFunction => get_is_ty(tys, ar, ac, pos, named, Fact::function()),
         Str::objectHas | Str::objectHasAll => {
           // TODO handle named params (including mixed pos/named)
           let (&[Some(obj), Some(field)], []) = (&pos[..], &named[..]) else { return };
           let ExprData::Prim(Prim::String(field)) = &ar[field] else { return };
-          let ty = tys.get(ty::Data::Object(ty::Object {
-            known: BTreeMap::from([(field.clone(), ty::Ty::ANY)]),
-            has_unknown: true,
-          }));
-          add_fact(tys, ar, ac, obj, Fact::ty(ty));
+          let fact = Fact::has_field(tys, field.clone());
+          add_fact(tys, ar, ac, obj, fact);
         }
         _ => {}
       }
@@ -140,7 +136,7 @@ fn get_is_ty(
   ac: &mut Facts,
   positional: &[Expr],
   named: &[(Id, Expr)],
-  ty: ty::Ty,
+  fact: Fact,
 ) {
   let param = match (positional, named) {
     (&[Some(x)], []) => x,
@@ -152,7 +148,7 @@ fn get_is_ty(
     }
     _ => return,
   };
-  add_fact(tys, ar, ac, param, Fact::ty(ty));
+  add_fact(tys, ar, ac, param, fact);
 }
 
 fn get_std_fn_param(
@@ -196,17 +192,17 @@ fn get_ty_eq(
 ) {
   let Some(param) = get_std_fn_param(scope, ar, call, &Str::type_, Id::x) else { return };
   let ExprData::Prim(Prim::String(type_str)) = &ar[type_str] else { return };
-  let ty = match *type_str {
-    Str::array => ty::Ty::ARRAY_ANY,
-    Str::boolean => ty::Ty::BOOL,
-    Str::number => ty::Ty::NUMBER,
-    Str::object => ty::Ty::OBJECT,
-    Str::string => ty::Ty::STRING,
-    Str::function => ty::Ty::UNKNOWN_FN,
-    Str::null => ty::Ty::NULL,
+  let fact = match *type_str {
+    Str::array => Fact::array(),
+    Str::boolean => Fact::boolean(),
+    Str::number => Fact::number(),
+    Str::object => Fact::object(),
+    Str::string => Fact::string(),
+    Str::function => Fact::function(),
+    Str::null => Fact::null(),
     _ => return,
   };
-  add_fact(tys, ar, ac, param, Fact::ty(ty));
+  add_fact(tys, ar, ac, param, fact);
 }
 
 /// Collects facts from `expr == LIT`, where `LIT` is some literal (`null`, `3`, `"hi"`, etc).
@@ -218,18 +214,18 @@ fn get_eq_lit(
   lit: ExprMust,
 ) {
   let ExprData::Prim(prim) = &ar[lit] else { return };
-  let ty = match prim {
-    Prim::Null => ty::Ty::NULL,
+  let fact = match prim {
+    Prim::Null => Fact::null(),
     Prim::Bool(b) => {
       if *b {
-        ty::Ty::TRUE
+        Fact::true_()
       } else {
-        ty::Ty::FALSE
+        Fact::false_()
       }
     }
     Prim::String(_) | Prim::Number(_) => return,
   };
-  add_fact(tys, ar, ac, var, Fact::ty(ty));
+  add_fact(tys, ar, ac, var, fact);
 }
 
 fn add_fact(
