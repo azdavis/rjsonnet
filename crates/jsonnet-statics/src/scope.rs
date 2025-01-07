@@ -1,6 +1,6 @@
 //! See [`Scope`].
 
-use crate::facts::data::Facts;
+use crate::flow::data::Facts;
 use always::always;
 use jsonnet_expr::{def, ExprMust, Id};
 use jsonnet_ty as ty;

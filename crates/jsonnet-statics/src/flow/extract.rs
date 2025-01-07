@@ -5,7 +5,7 @@
 //! so we won't trick this by doing `local std = wtf` beforehand, and also it'll still work with
 //! `local foo = std` and then asserting with `foo.isTY` etc.
 
-use crate::facts::data::{Fact, Facts, Totality};
+use crate::flow::data::{Fact, Facts, Totality};
 use crate::scope::Scope;
 use jsonnet_expr::{Expr, ExprArena, ExprData, ExprMust, Id, Prim, Str};
 

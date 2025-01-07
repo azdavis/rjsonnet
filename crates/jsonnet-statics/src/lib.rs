@@ -1,7 +1,7 @@
 //! Static checking for jsonnet.
 
 mod check;
-mod facts;
+mod flow;
 mod scope;
 mod suggestion;
 mod unify;
