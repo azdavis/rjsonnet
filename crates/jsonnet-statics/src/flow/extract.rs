@@ -212,11 +212,11 @@ fn get_all(scope: &Scope, ar: &ExprArena, ac: &mut Facts, arg: ExprMust) {
     return;
   }
   let (&[Some(map_fn), Some(array)], []) = (&pos[..], &named[..]) else { return };
-  let Some(elem_fact) = predicate_fact(scope, ar, map_fn) else { return };
+  let Some(elem_fact) = get_predicate(scope, ar, map_fn) else { return };
   add_fact(ar, ac, array, elem_fact.into_array());
 }
 
-fn predicate_fact(scope: &Scope, ar: &ExprArena, func: ExprMust) -> Option<Fact> {
+fn get_predicate(scope: &Scope, ar: &ExprArena, func: ExprMust) -> Option<Fact> {
   if let Some(field) = std_field(scope, ar, func) {
     unary_std_fn_fact(field)
   } else if let ExprData::Function { params, body } = &ar[func] {
