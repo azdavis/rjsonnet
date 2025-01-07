@@ -28,7 +28,7 @@ dependencies = [
 
 [[package]]
 name = "always"
-version = "0.7.8"
+version = "0.8.0"
 dependencies = [
  "log",
 ]
@@ -213,7 +213,7 @@ checksum = "22ec99545bb0ed0ea7bb9b8e1e9122ea386ff8a48c0922e43f36d45ab09e0e80"
 
 [[package]]
 name = "diagnostic"
-version = "0.7.8"
+version = "0.8.0"
 dependencies = [
  "text-pos",
 ]
@@ -296,7 +296,7 @@ dependencies = [
 
 [[package]]
 name = "finite-float"
-version = "0.7.8"
+version = "0.8.0"
 dependencies = [
  "always",
 ]
@@ -519,7 +519,7 @@ checksum = "49f1f14873335454500d59611f1cf4a4b0f786f9ac11f4312a78e4cf2566695b"
 
 [[package]]
 name = "jsonnet-analyze"
-version = "0.7.8"
+version = "0.8.0"
 dependencies = [
  "always",
  "apply-changes",
@@ -550,7 +550,7 @@ dependencies = [
 
 [[package]]
 name = "jsonnet-ast-escape"
-version = "0.7.8"
+version = "0.8.0"
 dependencies = [
  "always",
  "jsonnet-escape",
@@ -560,7 +560,7 @@ dependencies = [
 
 [[package]]
 name = "jsonnet-desugar"
-version = "0.7.8"
+version = "0.8.0"
 dependencies = [
  "always",
  "finite-float",
@@ -577,7 +577,7 @@ dependencies = [
 
 [[package]]
 name = "jsonnet-escape"
-version = "0.7.8"
+version = "0.8.0"
 dependencies = [
  "drop_bomb",
  "str-process",
@@ -585,7 +585,7 @@ dependencies = [
 
 [[package]]
 name = "jsonnet-eval"
-version = "0.7.8"
+version = "0.8.0"
 dependencies = [
  "always",
  "finite-float",
@@ -602,7 +602,7 @@ dependencies = [
 
 [[package]]
 name = "jsonnet-expr"
-version = "0.7.8"
+version = "0.8.0"
 dependencies = [
  "always",
  "finite-float",
@@ -617,11 +617,11 @@ dependencies = [
 
 [[package]]
 name = "jsonnet-ident"
-version = "0.7.8"
+version = "0.8.0"
 
 [[package]]
 name = "jsonnet-lex"
-version = "0.7.8"
+version = "0.8.0"
 dependencies = [
  "always",
  "jsonnet-escape",
@@ -634,7 +634,7 @@ dependencies = [
 
 [[package]]
 name = "jsonnet-ls"
-version = "0.7.8"
+version = "0.8.0"
 dependencies = [
  "jsonnet-analyze",
  "lang-srv",
@@ -642,7 +642,7 @@ dependencies = [
 
 [[package]]
 name = "jsonnet-parse"
-version = "0.7.8"
+version = "0.8.0"
 dependencies = [
  "always",
  "event-parse",
@@ -653,14 +653,14 @@ dependencies = [
 
 [[package]]
 name = "jsonnet-resolve-import"
-version = "0.7.8"
+version = "0.8.0"
 dependencies = [
  "paths",
 ]
 
 [[package]]
 name = "jsonnet-statics"
-version = "0.7.8"
+version = "0.8.0"
 dependencies = [
  "always",
  "diagnostic",
@@ -677,7 +677,7 @@ dependencies = [
 
 [[package]]
 name = "jsonnet-std-sig"
-version = "0.7.8"
+version = "0.8.0"
 dependencies = [
  "indoc",
  "rustc-hash",
@@ -685,7 +685,7 @@ dependencies = [
 
 [[package]]
 name = "jsonnet-syntax"
-version = "0.7.8"
+version = "0.8.0"
 dependencies = [
  "jsonnet-token",
  "rowan",
@@ -696,7 +696,7 @@ dependencies = [
 
 [[package]]
 name = "jsonnet-token"
-version = "0.7.8"
+version = "0.8.0"
 dependencies = [
  "indoc",
  "rustc-hash",
@@ -704,7 +704,7 @@ dependencies = [
 
 [[package]]
 name = "jsonnet-ty"
-version = "0.7.8"
+version = "0.8.0"
 dependencies = [
  "always",
  "jsonnet-expr",
@@ -718,7 +718,7 @@ dependencies = [
 
 [[package]]
 name = "jsonnet-val"
-version = "0.7.8"
+version = "0.8.0"
 dependencies = [
  "always",
  "finite-float",
@@ -736,7 +736,7 @@ checksum = "3752f229dcc5a481d60f385fa479ff46818033d881d2d801aa27dffcfb5e8306"
 
 [[package]]
 name = "lang-srv"
-version = "0.7.8"
+version = "0.8.0"
 dependencies = [
  "always",
  "anyhow",
@@ -754,7 +754,7 @@ dependencies = [
 
 [[package]]
 name = "lang-srv-state"
-version = "0.7.8"
+version = "0.8.0"
 dependencies = [
  "apply-changes",
  "diagnostic",
@@ -1135,7 +1135,7 @@ dependencies = [
 
 [[package]]
 name = "tests"
-version = "0.7.8"
+version = "0.8.0"
 dependencies = [
  "env_logger",
  "jsonnet-analyze",
@@ -1358,7 +1358,7 @@ checksum = "1e9df38ee2d2c3c5948ea468a8406ff0db0b29ae1ffde1bcf20ef305bcc95c51"
 
 [[package]]
 name = "xtask"
-version = "0.7.8"
+version = "0.8.0"
 dependencies = [
  "flate2",
  "pico-args",
