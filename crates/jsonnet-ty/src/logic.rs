@@ -49,10 +49,57 @@ pub fn and(tys: &mut MutStore<'_>, x: Ty, y: Ty) -> Ty {
       }
       tys.get(Data::Object(Object { known, has_unknown: x.has_unknown && y.has_unknown }))
     }
-    (Data::Fn(_), Data::Fn(_)) => {
-      // we could almost certainly be more permissive here, but this case is probably rare to run
-      // into anyway.
-      Ty::NEVER
+    (Data::Fn(f), Data::Fn(g)) => {
+      let (fps, fr) = f.parts();
+      let (gps, gr) = g.parts();
+      let (fps, gps) = match (fps, gps) {
+        (None, None) => {
+          always!(matches!(f, Fn::Unknown));
+          always!(matches!(g, Fn::Unknown));
+          return x;
+        }
+        (Some(_), None) => {
+          always!(matches!(g, Fn::Unknown));
+          return x;
+        }
+        (None, Some(_)) => {
+          always!(matches!(f, Fn::Unknown));
+          return y;
+        }
+        (Some(fps), Some(gps)) => (fps, gps),
+      };
+      // these are necessary to give up the borrow on f and g
+      #[expect(clippy::unnecessary_to_owned)]
+      let mut fps = fps.to_owned().into_iter();
+      #[expect(clippy::unnecessary_to_owned)]
+      let mut gps = gps.to_owned().into_iter();
+      let mut params = Vec::<Param>::new();
+      loop {
+        let (fp, gp) = match (fps.next(), gps.next()) {
+          (None, None) => break,
+          (Some(param), None) | (None, Some(param)) => {
+            if param.required {
+              return Ty::NEVER;
+            }
+            break;
+          }
+          (Some(fp), Some(gp)) => (fp, gp),
+        };
+        let id = if fp.id.is_builtin_unutterable() {
+          fp.id
+        } else if gp.id.is_builtin_unutterable() {
+          gp.id
+        } else if fp.id == gp.id {
+          fp.id
+        } else {
+          return Ty::NEVER;
+        };
+        let ty = and(tys, fp.ty, gp.ty);
+        let required = fp.required || gp.required;
+        params.push(Param { id, ty, required });
+      }
+      let func = Fn::Regular(RegularFn { params, ret: and(tys, fr, gr) });
+      tys.get(Data::Fn(func))
     }
     (Data::Union(xs), _) => union_and(tys, xs.clone(), y),
     (_, Data::Union(ys)) => union_and(tys, ys.clone(), x),

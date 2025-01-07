@@ -388,7 +388,6 @@ std.length(s)
 }
 
 #[test]
-#[should_panic = "none of the lines were equal"]
 fn fn_len_assert() {
   JsonnetInput::manifest_or_fn(
     r#"
