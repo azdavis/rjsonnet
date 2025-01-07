@@ -152,8 +152,16 @@ fn maybe_extra_checks(
       st.unify(arr_expr, sep_ty, arr.elem);
       Some(arr.elem)
     }
-    StdFn::reverse | StdFn::sort | StdFn::uniq | StdFn::filter => {
+    StdFn::reverse | StdFn::filter => {
       let &(_, arr_ty) = params.get(&Id::arr)?;
+      // TODO handle unions
+      let &ty::Data::Array(arr) = st.tys.data(arr_ty) else { return None };
+      // might not be a set anymore (if it was before)
+      Some(st.tys.get(ty::Data::Array(ty::Array::new(arr.elem))))
+    }
+    StdFn::sort | StdFn::uniq => {
+      let &(_, arr_ty) = params.get(&Id::arr)?;
+      // is still a set (if it was before)
       Some(arr_ty)
     }
     StdFn::set => {
