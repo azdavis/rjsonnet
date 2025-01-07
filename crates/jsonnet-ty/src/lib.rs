@@ -533,7 +533,7 @@ impl GlobalStore {
     }
   }
 
-  /// Returns the known object fields underlying this type, if any.
+  /// Returns Some(f) iff this is a function type f.
   #[must_use]
   pub fn as_fn(&self, ty: Ty) -> Option<&Fn> {
     if let Data::Fn(f) = self.0.data(ty, false)? {
