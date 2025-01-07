@@ -11,21 +11,19 @@ Contrary to other languages like [OCaml][ocaml], [Haskell][haskell], and Standar
 However, you can "annotate" a function's parameter's types with `assert`s like this:
 
 ```jsonnet
-function(a, b)
-  assert std.isNumber(a) || std.isString(a);
-  assert std.isBoolean(b);
-  if a == 3 && b then
+local func(x, y) =
+  assert std.isNumber(x) || std.isString(x);
+  assert std.isBoolean(y);
+  if x == 3 && y then
     "hi"
-  else if std.isString(a) then
-    a
+  else if std.isString(x) then
+    x
   else
-    std.toString(b)
-```
+    std.toString(y)
+;
 
-This will be inferred to have type:
-
-```
-(a: string | number, b: boolean) => string
+func("hi", false)
+## ^ type: (x: string | number, y: boolean) => string
 ```
 
 ## Flow typing
