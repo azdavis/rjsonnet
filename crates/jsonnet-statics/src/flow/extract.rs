@@ -7,7 +7,7 @@
 
 use crate::flow::data::{Fact, Facts, Totality};
 use crate::scope::Scope;
-use jsonnet_expr::{Expr, ExprArena, ExprData, ExprMust, Id, Prim, Str};
+use jsonnet_expr::{Expr, ExprArena, ExprData, ExprMust, Prim, Str};
 
 /// Collects facts that are always true in the expression because otherwise the expression diverges
 /// (i.e. it `error`s).
@@ -49,16 +49,7 @@ pub(crate) fn get_cond(scope: &Scope, ar: &ExprArena, ac: &mut Facts, cond: Expr
     ExprData::Call { func: Some(func), positional: pos, named } => {
       let Some(func_name) = std_field(scope, ar, *func) else { return };
       if let Some(fact) = unary_std_fn_fact(func_name) {
-        let param = match (&pos[..], &named[..]) {
-          (&[Some(x)], []) => x,
-          ([], &[(id, Some(x))]) => {
-            if id != Id::v {
-              return;
-            }
-            x
-          }
-          _ => return,
-        };
+        let (&[Some(param)], []) = (&pos[..], &named[..]) else { return };
         add_fact(ar, ac, param, fact);
       } else {
         match *func_name {
@@ -138,27 +129,12 @@ fn unary_std_fn_fact(fn_name: &Str) -> Option<Fact> {
   Some(ret)
 }
 
-fn get_std_fn_param(
-  scope: &Scope,
-  ar: &ExprArena,
-  call: ExprMust,
-  fn_name: &Str,
-  param_name: Id,
-) -> Expr {
+fn get_unary_std_fn_param(scope: &Scope, ar: &ExprArena, call: ExprMust, fn_name: &Str) -> Expr {
   let ExprData::Call { func: Some(func), positional, named } = &ar[call] else { return None };
   if std_field(scope, ar, *func).is_none_or(|got| got != fn_name) {
     return None;
   }
-  let param = match (&positional[..], &named[..]) {
-    (&[Some(x)], []) => x,
-    ([], &[(id, Some(x))]) => {
-      if id != param_name {
-        return None;
-      }
-      x
-    }
-    _ => return None,
-  };
+  let (&[Some(param)], []) = (&positional[..], &named[..]) else { return None };
   Some(param)
 }
 
@@ -174,7 +150,7 @@ fn std_field<'a>(scope: &Scope, ar: &'a ExprArena, func: ExprMust) -> Option<&'a
 
 /// Collects facts from `std.type(expr) == STR`, where `STR` is `"number"`, `"string"`, etc.
 fn get_ty_eq(scope: &Scope, ar: &ExprArena, ac: &mut Facts, call: ExprMust, type_str: ExprMust) {
-  let Some(param) = get_std_fn_param(scope, ar, call, &Str::type_, Id::x) else { return };
+  let Some(param) = get_unary_std_fn_param(scope, ar, call, &Str::type_) else { return };
   let ExprData::Prim(Prim::String(type_str)) = &ar[type_str] else { return };
   let fact = match *type_str {
     Str::array => Fact::array(Totality::Total),
@@ -190,7 +166,7 @@ fn get_ty_eq(scope: &Scope, ar: &ExprArena, ac: &mut Facts, call: ExprMust, type
 }
 
 fn get_len_eq(scope: &Scope, ar: &ExprArena, ac: &mut Facts, call: ExprMust, n: ExprMust) {
-  let Some(param) = get_std_fn_param(scope, ar, call, &Str::length, Id::x) else { return };
+  let Some(param) = get_unary_std_fn_param(scope, ar, call, &Str::length) else { return };
   let ExprData::Prim(Prim::Number(n)) = &ar[n] else { return };
   let Some(n) = get_uint(n.value()) else { return };
   add_fact(ar, ac, param, Fact::has_len(n));
