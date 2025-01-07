@@ -574,21 +574,21 @@ impl lang_srv_state::State for St {
       let root = arts.syntax.root.clone().into_ast()?;
       jsonnet_syntax::node_token(root.syntax(), ts)?
     };
-    let node = tok.parent().and_then(|p| {
-      if jsonnet_syntax::ast::Object::can_cast(p.kind()) {
-        return p.parent();
+    let node = tok.parent().and_then(|node| {
+      if jsonnet_syntax::ast::Object::can_cast(node.kind()) {
+        return node.parent();
       }
-      if jsonnet_syntax::ast::Bind::can_cast(p.kind()) {
-        let bind = jsonnet_syntax::ast::Bind::cast(p)?;
-        return if let Some(p) = bind.paren_params() {
+      if jsonnet_syntax::ast::Bind::can_cast(node.kind()) {
+        let bind = jsonnet_syntax::ast::Bind::cast(node)?;
+        return if let Some(paren_params) = bind.paren_params() {
           // NOTE: this depends on us knowing that when we have a local function with the syntax
           // sugar like local f(x) = x + 1, we put the syntax node pointer on the paren params.
-          Some(p.syntax().clone())
+          Some(paren_params.syntax().clone())
         } else {
           Some(bind.expr()?.syntax().clone())
         };
       }
-      Some(p)
+      Some(node)
     });
     let expr = node.and_then(|node| {
       let ptr = jsonnet_syntax::ast::SyntaxNodePtr::new(&node);
