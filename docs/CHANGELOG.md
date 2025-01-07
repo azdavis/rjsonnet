@@ -2,6 +2,10 @@
 
 Things under "main" are not released yet.
 
+## main
+
+- Improve flow typing for variables with function type.
+
 ## v0.8.0
 
 - Bring back ability to analyze flow types with `==` to a literal that is not the only value of that type.
