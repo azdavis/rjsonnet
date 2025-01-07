@@ -114,6 +114,17 @@ For objects, if `NUM` is the number of known fields, the object will then be mar
 
 For functions, if the function's argument count was not known before, it will be known after.
 
+```jsonnet
+function(f)
+  assert std.isFunction(f);
+  if std.length(f) == 2 then
+    f
+##  ^ type: ($a: any, $b: any) => any
+  else
+    f
+##  ^ type: (...) => any
+```
+
 ### Array element types
 
 `std.all(std.map(elem_test, expr))` checks that `expr` is an array whose element type is given by `elem_test`.
