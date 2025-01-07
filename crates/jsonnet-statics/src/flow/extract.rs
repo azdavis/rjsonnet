@@ -47,12 +47,7 @@ pub(crate) fn get_cond(scope: &Scope, ar: &ExprArena, ac: &mut Facts, cond: Expr
   let Some(cond) = cond else { return };
   match &ar[cond] {
     ExprData::Call { func: Some(func), positional: pos, named } => {
-      let ExprData::Subscript { on: Some(on), idx: Some(idx) } = ar[*func] else { return };
-      let ExprData::Id(std_id) = &ar[on] else { return };
-      if !scope.is_std(*std_id) {
-        return;
-      }
-      let ExprData::Prim(Prim::String(func_name)) = &ar[idx] else { return };
+      let Some(func_name) = std_field(scope, ar, *func) else { return };
       match *func_name {
         Str::isArray => get_is_ty(ar, ac, pos, named, Fact::array(Totality::Total)),
         Str::isBoolean => get_is_ty(ar, ac, pos, named, Fact::boolean()),
@@ -153,13 +148,7 @@ fn get_std_fn_param(
   param_name: Id,
 ) -> Expr {
   let ExprData::Call { func: Some(func), positional, named } = &ar[call] else { return None };
-  let ExprData::Subscript { on: Some(on), idx: Some(idx) } = ar[*func] else { return None };
-  let ExprData::Id(std_id) = &ar[on] else { return None };
-  if !scope.is_std(*std_id) {
-    return None;
-  }
-  let ExprData::Prim(Prim::String(func_name)) = &ar[idx] else { return None };
-  if func_name != fn_name {
+  if std_field(scope, ar, *func).is_none_or(|got| got != fn_name) {
     return None;
   }
   let param = match (&positional[..], &named[..]) {
@@ -173,6 +162,16 @@ fn get_std_fn_param(
     _ => return None,
   };
   Some(param)
+}
+
+fn std_field<'a>(scope: &Scope, ar: &'a ExprArena, func: ExprMust) -> Option<&'a Str> {
+  let ExprData::Subscript { on: Some(on), idx: Some(idx) } = ar[func] else { return None };
+  let ExprData::Id(std_id) = &ar[on] else { return None };
+  if !scope.is_std(*std_id) {
+    return None;
+  }
+  let ExprData::Prim(Prim::String(name)) = &ar[idx] else { return None };
+  Some(name)
 }
 
 /// Collects facts from `std.type(expr) == STR`, where `STR` is `"number"`, `"string"`, etc.
