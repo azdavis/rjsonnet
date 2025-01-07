@@ -5,6 +5,9 @@ Things under "main" are not released yet.
 ## main
 
 - Improve flow typing for variables with function type.
+- Improve typing for:
+  - `std.reverse`
+  - `std.filter`
 
 ## v0.8.0
 

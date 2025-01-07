@@ -216,7 +216,7 @@ fn get_all(scope: &Scope, ar: &ExprArena, ac: &mut Facts, arg: ExprMust) {
   add_fact(ar, ac, array, elem_fact.into_array());
 }
 
-fn get_predicate(scope: &Scope, ar: &ExprArena, func: ExprMust) -> Option<Fact> {
+pub(crate) fn get_predicate(scope: &Scope, ar: &ExprArena, func: ExprMust) -> Option<Fact> {
   if let Some(field) = std_field(scope, ar, func) {
     unary_std_fn_fact(field)
   } else if let ExprData::Function { params, body } = &ar[func] {

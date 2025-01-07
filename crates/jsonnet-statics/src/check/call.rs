@@ -1,8 +1,8 @@
 //! Checking function calls.
 
-use crate::{error, st};
+use crate::{error, flow, st};
 use always::always;
-use jsonnet_expr::{Expr, ExprMust, Id, StdFn, Str};
+use jsonnet_expr::{Expr, ExprArena, ExprMust, Id, StdFn, Str};
 use jsonnet_ty as ty;
 use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
@@ -10,6 +10,7 @@ use std::collections::BTreeMap;
 /// NOTE: the arguments have already been type-checked.
 pub(crate) fn get(
   st: &mut st::St<'_>,
+  ar: &ExprArena,
   expr: ExprMust,
   fn_expr: Expr,
   fn_ty: ty::Ty,
@@ -28,7 +29,7 @@ pub(crate) fn get(
       get_regular(st, expr, fn_expr, sig.params, pos_args, named_args, &mut |id, expr, ty| {
         params.insert(id, (expr, ty));
       });
-      maybe_extra_checks(st, std_fn, &params).unwrap_or(sig.ret)
+      maybe_extra_checks(st, ar, std_fn, &params).unwrap_or(sig.ret)
     }
     ty::Data::Fn(ty::Fn::StdParam(_)) => {
       always!(false, "should never call a StdParam");
@@ -37,7 +38,7 @@ pub(crate) fn get(
     ty::Data::Union(tys) => {
       // must be compatible with ALL of the union parts.
       let ret_tys =
-        tys.into_iter().map(|fn_ty| get(st, expr, fn_expr, fn_ty, pos_args, named_args));
+        tys.into_iter().map(|fn_ty| get(st, ar, expr, fn_expr, fn_ty, pos_args, named_args));
       let ret_ty = ty::Data::Union(ret_tys.collect());
       st.tys.get(ret_ty)
     }
@@ -93,6 +94,7 @@ fn ignore(_: Id, _: ExprMust, _: ty::Ty) {}
 #[expect(clippy::too_many_lines)]
 fn maybe_extra_checks(
   st: &mut st::St<'_>,
+  ar: &ExprArena,
   std_fn: StdFn,
   params: &FxHashMap<Id, (ExprMust, ty::Ty)>,
 ) -> Option<ty::Ty> {
@@ -152,7 +154,7 @@ fn maybe_extra_checks(
       st.unify(arr_expr, sep_ty, arr.elem);
       Some(arr.elem)
     }
-    StdFn::reverse | StdFn::filter => {
+    StdFn::reverse => {
       let &(_, arr_ty) = params.get(&Id::arr)?;
       // TODO handle unions
       let &ty::Data::Array(arr) = st.tys.data(arr_ty) else { return None };
@@ -163,6 +165,17 @@ fn maybe_extra_checks(
       let &(_, arr_ty) = params.get(&Id::arr)?;
       // is still a set (if it was before)
       Some(arr_ty)
+    }
+    StdFn::filter => {
+      let &(_, arr_ty) = params.get(&Id::arr)?;
+      // TODO handle unions
+      let &ty::Data::Array(arr) = st.tys.data(arr_ty) else { return None };
+      let &(func, _) = params.get(&Id::func)?;
+      let mut elem = arr.elem;
+      if let Some(fact) = flow::extract::get_predicate(&st.scope, ar, func) {
+        fact.apply_to(&mut st.tys, &mut elem);
+      }
+      Some(st.tys.get(ty::Data::Array(ty::Array::new(elem))))
     }
     StdFn::set => {
       let &(_, arr_ty) = params.get(&Id::arr)?;

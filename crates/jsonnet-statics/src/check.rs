@@ -106,7 +106,7 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
           }
         }
       }
-      call::get(st, expr, *func, fn_ty, &pos_args, &named_args)
+      call::get(st, ar, expr, *func, fn_ty, &pos_args, &named_args)
     }
     ExprData::Id(id) => {
       if let Some((ty, def)) = st.scope.get(*id) {

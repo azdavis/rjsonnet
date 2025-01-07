@@ -400,3 +400,19 @@ function(f)
   )
   .check();
 }
+
+#[test]
+fn filter() {
+  JsonnetInput::manifest_or_fn(
+    r#"
+function(xs)
+  assert std.isArray(xs);
+  assert std.all(std.map(function(x) std.isString(x) || std.isNumber(x), xs));
+  local ys = std.filter(std.isNumber, xs);
+##                                    ^^ type: array[string | number]
+  ys
+##^^ type: array[number]
+"#,
+  )
+  .check();
+}
