@@ -1,6 +1,6 @@
 # Types
 
-rjsonnet supports type inference, including across imported files, and on local variables, without introducing new syntax to Jsonnet.
+rjsonnet supports type inference and flow typing, including on local variables and across imported files, without introducing new syntax to Jsonnet.
 
 ## Annotations
 
@@ -12,7 +12,7 @@ However, you can "annotate" a function's parameter's types with `assert`s like t
 
 ```jsonnet
 local func(x, y) =
-  assert std.isNumber(x) || std.isString(x);
+  assert std.isString(x) || std.isNumber(x);
   assert std.isBoolean(y);
   if x == 3 && y then
     "hi"
@@ -159,11 +159,11 @@ function(x)
 
 `!a`, where `a` is a flow test, negates the meaning of the test.
 
-This is useful for e.g. `expr != null`, which can narrow away the null-ness of a union type.
+This is useful for e.g. `expr != null`, which can narrow away the nullability of a nullable type (aka a union type with `null`).
 
 This works because `a != b` desugars to `!(a == b)`, and `expr == LIT` is a supported test.
 
-The not-ness of a flow test is also reflected in the `else`-branch of `if` expressions:
+The negation of a flow test is also reflected in the `else`-branch of `if` expressions:
 
 ```jsonnet
 function(x)
@@ -197,6 +197,8 @@ They are:
 - `null`
 
 These are fairly self-explanatory. Notably, the values `true`, `false`, and `null` have their own types.
+
+`boolean` is the type that is the union of `true` and `false`. See docs for [union types](#union-types).
 
 ### Array types
 
@@ -238,9 +240,20 @@ If a union type contains both `true` and `false`, instead of showing the type as
 
 Order does not matter in union types. So `T1 | T2` is the same as `T2 | T1`.
 
-`never` is the union of zero types, aka the empty union type. It is a type with no values. This is the type of `error` expressions.
+`never` is the union of zero types, aka the empty union type. It is a type with no values. It is the type of expressions that are known to be impossible to evaluate, like `error` expressions and expression that have "nonsensical" types.
 
-`boolean` is the type that is the union of `true` and `false`.
+```jsonnet
+function(x)
+  if std.isNumber(x) && !std.isNumber(x) then
+    x
+##  ^ type: never
+  else if std.isNumber(x) then
+    x + 1
+##  ^ type: number
+  else
+    error "whoops"
+##  ^^^^^^^^^^^^^^ type: never
+```
 
 ### Function types
 
