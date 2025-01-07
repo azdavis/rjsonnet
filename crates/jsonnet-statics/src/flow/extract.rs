@@ -49,7 +49,17 @@ pub(crate) fn get_cond(scope: &Scope, ar: &ExprArena, ac: &mut Facts, cond: Expr
     ExprData::Call { func: Some(func), positional: pos, named } => {
       let Some(func_name) = std_field(scope, ar, *func) else { return };
       if let Some(fact) = unary_std_fn_fact(func_name) {
-        get_is_ty(ar, ac, pos, named, fact);
+        let param = match (&pos[..], &named[..]) {
+          (&[Some(x)], []) => x,
+          ([], &[(id, Some(x))]) => {
+            if id != Id::v {
+              return;
+            }
+            x
+          }
+          _ => return,
+        };
+        add_fact(ar, ac, param, fact);
       } else {
         match *func_name {
           Str::objectHas | Str::objectHasAll => {
@@ -126,27 +136,6 @@ fn unary_std_fn_fact(fn_name: &Str) -> Option<Fact> {
     _ => return None,
   };
   Some(ret)
-}
-
-/// Collects facts from call to a `std.isTYPE` function.
-fn get_is_ty(
-  ar: &ExprArena,
-  ac: &mut Facts,
-  positional: &[Expr],
-  named: &[(Id, Expr)],
-  fact: Fact,
-) {
-  let param = match (positional, named) {
-    (&[Some(x)], []) => x,
-    ([], &[(id, Some(x))]) => {
-      if id != Id::v {
-        return;
-      }
-      x
-    }
-    _ => return,
-  };
-  add_fact(ar, ac, param, fact);
 }
 
 fn get_std_fn_param(
