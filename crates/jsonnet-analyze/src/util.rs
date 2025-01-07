@@ -101,7 +101,7 @@ impl SyntaxFileToCombine {
         errors: SyntaxFileErrors { lex: lex.errors, parse: parse.errors, desugar: desugar.errors },
         exprs: jsonnet_eval::Exprs { ar: desugar.arenas.expr, top: desugar.top },
       },
-      to_combine: jsonnet_expr::Artifacts { paths: desugar.ps, strings: desugar.arenas.str },
+      to_combine: jsonnet_expr::Artifacts { paths: desugar.paths, strings: desugar.arenas.str },
     }
   }
 

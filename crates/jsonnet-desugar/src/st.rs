@@ -77,7 +77,13 @@ impl St {
   }
 
   pub(crate) fn finish(self, top: jsonnet_expr::Expr) -> Desugar {
-    Desugar { top, arenas: self.arenas, pointers: self.pointers, ps: self.ps, errors: self.errors }
+    Desugar {
+      top,
+      arenas: self.arenas,
+      pointers: self.pointers,
+      paths: self.ps,
+      errors: self.errors,
+    }
   }
 
   /// Returns a fresh identifier.
@@ -102,7 +108,7 @@ pub struct Desugar {
   /// Pointers between arena indices and concrete syntax.
   pub pointers: Pointers,
   /// The paths store.
-  pub ps: paths::Store,
+  pub paths: paths::Store,
   /// Errors when desugaring.
   pub errors: Vec<Error>,
 }
@@ -118,7 +124,7 @@ impl Desugar {
       self.top,
       &self.arenas.str,
       &self.arenas.expr,
-      &self.ps,
+      &self.paths,
       relative_to,
     )
   }
