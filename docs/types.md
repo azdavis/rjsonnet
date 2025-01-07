@@ -157,7 +157,9 @@ function(x)
 
 ### Negation
 
-`!a`, where `a` is a flow test, negates the meaning of the test. This is useful for e.g. `expr != null`, which can narrow away the null-ness of a union type.
+`!a`, where `a` is a flow test, negates the meaning of the test.
+
+This is useful for e.g. `expr != null`, which can narrow away the null-ness of a union type.
 
 This works because `a != b` desugars to `!(a == b)`, and `expr == LIT` is a supported test.
 
