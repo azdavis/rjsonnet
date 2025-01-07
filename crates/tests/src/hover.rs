@@ -296,3 +296,48 @@ fn escaped_field() {
   )
   .check();
 }
+
+#[test]
+#[should_panic = "no hover"]
+fn param_function() {
+  JsonnetInput::manifest_or_fn(
+    r#"
+function(x)
+##       ^ hover: number
+  assert std.isNumber(x);
+  x + 1
+"#,
+  )
+  .check();
+}
+
+#[test]
+#[should_panic = "no hover"]
+fn param_local() {
+  JsonnetInput::manifest_or_fn(
+    r#"
+local f(x) =
+##      ^ hover: number
+  assert std.isNumber(x);
+  x + 1
+; f
+"#,
+  )
+  .check();
+}
+
+#[test]
+#[should_panic = "no hover"]
+fn param_obj() {
+  JsonnetInput::manifest_or_fn(
+    r#"
+{
+  f(x):
+##  ^ hover: number
+    assert std.isNumber(x);
+    x + 1
+}
+"#,
+  )
+  .check();
+}
