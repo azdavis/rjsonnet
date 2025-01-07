@@ -73,14 +73,15 @@ pub(crate) fn get_cond(scope: &Scope, ar: &ExprArena, ac: &mut Facts, cond: Expr
         }
       }
     }
-    // the cond is itself another if expression.
+    // the `if` condition is itself another `if` expression, which is actually common due to the
+    // desugaring of `&&` and `||`
     &ExprData::If { cond, yes: Some(yes), no: Some(no) } => {
       if let ExprData::Prim(Prim::Bool(false)) | ExprData::Error(_) = &ar[no] {
-        // if it looks like a desugared `&&`, then just do both in sequence.
+        // it looks like a desugared `&&`, so do both in sequence.
         get_cond(scope, ar, ac, cond);
         get_cond(scope, ar, ac, Some(yes));
       } else if let ExprData::Prim(Prim::Bool(true)) = &ar[yes] {
-        // if it looks like a desugared `||`, then do the union.
+        // it looks like a desugared `||`, so do the union.
         let mut fst = Facts::default();
         let mut snd = Facts::default();
         get_cond(scope, ar, &mut fst, cond);
@@ -95,14 +96,16 @@ pub(crate) fn get_cond(scope: &Scope, ar: &ExprArena, ac: &mut Facts, cond: Expr
       }
     }
     &ExprData::BinaryOp { lhs: Some(lhs), op: jsonnet_expr::BinaryOp::Eq, rhs: Some(rhs) } => {
-      // do both sides. if one works, the other won't, but we'll just return. this allows for both
-      // `std.type(x) == "TYPE"` and `"TYPE" == std.type(x)`.
+      // for all of these, call each fn twice with lhs and rhs swapped. if one works, the other
+      // won't, but we'll just return.
+      //
+      // `std.type`
       get_ty_eq(scope, ar, ac, lhs, rhs);
       get_ty_eq(scope, ar, ac, rhs, lhs);
-      // same with this one.
+      // `std.length`
       get_len_eq(scope, ar, ac, lhs, rhs);
       get_len_eq(scope, ar, ac, rhs, lhs);
-      // and this one.
+      // literal
       get_eq_lit(ar, ac, lhs, rhs);
       get_eq_lit(ar, ac, rhs, lhs);
     }
@@ -150,7 +153,6 @@ fn std_field<'a>(scope: &Scope, ar: &'a ExprArena, func: ExprMust) -> Option<&'a
   Some(name)
 }
 
-/// Collects facts from `std.type(expr) == STR`, where `STR` is `"number"`, `"string"`, etc.
 fn get_ty_eq(scope: &Scope, ar: &ExprArena, ac: &mut Facts, call: ExprMust, type_str: ExprMust) {
   let Some(param) = get_unary_std_fn_param(scope, ar, call, &Str::type_) else { return };
   let ExprData::Prim(Prim::String(type_str)) = &ar[type_str] else { return };
@@ -183,7 +185,6 @@ pub(crate) fn get_uint(n: f64) -> Option<usize> {
   }
 }
 
-/// Collects facts from `expr == LIT`, where `LIT` is some literal (`null`, `3`, `"hi"`, etc).
 fn get_eq_lit(ar: &ExprArena, ac: &mut Facts, var: ExprMust, lit: ExprMust) {
   let fact = match &ar[lit] {
     ExprData::Prim(prim) => match prim {

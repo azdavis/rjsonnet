@@ -4,6 +4,7 @@ use jsonnet_expr::{Id, Str};
 use jsonnet_ty as ty;
 use std::collections::{hash_map::Entry, BTreeMap};
 
+/// A collection of facts about identifiers.
 #[derive(Debug, Default)]
 pub(crate) struct Facts {
   store: rustc_hash::FxHashMap<Id, Fact>,
@@ -41,6 +42,7 @@ impl Facts {
   }
 }
 
+/// A fact about an identifier.
 #[derive(Debug, Clone)]
 pub(crate) struct Fact(Repr);
 
@@ -199,7 +201,7 @@ impl Repr {
   }
 }
 
-/// all values fall into exactly one prim
+/// ALL values fall into EXACTLY ONE of these.
 #[derive(Debug, Clone)]
 enum Prim {
   Null,
@@ -231,7 +233,7 @@ impl Prim {
 struct Field {
   /// INVARIANT: non-empty.
   path: Vec<Str>,
-  /// If this is None, simply asserts the field exists.
+  /// If this is `None`, simply asserts the field exists.
   inner: Option<Box<Repr>>,
 }
 
@@ -247,8 +249,16 @@ impl Field {
   }
 }
 
+/// How total a simple fact is.
 #[derive(Debug, Clone, Copy)]
 pub(crate) enum Totality {
+  /// It's total, which means it can be negated.
+  ///
+  /// For example, if `!std.isNumber(x)` then we KNOW that `x` is not `number`.
   Total,
+  /// It's partial, which means it can't be negated.
+  ///
+  /// For example, if `!std.isInteger(x)` we DO NOT know that `x` is not `number`. It
+  /// could be an a decimal number!
   Partial,
 }
