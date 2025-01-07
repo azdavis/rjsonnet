@@ -183,7 +183,7 @@ pub enum ImportKind {
   Binary,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Visibility {
   Default,
   Hidden,

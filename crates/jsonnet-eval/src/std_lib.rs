@@ -55,7 +55,9 @@ pub(crate) fn length(x: &Val, expr: ExprMust, cx: Cx<'_>) -> Result<usize> {
       // we want "number of codepoints", NOT byte length.
       Prim::String(s) => Ok(cx.str_ar.get(s).chars().count()),
     },
-    Val::Object(obj) => Ok(obj.fields().len()),
+    Val::Object(obj) => {
+      Ok(obj.fields().iter().filter(|&&(_, vis, _)| vis != Visibility::Hidden).count())
+    }
     Val::Array(arr) => Ok(arr.len()),
     Val::Fn(Fn::Regular(func)) => Ok(func.params.iter().filter(|(_, d)| d.is_none()).count()),
     Val::Fn(Fn::Std(func)) => Ok(func.required_params_count()),

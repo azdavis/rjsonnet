@@ -313,12 +313,12 @@ pub const FNS: [Fn; 126] = [
       Depending on the type of the value given, this functions returns the number of
       _something_ in that argument value. The table below describes the _something_:
 
-      | Type     | Something  |
-      | -------- | ---------- |
-      | array    | elements   |
-      | string   | codepoints |
-      | function | parameters |
-      | object   | fields     |
+      | Type     | Something              |
+      | -------- | ---------------------- |
+      | array    | elements               |
+      | string   | codepoints (NOT bytes) |
+      | function | required parameters    |
+      | object   | non-hidden fields      |
 
       Raises an error if given `null`, `true`, `false`, or a number.
     "#},
@@ -333,7 +333,7 @@ pub const FNS: [Fn; 126] = [
       r#" std.length(function(x=1) x + 2) == 0 "#,
       r#" std.length({}) == 0 "#,
       r#" std.length({ a: 3, b: 5 }) == 2 "#,
-      r#" std.length({ x:: 9, y::: 7 }) == 2 "#,
+      r#" std.length({ x:: 9, y::: 7 }) == 1 "#,
     ],
   },
   Fn {
