@@ -198,8 +198,6 @@ They are:
 
 These are fairly self-explanatory. Notably, the values `true`, `false`, and `null` have their own types.
 
-`boolean` is the type that is the union of `true` and `false`.
-
 ### Array types
 
 `array[T]` is the type of arrays where the elements have type `T`.
@@ -241,6 +239,8 @@ If a union type contains both `true` and `false`, instead of showing the type as
 Order does not matter in union types. So `T1 | T2` is the same as `T2 | T1`.
 
 `never` is the union of zero types, aka the empty union type. It is a type with no values. This is the type of `error` expressions.
+
+`boolean` is the type that is the union of `true` and `false`.
 
 ### Function types
 
