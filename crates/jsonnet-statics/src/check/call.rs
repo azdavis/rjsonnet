@@ -151,7 +151,7 @@ fn maybe_extra_checks(
       // TODO handle unions
       let &ty::Data::Array(arr) = st.tys.data(arr_ty) else { return None };
       st.unify(arr_expr, ty::Ty::STRING_OR_ARRAY_ANY, arr.elem);
-      st.unify(arr_expr, sep_ty, arr.elem);
+      st.unify(arr_expr, arr.elem, sep_ty);
       Some(arr.elem)
     }
     StdFn::reverse => {
