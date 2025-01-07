@@ -165,9 +165,9 @@ impl<'a> JsonnetInput<'a> {
     Self { text, outcome: json, kind: OutcomeKind::Manifest { fn_ok: false } }
   }
 
-  /// either manifest, or a function
-  pub(crate) fn manifest_or_fn(text: &'a str, json: &'a str) -> Self {
-    Self { text, outcome: json, kind: OutcomeKind::Manifest { fn_ok: true } }
+  /// either manifest to anything, or a function
+  pub(crate) fn manifest_or_fn(text: &'a str) -> Self {
+    Self { text, outcome: "", kind: OutcomeKind::Manifest { fn_ok: true } }
   }
 
   pub(crate) fn manifest_self(text: &'a str) -> Self {
