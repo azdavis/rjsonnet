@@ -65,6 +65,10 @@ pub(crate) fn get_cond(scope: &Scope, ar: &ExprArena, ac: &mut Facts, cond: Expr
             let fact = Fact::has_field(field.clone());
             add_fact(ar, ac, obj, fact);
           }
+          Str::all => {
+            let (&[Some(arg)], []) = (&pos[..], &named[..]) else { return };
+            get_all(scope, ar, ac, arg);
+          }
           _ => {}
         }
       }
@@ -199,6 +203,26 @@ fn get_eq_lit(ar: &ExprArena, ac: &mut Facts, var: ExprMust, lit: ExprMust) {
     _ => return,
   };
   add_fact(ar, ac, var, fact);
+}
+
+fn get_all(scope: &Scope, ar: &ExprArena, ac: &mut Facts, arg: ExprMust) {
+  let ExprData::Call { func: Some(func), positional: pos, named } = &ar[arg] else { return };
+  if std_field(scope, ar, *func).is_none_or(|got| got != &Str::map) {
+    return;
+  }
+  let (&[Some(map_fn), Some(array)], []) = (&pos[..], &named[..]) else { return };
+  let elem_fact = if let Some(field) = std_field(scope, ar, map_fn) {
+    unary_std_fn_fact(field)
+  } else if let ExprData::Function { params, body } = &ar[map_fn] {
+    let &[(id, _)] = &params[..] else { return };
+    let mut body_ac = Facts::default();
+    get_cond(scope, ar, &mut body_ac, *body);
+    body_ac.remove(id)
+  } else {
+    return;
+  };
+  let Some(elem_fact) = elem_fact else { return };
+  add_fact(ar, ac, array, elem_fact.into_array());
 }
 
 fn add_fact(ar: &ExprArena, ac: &mut Facts, mut expr: ExprMust, fact: Fact) {

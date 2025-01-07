@@ -386,3 +386,23 @@ std.length(s)
   )
   .check();
 }
+
+#[test]
+fn array() {
+  JsonnetInput::manifest_or_fn(
+    r#"
+function(xs)
+  assert std.isArray(xs);
+  if std.all(std.map(std.isNumber, xs)) then
+    std.sum(xs)
+##          ^^ type: array[number]
+  else if std.all(std.map(function(x) std.isString(x) || std.isObject(x), xs)) then
+    std.length(xs) + 1
+##             ^^ type: array[string | object]
+  else
+    std.length(xs) + 2
+##             ^^ type: array[any]
+"#,
+  )
+  .check();
+}

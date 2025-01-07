@@ -97,6 +97,10 @@ impl Fact {
     Self(Repr::Len(n))
   }
 
+  pub(crate) fn into_array(self) -> Self {
+    Self(Repr::Array(Box::new(self.0)))
+  }
+
   pub(crate) fn and(self, other: Self) -> Self {
     Self(Repr::And(Box::new(self.0), Box::new(other.0)))
   }
@@ -127,6 +131,8 @@ enum Repr {
   /// separate from [`Prim::Object`]
   Field(Field),
   Len(usize),
+  /// separate from [`Prim::Array`]
+  Array(Box<Repr>),
   And(Box<Repr>, Box<Repr>),
   Or(Box<Repr>, Box<Repr>),
   Not(Box<Repr>),
@@ -141,6 +147,11 @@ impl Repr {
         ty::logic::and(tys, ty, obj_ty)
       }
       Repr::Len(n) => ty::logic::with_len(tys, ty, n),
+      Repr::Array(repr) => {
+        let elem = repr.apply_to(tys, ty::Ty::ANY);
+        let ary = tys.get(ty::Data::Array(ty::Array::new(elem)));
+        ty::logic::and(tys, ty, ary)
+      }
       Repr::And(lhs, rhs) => {
         // apply both
         let ty = lhs.apply_to(tys, ty);
@@ -167,8 +178,10 @@ impl Repr {
         let obj_ty = f.into_ty(tys);
         ty::logic::minus(tys, ty, obj_ty)
       }
-      // ignore
-      Repr::Len(_) => ty,
+      // ignore:
+      // 1. for Len, it's a bit odd to want to assert the length is *not* a certain known number
+      // 2. for Array, we would do apply_not with any but that likely would be too extreme
+      Repr::Len(_) | Repr::Array(_) => ty,
       // de morgan's laws: !(a && b) == !a || !b. see the Or case from apply_to
       Repr::And(lhs, rhs) => {
         let t1 = lhs.apply_not(tys, ty);

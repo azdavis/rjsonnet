@@ -8,6 +8,7 @@ Things under "main" are not released yet.
 - Improve object flow typing with `std.length`.
 - Support `std.objectHasEx` in flow typing.
 - Remove what little support we had for named arguments in flow typing.
+- Support flow typing for array element types with `std.all(std.map(..., xs))`.
 
 ## v0.7.8
 
