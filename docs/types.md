@@ -142,22 +142,122 @@ function(x)
 ##             ^ type: any
 ```
 
-The supported conditional tests on some expression `expr` are:
+For flow typing, rjsonnet understands how the runtime behavior of certain expressions depends on the types of values, and thus uses that information to infer static types. We call these certain expressions the "flow tests".
 
-- `std.isTYPE(expr)`, where `TYPE` is one of `Number`, `String`, `Boolean`, `Array`, `Object`, or `Function`
-- `std.type(expr) == STR`, where `STR` is one of `"number"`, `"string"`, `"boolean"`, `"array"`, `"object"`, `"function"`, or `"null"`
+These flow tests tests are the same ones supported in `assert`s, which, when at the very beginning of a function, serve as type annotations for the function parameters.
+
+These flow tests affect the static types of expressions which are either themselves variables, or a chain of field subscripts with known field names ending in a variable. Like these:
+
+- `x`
+- `x.a`
+- `x["b"]["c"].d.e`
+
+Many of the flow tests involve certain `std` functions. Note that we only support passing positional arguments for these functions for the purposes of the flow tests. That is, if you pass named parameters, it'll still work at runtime, but no flow typing information will be inferred statically.
+
+The supported flow tests are as follows.
+
+### Unary functions returning `boolean`
+
+- `std.isArray`
+- `std.isBoolean`
+- `std.isNumber`
+- `std.isObject`
+- `std.isString`
+- `std.isFunction`
+- `std.isEven`
+- `std.isOdd`
+- `std.isInteger`
+- `std.isDecimal`
+
+### `std.type`
+
+Similar to `std.isArray`, etc, we also support `std.type(expr) == STR`, where `STR` is one of the possible return values of that function, which are:
+
+- `"number"`
+- `"string"`
+- `"boolean"`
+- `"array"`
+- `"object"`
+- `"function"`
+- `"null"`
+
+### Field membership
+
+These check for field membership on objects:
+
 - `STR in expr`, where `STR` is a literal string
 - `std.objectHas(expr, STR)`, where `STR` is a literal string
 - `std.objectHasAll(expr, STR)`, where `STR` is a literal string
 - `std.objectHasEx(expr, STR, hidden)`, where `STR` is a literal string and `hidden` is an expression
-- `std.length(x) == NUM` where `NUM` is a literal number
-- `expr == LIT`, where `LIT` is a literal
-- `!a`, where `a` is a test
-- `a && b`, where `a` and `b` are tests
-- `a || b`, where `a` and `b` are tests
 
-`expr` must be a chain (possibly length 0) of object field subscripts with known field names, ending with a variable. For example, expr could be a variable `x`, or a field-get `x.y`, or a 2-chained field get `x["y"].z`, etc.
+### Length
 
-Support for passing named arguments to the std functions in the conditional tests is minimal.
+`std.length(x) == NUM`, where `NUM` is a literal number, can be used on objects and functions.
 
-These conditional tests are the same ones supported in `assert`s, which, when at the very beginning of a function, serve as type annotations for the function parameters.
+For objects, if `NUM` is the number of known fields, the object will then be marked as having no unknown fields.
+
+For functions, if the function's argument count was not known before, it will be known after.
+
+### Array element types
+
+`std.all(std.map(elem_test, expr))` checks that `expr` is an array whose element type is given by `elem_test`.
+
+`elem_test` can be either:
+
+- One of the unary functions returning `boolean` listed as a flow test, but NOT called on anything
+- A lambda function `function(x) a`, where `x` is a variable name and `a` is a flow test on `x`
+
+```jsonnet
+function(xs)
+  assert std.isArray(xs);
+  if std.all(std.map(std.isNumber, xs)) then
+    std.sum(xs)
+##          ^^ type: array[number]
+  else if std.all(std.map(function(x) std.isString(x) || std.isObject(x), xs)) then
+    std.length(xs) + 1
+##             ^^ type: array[string | object]
+  else
+    std.length(xs) + 2
+##             ^^ type: array[any]
+```
+
+### Comparison to literals
+
+`expr == LIT`, where `LIT` is a literal, will infer that `expr` is the type of `LIT`.
+
+### "And" of two flow tests
+
+`a && b`, where `a` and `b` are flow tests, chains together the tests `a` and `b`. This is similar to if we had done the tests one after another:
+
+- `if a && b then ...` is like `if a then if b then ...`
+- `assert a && b; ...` is like `assert a; assert b; ...`
+
+### "Or" of two flow tests
+
+`a || b`, where `a` and `b` are flow tests, tests if either `a` or `b` is true. This often leads to union types:
+
+```jsonnet
+function(x)
+  if std.isString(x) || std.isNumber(x) then
+    x
+##  ^ type: string | number
+```
+
+### "Not" of a flow test
+
+`!a`, where `a` is a flow test, negates the meaning of the test. This is useful for e.g. `expr != null`, which can narrow away the null-ness of a union type.
+
+This works because `a != b` desugars to `!(a == b)`, and `expr == LIT` is a supported test.
+
+The not-ness of a flow test is also reflected in the `else`-branch of `if` expressions:
+
+```jsonnet
+function(x)
+  assert std.isNumber(x) || x == null;
+  if x == null then
+##   ^ type: null | number
+    3
+  else
+    x
+##  ^ type: number
+```
