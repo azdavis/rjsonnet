@@ -6,7 +6,7 @@ rjsonnet supports type inference, including across imported files, and on local 
 
 The trickiest part of type inference without type annotations is handling function parameters.
 
-Contrary to other languages like OCaml, Haskell, and Standard ML, rjsonnet does not perform advanced Damas-Hindley-Milner-style type inference on function parameter types. We instead assume function parameters have `any` type.
+Contrary to other languages like [OCaml][ocaml], [Haskell][haskell], and Standard ML, rjsonnet does not perform advanced [Damas-Hindley-Milner][dhm]-style type inference on function parameter types. We instead assume function parameters have `any` type.
 
 However, you can "annotate" a function's parameter's types with `assert`s like this:
 
@@ -184,7 +184,7 @@ Although we don't introduce new syntax to the source language, we do use a certa
 
 `any` is the "type" of things that we don't know the type of.
 
-This is like `any` in TypeScript or `T.untyped` in Sorbet, a Ruby type checker.
+This is like [`any`][ts-any] in [TypeScript][ts] or [`T.untyped`][t-untyped] in [Sorbet][sorbet], a Ruby type checker.
 
 ### Primitive types
 
@@ -240,7 +240,7 @@ If a union type contains both `true` and `false`, instead of showing the type as
 
 Order does not matter in union types. So `T1 | T2` is the same as `T2 | T1`.
 
-`never` is the union of 0 types, aka the empty union type. It is a type with no values. This is the type of `error` expressions.
+`never` is the union of zero types, aka the empty union type. It is a type with no values. This is the type of `error` expressions.
 
 ### Function types
 
@@ -261,3 +261,11 @@ Union types bind stronger than function types. This means 1 and 2 below are equi
 1. `(x: boolean) => number | string`
 2. `(x: boolean) => (number | string)`
 3. `((x: boolean) => number) | string`
+
+[dhm]: https://bernsteinbear.com/blog/type-inference/
+[sorbet]: https://sorbet.org/
+[ts]: https://www.typescriptlang.org/
+[ts-any]: https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#any
+[t-untyped]: https://sorbet.org/docs/untyped
+[ocaml]: https://ocaml.org/
+[haskell]: https://www.haskell.org/
