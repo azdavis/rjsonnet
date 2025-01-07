@@ -56,9 +56,9 @@ function(x)
 
 For flow typing, rjsonnet understands how the runtime behavior of certain expressions depends on the types of values, and thus uses that information to infer static types. We call these certain expressions the "flow tests".
 
-These flow tests tests are the same ones supported in `assert`s, which, when at the very beginning of a function, serve as type annotations for the function parameters.
+These flow tests are the same ones supported in `assert`s, which, when at the very beginning of a function, serve as type annotations for the function parameters.
 
-These flow tests affect the static types of expressions which are either themselves variables, or a chain of field subscripts with known field names ending in a variable. Like these:
+They affect the static types of expressions which are either variables, or a chain of field subscripts with known field names ending in a variable. Like these:
 
 - `x`
 - `x.a`
@@ -92,6 +92,10 @@ Similar to `std.isArray`, etc, we also support `std.type(expr) == STR`, where `S
 - `"object"`
 - `"function"`
 - `"null"`
+
+### Comparison to literals
+
+`expr == LIT`, where `LIT` is a literal, will infer that `expr` is the type of `LIT`.
 
 ### Field membership
 
@@ -133,18 +137,14 @@ function(xs)
 ##             ^^ type: array[any]
 ```
 
-### Comparison to literals
-
-`expr == LIT`, where `LIT` is a literal, will infer that `expr` is the type of `LIT`.
-
-### "And" of two flow tests
+### Conjunction
 
 `a && b`, where `a` and `b` are flow tests, chains together the tests `a` and `b`. This is similar to if we had done the tests one after another:
 
 - `if a && b then ...` is like `if a then if b then ...`
 - `assert a && b; ...` is like `assert a; assert b; ...`
 
-### "Or" of two flow tests
+### Disjunction
 
 `a || b`, where `a` and `b` are flow tests, tests if either `a` or `b` is true. This often leads to union types:
 
@@ -155,7 +155,7 @@ function(x)
 ##  ^ type: string | number
 ```
 
-### "Not" of a flow test
+### Negation
 
 `!a`, where `a` is a flow test, negates the meaning of the test. This is useful for e.g. `expr != null`, which can narrow away the null-ness of a union type.
 
@@ -174,9 +174,9 @@ function(x)
 ##  ^ type: number
 ```
 
-## Syntax
+## Type syntax
 
-Although we don't introduce new syntax to the source language, we do use a certain syntax to report types to the user.
+Although we don't introduce new syntax for types to the Jsonnet language, we do use a certain syntax to report types to the user.
 
 ### Unknown type
 
