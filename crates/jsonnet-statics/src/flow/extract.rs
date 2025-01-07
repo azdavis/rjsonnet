@@ -48,31 +48,26 @@ pub(crate) fn get_cond(scope: &Scope, ar: &ExprArena, ac: &mut Facts, cond: Expr
   match &ar[cond] {
     ExprData::Call { func: Some(func), positional: pos, named } => {
       let Some(func_name) = std_field(scope, ar, *func) else { return };
-      match *func_name {
-        Str::isArray => get_is_ty(ar, ac, pos, named, Fact::array(Totality::Total)),
-        Str::isBoolean => get_is_ty(ar, ac, pos, named, Fact::boolean()),
-        Str::isNumber => get_is_ty(ar, ac, pos, named, Fact::number(Totality::Total)),
-        Str::isObject => get_is_ty(ar, ac, pos, named, Fact::object(Totality::Total)),
-        Str::isString => get_is_ty(ar, ac, pos, named, Fact::string(Totality::Total)),
-        Str::isFunction => get_is_ty(ar, ac, pos, named, Fact::function()),
-        Str::isEven | Str::isOdd | Str::isInteger | Str::isDecimal => {
-          get_is_ty(ar, ac, pos, named, Fact::number(Totality::Partial));
+      if let Some(fact) = unary_std_fn_fact(func_name) {
+        get_is_ty(ar, ac, pos, named, fact);
+      } else {
+        match *func_name {
+          Str::objectHas | Str::objectHasAll => {
+            // TODO handle named params (including mixed pos/named)
+            let (&[Some(obj), Some(field)], []) = (&pos[..], &named[..]) else { return };
+            let ExprData::Prim(Prim::String(field)) = &ar[field] else { return };
+            let fact = Fact::has_field(field.clone());
+            add_fact(ar, ac, obj, fact);
+          }
+          Str::objectHasEx => {
+            // TODO handle named params (including mixed pos/named)
+            let (&[Some(obj), Some(field), Some(_)], []) = (&pos[..], &named[..]) else { return };
+            let ExprData::Prim(Prim::String(field)) = &ar[field] else { return };
+            let fact = Fact::has_field(field.clone());
+            add_fact(ar, ac, obj, fact);
+          }
+          _ => {}
         }
-        Str::objectHas | Str::objectHasAll => {
-          // TODO handle named params (including mixed pos/named)
-          let (&[Some(obj), Some(field)], []) = (&pos[..], &named[..]) else { return };
-          let ExprData::Prim(Prim::String(field)) = &ar[field] else { return };
-          let fact = Fact::has_field(field.clone());
-          add_fact(ar, ac, obj, fact);
-        }
-        Str::objectHasEx => {
-          // TODO handle named params (including mixed pos/named)
-          let (&[Some(obj), Some(field), Some(_)], []) = (&pos[..], &named[..]) else { return };
-          let ExprData::Prim(Prim::String(field)) = &ar[field] else { return };
-          let fact = Fact::has_field(field.clone());
-          add_fact(ar, ac, obj, fact);
-        }
-        _ => {}
       }
     }
     // the cond is itself another if expression.
@@ -117,6 +112,20 @@ pub(crate) fn get_cond(scope: &Scope, ar: &ExprArena, ac: &mut Facts, cond: Expr
     }
     _ => {}
   }
+}
+
+fn unary_std_fn_fact(fn_name: &Str) -> Option<Fact> {
+  let ret = match *fn_name {
+    Str::isArray => Fact::array(Totality::Total),
+    Str::isBoolean => Fact::boolean(),
+    Str::isNumber => Fact::number(Totality::Total),
+    Str::isObject => Fact::object(Totality::Total),
+    Str::isString => Fact::string(Totality::Total),
+    Str::isFunction => Fact::function(),
+    Str::isEven | Str::isOdd | Str::isInteger | Str::isDecimal => Fact::number(Totality::Partial),
+    _ => return None,
+  };
+  Some(ret)
 }
 
 /// Collects facts from call to a `std.isTYPE` function.
