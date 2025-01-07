@@ -578,8 +578,7 @@ impl lang_srv_state::State for St {
       if jsonnet_syntax::ast::Object::can_cast(node.kind()) {
         return node.parent();
       }
-      if jsonnet_syntax::ast::Bind::can_cast(node.kind()) {
-        let bind = jsonnet_syntax::ast::Bind::cast(node)?;
+      if let Some(bind) = jsonnet_syntax::ast::Bind::cast(node.clone()) {
         return if let Some(paren_params) = bind.paren_params() {
           // NOTE: this depends on us knowing that when we have a local function with the syntax
           // sugar like local f(x) = x + 1, we put the syntax node pointer on the paren params.
