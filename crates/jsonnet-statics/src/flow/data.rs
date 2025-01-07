@@ -124,6 +124,7 @@ impl Fact {
 #[derive(Debug, Clone)]
 enum Repr {
   Prim(Prim, Totality),
+  /// separate from [`Prim::Object`]
   Field(Field),
   Len(usize),
   And(Box<Repr>, Box<Repr>),
