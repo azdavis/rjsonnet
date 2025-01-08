@@ -1,7 +1,11 @@
 {
-  "`local` expr": {
+  "`local` snippet": {
     "prefix": "local",
-    "body": ["local ${1:var} = ${2:expr};", "${3:expr}"]
+    "body": ["local ${1:var} = ${2:expr};"]
+  },
+  "`assert` snippet": {
+    "prefix": "assert",
+    "body": ["assert ${1:expr};"]
   },
   "`if` expr": {
     "prefix": "if",
