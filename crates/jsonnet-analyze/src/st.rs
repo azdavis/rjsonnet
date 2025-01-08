@@ -574,28 +574,56 @@ impl lang_srv_state::State for St {
       let root = arts.syntax.root.clone().into_ast()?;
       jsonnet_syntax::node_token(root.syntax(), ts)?
     };
-    let node = tok.parent().and_then(|node| {
-      if jsonnet_syntax::ast::Object::can_cast(node.kind()) {
-        return node.parent();
-      }
-      if let Some(bind) = jsonnet_syntax::ast::Bind::cast(node.clone()) {
-        return if let Some(paren_params) = bind.paren_params() {
-          // NOTE: this depends on us knowing that when we have a local function with the syntax
-          // sugar like local f(x) = x + 1, we put the syntax node pointer on the paren params.
-          Some(paren_params.syntax().clone())
+    let (node, param_pos) = match tok.parent() {
+      None => (None, None),
+      Some(node) => {
+        if jsonnet_syntax::ast::Object::can_cast(node.kind()) {
+          (node.parent(), None)
+        } else if jsonnet_syntax::ast::Param::can_cast(node.kind()) {
+          let parent = node.parent();
+          let pos = parent.as_ref().and_then(|parent| {
+            parent.children().position(|child| child.text_range() == node.text_range())
+          });
+          (parent, pos)
+        } else if let Some(bind) = jsonnet_syntax::ast::Bind::cast(node.clone()) {
+          if let Some(paren_params) = bind.paren_params() {
+            // NOTE: this depends on us knowing that when we have a local function with the syntax
+            // sugar like local f(x) = x + 1, we put the syntax node pointer on the paren params.
+            (Some(paren_params.syntax().clone()), None)
+          } else {
+            (bind.expr().map(|e| e.syntax().clone()), None)
+          }
         } else {
-          Some(bind.expr()?.syntax().clone())
-        };
+          (Some(node), None)
+        }
       }
-      Some(node)
+    };
+    // need this because we attach stuff to the syntax node pointer for paren params for desugared
+    // functions, but we do NOT do that for functions that were actually functions in the concrete
+    // syntax.
+    let paren_params_parent = node.as_ref().and_then(|x| {
+      if jsonnet_syntax::ast::ParenParams::can_cast(x.kind()) {
+        x.parent()
+      } else {
+        None
+      }
     });
-    let expr = node.and_then(|node| {
+    let expr = [node, paren_params_parent].into_iter().flatten().find_map(|node| {
       let ptr = jsonnet_syntax::ast::SyntaxNodePtr::new(&node);
       arts.syntax.pointers.get_idx(ptr)
     });
     let ty = expr.and_then(|expr| {
       let wa = &self.with_fs.artifacts;
-      let ty = arts.expr_tys.get(&expr)?;
+      let &ty = arts.expr_tys.get(&expr)?;
+      let ty = param_pos
+        .and_then(|pos| {
+          let func = wa.statics.as_fn(ty)?;
+          let (params, _) = func.parts();
+          let params = params?;
+          let param = params.get(pos)?;
+          Some(param.ty)
+        })
+        .unwrap_or(ty);
       let ty = ty.display(self.multi_line, &wa.statics, None, &wa.syntax.strings);
       Some(format!("type:\n```jsonnet-ty\n{ty}\n```"))
     });

@@ -298,7 +298,6 @@ fn escaped_field() {
 }
 
 #[test]
-#[should_panic = "no hover"]
 fn param_function() {
   JsonnetInput::manifest_or_fn(
     r#"
@@ -312,7 +311,6 @@ function(x)
 }
 
 #[test]
-#[should_panic = "no hover"]
 fn param_local() {
   JsonnetInput::manifest_or_fn(
     r#"
@@ -327,7 +325,6 @@ local f(x) =
 }
 
 #[test]
-#[should_panic = "no hover"]
 fn param_obj() {
   JsonnetInput::manifest_or_fn(
     r#"
