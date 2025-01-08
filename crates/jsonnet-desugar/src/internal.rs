@@ -16,6 +16,10 @@ pub(crate) fn get_expr(
   let expr = expr?;
   let ptr = ast::SyntaxNodePtr::new(expr.syntax());
   let data = match expr {
+    ast::Expr::ExprHole(_) => {
+      st.err(&expr, error::Kind::Hole);
+      return None;
+    }
     ast::Expr::ExprNull(_) => ExprData::Prim(Prim::Null),
     ast::Expr::ExprTrue(_) => ExprData::Prim(Prim::Bool(true)),
     ast::Expr::ExprFalse(_) => ExprData::Prim(Prim::Bool(false)),

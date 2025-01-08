@@ -287,3 +287,15 @@ fn invalid_super() {
   )
   .check();
 }
+
+#[test]
+fn hole() {
+  JsonnetInput::pre_eval_error(
+    r#"
+local f(x) = ... - x;
+##           ^^^ diagnostic: hole
+f(3) + 4
+"#,
+  )
+  .check();
+}

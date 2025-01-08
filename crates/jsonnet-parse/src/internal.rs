@@ -33,6 +33,10 @@ fn expr_prec(p: &mut Parser<'_>, min_prec: Prec) -> Option<Exited> {
     // precedence issues. clearly, expressions like `null` and `false` are this way, but
     // interestingly so are object literals and imports. note that objects and arrays may contain
     // sub-expressions that are not atomic, but the overall expression is atomic.
+    SK::DotDotDot => {
+      p.bump();
+      SK::ExprHole
+    }
     SK::NullKw => {
       p.bump();
       SK::ExprNull

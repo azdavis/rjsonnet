@@ -165,7 +165,6 @@ impl ExprData {
         }
       }
       ExprData::Import { path, .. } => *path = subst.get_path_id(*path),
-
       ExprData::Array(_)
       | ExprData::Subscript { .. }
       | ExprData::If { .. }

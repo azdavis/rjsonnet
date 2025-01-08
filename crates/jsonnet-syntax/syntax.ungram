@@ -1,7 +1,8 @@
 Root = Expr
 
 Expr =
-  ExprNull
+  ExprHole
+| ExprNull
 | ExprTrue
 | ExprFalse
 | ExprSelf
@@ -26,6 +27,7 @@ Expr =
 | ExprImport
 | ExprError
 
+ExprHole = '...'
 ExprNull = 'null'
 ExprTrue = 'true'
 ExprFalse = 'false'
