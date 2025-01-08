@@ -293,7 +293,7 @@ fn hole() {
   JsonnetInput::pre_eval_error(
     r#"
 local f(x) = ... - x;
-##           ^^^ diagnostic: hole
+##           ^^^ diagnostic: found placeholder hole
 f(3) + 4
 "#,
   )
