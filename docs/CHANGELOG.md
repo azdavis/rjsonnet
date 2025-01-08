@@ -8,6 +8,8 @@ Things under "main" are not released yet.
 - Improve typing for:
   - `std.reverse`
   - `std.filter`
+- Allow hovering over function parameters to see their type.
+- Allow writing `...` as a placeholder.
 
 ## v0.8.0
 
