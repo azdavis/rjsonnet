@@ -119,6 +119,17 @@ fn maybe_extra_checks(
       let elem = st.tys.get(ty::Data::Object(obj));
       Some(st.tys.get(ty::Data::Array(ty::Array::new(elem))))
     }
+    StdFn::filter => {
+      let &(func, _) = params.get(&Id::func)?;
+      let &(_, arr_ty) = params.get(&Id::arr)?;
+      // TODO handle unions
+      let &ty::Data::Array(arr) = st.tys.data(arr_ty) else { return None };
+      let mut elem = arr.elem;
+      if let Some(fact) = flow::extract::get_predicate(&st.scope, ar, func) {
+        fact.apply_to(&mut st.tys, &mut elem);
+      }
+      Some(st.tys.get(ty::Data::Array(ty::Array::new(elem))))
+    }
     StdFn::map => {
       let &(_, func_ty) = params.get(&Id::func)?;
       let &(arr_expr, arr_ty) = params.get(&Id::arr)?;
@@ -165,17 +176,6 @@ fn maybe_extra_checks(
       let &(_, arr_ty) = params.get(&Id::arr)?;
       // is still a set (if it was before)
       Some(arr_ty)
-    }
-    StdFn::filter => {
-      let &(_, arr_ty) = params.get(&Id::arr)?;
-      // TODO handle unions
-      let &ty::Data::Array(arr) = st.tys.data(arr_ty) else { return None };
-      let &(func, _) = params.get(&Id::func)?;
-      let mut elem = arr.elem;
-      if let Some(fact) = flow::extract::get_predicate(&st.scope, ar, func) {
-        fact.apply_to(&mut st.tys, &mut elem);
-      }
-      Some(st.tys.get(ty::Data::Array(ty::Array::new(elem))))
     }
     StdFn::set => {
       let &(_, arr_ty) = params.get(&Id::arr)?;
