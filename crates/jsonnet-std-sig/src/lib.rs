@@ -2196,10 +2196,10 @@ pub const FNS: [Fn; 126] = [
       Raises if `arr` is not an array, or `arr` contains non-boolean values.
     "},
     examples: &[
-      "std.all([true, true]) == true",
-      "std.all([true, false]) == false",
-      "std.all([true, true, true, false, true]) == false",
-      "std.all([]) == true",
+      "std.all([true, true])",
+      "std.all([])",
+      "!std.all([true, false])",
+      "!std.all([true, true, true, false, true])",
     ],
   },
   Fn {
@@ -2214,10 +2214,10 @@ pub const FNS: [Fn; 126] = [
       Raises if `arr` is not an array, or `arr` contains non-boolean values.
     "},
     examples: &[
-      "std.any([false, false]) == false",
-      "std.any([true, false]) == true",
-      "std.any([false, false, false, true, false]) == true",
-      "std.any([]) == false",
+      "std.any([true, false])",
+      "std.any([false, false, false, true, false])",
+      "!std.any([false, false])",
+      "!std.any([])",
     ],
   },
   Fn {
