@@ -416,3 +416,25 @@ function(xs)
   )
   .check();
 }
+
+#[test]
+fn filter_map() {
+  JsonnetInput::manifest_or_fn(
+    r#"
+local inc(x) =
+##    ^^^ type: (x: number) => number
+  assert std.isNumber(x);
+  x + 1;
+
+function(xs)
+  assert std.isArray(xs);
+  assert std.all(std.map(function(x) std.isString(x) || std.isNumber(x), xs));
+##      vv type: array[number]
+  local ys = std.filterMap(std.isNumber, inc, xs);
+##                                            ^^ type: array[string | number]
+  std.filterMap(function(x) x, inc, xs) + ys
+##                                  ^^ diagnostic: incompatible types; expected `number`; found `string`
+"#,
+  )
+  .check();
+}

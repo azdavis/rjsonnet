@@ -122,13 +122,7 @@ fn maybe_extra_checks(
     StdFn::filter => {
       let &(func, _) = params.get(&Id::func)?;
       let &(_, arr_ty) = params.get(&Id::arr)?;
-      // TODO handle unions
-      let &ty::Data::Array(arr) = st.tys.data(arr_ty) else { return None };
-      let mut elem = arr.elem;
-      if let Some(fact) = flow::extract::get_predicate(&st.scope, ar, func) {
-        fact.apply_to(&mut st.tys, &mut elem);
-      }
-      Some(st.tys.get(ty::Data::Array(ty::Array::new(elem))))
+      check_filter(st, ar, func, arr_ty)
     }
     StdFn::map => {
       let &(_, func_ty) = params.get(&Id::func)?;
@@ -136,8 +130,10 @@ fn maybe_extra_checks(
       check_map(st, func_ty, arr_expr, arr_ty)
     }
     StdFn::filterMap => {
+      let &(filter_func, _) = params.get(&Id::filter_func)?;
       let &(_, map_func_ty) = params.get(&Id::map_func)?;
       let &(arr_expr, arr_ty) = params.get(&Id::arr)?;
+      let arr_ty = check_filter(st, ar, filter_func, arr_ty).unwrap_or(arr_ty);
       check_map(st, map_func_ty, arr_expr, arr_ty)
     }
     StdFn::mod_ => {
@@ -340,6 +336,21 @@ fn check_map(
   let param_arr_ty = st.tys.get(ty::Data::Array(ty::Array::new(func_param.ty)));
   st.unify(arr_expr, param_arr_ty, arr_ty);
   Some(st.tys.get(ty::Data::Array(ty::Array::new(func_ret_ty))))
+}
+
+fn check_filter(
+  st: &mut st::St<'_>,
+  ar: &ExprArena,
+  func: ExprMust,
+  arr_ty: ty::Ty,
+) -> Option<ty::Ty> {
+  // TODO handle unions
+  let &ty::Data::Array(arr) = st.tys.data(arr_ty) else { return None };
+  let mut elem = arr.elem;
+  if let Some(fact) = flow::extract::get_predicate(&st.scope, ar, func) {
+    fact.apply_to(&mut st.tys, &mut elem);
+  }
+  Some(st.tys.get(ty::Data::Array(ty::Array::new(elem))))
 }
 
 fn length_ok(st: &st::St<'_>, ty: ty::Ty) -> bool {
