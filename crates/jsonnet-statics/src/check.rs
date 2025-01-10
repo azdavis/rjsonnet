@@ -208,7 +208,6 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
         BinaryOp::Eq => {
           must_reachable(st, expr, lhs_ty);
           must_reachable(st, expr, rhs_ty);
-          st.unify(rhs.unwrap_or(expr), lhs_ty, rhs_ty);
           ty::Ty::BOOLEAN
         }
         BinaryOp::Lt | BinaryOp::LtEq | BinaryOp::Gt | BinaryOp::GtEq => {
