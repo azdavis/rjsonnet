@@ -157,7 +157,7 @@ fn maybe_extra_checks(
       let &(arr_expr, arr_ty) = params.get(&Id::arr)?;
       // TODO handle unions
       let &ty::Data::Array(arr) = st.tys.data(arr_ty) else { return None };
-      st.unify(arr_expr, ty::Ty::STRING_OR_ARRAY_ANY, arr.elem);
+      st.unify(arr_expr, ty::Ty::STRING_OR_ARRAY, arr.elem);
       st.unify(arr_expr, arr.elem, sep_ty);
       Some(arr.elem)
     }

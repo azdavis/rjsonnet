@@ -430,7 +430,7 @@ impl<'a> MutStore<'a> {
         Prim::Number => Ty::NUMBER,
       },
       Data::Fn(Fn::Std(f)) => Ty::std_fn(f),
-      Data::Fn(Fn::Unknown) => Ty::UNKNOWN_FN,
+      Data::Fn(Fn::Unknown) => Ty::FUNCTION,
       // go directly to get inner.
       Data::Array(_) | Data::Object(_) | Data::Fn(Fn::Regular(_) | Fn::StdParam(_)) => {
         self.get_inner(data)

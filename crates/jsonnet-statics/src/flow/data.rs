@@ -222,8 +222,8 @@ impl Prim {
       Prim::False => ty::Ty::FALSE,
       Prim::Number => ty::Ty::NUMBER,
       Prim::String => ty::Ty::STRING,
-      Prim::Function => ty::Ty::UNKNOWN_FN,
-      Prim::Array => ty::Ty::ARRAY_ANY,
+      Prim::Function => ty::Ty::FUNCTION,
+      Prim::Array => ty::Ty::ARRAY,
       Prim::Object => ty::Ty::OBJECT,
     }
   }
