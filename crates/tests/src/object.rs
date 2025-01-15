@@ -242,7 +242,7 @@ local f(x) =
   x;
 
 function(y)
-  assert y == null || (std.isObject(y) && "s" in y);
+  assert y == null || (std.isObject(y) && "foo" in y);
   f(y)
 "#,
   )
