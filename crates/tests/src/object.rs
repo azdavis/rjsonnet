@@ -240,10 +240,12 @@ fn union() {
 local f(x) =
   assert x == null || std.isObject(x);
   x;
+##^ type: null | object
 
 function(y)
   assert y == null || (std.isObject(y) && "foo" in y);
   f(y)
+##  ^ type: null | { foo: any, ... }
 "#,
   )
   .check();
