@@ -234,7 +234,6 @@ assert std.objectHas(obj, "a");
 }
 
 #[test]
-#[should_panic = "incompatible types"]
 fn union() {
   JsonnetInput::manifest_or_fn(
     r#"

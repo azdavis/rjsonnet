@@ -5,6 +5,7 @@ Things under "main" are not released yet.
 ## main
 
 - Improve signature help argument matching.
+- Improve checking compatibility for union types.
 
 ## v0.8.1
 
