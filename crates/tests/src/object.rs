@@ -232,21 +232,3 @@ assert std.objectHas(obj, "a");
   )
   .check();
 }
-
-#[test]
-fn union() {
-  JsonnetInput::manifest_or_fn(
-    r#"
-local f(x) =
-  assert x == null || std.isObject(x);
-  x;
-##^ type: null | object
-
-function(y)
-  assert y == null || (std.isObject(y) && "foo" in y);
-  f(y)
-##  ^ type: null | { foo: any, ... }
-"#,
-  )
-  .check();
-}

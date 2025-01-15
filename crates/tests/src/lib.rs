@@ -22,6 +22,7 @@ mod repo;
 mod smoke;
 mod std_lib;
 mod string;
+mod union;
 mod unreachable;
 mod unused;
 mod website;
