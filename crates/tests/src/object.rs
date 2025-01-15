@@ -232,3 +232,20 @@ assert std.objectHas(obj, "a");
   )
   .check();
 }
+
+#[test]
+#[should_panic = "incompatible types"]
+fn union() {
+  JsonnetInput::manifest_or_fn(
+    r#"
+local f(x) =
+  assert x == null || std.isObject(x);
+  x;
+
+function(y)
+  assert y == null || (std.isObject(y) && "s" in y);
+  f(y)
+"#,
+  )
+  .check();
+}
