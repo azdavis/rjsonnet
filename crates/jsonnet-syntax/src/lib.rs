@@ -3,6 +3,7 @@
 #![allow(missing_debug_implementations, missing_docs)]
 
 use ast::AstNode as _;
+use token::Triviable as _;
 
 #[allow(clippy::pedantic, missing_debug_implementations, missing_docs)]
 pub mod ast {
@@ -72,7 +73,11 @@ pub fn node_token_for_arg(
   syntax: &kind::SyntaxNode,
   offset: rowan::TextSize,
 ) -> Option<kind::SyntaxToken> {
-  node_token_inner(syntax, offset, priority_for_arg)
+  let mut res = node_token_inner(syntax, offset, priority_for_arg)?;
+  while res.kind().is_trivia() {
+    res = res.prev_token()?;
+  }
+  Some(res)
 }
 
 fn node_token_inner(

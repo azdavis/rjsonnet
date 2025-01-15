@@ -2,6 +2,10 @@
 
 Things under "main" are not released yet.
 
+## main
+
+- Improve signature help argument matching.
+
 ## v0.8.1
 
 - Improve flow typing for variables with function type.
