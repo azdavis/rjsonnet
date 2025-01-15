@@ -852,20 +852,20 @@ impl lang_srv_state::State for St {
 }
 
 fn get_cur_param(
-  mut tmp: jsonnet_syntax::kind::SyntaxNode,
+  mut arg: jsonnet_syntax::kind::SyntaxNode,
   tok: &jsonnet_syntax::kind::SyntaxToken,
   call: &jsonnet_syntax::ast::ExprCall,
   func: &jsonnet_ty::Fn,
   str_ar: &jsonnet_expr::StrArena,
 ) -> Option<usize> {
   let arg = loop {
-    match jsonnet_syntax::ast::Arg::cast(tmp.clone()) {
+    match jsonnet_syntax::ast::Arg::cast(arg.clone()) {
       Some(x) => break x,
-      None => match tmp.parent() {
-        Some(x) => tmp = x,
+      None => match arg.parent() {
+        Some(x) => arg = x,
         None => return matches!(tok.kind(), SyntaxKind::LRound).then_some(0),
       },
-    };
+    }
   };
   if let Some(x) = arg.id_eq() {
     let id = x.id()?;
