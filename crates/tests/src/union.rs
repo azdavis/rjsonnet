@@ -97,7 +97,7 @@ function(y)
 
 #[test]
 fn obj_field_permissive_any() {
-  // allowed because  any is top AND bot type (unsafe)
+  // allowed because any is top AND bot type (unsafe)
   JsonnetInput::manifest_or_fn(
     r#"
 local f(x) =
