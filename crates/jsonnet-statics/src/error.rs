@@ -291,12 +291,3 @@ impl fmt::Display for Display<'_> {
     }
   }
 }
-
-// impl fmt::Display for MultiLine {
-//   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-//     match self {
-//       MultiLine::MustNot => f.write_str("; "),
-//       MultiLine::May => f.write_str("\n"),
-//     }
-//   }
-// }
