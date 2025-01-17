@@ -176,7 +176,7 @@ impl fmt::Display for Display<'_> {
       Kind::UnusedVar(id, _) => write!(f, "unused variable: `{}`", id.display(self.str_ar)),
       Kind::MissingArg(id, ty) => {
         let id = id.display(self.str_ar);
-        let ty = ty.display(self.multi_line, self.store, None, self.str_ar);
+        let ty = ty.display(MultiLine::MustNot, self.store, None, self.str_ar);
         write!(f, "missing argument: `{id}`")?;
         match self.multi_line {
           MultiLine::MustNot => f.write_str(" ")?,
@@ -191,8 +191,8 @@ impl fmt::Display for Display<'_> {
       }
       Kind::Unify(u) => match u {
         Unify::Incompatible(want, got) => {
-          let want = want.display(self.multi_line, self.store, None, self.str_ar);
-          let got = got.display(self.multi_line, self.store, None, self.str_ar);
+          let want = want.display(MultiLine::MustNot, self.store, None, self.str_ar);
+          let got = got.display(MultiLine::MustNot, self.store, None, self.str_ar);
           f.write_str("incompatible types")?;
           match self.multi_line {
             MultiLine::MustNot => f.write_str("; ")?,
@@ -255,24 +255,24 @@ impl fmt::Display for Display<'_> {
       },
       Kind::Invalid(ty, inv) => match inv {
         Invalid::OrdCmp => {
-          let ty = ty.display(self.multi_line, self.store, None, self.str_ar);
+          let ty = ty.display(MultiLine::MustNot, self.store, None, self.str_ar);
           write!(f, "not a type that can be compared with <, >=, etc: `{ty}`")
         }
         Invalid::Call => {
-          let ty = ty.display(self.multi_line, self.store, None, self.str_ar);
+          let ty = ty.display(MultiLine::MustNot, self.store, None, self.str_ar);
           write!(f, "not a type that can be called: `{ty}`")
         }
         Invalid::Subscript => {
-          let ty = ty.display(self.multi_line, self.store, None, self.str_ar);
+          let ty = ty.display(MultiLine::MustNot, self.store, None, self.str_ar);
           write!(f, "not a type which can be subscripted with `[]` or `.`: `{ty}`")
         }
         Invalid::Length => {
-          let ty = ty.display(self.multi_line, self.store, None, self.str_ar);
+          let ty = ty.display(MultiLine::MustNot, self.store, None, self.str_ar);
           write!(f, "not a type which has length: `{ty}`")
         }
         Invalid::Add(rhs) => {
-          let ty = ty.display(self.multi_line, self.store, None, self.str_ar);
-          let rhs = rhs.display(self.multi_line, self.store, None, self.str_ar);
+          let ty = ty.display(MultiLine::MustNot, self.store, None, self.str_ar);
+          let rhs = rhs.display(MultiLine::MustNot, self.store, None, self.str_ar);
           f.write_str("not a pair of types that can be added with `+`")?;
           match self.multi_line {
             MultiLine::MustNot => f.write_str("; ")?,
