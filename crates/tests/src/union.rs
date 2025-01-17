@@ -3,7 +3,7 @@
 use crate::check::JsonnetInput;
 
 #[test]
-fn more() {
+fn specific() {
   JsonnetInput::manifest_or_fn(
     r#"
 local f(x) =
@@ -21,7 +21,7 @@ function(y)
 }
 
 #[test]
-fn less() {
+fn permissive() {
   JsonnetInput::manifest_or_fn(
     r#"
 local f(x) =
@@ -40,7 +40,7 @@ function(y)
 }
 
 #[test]
-fn obj_more_field() {
+fn obj_specific_field() {
   JsonnetInput::manifest_or_fn(
     r#"
 local f(x) =
@@ -58,7 +58,7 @@ function(y)
 }
 
 #[test]
-fn obj_field_better_ty() {
+fn obj_field_specific_ty() {
   JsonnetInput::manifest_or_fn(
     r#"
 local f(x) =
@@ -76,8 +76,8 @@ function(y)
 }
 
 #[test]
-fn obj_field_worse_ty_any() {
-  // allowed because any is top AND bot type (unsafe)
+fn obj_field_permissive_any() {
+  // allowed because  any is top AND bot type (unsafe)
   JsonnetInput::manifest_or_fn(
     r#"
 local f(x) =
