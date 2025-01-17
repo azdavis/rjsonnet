@@ -2,10 +2,11 @@
 
 Things under "main" are not released yet.
 
-## main
+## v0.8.2
 
 - Improve signature help argument matching.
 - Improve checking compatibility for union types.
+- Improve display of types in diagnostics.
 
 ## v0.8.1
 
