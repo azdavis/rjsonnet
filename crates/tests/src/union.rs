@@ -76,6 +76,26 @@ function(y)
 }
 
 #[test]
+fn obj_field_permissive_ty() {
+  // NOTE the never is not great, not terrible
+  JsonnetInput::manifest_or_fn(
+    r#"
+local f(x) =
+  assert x == null || (std.isObject(x) && std.isString(x.foo));
+  x;
+##^ type: null | { foo: string, ... }
+
+function(y)
+  assert y == null || (std.isObject(y) && (std.isString(y.foo) || std.isNumber(y.foo)));
+##  v diagnostic: incompatible types; expected `null | { foo: string, ... }`; found `{ foo: number, ... }`
+  f(y)
+##  ^ type: null | { foo: string, ... } | { foo: number, ... } | { foo: never, ... }
+"#,
+  )
+  .check();
+}
+
+#[test]
 fn obj_field_permissive_any() {
   // allowed because  any is top AND bot type (unsafe)
   JsonnetInput::manifest_or_fn(
