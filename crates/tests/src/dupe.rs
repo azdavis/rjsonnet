@@ -16,6 +16,19 @@ x
 }
 
 #[test]
+fn local_diff_ty() {
+  JsonnetInput::pre_eval_error(
+    r#"
+##    v diagnostic: unused variable: `x`
+local x = 3, x = "hi";
+##           ^ diagnostic: duplicate variable: `x`
+x
+"#,
+  )
+  .check();
+}
+
+#[test]
 fn object_local() {
   JsonnetInput::pre_eval_error(
     r"
