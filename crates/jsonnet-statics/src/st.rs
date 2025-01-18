@@ -70,8 +70,9 @@ impl<'a> St<'a> {
   }
 
   pub(crate) fn undefine_self_super(&mut self) {
-    self.undefine(Id::self_);
-    self.undefine(Id::super_);
+    // these can never be marked as unused
+    _ = self.scope.undefine(Id::self_);
+    _ = self.scope.undefine(Id::super_);
   }
 
   pub(crate) fn insert_expr_ty(&mut self, expr: ExprMust, ty: ty::Ty) {

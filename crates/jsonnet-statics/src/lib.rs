@@ -18,7 +18,8 @@ pub fn get(mut st: st::St<'_>, ar: &ExprArena, expr: Expr) -> (st::Statics, Loca
   st.scope.define(Id::std, Ty::STD, jsonnet_expr::def::Def::Std);
   st.scope.define(Id::std_unutterable, Ty::STD, jsonnet_expr::def::Def::Std);
   check::get(&mut st, ar, expr);
-  st.undefine(Id::std);
-  st.undefine(Id::std_unutterable);
+  // these can never be marked as unused
+  _ = st.scope.undefine(Id::std);
+  _ = st.scope.undefine(Id::std_unutterable);
   st.finish()
 }
