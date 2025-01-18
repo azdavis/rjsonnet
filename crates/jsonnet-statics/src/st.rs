@@ -58,12 +58,6 @@ impl<'a> St<'a> {
     self.statics.defs.insert(expr, def);
   }
 
-  pub(crate) fn undefine(&mut self, id: Id) {
-    if let Some((e, k)) = self.scope.undefine(id) {
-      self.err(e, error::Kind::UnusedVar(id, k));
-    }
-  }
-
   pub(crate) fn define_self_super(&mut self) {
     self.scope.define(Id::self_, ty::Ty::OBJECT, def::Def::KwIdent);
     self.scope.define(Id::super_, ty::Ty::OBJECT, def::Def::KwIdent);

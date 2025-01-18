@@ -52,7 +52,7 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
       }
       st.undefine_self_super();
       for &(lhs, _) in binds {
-        st.undefine(lhs);
+        undefine(st, lhs);
       }
       st.tys.get(ty::Data::Object(obj))
     }
@@ -65,7 +65,7 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
       st.define_self_super();
       let body_ty = get(st, ar, *body);
       must_reachable(st, expr, body_ty);
-      st.undefine(*id);
+      undefine(st, *id);
       st.undefine_self_super();
       ty::Ty::OBJECT
     }
@@ -124,7 +124,7 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
       define_binds(st, ar, expr, binds, def::ExprDefKindMulti::LocalBind);
       let ty = get(st, ar, *body);
       for &(bind, _) in binds {
-        st.undefine(bind);
+        undefine(st, bind);
       }
       ty
     }
@@ -161,7 +161,7 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
       let body_ty = get(st, ar, *body);
       let mut fn_params = Vec::<ty::Param>::with_capacity(params.len());
       for &(id, rhs) in params {
-        st.undefine(id);
+        undefine(st, id);
         let Some(&ty) = param_tys.get(&id) else {
           always!(false, "should have gotten fn param ty: {id:?}");
           continue;
@@ -394,6 +394,12 @@ fn define_binds(
     let ty = get(st, ar, rhs);
     always!(bound_ids.contains(&lhs), "should have just defined: {lhs:?}");
     st.scope.refine(lhs, ty);
+  }
+}
+
+fn undefine(st: &mut st::St<'_>, id: Id) {
+  if let Some((e, k)) = st.scope.undefine(id) {
+    st.err(e, error::Kind::UnusedVar(id, k));
   }
 }
 
