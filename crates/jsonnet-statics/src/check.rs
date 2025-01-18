@@ -52,7 +52,7 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
       }
       st.undefine_self_super();
       for &(lhs, _) in binds {
-        undefine(st, lhs);
+        undefine(st, ar, lhs);
       }
       st.tys.get(ty::Data::Object(obj))
     }
@@ -65,7 +65,7 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
       st.define_self_super();
       let body_ty = get(st, ar, *body);
       must_reachable(st, expr, body_ty);
-      undefine(st, *id);
+      undefine(st, ar, *id);
       st.undefine_self_super();
       ty::Ty::OBJECT
     }
@@ -124,7 +124,7 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
       define_binds(st, ar, expr, binds, def::ExprDefKindMulti::LocalBind);
       let ty = get(st, ar, *body);
       for &(bind, _) in binds {
-        undefine(st, bind);
+        undefine(st, ar, bind);
       }
       ty
     }
@@ -161,7 +161,7 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
       let body_ty = get(st, ar, *body);
       let mut fn_params = Vec::<ty::Param>::with_capacity(params.len());
       for &(id, rhs) in params {
-        undefine(st, id);
+        undefine(st, ar, id);
         let Some(&ty) = param_tys.get(&id) else {
           always!(false, "should have gotten fn param ty: {id:?}");
           continue;
@@ -397,9 +397,49 @@ fn define_binds(
   }
 }
 
-fn undefine(st: &mut st::St<'_>, id: Id) {
+fn undefine(st: &mut st::St<'_>, ar: &ExprArena, id: Id) {
   let Some((e, k)) = st.scope.undefine(id) else { return };
-  st.err(e, error::Kind::UnusedVar(id, k));
+  if is_actually_unused(st, ar, e, k, id) {
+    st.err(e, error::Kind::UnusedVar(id, k));
+  }
+}
+
+/// this returns true most of the time. however, in a very specific case, it returns false. that
+/// case is when the id is an object comp local bind generated in desugaring that has been seen for
+/// the first time.
+///
+/// if this is its first time, we return false to skip emitting for now. if it is actually used by
+/// the second generated occurrence of the id, we will not detect it as unused a second time, and
+/// will not ever emit an unused error for it.
+///
+/// if this is NOT its first time, this is the second and thus final occurrence of the id being
+/// detected as unused. so we should actually emit the unused error, so we return true.
+///
+/// this is pretty hacky, tbh.
+fn is_actually_unused(
+  st: &mut st::St<'_>,
+  ar: &ExprArena,
+  expr: ExprMust,
+  kind: def::ExprDefKind,
+  id: Id,
+) -> bool {
+  let def::ExprDefKind::Multi(idx, def::ExprDefKindMulti::LocalBind) = kind else { return true };
+  let ExprData::Local { binds, body: Some(_) } = &ar[expr] else {
+    always!(false, "LocalBind did not point to a Local");
+    return true;
+  };
+  let Some(&(got_id, Some(e_idx))) = binds.get(idx) else {
+    always!(false, "LocalBind {idx} out of range");
+    return true;
+  };
+  always!(id == got_id, "didn't get {id:?} as local {idx}, got {got_id:?}");
+  let ExprData::Subscript { on: Some(on), idx: Some(sub_idx) } = ar[e_idx] else { return true };
+  let ExprData::Id(on_id) = ar[on] else { return true };
+  if !on_id.is_unutterable() {
+    return true;
+  }
+  let ExprData::Prim(Prim::Number(_)) = ar[sub_idx] else { return true };
+  !st.object_comp_local_defs.insert(e_idx)
 }
 
 fn is_orderable(st: &st::St<'_>, ty: ty::Ty) -> bool {

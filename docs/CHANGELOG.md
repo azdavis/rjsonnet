@@ -2,6 +2,10 @@
 
 Things under "main" are not released yet.
 
+## main
+
+- Fix unused warnings for object comprehension variables.
+
 ## v0.8.2
 
 - Improve signature help argument matching.

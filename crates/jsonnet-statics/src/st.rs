@@ -4,6 +4,7 @@ use crate::{error, scope::Scope, unify};
 use jsonnet_expr::{def, ExprMust, Id};
 use jsonnet_ty as ty;
 use paths::PathMap;
+use rustc_hash::FxHashSet;
 
 /// Results after doing statics on one file.
 #[derive(Debug, Default)]
@@ -29,6 +30,8 @@ pub struct St<'a> {
   pub(crate) scope: Scope,
   /// A store for all the types.
   pub(crate) tys: ty::MutStore<'a>,
+  /// The object comp local defs we've seen before.
+  pub(crate) object_comp_local_defs: FxHashSet<ExprMust>,
 }
 
 impl<'a> St<'a> {
@@ -45,6 +48,7 @@ impl<'a> St<'a> {
       str_ar,
       scope: Scope::default(),
       tys: ty::MutStore::new(tys),
+      object_comp_local_defs: FxHashSet::default(),
     }
   }
 

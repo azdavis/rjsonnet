@@ -104,9 +104,7 @@ fn object_comp() {
   .check();
 }
 
-// TODO the var is used, but not in both places.
 #[test]
-#[should_panic = "unused variable: `x`"]
 fn object_comp_only_key() {
   JsonnetInput::eval_error(
     r#"
@@ -119,9 +117,7 @@ fn object_comp_only_key() {
   .check();
 }
 
-// TODO the var is used, but not in both places.
 #[test]
-#[should_panic = "unused variable: `x`"]
 fn object_comp_only_val() {
   JsonnetInput::eval_error(
     r#"
