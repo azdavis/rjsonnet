@@ -90,18 +90,18 @@ impl SyntaxFileToCombine {
     let lex = jsonnet_lex::get(contents);
     let parse = jsonnet_parse::get(&lex.tokens);
     let root = parse.root.clone().into_ast().and_then(|x| x.expr());
-    let desugar = jsonnet_desugar::get(dirs, fs, root);
+    let ds = jsonnet_desugar::get(dirs, fs, root);
     Self {
       file: SyntaxFile {
         artifacts: SyntaxFileArtifacts {
           pos_db: text_pos::PositionDb::new(contents),
           root: parse.root,
-          pointers: desugar.pointers,
+          pointers: ds.pointers,
         },
-        errors: SyntaxFileErrors { lex: lex.errors, parse: parse.errors, desugar: desugar.errors },
-        exprs: jsonnet_eval::Exprs { ar: desugar.arenas.expr, top: desugar.top },
+        errors: SyntaxFileErrors { lex: lex.errors, parse: parse.errors, desugar: ds.errors },
+        exprs: jsonnet_eval::Exprs { ar: ds.arenas.expr, top: ds.top },
       },
-      to_combine: jsonnet_expr::Artifacts { paths: desugar.paths, strings: desugar.arenas.str },
+      to_combine: jsonnet_expr::Artifacts { paths: ds.paths, strings: ds.arenas.str },
     }
   }
 
