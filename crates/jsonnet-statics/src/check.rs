@@ -398,9 +398,8 @@ fn define_binds(
 }
 
 fn undefine(st: &mut st::St<'_>, id: Id) {
-  if let Some((e, k)) = st.scope.undefine(id) {
-    st.err(e, error::Kind::UnusedVar(id, k));
-  }
+  let Some((e, k)) = st.scope.undefine(id) else { return };
+  st.err(e, error::Kind::UnusedVar(id, k));
 }
 
 fn is_orderable(st: &st::St<'_>, ty: ty::Ty) -> bool {
