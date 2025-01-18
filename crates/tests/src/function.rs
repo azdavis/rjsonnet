@@ -1,9 +1,5 @@
 //! Tests for functions.
 
-// TODO remove the should panic and also fix some of these tests. some of the should panics are
-// 'right', but these tests should be able to test BOTH pre-eval error AND eval error maybe? or one
-// at a time (turn off optional static checks)?
-
 use crate::check::JsonnetInput;
 
 #[test]
