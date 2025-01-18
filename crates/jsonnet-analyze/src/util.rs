@@ -81,6 +81,8 @@ pub(crate) struct SyntaxFileToCombine {
   to_combine: jsonnet_expr::Artifacts,
 }
 
+const DEBUG_SYNTAX: bool = false;
+
 impl SyntaxFileToCombine {
   fn new(
     contents: &str,
@@ -89,8 +91,16 @@ impl SyntaxFileToCombine {
   ) -> Self {
     let lex = jsonnet_lex::get(contents);
     let parse = jsonnet_parse::get(&lex.tokens);
+    if DEBUG_SYNTAX {
+      log::warn!("parse:\n{:#?}", parse.root.clone().syntax());
+    }
     let root = parse.root.clone().into_ast().and_then(|x| x.expr());
     let ds = jsonnet_desugar::get(dirs, fs, root);
+    if DEBUG_SYNTAX {
+      let expr =
+        jsonnet_expr::display::expr(ds.top, &ds.arenas.str, &ds.arenas.expr, &ds.paths, None);
+      log::warn!("desugar:\n{expr}");
+    }
     Self {
       file: SyntaxFile {
         artifacts: SyntaxFileArtifacts {
