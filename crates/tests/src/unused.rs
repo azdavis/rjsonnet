@@ -93,10 +93,8 @@ fn object_comp() {
   JsonnetInput::eval_error(
     r#"
 {
-  local no = k,
-  [k]: false,
-##^^^^^^^^^^ diagnostic: unused variable: `no`
-  for k in ["a", "b"]
+  ["foo"]: 0 for x in ["a", "b"]
+##^^^^^^^^^^ diagnostic: unused variable: `x`
 }
 "#,
     "not yet implemented: makeArray",
@@ -123,6 +121,22 @@ fn object_comp_only_val() {
     r#"
 {
   ["foo"]: x for x in [0]
+}
+"#,
+    "not yet implemented: makeArray",
+  )
+  .check();
+}
+
+#[test]
+fn object_comp_extra_local() {
+  JsonnetInput::eval_error(
+    r#"
+{
+  local no = k,
+  [k]: false,
+##^^^^^^^^^^ diagnostic: unused variable: `no`
+  for k in ["a", "b"]
 }
 "#,
     "not yet implemented: makeArray",
