@@ -85,9 +85,9 @@ pub fn and(tys: &mut MutStore<'_>, x: Ty, y: Ty) -> Ty {
           }
           (Some(fp), Some(gp)) => (fp, gp),
         };
-        let id = if fp.id.is_builtin_unutterable() {
+        let id = if fp.id.is_unutterable() {
           fp.id
-        } else if gp.id.is_builtin_unutterable() {
+        } else if gp.id.is_unutterable() {
           gp.id
         } else if fp.id == gp.id {
           fp.id

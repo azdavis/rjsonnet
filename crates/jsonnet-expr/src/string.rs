@@ -40,12 +40,13 @@ enum StrRepr {
 enum CopyStrRepr {
   Builtin(BuiltinStr),
   Idx(StrIdx),
+  Unutterable(u32),
 }
 
 impl CopyStrRepr {
   fn apply(&mut self, subst: &Subst) {
     match self {
-      CopyStrRepr::Builtin(_) => {}
+      CopyStrRepr::Builtin(_) | CopyStrRepr::Unutterable(_) => {}
       CopyStrRepr::Idx(idx) => *idx = subst.get_str_idx(*idx),
     }
   }
@@ -69,6 +70,7 @@ impl StrIdx {
 pub struct StrArena {
   idx_to_data: Vec<Box<str>>,
   data_to_idx: FxHashMap<Box<str>, StrIdx>,
+  unutterable_idx: u32,
 }
 
 impl StrArena {
@@ -115,10 +117,17 @@ impl StrArena {
     Id(self.mk_copy_repr(contents))
   }
 
+  pub fn id_fresh_unutterable(&mut self) -> Id {
+    let ret = Id(CopyStrRepr::Unutterable(self.unutterable_idx));
+    self.unutterable_idx += 1;
+    ret
+  }
+
   fn get_idx(&self, idx: StrIdx) -> &str {
     &self.idx_to_data[idx.to_usize()]
   }
 
+  /// NOTE this is kinda fake for unutterable strings
   #[must_use]
   pub fn get<'a>(&'a self, s: &'a Str) -> &'a str {
     match s.0 {
@@ -127,11 +136,13 @@ impl StrArena {
     }
   }
 
+  /// NOTE this is kinda fake for unutterable strings
   #[must_use]
   pub fn get_id(&self, id: Id) -> &str {
     match id.0 {
       CopyStrRepr::Builtin(builtin) => builtin.as_static_str(),
       CopyStrRepr::Idx(idx) => self.get_idx(idx),
+      CopyStrRepr::Unutterable(_) => "$_",
     }
   }
 }
@@ -145,20 +156,19 @@ impl Id {
     self.0.apply(subst);
   }
 
-  /// NOTE: this does NOT return true for the fresh variables like $1, $2, etc, even though they are
-  /// meant to be (and are) unutterable.
   #[must_use]
-  pub fn is_builtin_unutterable(&self) -> bool {
+  pub fn is_unutterable(&self) -> bool {
     matches!(
       self.0,
-      CopyStrRepr::Builtin(
-        BuiltinStr::std_unutterable
-          | BuiltinStr::a_unutterable
-          | BuiltinStr::b_unutterable
-          | BuiltinStr::c_unutterable
-          | BuiltinStr::d_unutterable
-          | BuiltinStr::e_unutterable
-      )
+      CopyStrRepr::Unutterable(_)
+        | CopyStrRepr::Builtin(
+          BuiltinStr::std_unutterable
+            | BuiltinStr::a_unutterable
+            | BuiltinStr::b_unutterable
+            | BuiltinStr::c_unutterable
+            | BuiltinStr::d_unutterable
+            | BuiltinStr::e_unutterable
+        )
     )
   }
 
@@ -182,6 +192,7 @@ impl fmt::Display for DisplayCopyStrRepr<'_> {
     match self.repr {
       CopyStrRepr::Builtin(bs) => bs.as_static_str().fmt(f),
       CopyStrRepr::Idx(idx) => self.ar.get_idx(idx).fmt(f),
+      CopyStrRepr::Unutterable(idx) => write!(f, "${idx}"),
     }
   }
 }

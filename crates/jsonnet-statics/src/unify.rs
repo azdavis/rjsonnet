@@ -104,7 +104,7 @@ pub(crate) fn get(st: &mut St<'_>, store: &ty::MutStore<'_>, want: ty::Ty, got: 
           st.err(error::Unify::NotEnoughParams(want_params.len(), got_params.len()));
         }
         for (want, got) in want_params.iter().zip(got_params.iter()) {
-          if !want.id.is_builtin_unutterable() && want.id != got.id {
+          if !want.id.is_unutterable() && want.id != got.id {
             st.err(error::Unify::MismatchedParamNames(want.id, got.id));
           }
           // if we wanted a required argument, we can get either a required or optional argument.

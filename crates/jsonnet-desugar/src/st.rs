@@ -38,7 +38,6 @@ pub(crate) struct St {
   arenas: Arenas,
   errors: Vec<Error>,
   pointers: Pointers,
-  fresh_idx: usize,
   ps: paths::Store,
 }
 
@@ -88,9 +87,7 @@ impl St {
 
   /// Returns a fresh identifier.
   pub(crate) fn fresh(&mut self) -> jsonnet_expr::Id {
-    let s = format!("${}", self.fresh_idx);
-    self.fresh_idx += 1;
-    self.arenas.str.id(s.into_boxed_str())
+    self.arenas.str.id_fresh_unutterable()
   }
 
   pub(crate) fn path_id(&mut self, p: &paths::CleanPath) -> paths::PathId {
