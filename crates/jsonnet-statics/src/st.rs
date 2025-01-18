@@ -1,7 +1,7 @@
 //! The state of statics.
 
 use crate::{error, scope::Scope, unify};
-use jsonnet_expr::{def::Def, ExprMust, Id};
+use jsonnet_expr::{def, ExprMust, Id};
 use jsonnet_ty as ty;
 use paths::PathMap;
 
@@ -52,8 +52,8 @@ impl<'a> St<'a> {
     self.statics.errors.push(error::Error { expr, kind });
   }
 
-  pub(crate) fn note_usage(&mut self, expr: ExprMust, def: Def) {
-    // NOTE: we CANNOT assert insert returns none here, because we reuse expr indices sometimes
+  pub(crate) fn note_usage(&mut self, expr: ExprMust, def: def::Def) {
+    // NOTE: we CANNOT assert insert returns None here, because we reuse expr indices sometimes
     // when desugaring.
     self.statics.defs.insert(expr, def);
   }
@@ -65,8 +65,8 @@ impl<'a> St<'a> {
   }
 
   pub(crate) fn define_self_super(&mut self) {
-    self.scope.define(Id::self_, ty::Ty::OBJECT, Def::KwIdent);
-    self.scope.define(Id::super_, ty::Ty::OBJECT, Def::KwIdent);
+    self.scope.define(Id::self_, ty::Ty::OBJECT, def::Def::KwIdent);
+    self.scope.define(Id::super_, ty::Ty::OBJECT, def::Def::KwIdent);
   }
 
   pub(crate) fn undefine_self_super(&mut self) {
