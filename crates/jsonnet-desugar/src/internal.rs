@@ -465,7 +465,7 @@ fn get_object_comp(st: &mut St, cx: Cx<'_>, inside: ast::Object, in_obj: bool) -
   };
   let arr = st.fresh();
   let on = Some(st.expr(ptr, ExprData::Id(arr)));
-  let name_binds = vars.iter().enumerate().map(|(idx, (ptr, id))| {
+  let shared_binds = vars.iter().enumerate().map(|(idx, (ptr, id))| {
     let idx = always::convert::usize_to_u32(idx);
     let idx = f64::from(idx);
     let idx = Float::always_from_f64(idx);
@@ -473,9 +473,9 @@ fn get_object_comp(st: &mut St, cx: Cx<'_>, inside: ast::Object, in_obj: bool) -
     let subscript = Some(st.expr(*ptr, ExprData::Subscript { on, idx }));
     (*id, subscript)
   });
-  let name_binds: Vec<_> = name_binds.collect();
-  let body_binds: Vec<_> = name_binds.iter().copied().chain(binds).collect();
-  let name = Some(st.expr(ptr, ExprData::Local { binds: name_binds, body: name }));
+  let shared_binds: Vec<_> = shared_binds.collect();
+  let body_binds: Vec<_> = shared_binds.iter().copied().chain(binds).collect();
+  let name = Some(st.expr(ptr, ExprData::Local { binds: shared_binds, body: name }));
   let body = Some(st.expr(ptr, ExprData::Local { binds: body_binds, body }));
   let vars = vars.into_iter().map(|(ptr, x)| Some(st.expr(ptr, ExprData::Id(x))));
   let vars: Vec<_> = vars.collect();
