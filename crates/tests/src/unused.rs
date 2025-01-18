@@ -108,18 +108,13 @@ fn object_comp() {
 #[test]
 #[should_panic = "unused variable: `x`"]
 fn object_comp_only_key() {
-  JsonnetInput::manifest(
+  JsonnetInput::eval_error(
     r#"
 {
   [x]: 0 for x in ["a", "b"]
 }
 "#,
-    r#"
-{
-  "a": 0,
-  "b": 0
-}
-"#,
+    "not yet implemented: makeArray",
   )
   .check();
 }
@@ -128,17 +123,13 @@ fn object_comp_only_key() {
 #[test]
 #[should_panic = "unused variable: `x`"]
 fn object_comp_only_val() {
-  JsonnetInput::manifest(
+  JsonnetInput::eval_error(
     r#"
 {
   ["foo"]: x for x in [0]
 }
 "#,
-    r#"
-{
-  "foo": 0,
-}
-"#,
+    "not yet implemented: makeArray",
   )
   .check();
 }
