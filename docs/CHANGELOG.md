@@ -2,7 +2,7 @@
 
 Things under "main" are not released yet.
 
-## main
+## v0.8.3
 
 - Fix unused warnings for object comprehension variables.
 - Make a small CLI.
