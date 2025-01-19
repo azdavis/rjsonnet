@@ -14,6 +14,7 @@ doctest = false
 
 [dependencies]
 apply-changes.workspace = true
+diagnostic.workspace = true
 env_logger.workspace = true
 log.workspace = true
 paths.workspace = true
@@ -25,7 +26,6 @@ text-size.workspace = true
 token.workspace = true
 
 always.path = "../always"
-diagnostic.path = "../diagnostic"
 jsonnet-ast-escape.path = "../jsonnet-ast-escape"
 jsonnet-desugar.path = "../jsonnet-desugar"
 jsonnet-escape.path = "../jsonnet-escape"

@@ -13,6 +13,7 @@ test = false
 doctest = false
 
 [dependencies]
+diagnostic.workspace = true
 drop_bomb.workspace = true
 log.workspace = true
 paths.workspace = true
@@ -21,7 +22,6 @@ strsim.workspace = true
 uniq.workspace = true
 
 always.path = "../always"
-diagnostic.path = "../diagnostic"
 finite-float.path = "../finite-float"
 jsonnet-expr.path = "../jsonnet-expr"
 jsonnet-ty.path = "../jsonnet-ty"

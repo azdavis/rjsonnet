@@ -121,10 +121,6 @@ if always!(internal_invariant_satisfied()) {
 }
 ```
 
-### `crates/diagnostic`
-
-Common types for diagnostics (aka "errors") for programming language implementations.
-
 ### `crates/finite-float`
 
 A finite float type (not nan or infinite).

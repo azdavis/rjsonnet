@@ -16,6 +16,7 @@ doctest = false
 anyhow.workspace = true
 apply-changes.workspace = true
 better-panic.workspace = true
+diagnostic.workspace = true
 log.workspace = true
 lsp-server.workspace = true
 lsp-types.workspace = true
@@ -24,5 +25,4 @@ serde_json.workspace = true
 text-pos.workspace = true
 
 always.path = "../always"
-diagnostic.path = "../diagnostic"
 lang-srv-state.path = "../lang-srv-state"
