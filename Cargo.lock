@@ -92,7 +92,7 @@ checksum = "34ac096ce696dc2fcabef30516bb13c0a68a11d30131d3df6f04711467681b04"
 [[package]]
 name = "apply-changes"
 version = "0.1.0"
-source = "git+https://github.com/azdavis/language-util.git#c47fce1da5da563d5258461352cbfea9926331ec"
+source = "git+https://github.com/azdavis/language-util.git#e44479aa39b27a15cd596bc150abf6525dd8a5cc"
 dependencies = [
  "text-pos",
 ]
@@ -158,7 +158,7 @@ checksum = "613afe47fcd5fac7ccf1db93babcb082c5994d996f20b8b159f2ad1658eb5724"
 [[package]]
 name = "char-name"
 version = "0.1.0"
-source = "git+https://github.com/azdavis/language-util.git#c47fce1da5da563d5258461352cbfea9926331ec"
+source = "git+https://github.com/azdavis/language-util.git#e44479aa39b27a15cd596bc150abf6525dd8a5cc"
 
 [[package]]
 name = "colorchoice"
@@ -230,7 +230,7 @@ checksum = "d0a5c400df2834b80a4c3327b3aad3a4c4cd4de0629063962b03235697506a28"
 [[package]]
 name = "diagnostic"
 version = "0.1.0"
-source = "git+https://github.com/azdavis/language-util.git#c47fce1da5da563d5258461352cbfea9926331ec"
+source = "git+https://github.com/azdavis/language-util.git#e44479aa39b27a15cd596bc150abf6525dd8a5cc"
 dependencies = [
  "text-pos",
 ]
@@ -296,7 +296,7 @@ dependencies = [
 [[package]]
 name = "event-parse"
 version = "0.1.0"
-source = "git+https://github.com/azdavis/language-util.git#c47fce1da5da563d5258461352cbfea9926331ec"
+source = "git+https://github.com/azdavis/language-util.git#e44479aa39b27a15cd596bc150abf6525dd8a5cc"
 dependencies = [
  "drop_bomb",
  "rowan",
@@ -306,7 +306,7 @@ dependencies = [
 [[package]]
 name = "fast-hash"
 version = "0.1.0"
-source = "git+https://github.com/azdavis/language-util.git#c47fce1da5da563d5258461352cbfea9926331ec"
+source = "git+https://github.com/azdavis/language-util.git#e44479aa39b27a15cd596bc150abf6525dd8a5cc"
 dependencies = [
  "rustc-hash 2.1.0",
 ]
@@ -485,7 +485,7 @@ dependencies = [
 [[package]]
 name = "identifier-case"
 version = "0.1.0"
-source = "git+https://github.com/azdavis/language-util.git#c47fce1da5da563d5258461352cbfea9926331ec"
+source = "git+https://github.com/azdavis/language-util.git#e44479aa39b27a15cd596bc150abf6525dd8a5cc"
 
 [[package]]
 name = "idna"
@@ -511,7 +511,7 @@ dependencies = [
 [[package]]
 name = "idx"
 version = "0.1.0"
-source = "git+https://github.com/azdavis/language-util.git#c47fce1da5da563d5258461352cbfea9926331ec"
+source = "git+https://github.com/azdavis/language-util.git#e44479aa39b27a15cd596bc150abf6525dd8a5cc"
 dependencies = [
  "nohash-hasher",
 ]
@@ -882,7 +882,7 @@ checksum = "1261fe7e33c73b354eab43b1273a57c8f967d0391e80353e51f764ac02cf6775"
 [[package]]
 name = "paths"
 version = "0.1.0"
-source = "git+https://github.com/azdavis/language-util.git#c47fce1da5da563d5258461352cbfea9926331ec"
+source = "git+https://github.com/azdavis/language-util.git#e44479aa39b27a15cd596bc150abf6525dd8a5cc"
 dependencies = [
  "fast-hash",
  "idx",
@@ -1112,7 +1112,7 @@ checksum = "a8f112729512f8e442d81f95a8a7ddf2b7c6b8a1a6f509a95864142b30cab2d3"
 [[package]]
 name = "str-process"
 version = "0.1.0"
-source = "git+https://github.com/azdavis/language-util.git#c47fce1da5da563d5258461352cbfea9926331ec"
+source = "git+https://github.com/azdavis/language-util.git#e44479aa39b27a15cd596bc150abf6525dd8a5cc"
 dependencies = [
  "drop_bomb",
 ]
@@ -1120,7 +1120,7 @@ dependencies = [
 [[package]]
 name = "str-util"
 version = "0.1.0"
-source = "git+https://github.com/azdavis/language-util.git#c47fce1da5da563d5258461352cbfea9926331ec"
+source = "git+https://github.com/azdavis/language-util.git#e44479aa39b27a15cd596bc150abf6525dd8a5cc"
 dependencies = [
  "smol_str",
 ]
@@ -1156,7 +1156,7 @@ dependencies = [
 [[package]]
 name = "syntax-gen"
 version = "0.1.0"
-source = "git+https://github.com/azdavis/language-util.git#c47fce1da5da563d5258461352cbfea9926331ec"
+source = "git+https://github.com/azdavis/language-util.git#e44479aa39b27a15cd596bc150abf6525dd8a5cc"
 dependencies = [
  "char-name",
  "fast-hash",
@@ -1192,7 +1192,7 @@ dependencies = [
 [[package]]
 name = "text-pos"
 version = "0.1.0"
-source = "git+https://github.com/azdavis/language-util.git#c47fce1da5da563d5258461352cbfea9926331ec"
+source = "git+https://github.com/azdavis/language-util.git#e44479aa39b27a15cd596bc150abf6525dd8a5cc"
 dependencies = [
  "line-index",
  "text-size-util",
@@ -1207,7 +1207,7 @@ checksum = "f18aa187839b2bdb1ad2fa35ead8c4c2976b64e4363c386d45ac0f7ee85c9233"
 [[package]]
 name = "text-size-util"
 version = "0.1.0"
-source = "git+https://github.com/azdavis/language-util.git#c47fce1da5da563d5258461352cbfea9926331ec"
+source = "git+https://github.com/azdavis/language-util.git#e44479aa39b27a15cd596bc150abf6525dd8a5cc"
 dependencies = [
  "text-size",
 ]
@@ -1225,7 +1225,7 @@ dependencies = [
 [[package]]
 name = "token"
 version = "0.1.0"
-source = "git+https://github.com/azdavis/language-util.git#c47fce1da5da563d5258461352cbfea9926331ec"
+source = "git+https://github.com/azdavis/language-util.git#e44479aa39b27a15cd596bc150abf6525dd8a5cc"
 
 [[package]]
 name = "ungrammar"
@@ -1254,7 +1254,7 @@ checksum = "7dd6e30e90baa6f72411720665d41d89b9a3d039dc45b8faea1ddd07f617f6af"
 [[package]]
 name = "uniq"
 version = "0.1.0"
-source = "git+https://github.com/azdavis/language-util.git#c47fce1da5da563d5258461352cbfea9926331ec"
+source = "git+https://github.com/azdavis/language-util.git#e44479aa39b27a15cd596bc150abf6525dd8a5cc"
 
 [[package]]
 name = "url"
@@ -1362,7 +1362,7 @@ checksum = "589f6da84c646204747d1270a2a5661ea66ed1cced2631d546fdfb155959f9ec"
 [[package]]
 name = "write-rs-tokens"
 version = "0.1.0"
-source = "git+https://github.com/azdavis/language-util.git#c47fce1da5da563d5258461352cbfea9926331ec"
+source = "git+https://github.com/azdavis/language-util.git#e44479aa39b27a15cd596bc150abf6525dd8a5cc"
 dependencies = [
  "prettyplease",
  "proc-macro2",
