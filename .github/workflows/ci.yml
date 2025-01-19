@@ -75,17 +75,22 @@ jobs:
         with:
           node-version: 20.x
       - name: Make dist
-        run: cargo xtask dist --release --target ${{ matrix.rust }}
+        run: cargo xtask dist --release --with-cli --target ${{ matrix.rust }}
       - name: Make VSIX directory
         run: mkdir -p editors/vscode/vsix
       - name: Package VSIX
         run: npx --no-install vsce package --target ${{ matrix.vscode }} -o vsix/jsonnet-${{ matrix.vscode }}.vsix
         working-directory: editors/vscode
-      - name: Upload binary artifacts
+      - name: Upload language server artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: binary-${{ matrix.rust }}
+          name: ls-${{ matrix.rust }}
           path: binary/jsonnet-ls-${{ matrix.rust }}.gz
+      - name: Upload CLI artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: cli-${{ matrix.rust }}
+          path: binary/jsonnet-cli-${{ matrix.rust }}.gz
       - name: Upload VSIX artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -107,11 +112,17 @@ jobs:
       - name: Install node dependencies
         run: npm ci
         working-directory: editors/vscode
-      - name: Download binary artifacts
+      - name: Download language server artifacts
         uses: actions/download-artifact@v4
         with:
           path: binary
-          pattern: binary-*
+          pattern: ls-*
+          merge-multiple: true
+      - name: Download CLI artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: binary
+          pattern: cli-*
           merge-multiple: true
       - name: Download VSIX artifacts
         uses: actions/download-artifact@v4
