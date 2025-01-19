@@ -96,6 +96,10 @@ Depends on all the "stages" to create an overall high-level API for fully analyz
 
 The language server binary. Basically just mashes `jsonnet-analyze` and `lang-srv` together.
 
+### `crates/jsonnet-cli`
+
+A CLI that runs analysis once on the given file(s) and then exits.
+
 ### `crates/tests`
 
 The end-to-end tests. Lexing, parsing, desugaring, static analysis, evaluation, and manifestation are all tested here, with full Jsonnet programs as input.
