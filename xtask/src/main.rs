@@ -33,6 +33,7 @@ impl Cmd {
         desc: "make artifacts for distribution",
         options: &[
           ("--release", "build for release"),
+          ("--with-cli", "build the CLI as well"),
           ("--target <TARGET>", "a specific target to build for"),
         ],
       },
@@ -95,10 +96,12 @@ fn run_ci() {
 #[derive(Debug)]
 struct DistArgs {
   release: bool,
+  with_cli: bool,
   target: Option<String>,
 }
 
 const LANG_SRV_NAME: &str = "jsonnet-ls";
+const CLI_NAME: &str = "jsonnet-cli";
 
 fn cmd_exe(fst: &str) -> Command {
   if cfg!(windows) {
@@ -126,12 +129,17 @@ fn gzip(src: &Path, dst: &Path) {
 
 fn dist(args: &DistArgs) {
   let mut c = Command::new("cargo");
-  c.args(["build", "--locked", "--bin", LANG_SRV_NAME]);
+  c.args(["build", "--locked"]);
   if args.release {
     c.arg("--release");
   }
   if let Some(target) = &args.target {
     c.args(["--target", target.as_str()]);
+  }
+  let targets =
+    if args.with_cli { [LANG_SRV_NAME, CLI_NAME].as_slice() } else { [LANG_SRV_NAME].as_slice() };
+  for bin in targets {
+    c.args(["--bin", bin]);
   }
   run(&mut c);
   let kind = if args.release { "release" } else { "debug" };
@@ -141,12 +149,14 @@ fn dist(args: &DistArgs) {
   if let Some(target) = &args.target {
     dst = PathBuf::from("binary");
     fs::create_dir_all(&dst).expect("create dirs");
-    let gz = format!("{LANG_SRV_NAME}-{target}.gz");
-    src.push(exe(LANG_SRV_NAME).as_str());
-    dst.push(gz.as_str());
-    gzip(&src, &dst);
-    assert!(src.pop());
-    assert!(dst.pop());
+    for bin in targets {
+      let gz = format!("{bin}-{target}.gz");
+      src.push(exe(bin).as_str());
+      dst.push(gz.as_str());
+      gzip(&src, &dst);
+      assert!(src.pop());
+      assert!(dst.pop());
+    }
   }
   dst = ["editors", "vscode", "out"].into_iter().collect();
   // ignore errors if it exists already. if we have permission errors we're about to report them
@@ -284,6 +294,7 @@ fn main() {
     Cmd::Dist => {
       let dist_args = DistArgs {
         release: args.contains("--release"),
+        with_cli: args.contains("--with-cli"),
         target: args.opt_value_from_str("--target").expect("no parse"),
       };
       finish_args(args);
