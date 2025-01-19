@@ -90,7 +90,8 @@ impl SyntaxFileToCombine {
     let lex = jsonnet_lex::get(contents);
     let parse = jsonnet_parse::get(&lex.tokens);
     if log::log_enabled!(log::Level::Debug) {
-      log::debug!("parse:\n{:#?}", parse.root.clone().syntax());
+      let root = parse.root.clone().syntax();
+      log::debug!("parse:\n{root:#?}");
     }
     let root = parse.root.clone().into_ast().and_then(|x| x.expr());
     let ds = jsonnet_desugar::get(dirs, fs, root);
