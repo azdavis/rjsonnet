@@ -31,7 +31,6 @@ fn run() -> usize {
   for arg in std::env::args().skip(1) {
     let mut p = pwd.clone();
     p.push(arg.as_str());
-    println!("path: {}", p.as_path().display());
     let contents = match fs.read_to_string(p.as_path()) {
       Ok(x) => x,
       Err(e) => {
