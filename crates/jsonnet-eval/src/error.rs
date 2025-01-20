@@ -22,7 +22,7 @@ impl Error {
     paths: &'a paths::Store,
     relative_to: Option<&'a paths::CleanPath>,
   ) -> impl fmt::Display + use<'a> {
-    DisplayError { error: self, ar, paths, relative_to }
+    ErrorDisplay { error: self, ar, paths, relative_to }
   }
 }
 
@@ -56,14 +56,14 @@ impl From<arg::ErrorKind> for Kind {
   }
 }
 
-struct DisplayError<'a> {
+struct ErrorDisplay<'a> {
   error: &'a Error,
   ar: &'a jsonnet_expr::StrArena,
   paths: &'a paths::Store,
   relative_to: Option<&'a paths::CleanPath>,
 }
 
-impl<'a> DisplayError<'a> {
+impl<'a> ErrorDisplay<'a> {
   fn display_path(&self, path_id: paths::PathId) -> impl fmt::Display + use<'a> {
     let mut p = self.paths.get_path(path_id).as_path();
     if let Some(r) = self.relative_to {
@@ -73,7 +73,7 @@ impl<'a> DisplayError<'a> {
   }
 }
 
-impl fmt::Display for DisplayError<'_> {
+impl fmt::Display for ErrorDisplay<'_> {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     match self.error {
       Error::Exec { kind, .. } => match kind {

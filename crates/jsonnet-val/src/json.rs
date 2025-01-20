@@ -55,30 +55,30 @@ impl Val {
   /// Display the value.
   #[must_use]
   pub fn display<'a>(&'a self, ar: &'a jsonnet_expr::StrArena) -> impl fmt::Display + use<'a> {
-    DisplayVal { val: self, ar, indent: 0 }
+    ValDisplay { val: self, ar, indent: 0 }
   }
 }
 
-struct DisplayVal<'a> {
+struct ValDisplay<'a> {
   val: &'a Val,
   ar: &'a jsonnet_expr::StrArena,
   indent: usize,
 }
 
-impl fmt::Display for DisplayVal<'_> {
+impl fmt::Display for ValDisplay<'_> {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     match self.val {
       Val::Prim(p) => p.display(self.ar).fmt(f),
       Val::Object(map) => {
         f.write_str("{")?;
         let iter =
-          map.iter().map(|(k, v)| DisplayKv { k, v, ar: self.ar, indent: self.indent + 1 });
+          map.iter().map(|(k, v)| KvDisplay { k, v, ar: self.ar, indent: self.indent + 1 });
         write_comma_sep(iter, self.indent, f)?;
         f.write_str("}")
       }
       Val::Array(vs) => {
         f.write_str("[")?;
-        let iter = vs.iter().map(|val| DisplayVal { val, ar: self.ar, indent: self.indent + 1 });
+        let iter = vs.iter().map(|val| ValDisplay { val, ar: self.ar, indent: self.indent + 1 });
         write_comma_sep(iter, self.indent, f)?;
         f.write_str("]")
       }
@@ -86,20 +86,20 @@ impl fmt::Display for DisplayVal<'_> {
   }
 }
 
-struct DisplayKv<'a> {
+struct KvDisplay<'a> {
   k: &'a Str,
   v: &'a Val,
   ar: &'a jsonnet_expr::StrArena,
   indent: usize,
 }
 
-impl fmt::Display for DisplayKv<'_> {
+impl fmt::Display for KvDisplay<'_> {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     // TODO handle escapes
     f.write_str("\"")?;
     self.ar.get(self.k).fmt(f)?;
     f.write_str("\": ")?;
-    DisplayVal { val: self.v, ar: self.ar, indent: self.indent }.fmt(f)
+    ValDisplay { val: self.v, ar: self.ar, indent: self.indent }.fmt(f)
   }
 }
 

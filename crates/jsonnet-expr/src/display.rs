@@ -14,11 +14,11 @@ pub fn expr<'a>(
   ps: &'a paths::Store,
   relative_to: Option<&'a paths::CleanPath>,
 ) -> impl fmt::Display + use<'a> {
-  DisplayExpr { e, str_ar, expr_ar, ps, relative_to }
+  ExprDisplay { e, str_ar, expr_ar, ps, relative_to }
 }
 
 #[derive(Clone, Copy)]
-struct DisplayExpr<'a> {
+struct ExprDisplay<'a> {
   e: Expr,
   str_ar: &'a StrArena,
   expr_ar: &'a ExprArena,
@@ -26,13 +26,13 @@ struct DisplayExpr<'a> {
   relative_to: Option<&'a paths::CleanPath>,
 }
 
-impl<'a> DisplayExpr<'a> {
-  fn with(self, e: Expr) -> DisplayExpr<'a> {
-    DisplayExpr { e, ..self }
+impl<'a> ExprDisplay<'a> {
+  fn with(self, e: Expr) -> ExprDisplay<'a> {
+    ExprDisplay { e, ..self }
   }
 }
 
-impl fmt::Display for DisplayExpr<'_> {
+impl fmt::Display for ExprDisplay<'_> {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     let Some(e) = self.e else { return f.write_str("_") };
     match &self.expr_ar[e] {
@@ -183,16 +183,16 @@ impl fmt::Display for UnaryOp {
 impl Prim {
   #[must_use]
   pub fn display<'a>(&'a self, ar: &'a StrArena) -> impl fmt::Display + use<'a> {
-    DisplayPrim { prim: self, ar }
+    PrimDisplay { prim: self, ar }
   }
 }
 
-struct DisplayPrim<'a> {
+struct PrimDisplay<'a> {
   prim: &'a Prim,
   ar: &'a StrArena,
 }
 
-impl fmt::Display for DisplayPrim<'_> {
+impl fmt::Display for PrimDisplay<'_> {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     match self.prim {
       Prim::Null => f.write_str("null"),

@@ -45,16 +45,16 @@ impl CopyStrRepr {
   }
 
   fn display(self, ar: &StrArena) -> impl fmt::Display + use<'_> {
-    DisplayCopyStrRepr { repr: self, ar }
+    CopyStrReprDisplay { repr: self, ar }
   }
 }
 
-struct DisplayCopyStrRepr<'a> {
+struct CopyStrReprDisplay<'a> {
   repr: CopyStrRepr,
   ar: &'a StrArena,
 }
 
-impl fmt::Display for DisplayCopyStrRepr<'_> {
+impl fmt::Display for CopyStrReprDisplay<'_> {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     match self.repr {
       CopyStrRepr::Builtin(bs) => bs.as_static_str().fmt(f),
@@ -193,7 +193,7 @@ impl Id {
 
   #[must_use]
   pub fn display(self, ar: &StrArena) -> impl fmt::Display + use<'_> {
-    DisplayIdRepr { this: self.0, ar }
+    IdReprDisplay { this: self.0, ar }
   }
 }
 
@@ -212,12 +212,12 @@ impl IdRepr {
   }
 }
 
-struct DisplayIdRepr<'a> {
+struct IdReprDisplay<'a> {
   this: IdRepr,
   ar: &'a StrArena,
 }
 
-impl fmt::Display for DisplayIdRepr<'_> {
+impl fmt::Display for IdReprDisplay<'_> {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     match self.this {
       IdRepr::Str(s) => s.display(self.ar).fmt(f),

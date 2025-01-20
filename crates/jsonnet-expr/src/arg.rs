@@ -43,22 +43,22 @@ impl ErrorKind {
   /// Returns a value that displays this error.
   #[must_use]
   pub fn display<'a>(&'a self, ar: &'a StrArena) -> impl fmt::Display + use<'a> {
-    DisplayError { kind: self, ar }
+    ErrorDisplay { kind: self, ar }
   }
 }
 
-struct DisplayError<'a> {
+struct ErrorDisplay<'a> {
   kind: &'a ErrorKind,
   ar: &'a StrArena,
 }
 
-impl fmt::Display for DisplayError<'_> {
+impl fmt::Display for ErrorDisplay<'_> {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     match self.kind {
       ErrorKind::TooMany(tma) => {
         writeln!(f, "too many arguments")?;
 
-        let params = DisplayIds { name: "parameters", ar: self.ar, ids: &tma.params };
+        let params = IdsDisplay { name: "parameters", ar: self.ar, ids: &tma.params };
         writeln!(f, "  {params}")?;
 
         write!(f, "  positional arguments: ",)?;
@@ -68,7 +68,7 @@ impl fmt::Display for DisplayError<'_> {
           writeln!(f, "{}", tma.positional)?;
         }
 
-        let named = DisplayIds { name: "named arguments", ar: self.ar, ids: &tma.named };
+        let named = IdsDisplay { name: "named arguments", ar: self.ar, ids: &tma.named };
         write!(f, "  {named}")?;
         Ok(())
       }
@@ -89,13 +89,13 @@ impl fmt::Display for DisplayError<'_> {
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;
 
-struct DisplayIds<'a> {
+struct IdsDisplay<'a> {
   name: &'static str,
   ar: &'a StrArena,
   ids: &'a [Id],
 }
 
-impl fmt::Display for DisplayIds<'_> {
+impl fmt::Display for IdsDisplay<'_> {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     let mut iter = self.ids.iter();
     let Some(fst) = iter.next() else {
