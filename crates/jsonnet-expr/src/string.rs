@@ -50,6 +50,10 @@ impl CopyStrRepr {
       CopyStrRepr::Idx(idx) => *idx = subst.get_str_idx(*idx),
     }
   }
+
+  fn display(self, ar: &StrArena) -> impl fmt::Display + use<'_> {
+    DisplayCopyStrRepr { repr: self, ar }
+  }
 }
 
 struct DisplayCopyStrRepr<'a> {
@@ -193,7 +197,7 @@ impl Id {
 
   #[must_use]
   pub fn display(self, ar: &StrArena) -> impl fmt::Display + use<'_> {
-    DisplayCopyStrRepr { repr: self.0, ar }
+    self.0.display(ar)
   }
 }
 
