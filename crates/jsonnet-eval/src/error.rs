@@ -21,7 +21,7 @@ impl Error {
     ar: &'a jsonnet_expr::StrArena,
     paths: &'a paths::Store,
     relative_to: Option<&'a paths::CleanPath>,
-  ) -> impl fmt::Display + 'a {
+  ) -> impl fmt::Display + use<'a> {
     DisplayError { error: self, ar, paths, relative_to }
   }
 }
@@ -64,7 +64,7 @@ struct DisplayError<'a> {
 }
 
 impl<'a> DisplayError<'a> {
-  fn display_path(&self, path_id: paths::PathId) -> impl fmt::Display + 'a {
+  fn display_path(&self, path_id: paths::PathId) -> impl fmt::Display + use<'a> {
     let mut p = self.paths.get_path(path_id).as_path();
     if let Some(r) = self.relative_to {
       p = p.strip_prefix(r.as_path()).unwrap_or(p);

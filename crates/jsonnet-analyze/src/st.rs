@@ -36,7 +36,7 @@ impl WithFs {
     }
   }
 
-  fn display_path_id(&self, p: PathId) -> impl std::fmt::Display + '_ {
+  fn display_path_id(&self, p: PathId) -> impl std::fmt::Display + use<'_> {
     self.strip(self.artifacts.syntax.paths.get_path(p).as_path()).display()
   }
 

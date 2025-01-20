@@ -168,7 +168,7 @@ impl StaticsFile {
     multi_line: jsonnet_ty::display::MultiLine,
     store: &'a jsonnet_ty::GlobalStore,
     str_ar: &'a jsonnet_expr::StrArena,
-  ) -> impl Iterator<Item = Diagnostic> + 'a {
+  ) -> impl Iterator<Item = Diagnostic> + use<'a> {
     let root = self.syntax.artifacts.root.clone();
     let root = root.syntax();
     let all_errors = std::iter::empty()

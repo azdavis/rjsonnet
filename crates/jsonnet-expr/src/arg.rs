@@ -42,7 +42,7 @@ pub enum ErrorKind {
 impl ErrorKind {
   /// Returns a value that displays this error.
   #[must_use]
-  pub fn display<'a>(&'a self, ar: &'a StrArena) -> impl fmt::Display + 'a {
+  pub fn display<'a>(&'a self, ar: &'a StrArena) -> impl fmt::Display + use<'a> {
     DisplayError { kind: self, ar }
   }
 }

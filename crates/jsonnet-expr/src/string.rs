@@ -177,7 +177,7 @@ impl Id {
   }
 
   #[must_use]
-  pub fn display(self, ar: &StrArena) -> impl fmt::Display + '_ {
+  pub fn display(self, ar: &StrArena) -> impl fmt::Display + use<'_> {
     DisplayCopyStrRepr { repr: self.0, ar }
   }
 }

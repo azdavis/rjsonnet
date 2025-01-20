@@ -116,7 +116,7 @@ impl Desugar {
   pub fn display_top<'a>(
     &'a self,
     relative_to: Option<&'a paths::CleanPath>,
-  ) -> impl std::fmt::Display + 'a {
+  ) -> impl std::fmt::Display + use<'a> {
     jsonnet_expr::display::expr(
       self.top,
       &self.arenas.str,

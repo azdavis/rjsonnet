@@ -20,7 +20,7 @@ impl Ty {
     global: &'a GlobalStore,
     local: Option<&'a LocalStore>,
     str_ar: &'a StrArena,
-  ) -> impl fmt::Display + 'a {
+  ) -> impl fmt::Display + use<'a> {
     let level = match multi_line {
       MultiLine::MustNot => None,
       MultiLine::May => Some(0),

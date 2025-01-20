@@ -22,7 +22,7 @@ impl Error {
     multi_line: MultiLine,
     store: &'a ty::GlobalStore,
     str_ar: &'a jsonnet_expr::StrArena,
-  ) -> impl fmt::Display + 'a {
+  ) -> impl fmt::Display + use<'a> {
     Display { multi_line, kind: &self.kind, store, str_ar }
   }
 

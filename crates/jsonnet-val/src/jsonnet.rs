@@ -216,7 +216,7 @@ impl Object {
   }
 
   /// Returns the asserts in this.
-  pub fn asserts(&self) -> impl Iterator<Item = (Env, Expr)> + '_ {
+  pub fn asserts(&self) -> impl Iterator<Item = (Env, Expr)> + use<'_> {
     let iter = self
       .ancestry()
       .filter_map(|this| match &this.kind {
