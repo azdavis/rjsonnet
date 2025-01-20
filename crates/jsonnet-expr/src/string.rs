@@ -127,11 +127,11 @@ impl StrArena {
   }
 
   pub fn id(&mut self, contents: Box<str>) -> Id {
-    Id(self.mk_copy_repr(contents))
+    Id(IdRepr::Str(self.mk_copy_repr(contents)))
   }
 
   pub fn id_fresh_unutterable(&mut self) -> Id {
-    let ret = Id(CopyStrRepr::Unutterable(self.unutterable_idx));
+    let ret = Id(IdRepr::Str(CopyStrRepr::Unutterable(self.unutterable_idx)));
     self.unutterable_idx += 1;
     ret
   }
@@ -160,13 +160,15 @@ impl StrArena {
   /// NOTE this is kinda fake for unutterable strings
   #[must_use]
   pub fn get_id(&self, id: Id) -> &str {
-    self.get_copy_str(id.0)
+    match id.0 {
+      IdRepr::Str(s) => self.get_copy_str(s),
+    }
   }
 }
 
 /// An identifier.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct Id(CopyStrRepr);
+pub struct Id(IdRepr);
 
 impl Id {
   pub fn apply(&mut self, subst: &Subst) {
@@ -177,25 +179,53 @@ impl Id {
   pub fn is_unutterable(&self) -> bool {
     matches!(
       self.0,
-      CopyStrRepr::Unutterable(_)
-        | CopyStrRepr::Builtin(
-          BuiltinStr::std_unutterable
-            | BuiltinStr::a_unutterable
-            | BuiltinStr::b_unutterable
-            | BuiltinStr::c_unutterable
-            | BuiltinStr::d_unutterable
-            | BuiltinStr::e_unutterable
-        )
+      IdRepr::Str(
+        CopyStrRepr::Unutterable(_)
+          | CopyStrRepr::Builtin(
+            BuiltinStr::std_unutterable
+              | BuiltinStr::a_unutterable
+              | BuiltinStr::b_unutterable
+              | BuiltinStr::c_unutterable
+              | BuiltinStr::d_unutterable
+              | BuiltinStr::e_unutterable
+          )
+      )
     )
   }
 
   pub(crate) const fn builtin(bs: BuiltinStr) -> Self {
-    Self(CopyStrRepr::Builtin(bs))
+    Self(IdRepr::Str(CopyStrRepr::Builtin(bs)))
   }
 
   #[must_use]
   pub fn display(self, ar: &StrArena) -> impl fmt::Display + use<'_> {
-    self.0.display(ar)
+    DisplayIdRepr { this: self.0, ar }
+  }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+enum IdRepr {
+  Str(CopyStrRepr),
+}
+
+impl IdRepr {
+  pub fn apply(&mut self, subst: &Subst) {
+    match self {
+      IdRepr::Str(s) => s.apply(subst),
+    }
+  }
+}
+
+struct DisplayIdRepr<'a> {
+  this: IdRepr,
+  ar: &'a StrArena,
+}
+
+impl fmt::Display for DisplayIdRepr<'_> {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    match self.this {
+      IdRepr::Str(s) => s.display(self.ar).fmt(f),
+    }
   }
 }
 
