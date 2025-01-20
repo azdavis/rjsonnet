@@ -153,12 +153,11 @@ impl StrArena {
     }
   }
 
-  /// NOTE this is kinda fake for unutterable strings
   #[must_use]
-  pub fn get_id(&self, id: Id) -> &str {
+  pub fn get_id(&self, id: Id) -> Option<&str> {
     match id.0 {
-      IdRepr::Str(s) => self.get_copy_str(s),
-      IdRepr::Unutterable(_) => "$_",
+      IdRepr::Str(s) => Some(self.get_copy_str(s)),
+      IdRepr::Unutterable(_) => None,
     }
   }
 }

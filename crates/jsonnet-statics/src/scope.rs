@@ -101,6 +101,6 @@ impl Scope {
     &self,
     str_ar: &'ar jsonnet_expr::StrArena,
   ) -> impl Iterator<Item = &'ar str> + use<'_, 'ar> {
-    self.store.iter().map(|(&id, _)| str_ar.get_id(id))
+    self.store.iter().filter_map(|(&id, _)| str_ar.get_id(id))
   }
 }

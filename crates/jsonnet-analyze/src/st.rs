@@ -872,7 +872,7 @@ fn get_cur_param(
     let text = id.text();
     let (params, _) = func.parts();
     let params = params?;
-    let pos = params.iter().position(|p| str_ar.get_id(p.id) == text)?;
+    let pos = params.iter().position(|p| str_ar.get_id(p.id) == Some(text))?;
     Some(pos)
   } else {
     for (idx, a) in call.args().enumerate() {

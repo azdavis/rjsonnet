@@ -112,10 +112,10 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
         st.note_usage(expr, def);
         ty
       } else {
-        let suggest = match suggestion::exact(st.str_ar.get_id(*id)) {
+        let suggest = st.str_ar.get_id(*id).and_then(|id| match suggestion::exact(id) {
           Some(x) => Some(x.to_owned()),
-          None => suggestion::approx(st.str_ar.get_id(*id), st.scope.all_str(st.str_ar)),
-        };
+          None => suggestion::approx(id, st.scope.all_str(st.str_ar)),
+        });
         st.err(expr, error::Kind::UndefinedVar(*id, suggest));
         ty::Ty::ANY
       }
