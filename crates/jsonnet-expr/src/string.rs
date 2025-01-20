@@ -150,19 +150,23 @@ impl StrArena {
   #[must_use]
   pub fn get<'a>(&'a self, s: &'a Str) -> &'a str {
     match s.0 {
-      StrRepr::Copy(repr) => self.get_id(Id(repr)),
+      StrRepr::Copy(repr) => self.get_copy_str(repr),
       StrRepr::Alloc(ref s) => s.as_ref(),
+    }
+  }
+
+  fn get_copy_str(&self, s: CopyStrRepr) -> &str {
+    match s {
+      CopyStrRepr::Builtin(builtin) => builtin.as_static_str(),
+      CopyStrRepr::Idx(idx) => self.get_idx(idx),
+      CopyStrRepr::Unutterable(_) => "$_",
     }
   }
 
   /// NOTE this is kinda fake for unutterable strings
   #[must_use]
   pub fn get_id(&self, id: Id) -> &str {
-    match id.0 {
-      CopyStrRepr::Builtin(builtin) => builtin.as_static_str(),
-      CopyStrRepr::Idx(idx) => self.get_idx(idx),
-      CopyStrRepr::Unutterable(_) => "$_",
-    }
+    self.get_copy_str(id.0)
   }
 }
 
