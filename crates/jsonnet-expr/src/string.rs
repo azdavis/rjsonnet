@@ -34,13 +34,12 @@ enum StrRepr {
 enum CopyStrRepr {
   Builtin(BuiltinStr),
   Idx(StrIdx),
-  Unutterable(u32),
 }
 
 impl CopyStrRepr {
   fn apply(&mut self, subst: &Subst) {
     match self {
-      CopyStrRepr::Builtin(_) | CopyStrRepr::Unutterable(_) => {}
+      CopyStrRepr::Builtin(_) => {}
       CopyStrRepr::Idx(idx) => *idx = subst.get_str_idx(*idx),
     }
   }
@@ -60,7 +59,6 @@ impl fmt::Display for DisplayCopyStrRepr<'_> {
     match self.repr {
       CopyStrRepr::Builtin(bs) => bs.as_static_str().fmt(f),
       CopyStrRepr::Idx(idx) => self.ar.get_idx(idx).fmt(f),
-      CopyStrRepr::Unutterable(idx) => write!(f, "${idx}"),
     }
   }
 }
@@ -131,7 +129,7 @@ impl StrArena {
   }
 
   pub fn id_fresh_unutterable(&mut self) -> Id {
-    let ret = Id(IdRepr::Str(CopyStrRepr::Unutterable(self.unutterable_idx)));
+    let ret = Id(IdRepr::Unutterable(self.unutterable_idx));
     self.unutterable_idx += 1;
     ret
   }
@@ -140,7 +138,6 @@ impl StrArena {
     &self.idx_to_data[idx.to_usize()]
   }
 
-  /// NOTE this is kinda fake for unutterable strings
   #[must_use]
   pub fn get<'a>(&'a self, s: &'a Str) -> &'a str {
     match s.0 {
@@ -153,7 +150,6 @@ impl StrArena {
     match s {
       CopyStrRepr::Builtin(builtin) => builtin.as_static_str(),
       CopyStrRepr::Idx(idx) => self.get_idx(idx),
-      CopyStrRepr::Unutterable(_) => "$_",
     }
   }
 
@@ -162,6 +158,7 @@ impl StrArena {
   pub fn get_id(&self, id: Id) -> &str {
     match id.0 {
       IdRepr::Str(s) => self.get_copy_str(s),
+      IdRepr::Unutterable(_) => "$_",
     }
   }
 }
@@ -179,17 +176,15 @@ impl Id {
   pub fn is_unutterable(&self) -> bool {
     matches!(
       self.0,
-      IdRepr::Str(
-        CopyStrRepr::Unutterable(_)
-          | CopyStrRepr::Builtin(
-            BuiltinStr::std_unutterable
-              | BuiltinStr::a_unutterable
-              | BuiltinStr::b_unutterable
-              | BuiltinStr::c_unutterable
-              | BuiltinStr::d_unutterable
-              | BuiltinStr::e_unutterable
-          )
-      )
+      IdRepr::Unutterable(_)
+        | IdRepr::Str(CopyStrRepr::Builtin(
+          BuiltinStr::std_unutterable
+            | BuiltinStr::a_unutterable
+            | BuiltinStr::b_unutterable
+            | BuiltinStr::c_unutterable
+            | BuiltinStr::d_unutterable
+            | BuiltinStr::e_unutterable
+        ))
     )
   }
 
@@ -206,12 +201,14 @@ impl Id {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 enum IdRepr {
   Str(CopyStrRepr),
+  Unutterable(u32),
 }
 
 impl IdRepr {
   pub fn apply(&mut self, subst: &Subst) {
     match self {
       IdRepr::Str(s) => s.apply(subst),
+      IdRepr::Unutterable(_) => {}
     }
   }
 }
@@ -225,6 +222,7 @@ impl fmt::Display for DisplayIdRepr<'_> {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     match self.this {
       IdRepr::Str(s) => s.display(self.ar).fmt(f),
+      IdRepr::Unutterable(idx) => write!(f, "${idx}"),
     }
   }
 }
