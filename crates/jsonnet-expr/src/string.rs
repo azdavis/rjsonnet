@@ -52,6 +52,21 @@ impl CopyStrRepr {
   }
 }
 
+struct DisplayCopyStrRepr<'a> {
+  repr: CopyStrRepr,
+  ar: &'a StrArena,
+}
+
+impl fmt::Display for DisplayCopyStrRepr<'_> {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    match self.repr {
+      CopyStrRepr::Builtin(bs) => bs.as_static_str().fmt(f),
+      CopyStrRepr::Idx(idx) => self.ar.get_idx(idx).fmt(f),
+      CopyStrRepr::Unutterable(idx) => write!(f, "${idx}"),
+    }
+  }
+}
+
 /// An interned string, which is an index into a string arena.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 struct StrIdx(u32);
@@ -179,21 +194,6 @@ impl Id {
   #[must_use]
   pub fn display(self, ar: &StrArena) -> impl fmt::Display + use<'_> {
     DisplayCopyStrRepr { repr: self.0, ar }
-  }
-}
-
-struct DisplayCopyStrRepr<'a> {
-  repr: CopyStrRepr,
-  ar: &'a StrArena,
-}
-
-impl fmt::Display for DisplayCopyStrRepr<'_> {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    match self.repr {
-      CopyStrRepr::Builtin(bs) => bs.as_static_str().fmt(f),
-      CopyStrRepr::Idx(idx) => self.ar.get_idx(idx).fmt(f),
-      CopyStrRepr::Unutterable(idx) => write!(f, "${idx}"),
-    }
   }
 }
 
