@@ -4,6 +4,8 @@ use crate::error;
 use jsonnet_syntax::kind::SyntaxKind as SK;
 use str_process::St;
 
+const MERGE_CONFLICT_MARKERS: [&[u8]; 4] = [b"<<<<<<<", b"|||||||", b"=======", b">>>>>>>"];
+
 #[expect(clippy::too_many_lines)]
 pub(crate) fn token(st: &mut St<'_>, out: &mut error::Output, b: u8) -> SK {
   if is_ws(b) {
@@ -43,6 +45,11 @@ pub(crate) fn token(st: &mut St<'_>, out: &mut error::Output, b: u8) -> SK {
       }
       Some(_) | None => return SK::Slash,
     }
+  }
+  // pub this before text block since it may contain |||
+  if MERGE_CONFLICT_MARKERS.iter().any(|&bs| st.eat_prefix(bs)) {
+    st.bump_while(|b| b != b'\n');
+    return SK::MergeConflictMarker;
   }
   // put this before PUNCTUATION since that contains || and |
   if st.eat_prefix(b"|||") {

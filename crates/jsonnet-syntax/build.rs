@@ -44,6 +44,7 @@ fn main() {
       ("DoubleQuotedVerbatimString", "a double-quoted verbatim string"),
       ("SingleQuotedVerbatimString", "a single-quoted verbatim string"),
       ("TextBlock", "a text block"),
+      ("MergeConflictMarker", "a Git merge conflict marker"),
     ]),
     file: file!(),
   };

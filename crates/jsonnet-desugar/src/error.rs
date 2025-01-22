@@ -20,6 +20,7 @@ impl Error {
 #[derive(Debug)]
 pub(crate) enum Kind {
   Hole,
+  MergeConflictMarker,
   CannotRepresentNumber,
   ArrayCompNotOne,
   FirstCompSpecNotFor,
@@ -38,6 +39,7 @@ impl fmt::Display for Error {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     match &self.kind {
       Kind::Hole => f.write_str("found placeholder hole"),
+      Kind::MergeConflictMarker => f.write_str("found Git merge conflict marker"),
       Kind::CannotRepresentNumber => f.write_str("cannot represent number"),
       Kind::ArrayCompNotOne => f.write_str("array comprehension must contain exactly one element"),
       Kind::FirstCompSpecNotFor => {

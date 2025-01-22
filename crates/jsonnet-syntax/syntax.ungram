@@ -2,6 +2,7 @@ Root = Expr
 
 Expr =
   ExprHole
+| ExprMergeConflictMarker
 | ExprNull
 | ExprTrue
 | ExprFalse
@@ -27,7 +28,10 @@ Expr =
 | ExprImport
 | ExprError
 
+// not real exprs
 ExprHole = '...'
+ExprMergeConflictMarker = 'MergeConflictMarker'
+
 ExprNull = 'null'
 ExprTrue = 'true'
 ExprFalse = 'false'

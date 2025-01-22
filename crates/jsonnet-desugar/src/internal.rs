@@ -20,6 +20,10 @@ pub(crate) fn get_expr(
       st.err(&expr, error::Kind::Hole);
       return None;
     }
+    ast::Expr::ExprMergeConflictMarker(_) => {
+      st.err(&expr, error::Kind::MergeConflictMarker);
+      return None;
+    }
     ast::Expr::ExprNull(_) => ExprData::Prim(Prim::Null),
     ast::Expr::ExprTrue(_) => ExprData::Prim(Prim::Bool(true)),
     ast::Expr::ExprFalse(_) => ExprData::Prim(Prim::Bool(false)),
