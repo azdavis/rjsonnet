@@ -18,6 +18,7 @@ fn main() -> ExitCode {
 }
 
 fn run() -> usize {
+  env_logger::init();
   let mut st = St::init(Init::default());
   let fs = paths::RealFileSystem::default();
   let pwd = match fs.current_dir() {

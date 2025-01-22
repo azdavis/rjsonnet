@@ -14,6 +14,7 @@ test = false
 doctest = false
 
 [dependencies]
+env_logger.workspace = true
 paths.workspace = true
 
 jsonnet-analyze.path = "../jsonnet-analyze"
