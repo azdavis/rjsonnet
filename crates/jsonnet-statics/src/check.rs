@@ -399,13 +399,13 @@ fn define_binds(
 
 fn undefine(st: &mut st::St<'_>, ar: &ExprArena, id: Id) {
   let Some((e, k)) = st.scope.undefine(id) else { return };
-  if is_actually_unused(st, ar, e, k, id) {
+  if is_actually_unused(st, ar, e, k) {
     st.err(e, error::Kind::UnusedVar(id, k));
   }
 }
 
 /// this returns true most of the time. however, in a very specific case, it returns false. that
-/// case is when the id is an object comp local bind generated in desugaring that has been seen for
+/// case is when the def is an object comp local bind generated in desugaring that has been seen for
 /// the first time.
 ///
 /// if this is its first time, we return false to skip emitting for now. if it is actually used by
@@ -421,18 +421,10 @@ fn is_actually_unused(
   ar: &ExprArena,
   expr: ExprMust,
   kind: def::ExprDefKind,
-  id: Id,
 ) -> bool {
   let def::ExprDefKind::Multi(idx, def::ExprDefKindMulti::LocalBind) = kind else { return true };
-  let ExprData::Local { binds, body: Some(_) } = &ar[expr] else {
-    always!(false, "LocalBind did not point to a Local");
-    return true;
-  };
-  let Some(&(got_id, Some(e_idx))) = binds.get(idx) else {
-    always!(false, "LocalBind {idx} out of range");
-    return true;
-  };
-  always!(id == got_id, "didn't get {id:?} as local {idx}, got {got_id:?}");
+  let ExprData::Local { binds, body: Some(_) } = &ar[expr] else { return true };
+  let Some(&(_, Some(e_idx))) = binds.get(idx) else { return true };
   let ExprData::Subscript { on: Some(on), idx: Some(sub_idx) } = ar[e_idx] else { return true };
   let ExprData::Id(on_id) = ar[on] else { return true };
   if !on_id.is_unutterable() {
