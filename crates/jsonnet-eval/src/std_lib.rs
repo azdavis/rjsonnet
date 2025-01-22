@@ -46,7 +46,7 @@ pub(crate) fn isString(v: &Val) -> bool {
   matches!(v, Val::Prim(Prim::String(_)))
 }
 
-pub(crate) fn length(x: &Val, expr: ExprMust, cx: Cx<'_>) -> Result<usize> {
+pub(crate) fn length(x: &Val, expr: ExprMust, cx: &mut Cx<'_>) -> Result<usize> {
   match x {
     Val::Prim(prim) => match prim {
       Prim::Null | Prim::Bool(_) | Prim::Number(_) => {
@@ -64,15 +64,15 @@ pub(crate) fn length(x: &Val, expr: ExprMust, cx: Cx<'_>) -> Result<usize> {
   }
 }
 
-pub(crate) fn join(sep: &Val, arr: &Array, expr: ExprMust, cx: Cx<'_>) -> Result<Val> {
+pub(crate) fn join(sep: &Val, arr: &Array, expr: ExprMust, cx: &mut Cx<'_>) -> Result<Val> {
   match sep {
     Val::Prim(Prim::String(sep)) => {
       let mut ret = String::new();
-      let sep = cx.str_ar.get(sep);
+      let sep = cx.str_ar.get(sep).to_owned();
       let mut first = true;
       for (env, elem) in arr.iter() {
         if !first {
-          ret.push_str(sep);
+          ret.push_str(sep.as_str());
         };
         first = false;
         let Val::Prim(Prim::String(elem)) = exec::get(cx, env, elem)? else {
@@ -183,7 +183,7 @@ pub(crate) fn round(n: f64) -> f64 {
   n.round()
 }
 
-pub(crate) fn equals(lhs: &Val, rhs: &Val, expr: ExprMust, cx: Cx<'_>) -> Result<bool> {
+pub(crate) fn equals(lhs: &Val, rhs: &Val, expr: ExprMust, cx: &mut Cx<'_>) -> Result<bool> {
   exec::eq_val(expr, cx, lhs, rhs)
 }
 
@@ -230,7 +230,7 @@ pub(crate) fn substr(
   from: usize,
   len: usize,
   expr: ExprMust,
-  _: Cx<'_>,
+  _: &mut Cx<'_>,
 ) -> Result<String> {
   if from >= str.len() {
     return Err(error::Error::Exec { expr, kind: error::Kind::IdxOutOfRange(from) });

@@ -336,19 +336,22 @@ impl St {
   /// # Errors
   ///
   /// If this path couldn't be evaluated to json.
-  pub fn get_json(&self, path_id: PathId) -> jsonnet_eval::error::Result<jsonnet_val::json::Val> {
+  pub fn get_json(
+    &mut self,
+    path_id: PathId,
+  ) -> jsonnet_eval::error::Result<jsonnet_val::json::Val> {
     if self.with_fs.has_errors.contains(&path_id) {
       return Err(jsonnet_eval::error::Error::HasErrors(path_id));
     }
-    let cx = jsonnet_eval::Cx {
+    let mut cx = jsonnet_eval::Cx {
       paths: &self.with_fs.artifacts.syntax.paths,
-      str_ar: &self.with_fs.artifacts.syntax.strings,
-      exprs: &self.file_exprs,
+      str_ar: &mut self.with_fs.artifacts.syntax.strings,
+      exprs: &mut self.file_exprs,
       import_str: &self.import_str,
       import_bin: &self.import_bin,
     };
-    let val = jsonnet_eval::get_exec(cx, path_id)?;
-    jsonnet_eval::get_manifest(cx, val)
+    let val = jsonnet_eval::get_exec(&mut cx, path_id)?;
+    jsonnet_eval::get_manifest(&mut cx, val)
   }
 
   /// Returns the strings for this.

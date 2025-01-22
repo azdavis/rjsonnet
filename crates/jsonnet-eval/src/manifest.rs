@@ -10,7 +10,7 @@ use std::collections::BTreeMap;
 /// # Errors
 ///
 /// If manifestation failed.
-pub fn get(cx: Cx<'_>, val: jsonnet::Val) -> error::Result<json::Val> {
+pub fn get(cx: &mut Cx<'_>, val: jsonnet::Val) -> error::Result<json::Val> {
   match val {
     jsonnet::Val::Prim(prim) => Ok(json::Val::Prim(prim)),
     jsonnet::Val::Object(object) => {
@@ -44,7 +44,7 @@ pub fn get(cx: Cx<'_>, val: jsonnet::Val) -> error::Result<json::Val> {
 }
 
 /// both executes and manifests
-fn get_(cx: Cx<'_>, env: &jsonnet::Env, expr: jsonnet_expr::Expr) -> error::Result<json::Val> {
+fn get_(cx: &mut Cx<'_>, env: &jsonnet::Env, expr: jsonnet_expr::Expr) -> error::Result<json::Val> {
   let val = exec::get(cx, env, expr)?;
   get(cx, val)
 }

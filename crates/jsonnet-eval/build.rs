@@ -22,7 +22,7 @@ fn main() {
 
     #[allow(non_snake_case)]
     pub(crate) fn call_std(
-      cx: crate::Cx<'_>,
+      cx: &mut crate::Cx<'_>,
       env: &jsonnet_val::jsonnet::Env,
       pos: &[jsonnet_expr::Expr],
       named: &[(jsonnet_expr::Id, jsonnet_expr::Expr)],
@@ -156,7 +156,8 @@ fn mk_call_std_arm(func: &jsonnet_std_sig::Fn) -> proc_macro2::TokenStream {
       },
       Ty::Str => q! {
         let #name = util::get_str(&#name, args.#name.unwrap_or(expr))?;
-        let #name = cx.str_ar.get(#name);
+        let #name = cx.str_ar.get(#name).to_owned();
+        let #name = #name.as_str();
       },
       Ty::StrInterned => {
         q! { let #name = util::get_str(&#name, args.#name.unwrap_or(expr))?; }
