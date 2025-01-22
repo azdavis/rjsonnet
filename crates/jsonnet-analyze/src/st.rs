@@ -139,15 +139,15 @@ impl WithFs {
       match kind {
         TopoSortActionKind::Start => {
           if done.contains(&path_id) {
-            log::info!("already done");
+            log::debug!("already done");
             continue;
           }
           if self.file_tys.contains_key(&path_id) {
-            log::info!("already cached");
+            log::debug!("already cached");
             continue;
           }
           if !cur.insert(path_id) {
-            log::warn!("cycle");
+            log::debug!("cycle");
             continue;
           }
           work.push(TopoSortAction::end(path_id));
@@ -235,13 +235,13 @@ impl WithFs {
   where
     F: Sync + paths::FileSystem,
   {
-    log::debug!(
+    log::info!(
       "ensure_import_tys_cached {:?} {}",
       orig_path_id,
       self.display_path_id(orig_path_id)
     );
     let levels = self.topological_sort(fs, orig_path_id, contents);
-    log::debug!("levels: {levels:?}");
+    log::info!("levels: {levels:?}");
     // TODO allow asking for less analysis to just get the types, not the diagnostics
     for level in levels.into_iter().rev() {
       // parallel
