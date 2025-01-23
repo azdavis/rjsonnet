@@ -8,14 +8,14 @@ pub(crate) struct Detector {
 }
 
 impl Detector {
-  /// Returns the current item we're at.
-  pub(crate) fn cur(&self) -> paths::PathId {
-    self.cur
-  }
-
   /// Makes a new detector at an item.
   pub(crate) fn new(cur: paths::PathId) -> Self {
     Self { cur, in_progress: Vec::new() }
+  }
+
+  /// Returns the current item we're at.
+  pub(crate) fn cur(&self) -> paths::PathId {
+    self.cur
   }
 
   /// Sets the new item, returning an error if this would cause a non-self cycle.
