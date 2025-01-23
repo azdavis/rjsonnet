@@ -22,15 +22,14 @@ impl Env {
     self.path
   }
 
-  /// Returns a new env that is this env plus the binds.
-  #[must_use]
-  pub fn add_binds(&self, binds: &[(Id, Expr)]) -> Env {
+  /// Adds the binds to the env.
+  pub fn add_binds(&mut self, binds: &[(Id, Expr)]) {
     // TODO fix mutual recursion
     let mut ret = self.clone();
     for &(bind, expr) in binds {
       ret.insert(bind, self.clone(), expr);
     }
-    ret
+    *self = ret;
   }
 
   /// Returns an empty env.

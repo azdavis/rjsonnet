@@ -134,7 +134,11 @@ pub(crate) fn get(cx: &mut Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
         Get::Expr(env, expr) => get(cx, env, expr),
       },
     },
-    ExprData::Local { binds, body } => get(cx, &env.add_binds(&binds), body),
+    ExprData::Local { binds, body } => {
+      let mut env = env.clone();
+      env.add_binds(&binds);
+      get(cx, &env, body)
+    }
     ExprData::If { cond, yes, no } => {
       let Val::Prim(Prim::Bool(b)) = get(cx, env, cond)? else {
         return Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes });
