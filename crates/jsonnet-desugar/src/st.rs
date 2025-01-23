@@ -1,7 +1,6 @@
 //! The mutable state under which we desugar.
 
 use crate::error::{self, Error};
-use jsonnet_expr::Arenas;
 use jsonnet_syntax::{ast, kind::SyntaxToken};
 use rustc_hash::FxHashMap;
 use text_size::TextRange;
@@ -35,10 +34,10 @@ impl Pointers {
 
 #[derive(Debug, Default)]
 pub(crate) struct St {
-  arenas: Arenas,
+  arenas: jsonnet_expr::Arenas,
   errors: Vec<Error>,
   pointers: Pointers,
-  ps: paths::Store,
+  paths: paths::Store,
 }
 
 impl St {
@@ -80,7 +79,7 @@ impl St {
       top,
       arenas: self.arenas,
       pointers: self.pointers,
-      paths: self.ps,
+      paths: self.paths,
       errors: self.errors,
     }
   }
@@ -91,7 +90,7 @@ impl St {
   }
 
   pub(crate) fn path_id(&mut self, p: &paths::CleanPath) -> paths::PathId {
-    self.ps.get_id(p)
+    self.paths.get_id(p)
   }
 }
 
