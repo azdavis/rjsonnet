@@ -243,7 +243,7 @@ pub(crate) fn get(cx: &mut Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
     }
     ExprData::Import { kind, path } => match kind {
       jsonnet_expr::ImportKind::Code => match cx.exprs.get(&path) {
-        Some(file) => match env.empty_with_cur(path) {
+        Some(file) => match env.empty_with_paths(path) {
           Ok(env) => get(cx, &env, file.top),
           Err(cycle) => Err(error::Error::Exec { expr, kind: error::Kind::Cycle(cycle) }),
         },

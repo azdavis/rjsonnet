@@ -10,8 +10,8 @@ use std::collections::BTreeMap;
 #[derive(Debug, Clone)]
 pub struct Env {
   path: paths::PathId,
+  cur_paths: Vec<paths::PathId>,
   store: FxHashMap<Id, (Env, Expr)>,
-  cur: Vec<paths::PathId>,
   this: Option<Box<Object>>,
 }
 
@@ -36,7 +36,7 @@ impl Env {
   /// Returns an empty env.
   #[must_use]
   pub fn empty(path: paths::PathId) -> Self {
-    Self { path, store: FxHashMap::default(), cur: Vec::new(), this: None }
+    Self { path, cur_paths: Vec::new(), store: FxHashMap::default(), this: None }
   }
 
   /// Returns an empty env, but check to see if this would cause a cycle.
@@ -44,15 +44,15 @@ impl Env {
   /// # Errors
   ///
   /// If there would be a cycle.
-  pub fn empty_with_cur(&self, path: paths::PathId) -> Result<Self, Cycle> {
-    let mut cur = self.cur.clone();
-    let idx = self.cur.iter().position(|&p| p == path);
+  pub fn empty_with_paths(&self, path: paths::PathId) -> Result<Self, Cycle> {
+    let mut cur_paths = self.cur_paths.clone();
+    let idx = cur_paths.iter().position(|&p| p == path);
     match idx {
       None => {
-        cur.push(path);
-        Ok(Self { path, store: FxHashMap::default(), cur, this: None })
+        cur_paths.push(path);
+        Ok(Self { path, cur_paths, store: FxHashMap::default(), this: None })
       }
-      Some(idx) => Err(Cycle { first_and_last: path, intervening: cur.split_off(idx + 1) }),
+      Some(idx) => Err(Cycle { first_and_last: path, intervening: cur_paths.split_off(idx + 1) }),
     }
   }
 
