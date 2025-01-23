@@ -155,16 +155,14 @@ fn maybe_extra_checks(
     StdFn::join => {
       let &(_, sep_ty) = params.get(&Id::sep)?;
       let &(arr_expr, arr_ty) = params.get(&Id::arr)?;
-      // TODO handle unions
-      let &ty::Data::Array(arr) = st.tys.data(arr_ty) else { return None };
+      let arr = array_ty(st, arr_ty)?;
       st.unify(arr_expr, ty::Ty::STRING_OR_ARRAY, arr.elem);
       st.unify(arr_expr, arr.elem, sep_ty);
       Some(arr.elem)
     }
     StdFn::reverse => {
       let &(_, arr_ty) = params.get(&Id::arr)?;
-      // TODO handle unions
-      let &ty::Data::Array(arr) = st.tys.data(arr_ty) else { return None };
+      let arr = array_ty(st, arr_ty)?;
       // might not be a set anymore (if it was before)
       Some(st.tys.get(ty::Data::Array(ty::Array::new(arr.elem))))
     }
@@ -175,8 +173,7 @@ fn maybe_extra_checks(
     }
     StdFn::set => {
       let &(_, arr_ty) = params.get(&Id::arr)?;
-      // TODO handle unions
-      let &ty::Data::Array(arr) = st.tys.data(arr_ty) else { return None };
+      let arr = array_ty(st, arr_ty)?;
       Some(st.tys.get(ty::Data::Array(ty::Array::set(arr.elem))))
     }
     StdFn::assertEqual => {
@@ -344,8 +341,7 @@ fn check_filter(
   func: ExprMust,
   arr_ty: ty::Ty,
 ) -> Option<ty::Ty> {
-  // TODO handle unions
-  let &ty::Data::Array(arr) = st.tys.data(arr_ty) else { return None };
+  let arr = array_ty(st, arr_ty)?;
   let mut elem = arr.elem;
   if let Some(fact) = flow::extract::get_predicate(&st.scope, ar, func) {
     fact.apply_to(&mut st.tys, &mut elem);
@@ -390,4 +386,10 @@ fn object_values_inner(st: &st::St<'_>, ty: ty::Ty, ac: &mut ty::Union) {
       }
     }
   }
+}
+
+fn array_ty(st: &mut st::St<'_>, arr_ty: ty::Ty) -> Option<ty::Array> {
+  // TODO handle unions
+  let &ty::Data::Array(arr) = st.tys.data(arr_ty) else { return None };
+  Some(arr)
 }
