@@ -1,29 +1,35 @@
 //! Detecting cycles.
 
+/// A detector for cycles. Allows self-cycles.
 #[derive(Debug, Clone)]
 pub(crate) struct Detector {
-  path: paths::PathId,
-  cur_paths: Vec<paths::PathId>,
+  cur: paths::PathId,
+  in_progress: Vec<paths::PathId>,
 }
 
 impl Detector {
+  /// Returns the current item we're at.
   pub(crate) fn cur(&self) -> paths::PathId {
-    self.path
+    self.cur
   }
 
-  pub(crate) fn new(path: paths::PathId) -> Self {
-    Self { path, cur_paths: Vec::new() }
+  /// Makes a new detector at an item.
+  pub(crate) fn new(cur: paths::PathId) -> Self {
+    Self { cur, in_progress: Vec::new() }
   }
 
-  pub(crate) fn try_push(&self, path: paths::PathId) -> Result<Self, Cycle> {
-    let mut cur_paths = self.cur_paths.clone();
-    let idx = cur_paths.iter().position(|&p| p == path);
+  /// Sets the new item, returning an error if this would cause a non-self cycle.
+  pub(crate) fn try_push(mut self, cur: paths::PathId) -> Result<Self, Cycle> {
+    let idx = self.in_progress.iter().position(|&x| x == cur);
     match idx {
       None => {
-        cur_paths.push(path);
-        Ok(Self { path, cur_paths })
+        self.cur = cur;
+        self.in_progress.push(cur);
+        Ok(self)
       }
-      Some(idx) => Err(Cycle { first_and_last: path, intervening: cur_paths.split_off(idx + 1) }),
+      Some(idx) => {
+        Err(Cycle { first_and_last: cur, intervening: self.in_progress.split_off(idx + 1) })
+      }
     }
   }
 }

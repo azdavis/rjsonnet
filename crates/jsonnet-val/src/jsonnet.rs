@@ -45,7 +45,7 @@ impl Env {
   ///
   /// If there would be a cycle.
   pub fn empty_with_paths(&self, path: paths::PathId) -> Result<Self, Cycle> {
-    Ok(Self { cycle_detector: self.cycle_detector.try_push(path)?, store: Vec::new() })
+    Ok(Self { cycle_detector: self.cycle_detector.clone().try_push(path)?, store: Vec::new() })
   }
 
   /// Insert an id-expr mapping.
