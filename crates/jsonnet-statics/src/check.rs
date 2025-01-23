@@ -407,30 +407,41 @@ fn undefine(st: &mut st::St<'_>, ar: &ExprArena, id: Id) {
   }
 }
 
-/// this returns true most of the time. however, in a very specific case, it returns false. that
-/// case is when the def is an object comp local bind generated in desugaring that has been seen for
-/// the first time.
-///
-/// if this is its first time, we return false to skip emitting for now. if it is actually used by
-/// the second generated occurrence of the id, we will not detect it as unused a second time, and
-/// will not ever emit an unused error for it.
-///
-/// if this is NOT its first time, this is the second and thus final occurrence of the id being
-/// detected as unused. so we should actually emit the unused error, so we return true.
-///
-/// this is pretty hacky, tbh.
+/// we need to count down all the desugared copies of variables for e.g. object comprehension
+/// identifiers
 fn is_actually_unused(st: &mut st::St<'_>, ar: &ExprArena, expr_def: def::ExprDef) -> bool {
-  let def::ExprDef { expr, kind } = expr_def;
-  let def::ExprDefKind::Multi(idx, def::ExprDefKindMulti::LocalBind) = kind else { return true };
-  let ExprData::Local { binds, body: Some(_) } = &ar[expr] else { return true };
-  let Some(&(_, Some(e_idx))) = binds.get(idx) else { return true };
-  let ExprData::Subscript { on: Some(on), idx: Some(sub_idx) } = ar[e_idx] else { return true };
-  let ExprData::Id(on_id) = ar[on] else { return true };
-  if !on_id.is_unutterable() {
+  let ed = &ar[expr_def.expr];
+  let Some(ce) = canonical_expr(ed, expr_def) else {
+    log::warn!("expr def {expr_def:?} didn't match up with expr {ed:?}");
     return true;
+  };
+  st.id_counts.is_done(ce)
+}
+
+fn canonical_expr(expr: &jsonnet_expr::ExprData, expr_def: def::ExprDef) -> Expr {
+  match expr_def.kind {
+    def::ExprDefKind::ObjectCompId => {
+      let ExprData::ObjectComp { .. } = expr else { return None };
+      Some(expr_def.expr)
+    }
+    def::ExprDefKind::Multi(n, m) => match m {
+      def::ExprDefKindMulti::LocalBind => {
+        let ExprData::Local { binds, .. } = expr else { return None };
+        let &(_, e) = binds.get(n)?;
+        e
+      }
+      def::ExprDefKindMulti::ObjectLocalBind => {
+        let ExprData::Object { binds, .. } = expr else { return None };
+        let &(_, e) = binds.get(n)?;
+        e
+      }
+      def::ExprDefKindMulti::FnParam => {
+        let ExprData::Function { params, .. } = expr else { return None };
+        let &(_, e) = params.get(n)?;
+        e.unwrap_or(Some(expr_def.expr))
+      }
+    },
   }
-  let ExprData::Prim(Prim::Number(_)) = ar[sub_idx] else { return true };
-  !st.object_comp_local_defs.insert(e_idx)
 }
 
 fn is_orderable(st: &st::St<'_>, ty: ty::Ty) -> bool {

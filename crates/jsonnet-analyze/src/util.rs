@@ -48,6 +48,7 @@ pub(crate) struct SyntaxFileArtifacts {
   pub(crate) pos_db: text_pos::PositionDb,
   pub(crate) root: jsonnet_syntax::Root,
   pub(crate) pointers: jsonnet_desugar::Pointers,
+  pub(crate) id_counts: jsonnet_expr::Counter,
 }
 
 #[derive(Debug, Default)]
@@ -106,6 +107,7 @@ impl SyntaxFileToCombine {
           pos_db: text_pos::PositionDb::new(contents),
           root: parse.root,
           pointers: ds.pointers,
+          id_counts: ds.id_counts,
         },
         errors: SyntaxFileErrors { lex: lex.errors, parse: parse.errors, desugar: ds.errors },
         exprs: jsonnet_eval::Exprs { ar: ds.arenas.expr, top: ds.top },
@@ -214,7 +216,12 @@ impl StaticsFileToCombine {
     artifacts: &GlobalArtifacts,
     file_tys: &paths::PathMap<jsonnet_ty::Ty>,
   ) -> Self {
-    let st = jsonnet_statics::st::St::new(&artifacts.statics, file_tys, &artifacts.syntax.strings);
+    let st = jsonnet_statics::st::St::new(
+      &artifacts.statics,
+      file_tys,
+      &artifacts.syntax.strings,
+      syntax.artifacts.id_counts.clone(),
+    );
     let (statics, to_combine) = jsonnet_statics::get(st, &syntax.exprs.ar, syntax.exprs.top);
     Self { file: StaticsFile { syntax, statics }, to_combine }
   }

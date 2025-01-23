@@ -277,6 +277,26 @@ impl TryFrom<&Str> for StdField {
   }
 }
 
+#[derive(Debug, Default, Clone)]
+pub struct Counter {
+  inner: ExprMap<usize>,
+}
+
+impl Counter {
+  pub fn set(&mut self, e: ExprMust, n: usize) {
+    self.inner.insert(e, n);
+  }
+
+  pub fn is_done(&mut self, e: ExprMust) -> bool {
+    let Some(n) = self.inner.0.get_mut(e.0) else { return true };
+    if *n == 0 {
+      return true;
+    }
+    *n -= 1;
+    *n == 0
+  }
+}
+
 #[test]
 fn size() {
   assert_eq!(std::mem::size_of::<ExprData>(), 72);

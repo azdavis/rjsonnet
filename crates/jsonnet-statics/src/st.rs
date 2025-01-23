@@ -4,7 +4,6 @@ use crate::{error, scope::Scope, unify};
 use jsonnet_expr::{def, ExprMust, Id};
 use jsonnet_ty as ty;
 use paths::PathMap;
-use rustc_hash::FxHashSet;
 
 /// Results after doing statics on one file.
 #[derive(Debug, Default)]
@@ -30,8 +29,8 @@ pub struct St<'a> {
   pub(crate) scope: Scope,
   /// A store for all the types.
   pub(crate) tys: ty::MutStore<'a>,
-  /// The object comp local defs we've seen before.
-  pub(crate) object_comp_local_defs: FxHashSet<ExprMust>,
+  /// The counter for canonical id exprs we've seen as def sites.
+  pub(crate) id_counts: jsonnet_expr::Counter,
 }
 
 impl<'a> St<'a> {
@@ -41,6 +40,7 @@ impl<'a> St<'a> {
     tys: &'a ty::GlobalStore,
     other_files: &'a PathMap<ty::Ty>,
     str_ar: &'a jsonnet_expr::StrArena,
+    id_counts: jsonnet_expr::Counter,
   ) -> Self {
     Self {
       statics: Statics::default(),
@@ -48,7 +48,7 @@ impl<'a> St<'a> {
       str_ar,
       scope: Scope::default(),
       tys: ty::MutStore::new(tys),
-      object_comp_local_defs: FxHashSet::default(),
+      id_counts,
     }
   }
 

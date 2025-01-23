@@ -474,16 +474,16 @@ fn get_object_comp(st: &mut St, cx: Cx<'_>, inside: ast::Object, in_obj: bool) -
     let idx = f64::from(idx);
     let idx = Float::always_from_f64(idx);
     let idx = Some(st.expr(*ptr, ExprData::Prim(Prim::Number(idx))));
-    let subscript = Some(st.expr(*ptr, ExprData::Subscript { on, idx }));
-    (*id, subscript)
+    let subscript = st.expr(*ptr, ExprData::Subscript { on, idx });
+    // 2 is because we copy these exprs 2 times, see below
+    st.set_id_count(subscript, 2);
+    (*id, Some(subscript))
   });
   let shared_binds: Vec<_> = shared_binds.collect();
-  // NOTE: for unused variable checks on these shared binds, we depend on using the exprs in these
-  // shared binds, which MUST be number-subscripts on unutterable variables, exactly TWICE.
   let body_binds: Vec<_> = shared_binds.iter().copied().chain(binds).collect();
-  // FIRST time using shared binds
+  // 1st time using shared binds
   let name = Some(st.expr(ptr, ExprData::Local { binds: shared_binds, body: name }));
-  // SECOND time using shared binds
+  // 2nd time using shared binds
   let body = Some(st.expr(ptr, ExprData::Local { binds: body_binds, body }));
   let vars = vars.into_iter().map(|(ptr, x)| Some(st.expr(ptr, ExprData::Id(x))));
   let vars: Vec<_> = vars.collect();

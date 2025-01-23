@@ -1,6 +1,7 @@
 //! The mutable state under which we desugar.
 
 use crate::error::{self, Error};
+use always::always;
 use jsonnet_syntax::{ast, kind::SyntaxToken};
 use rustc_hash::FxHashMap;
 use text_size::TextRange;
@@ -37,6 +38,7 @@ pub(crate) struct St {
   arenas: jsonnet_expr::Arenas,
   errors: Vec<Error>,
   pointers: Pointers,
+  id_counts: jsonnet_expr::Counter,
   paths: paths::Store,
 }
 
@@ -74,12 +76,18 @@ impl St {
     self.errors.push(Error { range, kind });
   }
 
+  pub(crate) fn set_id_count(&mut self, canonical: jsonnet_expr::ExprMust, count: usize) {
+    always!(count > 1, "shouldn't have a 0 or 1 count");
+    self.id_counts.set(canonical, count);
+  }
+
   pub(crate) fn finish(self, top: jsonnet_expr::Expr) -> Desugar {
     Desugar {
       top,
       arenas: self.arenas,
       pointers: self.pointers,
       paths: self.paths,
+      id_counts: self.id_counts,
       errors: self.errors,
     }
   }
@@ -105,6 +113,8 @@ pub struct Desugar {
   pub pointers: Pointers,
   /// The paths store.
   pub paths: paths::Store,
+  /// The paths store.
+  pub id_counts: jsonnet_expr::Counter,
   /// Errors when desugaring.
   pub errors: Vec<Error>,
 }
