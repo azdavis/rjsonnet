@@ -246,7 +246,7 @@ fn maybe_extra_checks(
       let &(_, func_ty) = params.get(&Id::func)?;
       let &(arr_expr, arr_ty) = params.get(&Id::arr)?;
       let &(init_expr, init_ty) = params.get(&Id::init)?;
-      // TODO handle unions
+      // NOTE no attempt to handle union of fn tys
       let ty::Data::Fn(func) = st.tys.data(func_ty) else { return None };
       let (Some(&[ac_param, x_param]), func_ret) = func.parts() else { return None };
       st.unify(init_expr, ac_param.ty, init_ty);
@@ -329,7 +329,7 @@ fn check_map(
   arr_expr: ExprMust,
   arr_ty: ty::Ty,
 ) -> Option<ty::Ty> {
-  // TODO handle unions
+  // NOTE no attempt to handle union of fn tys
   let ty::Data::Fn(func) = st.tys.data(func_ty) else { return None };
   // NOTE no need to emit error when not 1 param, covered by unify
   let (Some(&[func_param]), func_ret_ty) = func.parts() else { return None };
