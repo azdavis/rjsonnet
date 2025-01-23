@@ -193,7 +193,7 @@ fn maybe_extra_checks(
     }
     StdFn::makeArray => {
       let &(_, func_ty) = params.get(&Id::func)?;
-      // TODO handle unions
+      // NOTE no attempt to handle union of fn tys
       let ty::Data::Fn(func) = st.tys.data(func_ty) else { return None };
       let (_, ret) = func.parts();
       Some(st.tys.get(ty::Data::Array(ty::Array::new(ret))))
@@ -374,7 +374,6 @@ fn object_values(
   Some(st.tys.get(ty::Data::Union(ac)))
 }
 
-/// TODO case on whether we are considering hidden fields?
 fn object_values_inner(st: &st::St<'_>, ty: ty::Ty, ac: &mut ty::Union) {
   match st.tys.data(ty) {
     ty::Data::Prim(_) | ty::Data::Array(_) | ty::Data::Fn(_) => {}
