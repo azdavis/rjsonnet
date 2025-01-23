@@ -16,7 +16,22 @@ pub enum Def {
   /// An `import` of a Jsonnet file.
   Import(paths::PathId),
   /// A part of an expression.
-  Expr(ExprMust, ExprDefKind),
+  Expr(ExprDef),
+}
+
+/// A def from an expr.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct ExprDef {
+  /// The expr.
+  pub expr: ExprMust,
+  /// The kind of def at this expr.
+  pub kind: ExprDefKind,
+}
+
+impl From<ExprDef> for Def {
+  fn from(value: ExprDef) -> Self {
+    Self::Expr(value)
+  }
 }
 
 /// A definition site with an associated expression in the plain (not sugary) language.

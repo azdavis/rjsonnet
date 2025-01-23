@@ -59,7 +59,8 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
     ExprData::ObjectComp { name, body, id, ary } => {
       let ary_ty = get(st, ar, *ary);
       must_reachable(st, expr, ary_ty);
-      st.scope.define(*id, ty::Ty::ANY, def::Def::Expr(expr, def::ExprDefKind::ObjectCompId));
+      let def = def::ExprDef { expr, kind: def::ExprDefKind::ObjectCompId };
+      st.scope.define(*id, ty::Ty::ANY, def.into());
       let name_ty = get(st, ar, *name);
       must_reachable(st, expr, name_ty);
       st.define_self_super();
@@ -150,7 +151,8 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
       for (idx, &(id, _)) in params.iter().enumerate() {
         // unwrap_or should never happen, but if it does we'll notice with the always!(false) later
         let ty = param_tys.get(&id).copied().unwrap_or(ty::Ty::ANY);
-        st.scope.define(id, ty, def::Def::Expr(expr, def::ExprDefKind::Multi(idx, m)));
+        let def = def::ExprDef { expr, kind: def::ExprDefKind::Multi(idx, m) };
+        st.scope.define(id, ty, def.into());
       }
       for &(id, rhs) in params {
         let Some(rhs) = rhs else { continue };
@@ -385,7 +387,8 @@ fn define_binds(
 ) {
   let mut bound_ids = FxHashSet::<Id>::default();
   for (idx, &(bind, _)) in binds.iter().enumerate() {
-    st.scope.define(bind, ty::Ty::ANY, def::Def::Expr(expr, def::ExprDefKind::Multi(idx, m)));
+    let def = def::ExprDef { expr, kind: def::ExprDefKind::Multi(idx, m) };
+    st.scope.define(bind, ty::Ty::ANY, def.into());
     if !bound_ids.insert(bind) {
       st.err(expr, error::Kind::DuplicateVar(bind, idx, m));
     }
@@ -398,9 +401,9 @@ fn define_binds(
 }
 
 fn undefine(st: &mut st::St<'_>, ar: &ExprArena, id: Id) {
-  let Some((e, k)) = st.scope.undefine(id) else { return };
-  if is_actually_unused(st, ar, e, k) {
-    st.err(e, error::Kind::UnusedVar(id, k));
+  let Some(ed) = st.scope.undefine(id) else { return };
+  if is_actually_unused(st, ar, ed) {
+    st.err(ed.expr, error::Kind::UnusedVar(id, ed.kind));
   }
 }
 
@@ -416,12 +419,8 @@ fn undefine(st: &mut st::St<'_>, ar: &ExprArena, id: Id) {
 /// detected as unused. so we should actually emit the unused error, so we return true.
 ///
 /// this is pretty hacky, tbh.
-fn is_actually_unused(
-  st: &mut st::St<'_>,
-  ar: &ExprArena,
-  expr: ExprMust,
-  kind: def::ExprDefKind,
-) -> bool {
+fn is_actually_unused(st: &mut st::St<'_>, ar: &ExprArena, expr_def: def::ExprDef) -> bool {
+  let def::ExprDef { expr, kind } = expr_def;
   let def::ExprDefKind::Multi(idx, def::ExprDefKindMulti::LocalBind) = kind else { return true };
   let ExprData::Local { binds, body: Some(_) } = &ar[expr] else { return true };
   let Some(&(_, Some(e_idx))) = binds.get(idx) else { return true };

@@ -2,7 +2,7 @@
 
 use crate::flow::data::Facts;
 use always::always;
-use jsonnet_expr::{def, ExprMust, Id};
+use jsonnet_expr::{def, Id};
 use jsonnet_ty as ty;
 use rustc_hash::FxHashMap;
 
@@ -51,7 +51,7 @@ impl Scope {
 
   /// returns Some(..) if the id was unused
   #[must_use]
-  pub(crate) fn undefine(&mut self, id: Id) -> Option<(ExprMust, def::ExprDefKind)> {
+  pub(crate) fn undefine(&mut self, id: Id) -> Option<def::ExprDef> {
     let Some(defined_id) = self.store.entry(id).or_default().pop() else {
       always!(false, "undefine without previous define: {id:?}");
       return None;
@@ -59,8 +59,8 @@ impl Scope {
     if defined_id.usages != 0 || id == Id::dollar {
       return None;
     }
-    let def::Def::Expr(e, k) = defined_id.def else { return None };
-    Some((e, k))
+    let def::Def::Expr(ed) = defined_id.def else { return None };
+    Some(ed)
   }
 
   pub(crate) fn add_facts(&mut self, tys: &mut ty::MutStore<'_>, fs: &Facts) {

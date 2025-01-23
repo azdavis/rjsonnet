@@ -100,13 +100,13 @@ where
   F: Sync + paths::FileSystem,
 {
   match def {
-    Def::Expr(expr, kind) => {
-      let local = if let def::ExprDefKind::Multi(idx, def::ExprDefKindMulti::LocalBind) = kind {
-        from_local(st, seen, fs, path_id, Some(expr), idx)
+    Def::Expr(ed) => {
+      let local = if let def::ExprDefKind::Multi(idx, def::ExprDefKindMulti::LocalBind) = ed.kind {
+        from_local(st, seen, fs, path_id, Some(ed.expr), idx)
       } else {
         None
       };
-      Some(local.unwrap_or(Real { path_id, expr, kind: Some(kind) }.into()))
+      Some(local.unwrap_or(Real { path_id, expr: ed.expr, kind: Some(ed.kind) }.into()))
     }
     Def::Std => Some(ConstEval::Std(None)),
     Def::KwIdent => None,
