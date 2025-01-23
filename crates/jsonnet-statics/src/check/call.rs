@@ -389,7 +389,19 @@ fn object_values_inner(tys: &ty::MutStore<'_>, ty: ty::Ty, ac: &mut ty::Union) {
 }
 
 fn array_ty(tys: &mut ty::MutStore<'_>, arr_ty: ty::Ty) -> Option<ty::Array> {
-  // TODO handle unions
-  let &ty::Data::Array(arr) = tys.data(arr_ty) else { return None };
-  Some(arr)
+  match tys.data(arr_ty) {
+    ty::Data::Array(arr) => Some(*arr),
+    ty::Data::Union(parts) => {
+      let parts = parts.clone();
+      let mut elem = ty::Union::new();
+      let mut is_set = true;
+      for part in parts {
+        let other = array_ty(tys, part)?;
+        elem.insert(other.elem);
+        is_set = is_set && other.is_set;
+      }
+      Some(ty::Array { elem: tys.get(ty::Data::Union(elem)), is_set })
+    }
+    _ => None,
+  }
 }
