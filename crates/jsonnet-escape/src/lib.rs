@@ -1,6 +1,6 @@
 //! Dealing with string escapes.
 
-use std::fmt;
+use std::fmt::{self, Write as _};
 use str_process::St;
 
 /// An error when interpreting the escaped bytes.
@@ -175,5 +175,45 @@ fn is_non_nl_ws(b: u8) -> bool {
 fn give_up_on_text_block(st: &mut St<'_>) {
   while st.cur().is_some() && !st.eat_prefix(b"|||") {
     st.bump();
+  }
+}
+
+/// A wrapper for unescaping a byte slice.
+#[derive(Debug)]
+#[repr(transparent)]
+pub struct Unescape {
+  bs: [u8],
+}
+
+impl Unescape {
+  /// Creates a new one of these.
+  #[must_use]
+  #[allow(unsafe_code)]
+  pub fn new(bs: &[u8]) -> &Self {
+    let ptr = std::ptr::from_ref::<[u8]>(bs);
+    let ptr = ptr as *const Unescape;
+    // SAFETY: Unescape transparently wraps [u8],
+    // and &*bs is &[u8].
+    unsafe { &*ptr }
+  }
+}
+
+impl fmt::Display for Unescape {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    f.write_str("\"")?;
+    for &b in &self.bs {
+      match b {
+        b'"' => f.write_str("\\\"")?,
+        b'\\' => f.write_str("\\\\")?,
+        8 => f.write_str("\\b")?,
+        12 => f.write_str("\\f")?,
+        10 => f.write_str("\\n")?,
+        13 => f.write_str("\\r")?,
+        9 => f.write_str("\\t")?,
+        // NOTE: no effort to try to output \uXXXX
+        _ => f.write_char(b as char)?,
+      }
+    }
+    f.write_str("\"")
   }
 }

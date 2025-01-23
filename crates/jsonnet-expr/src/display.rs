@@ -112,13 +112,13 @@ impl fmt::Display for ExprDisplay<'_> {
       }
       ExprData::Error(e) => write!(f, "error {}", self.with(*e)),
       ExprData::Import { kind, path } => {
-        // TODO handle escapes
         let mut p = self.ps.get_path(*path).as_path();
         if let Some(r) = self.relative_to {
           p = p.strip_prefix(r.as_path()).unwrap_or(p);
         }
-        let p = p.display();
-        write!(f, "{kind} \"{p}\"")
+        let p = p.as_os_str().as_encoded_bytes();
+        let p = jsonnet_escape::Unescape::new(p);
+        write!(f, "{kind} {p}")
       }
     }
   }
@@ -198,10 +198,8 @@ impl fmt::Display for PrimDisplay<'_> {
       Prim::Null => f.write_str("null"),
       Prim::Bool(b) => b.fmt(f),
       Prim::String(s) => {
-        // TODO handle escapes
-        f.write_str("\"")?;
-        self.ar.get(s).fmt(f)?;
-        f.write_str("\"")
+        let bs = self.ar.get(s).as_bytes();
+        jsonnet_escape::Unescape::new(bs).fmt(f)
       }
       Prim::Number(n) => n.fmt(f),
     }

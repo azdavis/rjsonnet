@@ -633,6 +633,7 @@ version = "0.8.3"
 dependencies = [
  "always",
  "finite-float",
+ "jsonnet-escape",
  "jsonnet-std-sig",
  "la-arena",
  "paths",
@@ -734,6 +735,7 @@ name = "jsonnet-ty"
 version = "0.8.3"
 dependencies = [
  "always",
+ "jsonnet-escape",
  "jsonnet-expr",
  "jsonnet-ident",
  "jsonnet-std-sig",
@@ -749,6 +751,7 @@ version = "0.8.3"
 dependencies = [
  "always",
  "finite-float",
+ "jsonnet-escape",
  "jsonnet-expr",
  "paths",
  "rustc-hash 2.1.0",
