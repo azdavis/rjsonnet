@@ -261,16 +261,6 @@ impl StdField {
       StdField::Fn(std_fn) => std_fn.doc(),
     }
   }
-
-  /// Returns since what Jsonnet version this is available. If `Some(n)`, this is available since
-  /// Jsonnet version 0.n.0. If `None`, unknown.
-  #[must_use]
-  pub fn available_since(&self) -> Option<u8> {
-    match self {
-      StdField::ThisFile => Some(10),
-      StdField::Fn(_) => todo!(),
-    }
-  }
 }
 
 impl TryFrom<&Str> for StdField {
