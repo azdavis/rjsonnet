@@ -45,7 +45,7 @@ pub enum Kind {
   User(Str),
   /// should be caught in statics
   UndefinedVar(Id),
-  Cycle(jsonnet_val::jsonnet::Cycle),
+  Cycle(jsonnet_val::cycle::Cycle),
   IdxOutOfRange(usize),
   IdxNotUtf8Boundary(usize),
 }

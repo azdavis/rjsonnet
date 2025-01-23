@@ -1,5 +1,6 @@
 //! Jsonnet values.
 
+use crate::cycle::{self, Cycle};
 use always::always;
 use jsonnet_expr::{Expr, Id, Prim, StdField, StdFn, Str, Visibility};
 use rustc_hash::FxHashSet;
@@ -8,8 +9,7 @@ use std::collections::BTreeMap;
 /// An environment, which stores a mapping of identifiers to unevaluated expressions.
 #[derive(Debug, Clone)]
 pub struct Env {
-  path: paths::PathId,
-  cur_paths: Vec<paths::PathId>,
+  cycle_detector: cycle::Detector,
   store: Vec<EnvElem>,
 }
 
@@ -17,7 +17,7 @@ impl Env {
   /// Returns the path that this env came from.
   #[must_use]
   pub fn path(&self) -> paths::PathId {
-    self.path
+    self.cycle_detector.cur()
   }
 
   /// Adds the binds to the env.
@@ -31,7 +31,7 @@ impl Env {
   /// Returns an empty env.
   #[must_use]
   pub fn empty(path: paths::PathId) -> Self {
-    Self { path, cur_paths: Vec::new(), store: Vec::new() }
+    Self { cycle_detector: cycle::Detector::new(path), store: Vec::new() }
   }
 
   /// Append other after self, leaving other empty.
@@ -45,15 +45,7 @@ impl Env {
   ///
   /// If there would be a cycle.
   pub fn empty_with_paths(&self, path: paths::PathId) -> Result<Self, Cycle> {
-    let mut cur_paths = self.cur_paths.clone();
-    let idx = cur_paths.iter().position(|&p| p == path);
-    match idx {
-      None => {
-        cur_paths.push(path);
-        Ok(Self { path, cur_paths, store: Vec::new() })
-      }
-      Some(idx) => Err(Cycle { first_and_last: path, intervening: cur_paths.split_off(idx + 1) }),
-    }
+    Ok(Self { cycle_detector: self.cycle_detector.try_push(path)?, store: Vec::new() })
   }
 
   /// Insert an id-expr mapping.
@@ -103,8 +95,7 @@ impl Env {
               };
               let env = Self {
                 store: self.store.iter().take(idx + extra).cloned().collect(),
-                path: self.path,
-                cur_paths: self.cur_paths.clone(),
+                cycle_detector: self.cycle_detector.clone(),
               };
               return Some(Get::Expr(env, expr));
             }
@@ -143,15 +134,6 @@ enum EnvElem {
   Binds(Vec<(Id, Expr)>, SelfRefer),
   Single(Id, Env, Expr),
   This(Box<Object>),
-}
-
-/// A cycle error.
-#[derive(Debug, Clone)]
-pub struct Cycle {
-  /// The first and last thing in the cycle.
-  pub first_and_last: paths::PathId,
-  /// The other stuff in the cycle, in order.
-  pub intervening: Vec<paths::PathId>,
 }
 
 /// The output when getting an identifier.
