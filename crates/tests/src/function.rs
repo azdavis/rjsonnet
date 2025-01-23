@@ -189,16 +189,26 @@ local sub(x, y) = x - y;
   .check();
 }
 
-/// TODO fix. this is actually supposed to be allowed (wild)
 #[test]
-#[should_panic = "undefined variable: `a`"]
-fn default_arg_is_other_arg() {
+fn default_arg_is_other_given_arg() {
   JsonnetInput::manifest(
     r"
-local hm(a, b=a) = a + b;
-hm(5)
+local f(a, b=a) = a + b;
+f(5)
 ",
     "10",
+  )
+  .check();
+}
+
+#[test]
+fn default_arg_is_other_default_arg() {
+  JsonnetInput::manifest(
+    r"
+local f(a=2, b=a) = a + b;
+f()
+",
+    "4",
   )
   .check();
 }
@@ -229,10 +239,9 @@ hm(b=5) + hm(3, 4)
   .check();
 }
 
-// TODO fix this bug (something with mutual recursion in the envs)
 #[test]
 fn mutual_recur() {
-  JsonnetInput::eval_error(
+  JsonnetInput::manifest(
     r#"
 local
   isOdd(x) =
@@ -245,7 +254,7 @@ local
 
 isOdd(4)
 "#,
-    "undefined variable: `isEven`",
+    "false",
   )
   .check();
 }

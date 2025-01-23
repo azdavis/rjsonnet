@@ -7,7 +7,7 @@ use finite_float::Float;
 use jsonnet_expr::{
   arg, BinaryOp, Expr, ExprData, ExprMust, Id, Prim, StdField, Str, StrArena, Visibility,
 };
-use jsonnet_val::jsonnet::{Array, Env, Field, Fn, Get, Object, RegularFn, Val};
+use jsonnet_val::jsonnet::{Array, Env, Field, Fn, Get, Object, RegularFn, SelfRefer, Val};
 use rustc_hash::FxHashSet;
 use std::cmp::Ordering;
 use std::collections::BTreeMap;
@@ -131,12 +131,12 @@ pub(crate) fn get(cx: &mut Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
           None => Err(error::Error::Exec { expr, kind: error::Kind::UndefinedVar(id) }),
         },
         Get::Std => Ok(Val::Object(Object::std_lib())),
-        Get::Expr(env, expr) => get(cx, env, expr),
+        Get::Expr(env, expr) => get(cx, &env, expr),
       },
     },
     ExprData::Local { binds, body } => {
       let mut env = env.clone();
-      env.add_binds(&binds);
+      env.add_binds(binds.clone(), SelfRefer::Yes);
       get(cx, &env, body)
     }
     ExprData::If { cond, yes, no } => {
@@ -310,7 +310,8 @@ pub(crate) fn get_call(
           });
         }
       }
-      let mut env = func.env.clone();
+      let mut provided_binds = Vec::<(Id, Expr)>::with_capacity(provided.len());
+      let mut default_binds = Vec::<(Id, Expr)>::new();
       for (id, rhs) in func.params {
         match rhs {
           // from my (not super close) reading of the spec, it seems like for function parameters
@@ -321,9 +322,51 @@ pub(crate) fn get_call(
           None => {
             return Err(error::Error::Exec { expr, kind: arg::ErrorKind::NotDefined(id).into() })
           }
-          Some(rhs) => env.insert(id, func.env.clone(), rhs),
+          Some(rhs) => {
+            let binds =
+              if provided.contains(&id) { &mut provided_binds } else { &mut default_binds };
+            binds.push((id, rhs));
+          }
         }
       }
+      // first remove the provided binds from the func env, so we don't accidentally shadow them
+      // when we add the func env so we can evaluate the default binds.
+      let mut func_env = func.env.clone();
+      for &(id, _) in &provided_binds {
+        func_env.remove(id);
+      }
+      // start with the current env.
+      let mut env = env.clone();
+      // add the provided binds to that. we evaluate the provided binds under the current env.
+      //
+      // these binds do NOT recursively refer to themselves. for example, if we have
+      //
+      // local f(x) = local g(x) = x + 1; g(x)
+      //
+      // then the x passed to the call to g refers to the param of f, NOT the param of g.
+      env.add_binds(provided_binds, SelfRefer::No);
+      // then append the func env onto the current env.
+      //
+      // if the func default params or body mention names that are defined in both the current env
+      // and the func env, they will be shadowed by the func env, except for the provided binds
+      // which we already removed.
+      //
+      // if the func default params or body mention names that are only in the func env, they will
+      // be defined by the func env.
+      //
+      // the func body cannot mention names that are only in the current env but not the fn's env,
+      // since this is prohibited by statics.
+      env.append(&mut func_env);
+      // finally add the default binds. these are the arguments that were not provided and will
+      // default to the default argument values, to be evaluated under the func env.
+      //
+      // these binds MAY refer to themselves. for example, in
+      //
+      // local f(a=2, b=a) = a + b
+      //
+      // we have f() == 4.
+      env.add_binds(default_binds, SelfRefer::Yes);
+      // now evaluate the body.
       get(cx, &env, func.body)
     }
     Val::Fn(Fn::Std(std_fn)) => {

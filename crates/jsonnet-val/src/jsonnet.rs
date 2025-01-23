@@ -2,17 +2,15 @@
 
 use always::always;
 use jsonnet_expr::{Expr, Id, Prim, StdField, StdFn, Str, Visibility};
-use rustc_hash::{FxHashMap, FxHashSet};
+use rustc_hash::FxHashSet;
 use std::collections::BTreeMap;
 
-/// An environment, which stores a mapping of identifiers to unevaluated expressions. Since the
-/// expressions are unevaluated, they have with them their own envs to evaluate.
+/// An environment, which stores a mapping of identifiers to unevaluated expressions.
 #[derive(Debug, Clone)]
 pub struct Env {
   path: paths::PathId,
   cur_paths: Vec<paths::PathId>,
-  store: FxHashMap<Id, (Env, Expr)>,
-  this: Option<Box<Object>>,
+  store: Vec<EnvElem>,
 }
 
 impl Env {
@@ -23,19 +21,22 @@ impl Env {
   }
 
   /// Adds the binds to the env.
-  pub fn add_binds(&mut self, binds: &[(Id, Expr)]) {
-    // TODO fix mutual recursion
-    let mut ret = self.clone();
-    for &(bind, expr) in binds {
-      ret.insert(bind, self.clone(), expr);
+  pub fn add_binds(&mut self, binds: Vec<(Id, Expr)>, self_refer: SelfRefer) {
+    if binds.is_empty() {
+      return;
     }
-    *self = ret;
+    self.store.push(EnvElem::Binds(binds, self_refer));
   }
 
   /// Returns an empty env.
   #[must_use]
   pub fn empty(path: paths::PathId) -> Self {
-    Self { path, cur_paths: Vec::new(), store: FxHashMap::default(), this: None }
+    Self { path, cur_paths: Vec::new(), store: Vec::new() }
+  }
+
+  /// Append other after self, leaving other empty.
+  pub fn append(&mut self, other: &mut Self) {
+    self.store.append(&mut other.store);
   }
 
   /// Returns an empty env, but check to see if this would cause a cycle.
@@ -49,7 +50,7 @@ impl Env {
     match idx {
       None => {
         cur_paths.push(path);
-        Ok(Self { path, cur_paths, store: FxHashMap::default(), this: None })
+        Ok(Self { path, cur_paths, store: Vec::new() })
       }
       Some(idx) => Err(Cycle { first_and_last: path, intervening: cur_paths.split_off(idx + 1) }),
     }
@@ -57,12 +58,31 @@ impl Env {
 
   /// Insert an id-expr mapping.
   pub fn insert(&mut self, id: Id, env: Env, expr: Expr) {
-    self.store.insert(id, (env, expr));
+    self.store.push(EnvElem::Single(id, env, expr));
+  }
+
+  /// Removes an id from this env. Use with caution.
+  pub fn remove(&mut self, id: Id) {
+    let iter = std::mem::take(&mut self.store).into_iter().filter_map(|elem| match elem {
+      EnvElem::Binds(vec, self_refer) => {
+        let iter = vec.into_iter().filter(|&(x, _)| x != id);
+        Some(EnvElem::Binds(iter.collect(), self_refer))
+      }
+      EnvElem::Single(x, env, expr) => {
+        if x == id {
+          None
+        } else {
+          Some(EnvElem::Single(x, env, expr))
+        }
+      }
+      EnvElem::This(object) => Some(EnvElem::This(object)),
+    });
+    self.store = iter.collect();
   }
 
   /// Get an identifier.
   #[must_use]
-  pub fn get(&self, id: Id) -> Option<Get<'_>> {
+  pub fn get(&self, id: Id) -> Option<Get> {
     if id == Id::self_ {
       return Some(Get::Self_);
     }
@@ -72,9 +92,33 @@ impl Env {
     if id == Id::std_unutterable {
       return Some(Get::Std);
     }
-    if let Some(&(ref env, expr)) = self.store.get(&id) {
-      Some(Get::Expr(env, expr))
-    } else if id == Id::std {
+    for idx in (0..self.store.len()).rev() {
+      match &self.store[idx] {
+        EnvElem::Binds(binds, self_refer) => {
+          for &(other, expr) in binds {
+            if other == id {
+              let extra = match self_refer {
+                SelfRefer::Yes => 1,
+                SelfRefer::No => 0,
+              };
+              let env = Self {
+                store: self.store.iter().take(idx + extra).cloned().collect(),
+                path: self.path,
+                cur_paths: self.cur_paths.clone(),
+              };
+              return Some(Get::Expr(env, expr));
+            }
+          }
+        }
+        EnvElem::This(_) => continue,
+        EnvElem::Single(other, env, expr) => {
+          if *other == id {
+            return Some(Get::Expr(env.clone(), *expr));
+          }
+        }
+      }
+    }
+    if id == Id::std {
       Some(Get::Std)
     } else {
       None
@@ -84,8 +128,21 @@ impl Env {
   /// Returns what `self` refers to in this env.
   #[must_use]
   pub fn this(&self) -> Option<&Object> {
-    self.this.as_deref()
+    self.store.iter().rev().find_map(|elem| {
+      if let EnvElem::This(obj) = elem {
+        Some(&**obj)
+      } else {
+        None
+      }
+    })
   }
+}
+
+#[derive(Debug, Clone)]
+enum EnvElem {
+  Binds(Vec<(Id, Expr)>, SelfRefer),
+  Single(Id, Env, Expr),
+  This(Box<Object>),
 }
 
 /// A cycle error.
@@ -99,7 +156,7 @@ pub struct Cycle {
 
 /// The output when getting an identifier.
 #[derive(Debug)]
-pub enum Get<'a> {
+pub enum Get {
   /// The id was `self`.
   Self_,
   /// The id was `super`.
@@ -107,7 +164,7 @@ pub enum Get<'a> {
   /// The id was `std`, the standard library.
   Std,
   /// The id mapped to an expr.
-  Expr(&'a Env, Expr),
+  Expr(Env, Expr),
 }
 
 /// A Jsonnet value.
@@ -205,7 +262,7 @@ impl Object {
     let mut env = env.clone();
     let mut this = self.clone();
     this.is_super = false;
-    env.this = Some(Box::new(this));
+    env.store.push(EnvElem::This(Box::new(this)));
     env
   }
 
@@ -378,7 +435,7 @@ pub enum Fn {
 /// A regular user-written function.
 #[derive(Debug, Clone)]
 pub struct RegularFn {
-  /// The env the default params get evaluated under.
+  /// The env the default params and body get evaluated under.
   pub env: Env,
   /// The params, with optional defaults.
   ///
@@ -388,4 +445,13 @@ pub struct RegularFn {
   pub params: Vec<(Id, Option<Expr>)>,
   /// The function body.
   pub body: Expr,
+}
+
+/// Whether some bindings can refer to themselves.
+#[derive(Debug, Clone, Copy)]
+pub enum SelfRefer {
+  /// They may.
+  Yes,
+  /// They may not.
+  No,
 }

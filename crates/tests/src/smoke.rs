@@ -112,9 +112,7 @@ std.join([1], [[2], [4, 5], [6]])
   .check();
 }
 
-// TODO fix. this is frankly embarrassing.
 #[test]
-#[should_panic = "undefined variable: `y`"]
 fn pass_arg() {
   JsonnetInput::manifest(
     r"
@@ -124,6 +122,20 @@ local b(y) = a(y);
 b(3)
 ",
     "3",
+  )
+  .check();
+}
+
+#[test]
+fn shadow_arg() {
+  JsonnetInput::manifest(
+    r"
+local x = 2;
+local a(x) = x;
+
+x + a(3) + x
+",
+    "7",
   )
   .check();
 }
