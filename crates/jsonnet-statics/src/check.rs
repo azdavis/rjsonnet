@@ -26,7 +26,7 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
       Prim::String(_) => ty::Ty::STRING,
       Prim::Number(_) => ty::Ty::NUMBER,
     },
-    ExprData::Object { binds, asserts, fields } => {
+    ExprData::Object { asserts, fields } => {
       let mut obj = ty::Object::empty();
       for field in fields {
         get(st, ar, field.key);
@@ -40,7 +40,6 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
         }
       }
       st.define_self_super();
-      define_binds(st, ar, expr, binds, def::ExprDefKindMulti::ObjectLocalBind);
       for field in fields {
         let ty = get(st, ar, field.val);
         let Some(key) = field.key else { continue };
@@ -51,9 +50,6 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
         get(st, ar, cond);
       }
       st.undefine_self_super();
-      for &(lhs, _) in binds {
-        undefine(st, ar, lhs);
-      }
       st.tys.get(ty::Data::Object(obj))
     }
     ExprData::ObjectComp { name, body, id, ary } => {
@@ -427,11 +423,6 @@ fn canonical_expr(expr: &jsonnet_expr::ExprData, expr_def: def::ExprDef) -> Expr
     def::ExprDefKind::Multi(n, m) => match m {
       def::ExprDefKindMulti::LocalBind => {
         let ExprData::Local { binds, .. } = expr else { return None };
-        let &(_, e) = binds.get(n)?;
-        e
-      }
-      def::ExprDefKindMulti::ObjectLocalBind => {
-        let ExprData::Object { binds, .. } = expr else { return None };
         let &(_, e) = binds.get(n)?;
         e
       }

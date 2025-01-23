@@ -62,6 +62,27 @@ fn in_all_fields() {
   .check();
 }
 
+// should NOT trigger unused
+#[test]
+fn in_some_fields() {
+  JsonnetInput::manifest(
+    r#"
+{
+  local a = 1,
+  b: "hi",
+  c: a + 2,
+}
+"#,
+    r#"
+{
+  "b": "hi",
+  "c": 3
+}
+"#,
+  )
+  .check();
+}
+
 #[test]
 fn no_field() {
   JsonnetInput::manifest(

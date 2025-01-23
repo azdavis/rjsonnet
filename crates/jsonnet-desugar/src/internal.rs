@@ -323,17 +323,6 @@ fn get_object(st: &mut St, cx: Cx<'_>, inside: ast::Object, in_obj: bool) -> Exp
   }
 }
 
-/// NOTE: it appears that this is the only place we clone a bunch of binds. this means that "warn on
-/// unused vars" won't be able to work without major annoyance.
-///
-/// the reason is because we have many bindings duplicated for each field/assert, due to the
-/// desugaring strategy laid out in the spec for objects. but all those cloned bindings really
-/// correspond to only one user-written var. so that user-written var should be marked unused if and
-/// only if every copy of it was unused.
-///
-/// which means we have to do something like... track how many times the var was cloned by keeping a
-/// counter, then stick that counter somewhere so later when statics counts how many vars were
-/// unused, it knows how many copies to count as unused before marking the actual var as unused...?
 fn get_object_literal(st: &mut St, cx: Cx<'_>, inside: ast::Object, in_obj: bool) -> ExprData {
   let mut binds = Vec::<(Id, Expr)>::new();
   let mut asserts = Vec::<Expr>::new();
@@ -412,7 +401,24 @@ fn get_object_literal(st: &mut St, cx: Cx<'_>, inside: ast::Object, in_obj: bool
     let this = Some(st.expr(ptr, ExprData::Id(Id::self_)));
     binds.push((Id::dollar, this));
   }
-  ExprData::Object { binds, asserts, fields }
+  let count = asserts.len() + fields.len();
+  if !binds.is_empty() {
+    let ptr = ast::SyntaxNodePtr::new(inside.syntax());
+    if count > 1 {
+      for &(_, e) in &binds {
+        let Some(e) = e else { continue };
+        st.set_id_count(e, count);
+      }
+    } else if count == 0 {
+      // invent a fake `assert true` so the binds appear
+      asserts.push(Some(st.expr(ptr, ExprData::Prim(Prim::Bool(true)))));
+    }
+    let to_modify = asserts.iter_mut().chain(fields.iter_mut().map(|f| &mut f.val));
+    for e in to_modify {
+      *e = Some(st.expr(ptr, ExprData::Local { binds: binds.clone(), body: *e }));
+    }
+  }
+  ExprData::Object { asserts, fields }
 }
 
 fn get_object_comp(st: &mut St, cx: Cx<'_>, inside: ast::Object, in_obj: bool) -> ExprData {
@@ -465,7 +471,7 @@ fn get_object_comp(st: &mut St, cx: Cx<'_>, inside: ast::Object, in_obj: bool) -
     st.err(&inside, error::Kind::ObjectCompNotOne);
     // this is a good "fake" return, since we knew this was going to be some kind of object,
     // but now we can't figure out what fields it should have. so let's say it has no fields.
-    return ExprData::Object { binds, asserts: Vec::new(), fields: Vec::new() };
+    return ExprData::Object { asserts: Vec::new(), fields: Vec::new() };
   };
   let arr = st.fresh();
   let on = Some(st.expr(ptr, ExprData::Id(arr)));

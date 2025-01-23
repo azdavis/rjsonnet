@@ -37,11 +37,8 @@ impl fmt::Display for ExprDisplay<'_> {
     let Some(e) = self.e else { return f.write_str("_") };
     match &self.expr_ar[e] {
       ExprData::Prim(prim) => prim.display(self.str_ar).fmt(f),
-      ExprData::Object { binds, asserts, fields } => {
+      ExprData::Object { asserts, fields } => {
         f.write_str("{ ")?;
-        for &(id, expr) in binds {
-          write!(f, "local {} = {}, ", id.display(self.str_ar), self.with(expr))?;
-        }
         for &a in asserts {
           write!(f, "assert {}, ", self.with(a))?;
         }

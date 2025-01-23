@@ -53,8 +53,6 @@ pub enum ExprDefKind {
 pub enum ExprDefKindMulti {
   /// A binding in a `local`.
   LocalBind,
-  /// A binding in a `local` inside of an object.
-  ObjectLocalBind,
   /// A parameter in a function.
   FnParam,
 }

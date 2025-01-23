@@ -19,12 +19,9 @@ use jsonnet_expr::{Expr, ExprArena, ExprData, ExprMust, Prim, Str};
 pub(crate) fn get_always(scope: &Scope, ar: &ExprArena, body: Expr) -> Facts {
   let mut ac = Facts::default();
   let Some(body) = body else { return ac };
-  if let ExprData::Object { binds, asserts, .. } = &ar[body] {
+  if let ExprData::Object { asserts, .. } = &ar[body] {
     for &a in asserts {
       get_assert(scope, ar, &mut ac, a);
-    }
-    for &(id, _) in binds {
-      ac.remove(id);
     }
   } else {
     get_assert(scope, ar, &mut ac, Some(body));
@@ -34,11 +31,24 @@ pub(crate) fn get_always(scope: &Scope, ar: &ExprArena, body: Expr) -> Facts {
 
 /// Collects facts from desugared `assert`s, i.e. `if`s where the `else` diverges.
 fn get_assert(scope: &Scope, ar: &ExprArena, ac: &mut Facts, mut body: Expr) {
-  while let Some(b) = body {
+  while let Some(mut b) = body {
+    // this shenanigans with the local is especially useful for asserts inside objects, since we
+    // desugar object locals into each assert and field. this pattern is likely applicable in more
+    // situations than this one, but this is the most important.
+    let mut bs = None::<&[(jsonnet_expr::Id, Expr)]>;
+    if let ExprData::Local { binds, body: Some(body) } = &ar[b] {
+      b = *body;
+      bs = Some(binds.as_slice());
+    }
     let ExprData::If { cond, yes, no: Some(no) } = ar[b] else { break };
     let ExprData::Error(_) = &ar[no] else { break };
     body = yes;
     get_cond(scope, ar, ac, cond);
+    if let Some(bs) = bs {
+      for &(id, _) in bs {
+        ac.remove(id);
+      }
+    }
   }
 }
 

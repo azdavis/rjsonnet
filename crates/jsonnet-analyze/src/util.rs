@@ -310,6 +310,19 @@ fn expr_def_range(
         Some(for_spec.id()?.text_range())
       })
       .or_else(|| {
+        // this helps with `{ local x = 1, ... }` desugaring
+        let object = node_ptr.cast::<jsonnet_syntax::ast::Object>()?;
+        let object = object.try_to_node(root)?;
+        let mut object_locals = object.members().filter_map(|member| {
+          if let jsonnet_syntax::ast::MemberKind::ObjectLocal(x) = member.member_kind()? {
+            Some(x)
+          } else {
+            None
+          }
+        });
+        Some(object_locals.nth(idx)?.bind()?.id()?.text_range())
+      })
+      .or_else(|| {
         let paren_params = node_ptr.cast::<jsonnet_syntax::ast::ParenParams>()?;
         let paren_params = paren_params.try_to_node(root)?;
         let parent = paren_params.syntax().parent()?;
@@ -344,25 +357,6 @@ fn expr_def_range(
       })
       .or_else(|| {
         log::warn!("func fallback: {node_ptr:?}");
-        let node = node_ptr.try_to_node(root)?;
-        log::warn!("node: {node:?}");
-        Some(node.text_range())
-      }),
-    def::ExprDefKind::Multi(idx, def::ExprDefKindMulti::ObjectLocalBind) => node_ptr
-      .cast::<jsonnet_syntax::ast::ExprObject>()
-      .and_then(|obj| {
-        let obj = obj.try_to_node(root)?.object()?;
-        let nth_local = obj
-          .members()
-          .filter_map(|x| match x.member_kind()? {
-            jsonnet_syntax::ast::MemberKind::ObjectLocal(loc) => Some(loc),
-            _ => None,
-          })
-          .nth(idx)?;
-        Some(nth_local.bind()?.id()?.text_range())
-      })
-      .or_else(|| {
-        log::warn!("object local fallback: {node_ptr:?}");
         let node = node_ptr.try_to_node(root)?;
         log::warn!("node: {node:?}");
         Some(node.text_range())

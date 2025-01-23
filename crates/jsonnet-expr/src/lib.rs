@@ -84,13 +84,7 @@ pub struct Field {
 #[derive(Debug, Clone)]
 pub enum ExprData {
   Prim(Prim),
-  /// object fields ARE NOT desugared into the body itself. evaluation is thus modified to handle
-  /// this new location that ids in def position are permitted to appear.
-  ///
-  /// the spec suggests duplicating the locals across every assert and field, but that is a bit
-  /// wasteful and also makes implementing unused variables prohibitively tricky.
   Object {
-    binds: Vec<(Id, Expr)>,
     asserts: Vec<Expr>,
     fields: Vec<Field>,
   },
@@ -152,9 +146,7 @@ impl ExprData {
     match self {
       ExprData::Prim(prim) => prim.apply(subst),
       ExprData::ObjectComp { id, .. } | ExprData::Id(id) => id.apply(subst),
-      ExprData::Object { binds, fields: _, asserts: _ }
-      | ExprData::Local { binds, .. }
-      | ExprData::Call { named: binds, .. } => {
+      ExprData::Local { binds, .. } | ExprData::Call { named: binds, .. } => {
         for (bind, _) in binds {
           bind.apply(subst);
         }
@@ -166,6 +158,7 @@ impl ExprData {
       }
       ExprData::Import { path, .. } => *path = subst.get_path_id(*path),
       ExprData::Array(_)
+      | ExprData::Object { .. }
       | ExprData::Subscript { .. }
       | ExprData::If { .. }
       | ExprData::BinaryOp { .. }
@@ -299,5 +292,5 @@ impl Counter {
 
 #[test]
 fn size() {
-  assert_eq!(std::mem::size_of::<ExprData>(), 72);
+  assert_eq!(std::mem::size_of::<ExprData>(), 56);
 }

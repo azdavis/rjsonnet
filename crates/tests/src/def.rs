@@ -242,7 +242,7 @@ fn obj_local() {
     r#"
 {
   local a = 1,
-##      ^ def: a
+##          ^ def: a
   b: "hi",
   c: a + 2,
 ##   ^ use: a

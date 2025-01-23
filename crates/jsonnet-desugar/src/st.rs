@@ -77,7 +77,7 @@ impl St {
   }
 
   pub(crate) fn set_id_count(&mut self, canonical: jsonnet_expr::ExprMust, count: usize) {
-    always!(count > 1, "shouldn't have a 0 or 1 count");
+    always!(count > 1, "should have an explicit count gt 1");
     self.id_counts.set(canonical, count);
   }
 

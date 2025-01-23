@@ -18,7 +18,7 @@ pub(crate) fn get(cx: &mut Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
   let Some(expr) = expr else { return Err(error::Error::NoExpr) };
   match cx.exprs[&env.path()].ar[expr].clone() {
     ExprData::Prim(p) => Ok(Val::Prim(p.clone())),
-    ExprData::Object { binds, asserts, fields } => {
+    ExprData::Object { asserts, fields } => {
       let mut named_fields = BTreeMap::<Str, (Visibility, Expr)>::default();
       for field in fields {
         match get(cx, env, field.key)? {
@@ -31,7 +31,7 @@ pub(crate) fn get(cx: &mut Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
           _ => return Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes }),
         }
       }
-      Ok(Val::Object(Object::new(env.clone(), binds.clone(), asserts.clone(), named_fields)))
+      Ok(Val::Object(Object::new(env.clone(), asserts.clone(), named_fields)))
     }
     ExprData::ObjectComp { name, body, id, ary } => {
       let Val::Array(array) = get(cx, env, ary)? else {
@@ -59,7 +59,7 @@ pub(crate) fn get(cx: &mut Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
           _ => return Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes }),
         }
       }
-      Ok(Val::Object(Object::new(env.clone(), Vec::new(), Vec::new(), fields)))
+      Ok(Val::Object(Object::new(env.clone(), Vec::new(), fields)))
     }
     ExprData::Array(elems) => Ok(Val::Array(Array::new(env.clone(), elems.clone()))),
     ExprData::Subscript { on, idx } => match get(cx, env, on)? {
