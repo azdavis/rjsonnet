@@ -111,3 +111,19 @@ std.join([1], [[2], [4, 5], [6]])
   )
   .check();
 }
+
+// TODO fix. this is frankly embarrassing.
+#[test]
+#[should_panic = "undefined variable: `y`"]
+fn pass_arg() {
+  JsonnetInput::manifest(
+    r"
+local a(x) = x;
+local b(y) = a(y);
+
+b(3)
+",
+    "3",
+  )
+  .check();
+}
