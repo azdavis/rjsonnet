@@ -101,17 +101,17 @@ fn maybe_extra_checks(
   match std_fn {
     StdFn::length => {
       let &(expr, ty) = params.get(&Id::x)?;
-      if !length_ok(st, ty) {
+      if !length_ok(&st.tys, ty) {
         st.err(expr, error::Kind::Invalid(ty, error::Invalid::Length));
       }
       None
     }
     StdFn::objectValues | StdFn::objectValuesAll => {
-      let elem = object_values(st, params)?;
+      let elem = object_values(&mut st.tys, params)?;
       Some(st.tys.get(ty::Data::Array(ty::Array::new(elem))))
     }
     StdFn::objectKeysValues | StdFn::objectKeysValuesAll => {
-      let val_ty = object_values(st, params)?;
+      let val_ty = object_values(&mut st.tys, params)?;
       let obj = ty::Object {
         known: BTreeMap::from([(Str::key, ty::Ty::STRING), (Str::value, val_ty)]),
         has_unknown: false,
@@ -155,14 +155,14 @@ fn maybe_extra_checks(
     StdFn::join => {
       let &(_, sep_ty) = params.get(&Id::sep)?;
       let &(arr_expr, arr_ty) = params.get(&Id::arr)?;
-      let arr = array_ty(st, arr_ty)?;
+      let arr = array_ty(&mut st.tys, arr_ty)?;
       st.unify(arr_expr, ty::Ty::STRING_OR_ARRAY, arr.elem);
       st.unify(arr_expr, arr.elem, sep_ty);
       Some(arr.elem)
     }
     StdFn::reverse => {
       let &(_, arr_ty) = params.get(&Id::arr)?;
-      let arr = array_ty(st, arr_ty)?;
+      let arr = array_ty(&mut st.tys, arr_ty)?;
       // might not be a set anymore (if it was before)
       Some(st.tys.get(ty::Data::Array(ty::Array::new(arr.elem))))
     }
@@ -173,7 +173,7 @@ fn maybe_extra_checks(
     }
     StdFn::set => {
       let &(_, arr_ty) = params.get(&Id::arr)?;
-      let arr = array_ty(st, arr_ty)?;
+      let arr = array_ty(&mut st.tys, arr_ty)?;
       Some(st.tys.get(ty::Data::Array(ty::Array::set(arr.elem))))
     }
     StdFn::assertEqual => {
@@ -341,7 +341,7 @@ fn check_filter(
   func: ExprMust,
   arr_ty: ty::Ty,
 ) -> Option<ty::Ty> {
-  let arr = array_ty(st, arr_ty)?;
+  let arr = array_ty(&mut st.tys, arr_ty)?;
   let mut elem = arr.elem;
   if let Some(fact) = flow::extract::get_predicate(&st.scope, ar, func) {
     fact.apply_to(&mut st.tys, &mut elem);
@@ -349,29 +349,29 @@ fn check_filter(
   Some(st.tys.get(ty::Data::Array(ty::Array::new(elem))))
 }
 
-fn length_ok(st: &st::St<'_>, ty: ty::Ty) -> bool {
-  match st.tys.data(ty) {
+fn length_ok(tys: &ty::MutStore<'_>, ty: ty::Ty) -> bool {
+  match tys.data(ty) {
     ty::Data::Prim(prim) => match prim {
       ty::Prim::Any | ty::Prim::String => true,
       ty::Prim::True | ty::Prim::False | ty::Prim::Null | ty::Prim::Number => false,
     },
     ty::Data::Array(_) | ty::Data::Object(_) | ty::Data::Fn(_) => true,
-    ty::Data::Union(tys) => tys.iter().all(|&ty| length_ok(st, ty)),
+    ty::Data::Union(parts) => parts.iter().all(|&ty| length_ok(tys, ty)),
   }
 }
 
 fn object_values(
-  st: &mut st::St<'_>,
+  tys: &mut ty::MutStore<'_>,
   params: &FxHashMap<Id, (ExprMust, ty::Ty)>,
 ) -> Option<ty::Ty> {
   let &(_, ty) = params.get(&Id::o)?;
   let mut ac = ty::Union::new();
-  object_values_inner(st, ty, &mut ac);
-  Some(st.tys.get(ty::Data::Union(ac)))
+  object_values_inner(tys, ty, &mut ac);
+  Some(tys.get(ty::Data::Union(ac)))
 }
 
-fn object_values_inner(st: &st::St<'_>, ty: ty::Ty, ac: &mut ty::Union) {
-  match st.tys.data(ty) {
+fn object_values_inner(tys: &ty::MutStore<'_>, ty: ty::Ty, ac: &mut ty::Union) {
+  match tys.data(ty) {
     ty::Data::Prim(_) | ty::Data::Array(_) | ty::Data::Fn(_) => {}
     ty::Data::Object(obj) => {
       if obj.has_unknown {
@@ -380,16 +380,16 @@ fn object_values_inner(st: &st::St<'_>, ty: ty::Ty, ac: &mut ty::Union) {
         ac.extend(obj.known.values().copied());
       }
     }
-    ty::Data::Union(tys) => {
-      for &ty in tys {
-        object_values_inner(st, ty, ac);
+    ty::Data::Union(parts) => {
+      for &ty in parts {
+        object_values_inner(tys, ty, ac);
       }
     }
   }
 }
 
-fn array_ty(st: &mut st::St<'_>, arr_ty: ty::Ty) -> Option<ty::Array> {
+fn array_ty(tys: &mut ty::MutStore<'_>, arr_ty: ty::Ty) -> Option<ty::Array> {
   // TODO handle unions
-  let &ty::Data::Array(arr) = st.tys.data(arr_ty) else { return None };
+  let &ty::Data::Array(arr) = tys.data(arr_ty) else { return None };
   Some(arr)
 }
