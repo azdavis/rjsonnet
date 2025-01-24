@@ -197,3 +197,73 @@ fn object_field_plus() {
   )
   .check();
 }
+
+#[test]
+fn object_plus_self() {
+  JsonnetInput::manifest(
+    r#"
+{
+  foo: "a",
+  inner: {
+    [self.foo]: {
+      x: 2,
+      y: 3,
+      z: 4,
+    },
+  } + {
+    [self.foo]: {
+      x: 5,
+    },
+  },
+}
+"#,
+    r#"
+{
+  "foo": "a",
+  "inner": {
+    "a": {
+      "x": 5
+    }
+  }
+}
+"#,
+  )
+  .check();
+}
+
+#[test]
+#[should_panic = "mismatched manifest"]
+fn object_field_plus_self() {
+  // TODO impl support for +:
+  JsonnetInput::manifest(
+    r#"
+{
+  foo: "a",
+  inner: {
+    [self.foo]: {
+      x: 2,
+      y: 3,
+      z: 4,
+    },
+  } + {
+    [self.foo]+: {
+      x: 5,
+    },
+  },
+}
+"#,
+    r#"
+{
+  "foo": "a",
+  "inner": {
+    "a": {
+      "x": 5,
+      "y": 3,
+      "z": 4
+    }
+  }
+}
+"#,
+  )
+  .check();
+}
