@@ -56,9 +56,7 @@ fn override_field() {
 }
 
 #[test]
-#[should_panic = "mismatched manifest"]
 fn add_field() {
-  // TODO impl support for +:
   JsonnetInput::manifest(
     r#"
 {
@@ -119,10 +117,10 @@ fn self_in_field_name_override_field() {
   .check();
 }
 
+/// TODO impl support for +: where field name uses super
 #[test]
-#[should_panic = "mismatched manifest"]
+#[should_panic = "no such field: `foo`"]
 fn self_in_field_name_add_field() {
-  // TODO impl support for +:
   JsonnetInput::manifest(
     r#"
 {

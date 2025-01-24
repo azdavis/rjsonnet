@@ -374,7 +374,7 @@ fn get_object_literal(st: &mut St, cx: Cx<'_>, inside: ast::Object, in_obj: bool
         };
         let (plus, val) = match field.field_extra() {
           None => (false, get_expr(st, cx, field.expr(), true, false)),
-          Some(ast::FieldExtra::FieldPlus(_)) => {
+          Some(ast::FieldExtra::FieldPlus(field_plus)) => {
             // TODO: the spec says do substitution with self and super and outerself and outersuper,
             // and afterwards remove the distinction between regular fields and field-plus fields,
             // when desugaring. instead, maybe something with the same effect would be to carry
@@ -383,7 +383,16 @@ fn get_object_literal(st: &mut St, cx: Cx<'_>, inside: ast::Object, in_obj: bool
             // we could set that up correctly in the corresponding place in the spec where we set
             // outerself and outersuper. then when evaluating "field plus" fields we would replace
             // the regular 'this' with that 'outer this'.
-            (true, get_expr(st, cx, field.expr(), true, false))
+            let val = get_expr(st, cx, field.expr(), true, false);
+            let ptr = ast::SyntaxNodePtr::new(field_plus.syntax());
+            let sup = Some(st.expr(ptr, ExprData::Id(Id::super_)));
+            let cond = call_std_func_data(st, ptr, Str::objectHasAll, vec![sup, key]);
+            let cond = Some(st.expr(ptr, cond));
+            let sup_field = Some(st.expr(ptr, ExprData::Subscript { on: sup, idx: key }));
+            let yes = bop(BinaryOp::Add, sup_field, val);
+            let yes = Some(st.expr(ptr, yes));
+            let if_ = Some(st.expr(ptr, ExprData::If { cond, yes, no: val }));
+            (true, if_)
           }
           Some(ast::FieldExtra::ParenParams(paren_params)) => {
             let ptr = ast::SyntaxNodePtr::new(paren_params.syntax());
