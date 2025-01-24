@@ -109,11 +109,7 @@ impl Env {
         }
       }
     }
-    if id == Id::std {
-      Some(Get::Object(Object::std_lib()))
-    } else {
-      None
-    }
+    (id == Id::std).then(|| Get::Object(Object::std_lib()))
   }
 
   /// Returns what `self` refers to in this env.
