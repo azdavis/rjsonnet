@@ -137,6 +137,10 @@ A generic language server scaffold.
 
 A trait for the state of a language server.
 
+### `crates/cycle`
+
+A detector for non-self cycles.
+
 ## Other code
 
 Most of the code is contained in the Rust crates documented above, but some code lives elsewhere.

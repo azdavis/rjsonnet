@@ -1,7 +1,7 @@
 //! Jsonnet values.
 
-use crate::cycle::{self, Cycle};
 use always::always;
+use cycle::Cycle;
 use jsonnet_expr::{Expr, Id, Prim, StdField, StdFn, Str, Visibility};
 use rustc_hash::FxHashSet;
 use std::collections::BTreeMap;
@@ -9,7 +9,7 @@ use std::collections::BTreeMap;
 /// An environment, which stores a mapping of identifiers to unevaluated expressions.
 #[derive(Debug, Clone)]
 pub struct Env {
-  cycle_detector: cycle::Detector,
+  cycle_detector: cycle::Detector<paths::PathId>,
   store: Vec<EnvElem>,
 }
 
@@ -17,7 +17,7 @@ impl Env {
   /// Returns the path that this env came from.
   #[must_use]
   pub fn path(&self) -> paths::PathId {
-    self.cycle_detector.cur()
+    *self.cycle_detector.cur()
   }
 
   /// Adds the binds to the env.
@@ -44,7 +44,7 @@ impl Env {
   /// # Errors
   ///
   /// If there would be a cycle.
-  pub fn empty_with_paths(&self, path: paths::PathId) -> Result<Self, Cycle> {
+  pub fn empty_with_paths(&self, path: paths::PathId) -> Result<Self, Cycle<paths::PathId>> {
     Ok(Self { cycle_detector: self.cycle_detector.clone().try_push(path)?, store: Vec::new() })
   }
 

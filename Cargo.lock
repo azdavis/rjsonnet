@@ -228,6 +228,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d0a5c400df2834b80a4c3327b3aad3a4c4cd4de0629063962b03235697506a28"
 
 [[package]]
+name = "cycle"
+version = "0.8.3"
+
+[[package]]
 name = "diagnostic"
 version = "0.1.0"
 source = "git+https://github.com/azdavis/language-util.git#e44479aa39b27a15cd596bc150abf6525dd8a5cc"
@@ -615,6 +619,7 @@ name = "jsonnet-eval"
 version = "0.8.3"
 dependencies = [
  "always",
+ "cycle",
  "finite-float",
  "jsonnet-expr",
  "jsonnet-std-sig",
@@ -750,6 +755,7 @@ name = "jsonnet-val"
 version = "0.8.3"
 dependencies = [
  "always",
+ "cycle",
  "finite-float",
  "jsonnet-escape",
  "jsonnet-expr",

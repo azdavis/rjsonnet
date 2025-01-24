@@ -1,0 +1,13 @@
+[package]
+name = "cycle"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lib]
+test = false
+doctest = false
+
+[lints]
+workspace = true
