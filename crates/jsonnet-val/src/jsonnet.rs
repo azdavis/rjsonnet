@@ -72,17 +72,17 @@ impl Env {
     self.store = iter.collect();
   }
 
-  /// Get an identifier.
+  /// Get an identifier. Returns None if it is not in scope.
   #[must_use]
   pub fn get(&self, id: Id) -> Option<Get> {
     if id == Id::self_ {
-      return Some(Get::Self_);
+      return self.this().map(|this| Get::Object(this.clone()));
     }
     if id == Id::super_ {
-      return Some(Get::Super);
+      return self.this().map(|this| Get::Object(this.parent()));
     }
     if id == Id::std_unutterable {
-      return Some(Get::Std);
+      return Some(Get::Object(Object::std_lib()));
     }
     for idx in (0..self.store.len()).rev() {
       match &self.store[idx] {
@@ -110,7 +110,7 @@ impl Env {
       }
     }
     if id == Id::std {
-      Some(Get::Std)
+      Some(Get::Object(Object::std_lib()))
     } else {
       None
     }
@@ -139,14 +139,10 @@ enum EnvElem {
 /// The output when getting an identifier.
 #[derive(Debug)]
 pub enum Get {
-  /// The id was `self`.
-  Self_,
-  /// The id was `super`.
-  Super,
-  /// The id was `std`, the standard library.
-  Std,
   /// The id mapped to an expr.
   Expr(Env, Expr),
+  /// The id returns an object (self, super, or std).
+  Object(Object),
 }
 
 /// A Jsonnet value.
