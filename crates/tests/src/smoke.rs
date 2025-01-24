@@ -139,3 +139,61 @@ x + a(3) + x
   )
   .check();
 }
+
+#[test]
+fn object_plus() {
+  JsonnetInput::manifest(
+    r#"
+{
+  a: {
+    x: 2,
+    y: 3,
+    z: 4,
+  },
+} + {
+  a: {
+    x: 5,
+  },
+}
+"#,
+    r#"
+{
+  "a": {
+    "x": 5
+  }
+}
+"#,
+  )
+  .check();
+}
+
+#[test]
+#[should_panic = "mismatched manifest"]
+fn object_field_plus() {
+  // TODO impl support for +:
+  JsonnetInput::manifest(
+    r#"
+{
+  a: {
+    x: 2,
+    y: 3,
+    z: 4,
+  },
+} + {
+  a+: {
+    x: 5,
+  },
+}
+"#,
+    r#"
+{
+  "a": {
+    "x": 5,
+    "y": 3,
+    "z": 4
+  }
+}
+"#,
+  )
+  .check();
+}
