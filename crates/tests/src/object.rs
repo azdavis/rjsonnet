@@ -2,6 +2,8 @@
 
 use crate::check::JsonnetInput;
 
+mod plus;
+
 #[test]
 fn empty() {
   JsonnetInput::manifest_self("{}").check();
@@ -75,32 +77,6 @@ base + {
   "super_a": 3,
   "super_b": 6
 }
-"#,
-  )
-  .check();
-}
-
-#[test]
-fn explicit_plus() {
-  JsonnetInput::manifest(
-    r"
-{ a: 1, b: 2 } + { a: 3, c: 4 }
-",
-    r#"
-{ "a": 3, "b": 2, "c": 4 }
-"#,
-  )
-  .check();
-}
-
-#[test]
-fn implicit_plus() {
-  JsonnetInput::manifest(
-    r"
-{ a: 1 } { b: 2 }
-",
-    r#"
-{ "a": 1, "b": 2 }
 "#,
   )
   .check();
