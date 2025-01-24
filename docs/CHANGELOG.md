@@ -2,6 +2,11 @@
 
 Things under "main" are not released yet.
 
+## v0.8.4
+
+- Improve go-to-def for object locals.
+- Improve special case typing for array unions.
+
 ## v0.8.3
 
 - Fix unused warnings for object comprehension variables.
