@@ -193,17 +193,25 @@ impl fmt::Display for TypeAndDefault<'_> {
       }
       TypeAndDefault::Bool(b) => {
         writeln!(f, "- Type: `boolean`")?;
-        writeln!(f, "- Default: `{b:?}`")?;
+        writeln!(f, "- Default: `{b}`")?;
         Ok(())
       }
       TypeAndDefault::Number(n) => {
         writeln!(f, "- Type: `number`")?;
-        writeln!(f, "- Default: `{n:?}`")?;
+        writeln!(f, "- Default: `{n}`")?;
         Ok(())
       }
       TypeAndDefault::Array(ar) => {
         writeln!(f, "- Type: `array`")?;
-        writeln!(f, "- Default: `{ar:?}`")?;
+        write!(f, "- Default: `[")?;
+        let mut iter = ar.iter();
+        if let Some(elem) = iter.next() {
+          write!(f, "{elem}")?;
+        }
+        for elem in iter {
+          write!(f, ", {elem}")?;
+        }
+        writeln!(f, "]`")?;
         Ok(())
       }
     }
