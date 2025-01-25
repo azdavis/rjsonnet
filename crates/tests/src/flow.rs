@@ -438,3 +438,23 @@ function(xs)
   )
   .check();
 }
+
+#[test]
+#[should_panic = "unreachable code"]
+fn obj_field() {
+  JsonnetInput::manifest_or_fn(
+    r#"
+function(x)
+  assert std.isObject(x) && std.isString(x.t);
+  if x.t == "foo" then
+    1
+  else if x.t == "bar" then
+    2
+  else if x.t == "quz" then
+    3
+  else
+    4
+"#,
+  )
+  .check();
+}
