@@ -2,6 +2,10 @@
 
 Things under "main" are not released yet.
 
+## v0.8.5
+
+- Default extra dirs to `.` and `bazel-bin`.
+
 ## v0.8.4
 
 - Improve go-to-def for object locals.
