@@ -54,7 +54,10 @@
         },
         "rjsonnet.server.importDirs.extra": {
           "type": "array",
-          "default": [],
+          "default": [
+            ".",
+            "bazel-bin"
+          ],
           "markdownDescription": "Extra directories in which to search for import paths."
         },
         "rjsonnet.server.manifest.enabled": {

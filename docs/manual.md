@@ -22,7 +22,7 @@ Enable the language server.
 #### `rjsonnet.server.importDirs.extra`
 
 - Type: `array`
-- Default: `[]`
+- Default: `[".", "bazel-bin"]`
 
 Extra directories in which to search for import paths.
 
