@@ -68,8 +68,13 @@ pub fn run<S: lang_srv_state::State>() {
   for msg in &conn.receiver {
     match msg {
       lsp_server::Message::Request(req) => {
-        if conn.handle_shutdown(&req).expect("handle shutdown") {
-          return;
+        match conn.handle_shutdown(&req) {
+          Err(e) => {
+            log::error!("error handling shutdown: {e}");
+            return;
+          }
+          Ok(true) => return,
+          Ok(false) => {}
         }
         match request::handle(&mut srv, req).and_then(|r| srv.respond(&conn, r)) {
           Ok(()) => {}
