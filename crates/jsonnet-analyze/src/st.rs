@@ -621,8 +621,7 @@ impl lang_srv_state::State for St {
       let ty = param_pos
         .and_then(|pos| {
           let func = wa.statics.as_fn(ty)?;
-          let (params, _) = func.parts();
-          let params = params?;
+          let (params, _) = func.parts()?;
           let param = params.get(pos)?;
           Some(param.ty)
         })
@@ -873,8 +872,7 @@ fn get_cur_param(
   if let Some(x) = arg.id_eq() {
     let id = x.id()?;
     let text = id.text();
-    let (params, _) = func.parts();
-    let params = params?;
+    let (params, _) = func.parts()?;
     let pos = params.iter().position(|p| str_ar.get_id(p.id) == Some(text))?;
     Some(pos)
   } else {

@@ -42,11 +42,7 @@ impl Fn {
     str_ar: &'a StrArena,
   ) -> Result<(String, Vec<std::ops::Range<u32>>), fmt::Error> {
     // NOTE: some duplication with `FnDisplay`.
-    let (params, ret) = self.parts();
-    let Some(params) = params else {
-      always!(ret == Ty::ANY);
-      return Ok(("function".to_owned(), Vec::new()));
-    };
+    let Some((params, ret)) = self.parts() else { return Ok(("function".to_owned(), Vec::new())) };
     let mut param_ranges = Vec::<std::ops::Range<u32>>::new();
     let mut buf = "(".to_owned();
     let mut first = true;
@@ -166,15 +162,10 @@ impl fmt::Display for TyDisplay<'_> {
           f.write_str("{}")
         }
       }
-      Data::Fn(func) => {
-        let (params, ret) = func.parts();
-        if let Some(params) = params {
-          FnDisplay { params, ret, prec: self.prec, stuff: self.stuff }.fmt(f)
-        } else {
-          always!(ret == Ty::ANY);
-          f.write_str("function")
-        }
-      }
+      Data::Fn(func) => match func.parts() {
+        Some((params, ret)) => FnDisplay { params, ret, prec: self.prec, stuff: self.stuff }.fmt(f),
+        None => f.write_str("function"),
+      },
       Data::Union(tys) => {
         let has_bool = tys.contains(&Ty::TRUE) && tys.contains(&Ty::FALSE);
         let mut iter = tys.iter().filter_map(|&ty| {

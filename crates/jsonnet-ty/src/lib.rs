@@ -216,23 +216,23 @@ impl Fn {
     }
   }
 
-  /// Returns the params and return type for this.
+  /// Returns the params and return type for this, or `None` if this is `Unknown`.
   #[must_use]
-  pub fn parts(&self) -> (Option<&[Param]>, Ty) {
+  pub fn parts(&self) -> Option<(&[Param], Ty)> {
     match self {
-      Fn::Regular(func) => (Some(func.params.as_slice()), func.ret),
+      Fn::Regular(func) => Some((func.params.as_slice(), func.ret)),
       Fn::Std(func) => {
         let sig = StdFnSig::get(*func);
-        (Some(sig.params), sig.ret)
+        Some((sig.params, sig.ret))
       }
       Fn::StdParam(param_count) => {
         let params = match param_count {
           ParamCount::One => [Param::A].as_slice(),
           ParamCount::Two => [Param::A, Param::B].as_slice(),
         };
-        (Some(params), Ty::ANY)
+        Some((params, Ty::ANY))
       }
-      Fn::Unknown => (None, Ty::ANY),
+      Fn::Unknown => None,
     }
   }
 }

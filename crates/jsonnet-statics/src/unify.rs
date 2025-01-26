@@ -97,27 +97,26 @@ pub(crate) fn get(st: &mut St<'_>, store: &ty::MutStore<'_>, want: ty::Ty, got: 
       // also, ignore the fields that ARE in `got` but are NOT in `want`. kind of like sub-typing.
     }
     (ty::Data::Fn(want), ty::Data::Fn(got)) => {
-      let (want_params, want_ret) = want.parts();
-      let (got_params, got_ret) = got.parts();
-      if let (Some(want_params), Some(got_params)) = (want_params, got_params) {
-        if want_params.len() > got_params.len() {
-          st.err(error::Unify::NotEnoughParams(want_params.len(), got_params.len()));
+      let parts = (want.parts(), got.parts());
+      // if either has no parts (is unknown), it will unify with the other always.
+      let (Some((want_params, want_ret)), Some((got_params, got_ret))) = parts else { return };
+      if want_params.len() > got_params.len() {
+        st.err(error::Unify::NotEnoughParams(want_params.len(), got_params.len()));
+      }
+      for (want, got) in want_params.iter().zip(got_params.iter()) {
+        if !want.id.is_unutterable() && want.id != got.id {
+          st.err(error::Unify::MismatchedParamNames(want.id, got.id));
         }
-        for (want, got) in want_params.iter().zip(got_params.iter()) {
-          if !want.id.is_unutterable() && want.id != got.id {
-            st.err(error::Unify::MismatchedParamNames(want.id, got.id));
-          }
-          // if we wanted a required argument, we can get either a required or optional argument.
-          if !want.required && got.required {
-            st.err(error::Unify::WantOptionalParamGotRequired(want.id));
-          }
-          // ah yes, the famous contra-variance.
-          get(st, store, got.ty, want.ty);
+        // if we wanted a required argument, we can get either a required or optional argument.
+        if !want.required && got.required {
+          st.err(error::Unify::WantOptionalParamGotRequired(want.id));
         }
-        for got in got_params.iter().skip(want_params.len()) {
-          if got.required {
-            st.err(error::Unify::ExtraRequiredParam(got.id));
-          }
+        // ah yes, the famous contra-variance.
+        get(st, store, got.ty, want.ty);
+      }
+      for got in got_params.iter().skip(want_params.len()) {
+        if got.required {
+          st.err(error::Unify::ExtraRequiredParam(got.id));
         }
       }
       get(st, store, want_ret, got_ret);

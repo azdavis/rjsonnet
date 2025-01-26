@@ -50,9 +50,7 @@ pub fn and(tys: &mut MutStore<'_>, x: Ty, y: Ty) -> Ty {
       tys.get(Data::Object(Object { known, has_unknown: x.has_unknown && y.has_unknown }))
     }
     (Data::Fn(f), Data::Fn(g)) => {
-      let (fps, fr) = f.parts();
-      let (gps, gr) = g.parts();
-      let (fps, gps) = match (fps, gps) {
+      let ((fps, fr), (gps, gr)) = match (f.parts(), g.parts()) {
         (None, None) => {
           always!(matches!(f, Fn::Unknown));
           always!(matches!(g, Fn::Unknown));
@@ -66,7 +64,7 @@ pub fn and(tys: &mut MutStore<'_>, x: Ty, y: Ty) -> Ty {
           always!(matches!(f, Fn::Unknown));
           return y;
         }
-        (Some(fps), Some(gps)) => (fps, gps),
+        (Some(x), Some(y)) => (x, y),
       };
       // these are necessary to give up the borrow on f and g
       #[expect(clippy::unnecessary_to_owned)]
@@ -149,8 +147,7 @@ pub fn with_len(tys: &mut MutStore<'_>, ty: Ty, n: usize) -> Ty {
       (Ordering::Less, false) | (Ordering::Greater, _) => Ty::NEVER,
     },
     Data::Fn(func) => {
-      let (params, ret) = func.parts();
-      if let Some(params) = params {
+      if let Some((params, _)) = func.parts() {
         let required = params.iter().filter(|x| x.required).count();
         if required == n {
           ty
@@ -161,7 +158,8 @@ pub fn with_len(tys: &mut MutStore<'_>, ty: Ty, n: usize) -> Ty {
         // we don't have infinite of these
         return ty;
       } else {
-        let f = RegularFn { params: Param::UNUTTERABLE.iter().copied().take(n).collect(), ret };
+        let params = Param::UNUTTERABLE.iter().copied().take(n);
+        let f = RegularFn { params: params.collect(), ret: Ty::ANY };
         tys.get(Data::Fn(Fn::Regular(f)))
       }
     }
