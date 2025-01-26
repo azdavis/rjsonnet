@@ -12,7 +12,7 @@ However, you can "annotate" a function's parameter's types with `assert`s like t
 
 ```jsonnet
 local func(x, y) =
-  assert std.isString(x) || std.isNumber(x);
+  assert std.isNumber(x) || std.isString(x);
   assert std.isBoolean(y);
   if x == 3 && y then
     "hi"
@@ -23,7 +23,7 @@ local func(x, y) =
 ;
 
 func("hi", false)
-## ^ type: (x: string | number, y: boolean) => string
+## ^ type: (x: number | string, y: boolean) => string
 ```
 
 ## Flow typing
@@ -46,13 +46,13 @@ function(x)
       else
         assert !std.isBoolean(x.foo) && x.foo != null;
         std.length(x.foo)
-##                 ^ hover: { foo: string | array[any] | function | object, ... }
+##                 ^ hover: { foo: string | array[any] | object | function, ... }
     else
       std.length(x)
 ##               ^ type: { foo: never, ... }
   else
     std.length(std.toString(x))
-##                          ^ type: boolean | null | string | number | array[any] | function
+##                          ^ type: boolean | null | number | string | array[any] | function
 ```
 
 For flow typing, rjsonnet understands how the runtime behavior of certain expressions depends on the types of values, and thus uses that information to infer static types. We call these certain expressions the "flow tests".
@@ -162,9 +162,9 @@ function(xs)
 
 ```jsonnet
 function(x)
-  if std.isString(x) || std.isNumber(x) then
+  if std.isNumber(x) || std.isString(x) then
     x
-##  ^ type: string | number
+##  ^ type: number | string
 ```
 
 ### Negation

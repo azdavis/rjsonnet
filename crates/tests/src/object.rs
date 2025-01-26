@@ -167,7 +167,7 @@ local f(x) =
     else
       { foo: "hi" };
   obj.foo;
-##    ^^^ hover: string | number
+##    ^^^ hover: number | string
 
 f(true)
 "#,

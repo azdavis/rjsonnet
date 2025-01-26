@@ -71,16 +71,16 @@ impl Fact {
     Self(Repr::Prim(Prim::String, tot))
   }
 
-  pub(crate) fn function() -> Self {
-    Self(Repr::Prim(Prim::Function, Totality::Total))
-  }
-
   pub(crate) fn array(tot: Totality) -> Self {
     Self(Repr::Prim(Prim::Array, tot))
   }
 
   pub(crate) fn object(tot: Totality) -> Self {
     Self(Repr::Prim(Prim::Object, tot))
+  }
+
+  pub(crate) fn function() -> Self {
+    Self(Repr::Prim(Prim::Function, Totality::Total))
   }
 
   pub(crate) fn has_field(field: Str) -> Self {
@@ -211,9 +211,9 @@ enum Prim {
   False,
   Number,
   String,
-  Function,
   Array,
   Object,
+  Function,
 }
 
 impl Prim {
@@ -224,9 +224,9 @@ impl Prim {
       Prim::False => ty::Ty::FALSE,
       Prim::Number => ty::Ty::NUMBER,
       Prim::String => ty::Ty::STRING,
-      Prim::Function => ty::Ty::FUNCTION,
       Prim::Array => ty::Ty::ARRAY,
       Prim::Object => ty::Ty::OBJECT,
+      Prim::Function => ty::Ty::FUNCTION,
     }
   }
 }

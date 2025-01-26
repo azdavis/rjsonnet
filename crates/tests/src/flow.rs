@@ -7,10 +7,10 @@ fn smoke() {
   JsonnetInput::manifest(
     r#"
 local f(x) =
-##    ^ hover: (x: string | number) => number
+##    ^ hover: (x: number | string) => number
   assert std.isNumber(x) || std.isString(x);
   if std.isNumber(x) then
-##                ^ hover: string | number
+##                ^ hover: number | string
     x + 1
 ##  ^ hover: number
   else
@@ -146,7 +146,7 @@ local f(obj) =
     else
       assert !std.isBoolean(obj.a) && obj.a != null;
       std.length(obj.a)
-##               ^^^ hover: { a: string | array[any] | function | object, ... }
+##               ^^^ hover: { a: string | array[any] | object | function, ... }
   else
     std.length(obj)
 ##             ^^^ hover: { a: never, ... }
@@ -232,13 +232,13 @@ local f(x) =
 ##        ^ type: { a: string, b: number, ... }
       else
         x
-##      ^ type: { a: string, b: boolean | null | string | array[any] | function | object, ... } | { a: string, b: never, ... }
+##      ^ type: { a: string, b: boolean | null | string | array[any] | object | function, ... } | { a: string, b: never, ... }
     else
       x
-##    ^ type: { a: boolean | null | number | array[any] | function | object, ... } | { a: never, ... }
+##    ^ type: { a: boolean | null | number | array[any] | object | function, ... } | { a: never, ... }
   else
     x
-##  ^ type: boolean | null | string | number | array[any] | function
+##  ^ type: boolean | null | number | string | array[any] | function
 ;
 
 f(null)
@@ -283,7 +283,7 @@ local f(x) =
 ##    ^ type: function
   else
     x
-##  ^ type: boolean | null | string | number | array[any] | object
+##  ^ type: boolean | null | number | string | array[any] | object
 ;
 
 f(null)
@@ -408,9 +408,9 @@ fn filter() {
     r#"
 function(xs)
   assert std.isArray(xs);
-  assert std.all(std.map(function(x) std.isString(x) || std.isNumber(x), xs));
+  assert std.all(std.map(function(x) std.isNumber(x) || std.isString(x), xs));
   local ys = std.filter(std.isNumber, xs);
-##                                    ^^ type: array[string | number]
+##                                    ^^ type: array[number | string]
   ys
 ##^^ type: array[number]
 "#,
@@ -429,10 +429,10 @@ local inc(x) =
 
 function(xs)
   assert std.isArray(xs);
-  assert std.all(std.map(function(x) std.isString(x) || std.isNumber(x), xs));
+  assert std.all(std.map(function(x) std.isNumber(x) || std.isString(x), xs));
 ##      vv type: array[number]
   local ys = std.filterMap(std.isNumber, inc, xs);
-##                                            ^^ type: array[string | number]
+##                                            ^^ type: array[number | string]
   std.filterMap(function(x) x, inc, xs) + ys
 ##                                  ^^ diagnostic: incompatible types; expected `number`; found `string`
 "#,

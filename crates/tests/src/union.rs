@@ -7,9 +7,9 @@ fn specific() {
   JsonnetInput::manifest_or_fn(
     r#"
 local f(x) =
-  assert x == null || std.isString(x) || std.isNumber(x);
+  assert x == null || std.isNumber(x) || std.isString(x);
   x;
-##^ type: null | string | number
+##^ type: null | number | string
 
 function(y)
   assert y == null || std.isString(y);
@@ -30,10 +30,10 @@ local f(x) =
 ##^ type: null | string
 
 function(y)
-  assert y == null || std.isString(y) || std.isNumber(y);
+  assert y == null || std.isNumber(y) || std.isString(y);
 ##  v diagnostic: incompatible types; expected `null | string`; found `number`
   f(y)
-##  ^ type: null | string | number
+##  ^ type: null | number | string
 "#,
   )
   .check();
