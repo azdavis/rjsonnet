@@ -29,7 +29,6 @@ function(b)
 }
 
 #[test]
-#[should_panic = "completions did not match"]
 fn union_outside() {
   JsonnetInput::manifest_or_fn(
     r#"

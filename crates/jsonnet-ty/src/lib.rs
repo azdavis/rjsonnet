@@ -501,6 +501,20 @@ impl<'a> MutStore<'a> {
   pub fn into_local(self) -> LocalStore {
     self.local
   }
+
+  fn object_fields(&mut self, ty: Ty, ac: &mut BTreeMap<Str, Ty>) -> bool {
+    match self.data(ty) {
+      Data::Prim(_) | Data::Array(_) | Data::Fn(_) => false,
+      Data::Object(object) => {
+        for (field, ty) in object.clone().known {
+          let cur = ac.entry(field).or_insert(Ty::NEVER);
+          *cur = self.get(Data::mk_union([*cur, ty]));
+        }
+        true
+      }
+      Data::Union(tys) => tys.clone().into_iter().all(|ty| self.object_fields(ty, ac)),
+    }
+  }
 }
 
 /// The global store of types.
@@ -514,24 +528,16 @@ impl Default for GlobalStore {
 }
 
 impl GlobalStore {
-  /// Returns the known object fields underlying this type, if any.
+  /// If this type is an object type or a union of object types, returns a mapping from field names
+  /// to types for the known fields of this type.
   #[must_use]
   pub fn object_fields(&mut self, ty: Ty) -> Option<BTreeMap<Str, Ty>> {
-    // TODO fix; this needs to possibly create new union types
     let mut ac = BTreeMap::<Str, Ty>::new();
-    self.object_fields_(ty, &mut ac).then_some(ac)
-  }
-
-  fn object_fields_(&self, ty: Ty, ac: &mut BTreeMap<Str, Ty>) -> bool {
-    let Some(data) = self.0.data(ty, false) else { return false };
-    match data {
-      Data::Prim(_) | Data::Array(_) | Data::Fn(_) => false,
-      Data::Object(object) => {
-        ac.extend(object.known.iter().map(|(k, &v)| (k.clone(), v)));
-        true
-      }
-      Data::Union(tys) => tys.iter().all(|&ty| self.object_fields_(ty, ac)),
-    }
+    let mut m = MutStore::new(&*self);
+    let ok = m.object_fields(ty, &mut ac);
+    let local = m.into_local();
+    always!(Subst::get(self, local).is_none());
+    ok.then_some(ac)
   }
 
   /// Returns Some(f) iff this is a function type f.
