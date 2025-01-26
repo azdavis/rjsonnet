@@ -41,3 +41,111 @@ function(b)
   )
   .check();
 }
+
+#[test]
+fn union_inside_inside() {
+  JsonnetInput::manifest_or_fn(
+    r#"
+function(x, y, z)
+  assert std.isBoolean(x);
+  assert std.isBoolean(y);
+  assert std.isBoolean(z);
+  local obj = {
+    a:
+      if x then
+        { b: if y then 1 else false }
+      else
+        { b: if z then true else "hi" }
+  };
+  obj.a.b
+##      ^ completions: b: boolean | number | string
+"#,
+  )
+  .check();
+}
+
+#[test]
+fn union_inside_outside() {
+  JsonnetInput::manifest_or_fn(
+    r#"
+function(x, y, z)
+  assert std.isBoolean(x);
+  assert std.isBoolean(y);
+  assert std.isBoolean(z);
+  local obj = {
+    a:
+      if x then
+        if y then
+          { b: 1 }
+        else
+          { b: false }
+      else
+        if z then
+          { b: true }
+        else
+          { b: "hi" }
+  };
+  obj.a.b
+##      ^ completions: b: boolean | number | string
+"#,
+  )
+  .check();
+}
+
+#[test]
+fn union_outside_inside() {
+  JsonnetInput::manifest_or_fn(
+    r#"
+function(x, y, z)
+  assert std.isBoolean(x);
+  assert std.isBoolean(y);
+  assert std.isBoolean(z);
+  local obj =
+    if x then
+      {
+        a: { b: if y then 1 else false }
+      }
+    else
+      {
+        a: { b: if z then true else "hi" }
+      }
+  ;
+  obj.a.b
+##      ^ completions: b: boolean | number | string
+"#,
+  )
+  .check();
+}
+
+#[test]
+fn union_outside_outside() {
+  JsonnetInput::manifest_or_fn(
+    r#"
+function(x, y, z)
+  assert std.isBoolean(x);
+  assert std.isBoolean(y);
+  assert std.isBoolean(z);
+  local obj =
+    if x then
+      {
+        a:
+          if y then
+            { b: 1 }
+          else
+            { b: false }
+      }
+    else
+      {
+        a:
+          if z then
+            { b: true }
+          else
+            { b: "hi" }
+      }
+  ;
+  obj.a.b
+##      ^ completions: b: boolean | number | string
+"#,
+  )
+  .check();
+}
