@@ -234,7 +234,8 @@ local f(x) =
         x
 ##      ^ type: { a: string, b: boolean | null | string | array[any] | object | function, ... } | { a: string, b: never, ... }
     else
-      x
+##      v completions: a: boolean | null | number | array[any] | object | function
+      x.a
 ##    ^ type: { a: boolean | null | number | array[any] | object | function, ... } | { a: never, ... }
   else
     x
