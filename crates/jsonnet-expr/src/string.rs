@@ -234,8 +234,9 @@ pub struct Subst {
 }
 
 impl Subst {
-  /// Combine artifacts and produce a substitution to apply to other things.
-  pub fn get(this: &mut Artifacts, other: Artifacts) -> Self {
+  /// Combines artifacts. Then, if that combination produced a non-empty substitution to apply to
+  /// other things, return it.
+  pub fn get(this: &mut Artifacts, other: Artifacts) -> Option<Self> {
     let mut ret = Subst::default();
     for (idx, s) in other.strings.idx_to_data.into_iter().enumerate() {
       let old = StrIdx::from_usize(idx);
@@ -249,7 +250,11 @@ impl Subst {
         always!(ret.paths.insert(old, new).is_none());
       }
     });
-    ret
+    (!ret.is_empty()).then_some(ret)
+  }
+
+  fn is_empty(&self) -> bool {
+    self.strings.is_empty() && self.paths.is_empty()
   }
 
   /// Get the path id from the subst.

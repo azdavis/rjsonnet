@@ -562,12 +562,13 @@ pub struct Subst {
 }
 
 impl Subst {
-  /// Combine stores and produce a substitution to apply to other things.
+  /// Combines the local store into the global one. Then, if that combination produced a non-empty
+  /// substitution to apply to other things, return it.
   ///
   /// # Panics
   ///
   /// On internal error in debug mode only.
-  pub fn get(global: &mut GlobalStore, mut local: LocalStore) -> Self {
+  pub fn get(global: &mut GlobalStore, mut local: LocalStore) -> Option<Self> {
     // topological sort to determine what order to add the data from the local store to the global
     // store.
     let mut work: Vec<_> = (0..local.0.idx_to_data.len())
@@ -676,7 +677,11 @@ impl Subst {
         assert!(!data.has_local());
       }
     }
-    ret
+    (!ret.is_empty()).then_some(ret)
+  }
+
+  fn is_empty(&self) -> bool {
+    self.old_to_new.is_empty()
   }
 }
 

@@ -144,9 +144,10 @@ impl SyntaxFileToCombine {
 
   pub(crate) fn combine(self, artifacts: &mut GlobalArtifacts) -> SyntaxFile {
     let mut ret = self.file;
-    let expr_subst = jsonnet_expr::Subst::get(&mut artifacts.syntax, self.to_combine);
-    for (_, ed) in ret.exprs.ar.iter_mut() {
-      ed.apply(&expr_subst);
+    if let Some(expr_subst) = jsonnet_expr::Subst::get(&mut artifacts.syntax, self.to_combine) {
+      for (_, ed) in ret.exprs.ar.iter_mut() {
+        ed.apply(&expr_subst);
+      }
     }
     ret
   }
@@ -228,12 +229,13 @@ impl StaticsFileToCombine {
 
   pub(crate) fn combine(self, artifacts: &mut GlobalArtifacts) -> StaticsFile {
     let mut ret = self.file;
-    let ty_subst = jsonnet_ty::Subst::get(&mut artifacts.statics, self.to_combine);
-    for err in &mut ret.statics.errors {
-      err.apply(&ty_subst);
-    }
-    for ty in ret.statics.expr_tys.values_mut() {
-      ty.apply(&ty_subst);
+    if let Some(ty_subst) = jsonnet_ty::Subst::get(&mut artifacts.statics, self.to_combine) {
+      for err in &mut ret.statics.errors {
+        err.apply(&ty_subst);
+      }
+      for ty in ret.statics.expr_tys.values_mut() {
+        ty.apply(&ty_subst);
+      }
     }
     ret
   }
