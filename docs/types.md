@@ -282,7 +282,9 @@ function(x)
 - `object`
 - `function`
 
-This may sound like `any`, but they are not quite identical.
+This may sound like `any`, but they are not quite identical. See discussion on [soundness](#soundness).
+
+See also discussion about [canonical forms](#canonical-forms) for interactions with other composite types.
 
 ### Functions
 
@@ -303,6 +305,65 @@ Union types bind stronger than function types. This means 1 and 2 below are equi
 1. `(x: boolean) => number | string`
 2. `(x: boolean) => (number | string)`
 3. `((x: boolean) => number) | string`
+
+## Further discussion
+
+These are some more in-depth notes and musings about the type system.
+
+### Canonical forms
+
+There are four kinds of composite types in the type system:
+
+1. Objects
+2. Functions
+3. Arrays
+4. Unions
+
+The fact that unions exist alongside other composite types in the type system raises the question of whether there is some canonical form of union types with respect to the other composite types.
+
+We do flatten union types as much as possible, i.e. `A | (B | C)` becomes `A | B | C`. We also deduplicate, i.e. `A | B | A` becomes `A | B`.
+
+However, this is the only canonicalizing we perform. This means that in the following two examples, we allow both types in the given pair to exist as distinct types, even though they have identical semantics:
+
+1. `{ a: number } | { a: string }` and `{ a: number | string }`
+1. `(() => number) | (() => string)` and `() => number | string`
+
+### Soundness
+
+A highly desirable property of a static type system is soundness. This means: if a program would cause a type error when run, the static type checker emits an error noting this fact before that program runs.
+
+The presence of `any` in our type system means it is not sound.
+
+In programming language theory jargon, `any` is both a top type and a bottom type. That means every other type is a subtype of this, and this is a subtype of every other type. This is the source of the unsoundness.
+
+`any` is necessary to work with existing Jsonnet code without either emitting vast amounts of possibly spurious errors, or requiring a much, much higher sophisticated level of analysis.
+
+#### Bottom
+
+`never` is the type that is only a bottom type, not also a top type. You can do anything with a `never` - get a field off of it, add to it, pass it to a function, use it as a conditional in an `if` expression, etc. Similarly, you can do anything with an `any`.
+
+The only difference is that we warn in some cases when doing certain things with a `never` that would force the expression to be evaluated, because if we know it's a `never`, and we know we're trying to evaluate it, we know any code that follows is unreachable, because the `never` will actually not be evaluated and will raise an error.
+
+#### Top
+
+`top` is the type that is only a top type, not also a bottom type. It is rare to encounter, but you can contrive it into existence like this:
+
+```jsonnet
+function(x) if std.isBoolean(x) then x else x
+## ^ type: (x: any) => top
+```
+
+Any value is compatible with `top`, and so it is for `any` as well. Because `any` is a top type like `top`, we treat `any` like `top` when doing a flow test on an `any` subject. This means, for instance, in the `else` branch, we narrow the type of the subject to everything (aka `top`) except what we just tested for in the flow test:
+
+```jsonnet
+function(x)
+  if std.isBoolean(x) then
+    x
+##  ^ type: boolean
+  else
+    x
+##  ^ type: null | number | string | array[any] | object | function
+```
 
 [dhm]: https://bernsteinbear.com/blog/type-inference/
 [sorbet]: https://sorbet.org/
