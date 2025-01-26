@@ -338,3 +338,29 @@ fn param_obj() {
   )
   .check();
 }
+
+#[test]
+fn no_comment() {
+  JsonnetInput::manifest(
+    r#"
+// hi there
+## ^ hover: <none>
+1 + 1
+"#,
+    "2",
+  )
+  .check();
+}
+
+#[test]
+fn no_whitespace() {
+  JsonnetInput::manifest(
+    r#"
+local      one = 1;
+##     ^ hover: <none>
+one + one
+"#,
+    "2",
+  )
+  .check();
+}

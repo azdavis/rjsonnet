@@ -137,12 +137,18 @@ impl Expect {
       Kind::Hover => {
         let pos = text_pos::PositionUtf16 { line: region.line, col: region.col_start };
         let got = st.hover(fs, path.to_owned(), pos);
-        let Some(got) = got else { panic!("{path_str}:{pos}: no hover") };
         let want = self.msg.as_str();
-        assert!(
-          got.lines().any(|line| line == want),
-          "{path_str}:{pos}: none of the lines were equal to '{want}':\n\n{got}"
-        );
+        match (want, got) {
+          ("<none>", Some(got)) => panic!("{path_str}:{pos}: wanted no hover, got {got}"),
+          ("<none>", None) => {}
+          (_, None) => panic!("{path_str}:{pos}: wanted hover, got none"),
+          (_, Some(got)) => {
+            assert!(
+              got.lines().any(|line| line == want),
+              "{path_str}:{pos}: none of the lines were equal to '{want}':\n\n{got}"
+            );
+          }
+        }
       }
       Kind::Completions => {
         let pos = text_pos::PositionUtf16 { line: region.line, col: region.col_start };
