@@ -231,6 +231,7 @@ pub struct Subst {
 impl Subst {
   /// Combines artifacts. Then, if that combination produced a non-empty substitution to apply to
   /// other things, return it.
+  #[must_use]
   pub fn get(this: &mut Artifacts, other: Artifacts) -> Option<Self> {
     let mut ret = Subst::default();
     for (idx, s) in other.strings.idx_to_data.into_iter().enumerate() {
