@@ -106,7 +106,7 @@ local f(obj) =
 ##  ^^^ hover: { foo: any, ... }
   else
     std.length(obj);
-##             ^^^ hover: object
+##             ^^^ hover: { foo: never, ... }
 
 f({thing: 5}) + f({foo: 2})
 "#,
@@ -149,7 +149,7 @@ local f(obj) =
 ##               ^^^ hover: { a: string | array[any] | ((...) => any) | object, ... }
   else
     std.length(obj)
-##             ^^^ hover: object
+##             ^^^ hover: { a: never, ... }
 ;
 
 [f({b: null}), f({a: "hello"}), f({a: 4})]
@@ -183,7 +183,7 @@ fn not_or_1() {
 local f(x) =
   if std.isObject(x) && "foo" in x && !("foo" in x || "bar" in x) then
     x
-##  ^ type: never
+##  ^ type: { foo: never, bar: never, ... }
 ;
 
 f(null)
@@ -200,7 +200,7 @@ fn not_or_2() {
 local f(x) =
   if std.isObject(x) && "foo" in x && !("foo" in x || std.length(x) == 5) then
     x
-##  ^ type: never
+##  ^ type: { foo: never, ... }
 ;
 
 f(null)
@@ -232,10 +232,10 @@ local f(x) =
 ##        ^ type: { a: string, b: number, ... }
       else
         x
-##      ^ type: { a: string, ... }
+##      ^ type: { a: string, b: boolean | null | string | array[any] | ((...) => any) | object, ... } | { a: string, b: never, ... }
     else
       x
-##    ^ type: object
+##    ^ type: { a: boolean | null | number | array[any] | ((...) => any) | object, ... } | { a: never, ... }
   else
     x
 ##  ^ type: boolean | null | string | number | array[any] | ((...) => any)
@@ -441,7 +441,6 @@ function(xs)
 }
 
 #[test]
-#[should_panic = "unreachable code"]
 fn obj_field() {
   JsonnetInput::manifest_or_fn(
     r#"

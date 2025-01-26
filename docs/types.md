@@ -49,7 +49,7 @@ function(x)
 ##                 ^ hover: { foo: string | array[any] | ((...) => any) | object, ... }
     else
       std.length(x)
-##               ^ type: object
+##               ^ type: { foo: never, ... }
   else
     std.length(std.toString(x))
 ##                          ^ type: boolean | null | string | number | array[any] | ((...) => any)

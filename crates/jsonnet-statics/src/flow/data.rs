@@ -177,8 +177,8 @@ impl Repr {
         Totality::Partial => ty,
       },
       Repr::Field(f) => {
-        let obj_ty = f.into_ty(tys);
-        ty::logic::minus(tys, ty, obj_ty)
+        let obj_ty = f.into_not(tys);
+        ty::logic::and(tys, ty, obj_ty)
       }
       // ignore:
       // 1. for Len, it's a bit odd to want to assert the length is *not* a certain known number
@@ -240,6 +240,16 @@ struct Field {
 impl Field {
   fn into_ty(self, tys: &mut ty::MutStore<'_>) -> ty::Ty {
     let field_ty = self.inner.map_or(ty::Ty::ANY, |inner| inner.apply_to(tys, ty::Ty::ANY));
+    self.path.into_iter().fold(field_ty, |ac, field| {
+      tys.get(ty::Data::Object(ty::Object {
+        known: BTreeMap::from([(field, ac)]),
+        has_unknown: true,
+      }))
+    })
+  }
+
+  fn into_not(self, tys: &mut ty::MutStore<'_>) -> ty::Ty {
+    let field_ty = self.inner.map_or(ty::Ty::NEVER, |inner| inner.apply_not(tys, ty::Ty::TOP));
     self.path.into_iter().fold(field_ty, |ac, field| {
       tys.get(ty::Data::Object(ty::Object {
         known: BTreeMap::from([(field, ac)]),
