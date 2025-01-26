@@ -2,6 +2,11 @@
 
 Things under "main" are not released yet.
 
+## main
+
+- Improve syntax highlighting for the `function` type.
+- Improve object field completions for unions.
+
 ## v0.8.6
 
 - Improve negative flow typing, especially with object fields.
