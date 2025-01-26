@@ -516,18 +516,18 @@ impl Default for GlobalStore {
 impl GlobalStore {
   /// Returns the known object fields underlying this type, if any.
   #[must_use]
-  pub fn object_fields(&self, ty: Ty) -> Option<BTreeMap<&Str, Ty>> {
+  pub fn object_fields(&self, ty: Ty) -> Option<BTreeMap<Str, Ty>> {
     // TODO fix; this needs to possibly create new union types
-    let mut ac = BTreeMap::<&Str, Ty>::new();
+    let mut ac = BTreeMap::<Str, Ty>::new();
     self.object_fields_(ty, &mut ac).then_some(ac)
   }
 
-  fn object_fields_<'a>(&'a self, ty: Ty, ac: &mut BTreeMap<&'a Str, Ty>) -> bool {
+  fn object_fields_(&self, ty: Ty, ac: &mut BTreeMap<Str, Ty>) -> bool {
     let Some(data) = self.0.data(ty, false) else { return false };
     match data {
       Data::Prim(_) | Data::Array(_) | Data::Fn(_) => false,
       Data::Object(object) => {
-        ac.extend(object.known.iter().map(|(k, &v)| (k, v)));
+        ac.extend(object.known.iter().map(|(k, &v)| (k.clone(), v)));
         true
       }
       Data::Union(tys) => tys.iter().all(|&ty| self.object_fields_(ty, ac)),

@@ -714,13 +714,13 @@ impl lang_srv_state::State for St {
     let fields = wa.statics.object_fields(ty)?;
     let fields = fields.into_iter().map(|(name, ty)| {
       let doc = if expr_is_std {
-        jsonnet_expr::StdField::try_from(name).ok().map(|x| x.doc().to_owned())
+        jsonnet_expr::StdField::try_from(&name).ok().map(|x| x.doc().to_owned())
       } else {
         None
       };
       let ty = ty.display(self.multi_line, &wa.statics, None, &wa.syntax.strings);
       lang_srv_state::CompletionItem {
-        name: wa.syntax.strings.get(name).to_owned(),
+        name: wa.syntax.strings.get(&name).to_owned(),
         ty: ty.to_string(),
         kind: lang_srv_state::CompletionItemKind::Field,
         doc,
