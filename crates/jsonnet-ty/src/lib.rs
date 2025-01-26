@@ -502,7 +502,7 @@ impl<'a> MutStore<'a> {
     self.local
   }
 
-  fn object_fields(&mut self, ty: Ty, ac: &mut BTreeMap<Str, Ty>) -> bool {
+  fn known_fields(&mut self, ty: Ty, ac: &mut BTreeMap<Str, Ty>) -> bool {
     match self.data(ty) {
       Data::Prim(_) | Data::Array(_) | Data::Fn(_) => false,
       Data::Object(object) => {
@@ -512,7 +512,7 @@ impl<'a> MutStore<'a> {
         }
         true
       }
-      Data::Union(tys) => tys.clone().into_iter().all(|ty| self.object_fields(ty, ac)),
+      Data::Union(tys) => tys.clone().into_iter().all(|ty| self.known_fields(ty, ac)),
     }
   }
 }
@@ -531,10 +531,10 @@ impl GlobalStore {
   /// If this type is an object type or a union of object types, returns a mapping from field names
   /// to types for the known fields of this type.
   #[must_use]
-  pub fn object_fields(&mut self, ty: Ty) -> Option<BTreeMap<Str, Ty>> {
+  pub fn known_fields(&mut self, ty: Ty) -> Option<BTreeMap<Str, Ty>> {
     let mut ac = BTreeMap::<Str, Ty>::new();
     let mut m = MutStore::new(&*self);
-    let ok = m.object_fields(ty, &mut ac);
+    let ok = m.known_fields(ty, &mut ac);
     let local = m.into_local();
     always!(Subst::get(self, local).is_none());
     ok.then_some(ac)

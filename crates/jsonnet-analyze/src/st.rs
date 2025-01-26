@@ -710,7 +710,7 @@ impl lang_srv_state::State for St {
       const_eval::get(self, fs, path_id, Some(expr)),
       Some(const_eval::ConstEval::Std(None))
     );
-    let fields = self.with_fs.artifacts.statics.object_fields(ty)?;
+    let fields = self.with_fs.artifacts.statics.known_fields(ty)?;
     let wa = &self.with_fs.artifacts;
     let fields = fields.into_iter().map(|(name, ty)| {
       let doc = if expr_is_std {
