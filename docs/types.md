@@ -271,6 +271,19 @@ function(x)
 ##  ^^^^^^^^^^^^^^ type: never
 ```
 
+`top` is the union of all types; that is, it is the union of:
+
+- `null`
+- `true`
+- `false`
+- `number`
+- `string`
+- `array[any]`
+- `object`
+- `function`
+
+This may sound like `any`, but they are not quite identical.
+
 ### Function types
 
 `(x: T1) => T2` is the type of functions with one required parameter `x` of type `T1` that return type `T2`.

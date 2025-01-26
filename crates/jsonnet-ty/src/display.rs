@@ -167,6 +167,9 @@ impl fmt::Display for TyDisplay<'_> {
         None => f.write_str("function"),
       },
       Data::Union(tys) => {
+        if self.ty == Ty::TOP {
+          return f.write_str("top");
+        }
         let has_bool = tys.contains(&Ty::TRUE) && tys.contains(&Ty::FALSE);
         let mut iter = tys.iter().filter_map(|&ty| {
           if has_bool && (ty == Ty::TRUE || ty == Ty::FALSE) {
