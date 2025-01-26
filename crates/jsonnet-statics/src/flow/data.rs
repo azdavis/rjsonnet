@@ -204,7 +204,7 @@ impl Repr {
 }
 
 /// ALL values fall into EXACTLY ONE of these.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 enum Prim {
   Null,
   True,
@@ -217,7 +217,7 @@ enum Prim {
 }
 
 impl Prim {
-  fn as_ty(&self) -> ty::Ty {
+  fn as_ty(self) -> ty::Ty {
     match self {
       Prim::Null => ty::Ty::NULL,
       Prim::True => ty::Ty::TRUE,
