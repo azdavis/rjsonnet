@@ -144,8 +144,9 @@ local f(obj) =
       obj.a + 7
 ##    ^^^ hover: { a: number, ... }
     else
+      assert !std.isBoolean(obj.a) && obj.a != null;
       std.length(obj.a)
-##               ^^^ hover: { a: any, ... }
+##               ^^^ hover: { a: string | array[any] | ((...) => any) | object, ... }
   else
     std.length(obj)
 ##             ^^^ hover: object
@@ -237,7 +238,7 @@ local f(x) =
 ##    ^ type: object
   else
     x
-##  ^ type: any
+##  ^ type: boolean | null | string | number | array[any] | ((...) => any)
 ;
 
 f(null)
@@ -282,7 +283,7 @@ local f(x) =
 ##    ^ type: (...) => any
   else
     x
-##  ^ type: any
+##  ^ type: boolean | null | string | number | array[any] | object
 ;
 
 f(null)

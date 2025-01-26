@@ -44,14 +44,15 @@ function(x)
           x.foo
 ##        ^ type: { foo: number, ... }
       else
+        assert !std.isBoolean(x.foo) && x.foo != null;
         std.length(x.foo)
-##                 ^ type: { foo: any, ... }
+##                 ^ hover: { foo: string | array[any] | ((...) => any) | object, ... }
     else
       std.length(x)
 ##               ^ type: object
   else
-    std.length(x)
-##             ^ type: any
+    std.length(std.toString(x))
+##                          ^ type: boolean | null | string | number | array[any] | ((...) => any)
 ```
 
 For flow typing, rjsonnet understands how the runtime behavior of certain expressions depends on the types of values, and thus uses that information to infer static types. We call these certain expressions the "flow tests".

@@ -179,10 +179,6 @@ pub fn with_len(tys: &mut MutStore<'_>, ty: Ty, n: usize) -> Ty {
 /// When such a type doesn't exist, e.g. when `x == y`, returns `never`.
 ///
 /// It's kind of like `x && !y`, where `!y` is like the union of everything EXCEPT `y`.
-///
-/// Note that we do NOT handle the case where `x` is `any` by returning a big union type of
-/// everything except `y`. This is "okay" because having `any` already makes the type system
-/// unsound.
 pub fn minus(tys: &mut MutStore<'_>, x: Ty, y: Ty) -> Ty {
   // speed up simple cases (correctness is maintained if these are removed)
   if x == y || x == Ty::NEVER {
@@ -192,7 +188,7 @@ pub fn minus(tys: &mut MutStore<'_>, x: Ty, y: Ty) -> Ty {
     return x;
   }
   match (tys.data(x), tys.data(y)) {
-    (Data::Prim(Prim::Any), _) => Ty::ANY,
+    (Data::Prim(Prim::Any), _) => minus(tys, Ty::TOP, y),
     (_, Data::Prim(Prim::Any)) => Ty::NEVER,
     (Data::Prim(xp), Data::Prim(yp)) => {
       always!(xp != yp, "should have returned already if x == y");

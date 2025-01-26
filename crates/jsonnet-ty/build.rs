@@ -8,12 +8,25 @@ use std::collections::{BTreeMap, BTreeSet};
 fn main() {
   let things = [
     (ident("ANY"), q!(Data::Prim(super::Prim::Any))),
+    (
+      ident("TOP"),
+      q!(Data::mk_union([
+        Ty::NULL,
+        Ty::TRUE,
+        Ty::FALSE,
+        Ty::NUMBER,
+        Ty::STRING,
+        Ty::FUNCTION,
+        Ty::ARRAY,
+        Ty::OBJECT,
+      ])),
+    ),
+    (ident("NEVER"), q!(Data::mk_union([]))),
     (ident("TRUE"), q!(Data::Prim(super::Prim::True))),
     (ident("FALSE"), q!(Data::Prim(super::Prim::False))),
     (ident("NULL"), q!(Data::Prim(super::Prim::Null))),
     (ident("STRING"), q!(Data::Prim(super::Prim::String))),
     (ident("NUMBER"), q!(Data::Prim(super::Prim::Number))),
-    (ident("NEVER"), q!(Data::mk_union([]))),
     (ident("BOOLEAN"), q!(Data::mk_union([Ty::TRUE, Ty::FALSE]))),
     (ident("ARRAY_BOOLEAN"), q!(Data::Array(super::Array::new(Ty::BOOLEAN)))),
     (ident("ARRAY_NUMBER"), q!(Data::Array(super::Array::new(Ty::NUMBER)))),
