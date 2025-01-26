@@ -150,8 +150,8 @@ impl Repr {
         ty::logic::and(tys, ty, obj_ty)
       }
       Repr::Len(n) => ty::logic::with_len(tys, ty, n),
-      Repr::Array(repr) => {
-        let elem = repr.apply_to(tys, ty::Ty::ANY);
+      Repr::Array(inner) => {
+        let elem = inner.apply_to(tys, ty::Ty::ANY);
         let ary = tys.get(ty::Data::Array(ty::Array::new(elem)));
         ty::logic::and(tys, ty, ary)
       }
