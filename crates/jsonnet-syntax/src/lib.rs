@@ -62,12 +62,17 @@ pub fn token_parent(tok: &kind::SyntaxToken) -> Option<kind::SyntaxNode> {
 }
 
 /// Returns the best token in the node at the offset.
+///
+/// The returned token will never be trivia.
 #[must_use]
 pub fn node_token(syntax: &kind::SyntaxNode, offset: rowan::TextSize) -> Option<kind::SyntaxToken> {
-  node_token_inner(syntax, offset, priority)
+  let ret = node_token_inner(syntax, offset, priority)?;
+  (!ret.kind().is_trivia()).then_some(ret)
 }
 
 /// Returns the best token in the node at the offset for arguments.
+///
+/// The returned token will never be trivia.
 #[must_use]
 pub fn node_token_for_arg(
   syntax: &kind::SyntaxNode,
