@@ -144,6 +144,25 @@ impl Expect {
           "{path_str}:{pos}: none of the lines were equal to '{want}':\n\n{got}"
         );
       }
+      Kind::Completions => {
+        let pos = text_pos::PositionUtf16 { line: region.line, col: region.col_start };
+        let got = st.completions(fs, path.to_owned(), pos);
+        let Some(got) = got else { panic!("{path_str}:{pos}: no completions") };
+        let mut iter = got.iter();
+        let mut got = String::new();
+        let fst = iter.next().expect("should not have empty completions");
+        got.push_str(fst.name.as_str());
+        got.push_str(": ");
+        got.push_str(fst.ty.as_str());
+        for x in iter {
+          got.push_str("; ");
+          got.push_str(x.name.as_str());
+          got.push_str(": ");
+          got.push_str(x.ty.as_str());
+        }
+        let want = self.msg.as_str();
+        assert_eq!(want, got, "{path_str}:{pos}: completions did not match");
+      }
     }
   }
 }
@@ -165,6 +184,8 @@ pub(crate) enum Kind {
   Diagnostic,
   /// A hover. (aliased as "type")
   Hover,
+  /// Completions that should be available.
+  Completions,
 }
 
 impl Kind {
@@ -174,6 +195,7 @@ impl Kind {
       Kind::Use => "use",
       Kind::Diagnostic => "diagnostic",
       Kind::Hover => "hover",
+      Kind::Completions => "completions",
     }
   }
 }
@@ -187,6 +209,7 @@ impl std::str::FromStr for Kind {
       "use" => Kind::Use,
       "diagnostic" => Kind::Diagnostic,
       "hover" | "type" => Kind::Hover,
+      "completions" => Kind::Completions,
       _ => return Err(s.to_owned()),
     };
     Ok(ret)

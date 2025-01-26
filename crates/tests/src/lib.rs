@@ -6,6 +6,7 @@
 mod array;
 mod check;
 mod comment;
+mod completions;
 mod def;
 mod did_you_mean;
 mod docs;
