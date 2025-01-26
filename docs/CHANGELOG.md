@@ -2,6 +2,10 @@
 
 Things under "main" are not released yet.
 
+## v0.8.6
+
+- Improve negative flow typing, especially with object fields.
+
 ## v0.8.5
 
 - Default extra dirs to `.` and `bazel-bin`.
