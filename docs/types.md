@@ -65,26 +65,30 @@ They affect the static types of expressions which are either variables, or a cha
 - `x.a`
 - `x["b"]["c"].d.e`
 
+We call these an expression like this a "subject". in the definitions below, it is represented by `subj`.
+
 Many of the flow tests involve certain `std` functions. Note that we only support passing positional arguments for these functions for the purposes of the flow tests. That is, if you pass named parameters, it'll still work at runtime, but no flow typing information will be inferred statically.
 
 The supported flow tests are as follows.
 
 ### Unary functions returning `boolean`
 
-- `std.isArray(expr)`
-- `std.isBoolean(expr)`
-- `std.isNumber(expr)`
-- `std.isObject(expr)`
-- `std.isString(expr)`
-- `std.isFunction(expr)`
-- `std.isEven(expr)`
-- `std.isOdd(expr)`
-- `std.isInteger(expr)`
-- `std.isDecimal(expr)`
+These functions can be called on a subject `subj`:
+
+- `std.isArray`
+- `std.isBoolean`
+- `std.isNumber`
+- `std.isObject`
+- `std.isString`
+- `std.isFunction`
+- `std.isEven`
+- `std.isOdd`
+- `std.isInteger`
+- `std.isDecimal`
 
 ### `std.type`
 
-Similar to `std.isArray`, etc, we also support `std.type(expr) == STR`, where `STR` is one of the possible return values of that function, which are:
+Similar to `std.isArray`, etc, we also support `std.type(subj) == STR`, where `STR` is one of the possible return values of the `std.type` function, which are:
 
 - `"number"`
 - `"string"`
@@ -96,20 +100,20 @@ Similar to `std.isArray`, etc, we also support `std.type(expr) == STR`, where `S
 
 ### Comparison to literals
 
-`expr == LIT`, where `LIT` is a literal, will infer that `expr` is the type of `LIT`.
+`subj == LIT`, where `LIT` is a literal (i.e. `3`, `false`, `"hi"`, `[1, 2]`, etc.), will infer that `subj` is the type of `LIT`.
 
 ### Field membership
 
 These check for field membership on objects:
 
-- `STR in expr`, where `STR` is a literal string
-- `std.objectHas(expr, STR)`, where `STR` is a literal string
-- `std.objectHasAll(expr, STR)`, where `STR` is a literal string
-- `std.objectHasEx(expr, STR, hidden)`, where `STR` is a literal string and `hidden` is an expression
+- `STR in subj`, where `STR` is a literal string
+- `std.objectHas(subj, STR)`, where `STR` is a literal string
+- `std.objectHasAll(subj, STR)`, where `STR` is a literal string
+- `std.objectHasEx(subj, STR, hidden)`, where `STR` is a literal string and `hidden` is an expression
 
 ### Length
 
-`std.length(expr) == NUM`, where `NUM` is a literal number, can be used on objects and functions.
+`std.length(subj) == NUM`, where `NUM` is a literal number, can be used on objects and functions.
 
 For objects, if `NUM` is the number of known fields, the object will then be marked as having no unknown fields.
 
@@ -128,7 +132,7 @@ function(f)
 
 ### Array element types
 
-`std.all(std.map(elem_test, expr))` checks that `expr` is an array whose element type is given by `elem_test`.
+`std.all(std.map(elem_test, subj))` checks that `subj` is an array whose element type is given by `elem_test`.
 
 `elem_test` can be either:
 
@@ -171,9 +175,9 @@ function(x)
 
 `!a`, where `a` is a flow test, negates the meaning of the test.
 
-This is useful for e.g. `expr != null`, which can narrow away the nullability of a nullable type (aka a union type with `null`).
+This is useful for e.g. `subj != null`, which can narrow away the nullability of a nullable type (aka a union type with `null`).
 
-This works because `a != b` desugars to `!(a == b)`, and `expr == LIT` is a supported test.
+This works because `a != b` desugars to `!(a == b)`, and `subj == LIT` is a supported test.
 
 The negation of a flow test is also reflected in the `else`-branch of `if` expressions:
 
