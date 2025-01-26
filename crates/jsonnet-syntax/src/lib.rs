@@ -78,11 +78,11 @@ pub fn node_token_for_arg(
   syntax: &kind::SyntaxNode,
   offset: rowan::TextSize,
 ) -> Option<kind::SyntaxToken> {
-  let mut res = node_token_inner(syntax, offset, priority_for_arg)?;
-  while res.kind().is_trivia() {
-    res = res.prev_token()?;
+  let mut ret = node_token_inner(syntax, offset, priority_for_arg)?;
+  while ret.kind().is_trivia() {
+    ret = ret.prev_token()?;
   }
-  Some(res)
+  Some(ret)
 }
 
 fn node_token_inner(
