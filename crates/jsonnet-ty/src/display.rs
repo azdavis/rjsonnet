@@ -41,28 +41,28 @@ impl Fn {
     local: Option<&'a LocalStore>,
     str_ar: &'a StrArena,
   ) -> Result<(String, Vec<std::ops::Range<u32>>), fmt::Error> {
-    let (params, ret) = self.parts();
-    let mut param_ranges = Vec::<std::ops::Range<u32>>::new();
     // NOTE: some duplication with `FnDisplay`.
+    let (params, ret) = self.parts();
+    let Some(params) = params else {
+      always!(ret == Ty::ANY);
+      return Ok(("function".to_owned(), Vec::new()));
+    };
+    let mut param_ranges = Vec::<std::ops::Range<u32>>::new();
     let mut buf = "(".to_owned();
-    if let Some(params) = params {
-      let mut first = true;
-      for &param in params {
-        if first {
-          first = false;
-        } else {
-          buf.push_str(", ");
-        }
-        let start = always::convert::usize_to_u32(buf.len());
-        let param_d = ParamDisplay { param, stuff: Stuff { global, local, str_ar, level: None } };
-        write!(&mut buf, "{param_d}")?;
-        let end = always::convert::usize_to_u32(buf.len());
-        param_ranges.push(start..end);
+    let mut first = true;
+    for &param in params {
+      if first {
+        first = false;
+      } else {
+        buf.push_str(", ");
       }
-      always!(params.len() == param_ranges.len());
-    } else {
-      buf.push_str("...");
+      let start = always::convert::usize_to_u32(buf.len());
+      let param_d = ParamDisplay { param, stuff: Stuff { global, local, str_ar, level: None } };
+      write!(&mut buf, "{param_d}")?;
+      let end = always::convert::usize_to_u32(buf.len());
+      param_ranges.push(start..end);
     }
+    always!(params.len() == param_ranges.len());
     buf.push_str(") => ");
     let ret = ret.display(MultiLine::MustNot, global, local, str_ar);
     write!(&mut buf, "{ret}")?;
@@ -168,7 +168,12 @@ impl fmt::Display for TyDisplay<'_> {
       }
       Data::Fn(func) => {
         let (params, ret) = func.parts();
-        FnDisplay { params, ret, prec: self.prec, stuff: self.stuff }.fmt(f)
+        if let Some(params) = params {
+          FnDisplay { params, ret, prec: self.prec, stuff: self.stuff }.fmt(f)
+        } else {
+          always!(ret == Ty::ANY);
+          f.write_str("function")
+        }
       }
       Data::Union(tys) => {
         let has_bool = tys.contains(&Ty::TRUE) && tys.contains(&Ty::FALSE);
@@ -205,7 +210,7 @@ impl fmt::Display for TyDisplay<'_> {
 
 #[derive(Clone, Copy)]
 struct FnDisplay<'a> {
-  params: Option<&'a [Param]>,
+  params: &'a [Param],
   ret: Ty,
   prec: Prec,
   stuff: Stuff<'a>,
@@ -218,28 +223,25 @@ impl fmt::Display for FnDisplay<'_> {
       f.write_str("(")?;
     }
     f.write_str("(")?;
-    if let Some(params) = self.params {
-      let [cur_level, new_level, rec_level] = increase_level(params.len(), self.stuff.level);
-      let mut iter = params
-        .iter()
-        .map(|&param| ParamDisplay { param, stuff: Stuff { level: rec_level, ..self.stuff } });
-      if let Some(new_level) = new_level {
-        nl_indent(f, new_level)?;
-      }
-      if let Some(p) = iter.next() {
-        p.fmt(f)?;
-      }
-      for p in iter {
-        f.write_str(",")?;
-        field_sep(f, new_level)?;
-        p.fmt(f)?;
-      }
-      if let Some(cur_level) = cur_level {
-        f.write_str(",")?;
-        nl_indent(f, cur_level)?;
-      }
-    } else {
-      f.write_str("...")?;
+    let [cur_level, new_level, rec_level] = increase_level(self.params.len(), self.stuff.level);
+    let mut iter = self
+      .params
+      .iter()
+      .map(|&param| ParamDisplay { param, stuff: Stuff { level: rec_level, ..self.stuff } });
+    if let Some(new_level) = new_level {
+      nl_indent(f, new_level)?;
+    }
+    if let Some(p) = iter.next() {
+      p.fmt(f)?;
+    }
+    for p in iter {
+      f.write_str(",")?;
+      field_sep(f, new_level)?;
+      p.fmt(f)?;
+    }
+    if let Some(cur_level) = cur_level {
+      f.write_str(",")?;
+      nl_indent(f, cur_level)?;
     }
     f.write_str(") => ")?;
     TyDisplay { ty: self.ret, prec: self.prec, stuff: self.stuff }.fmt(f)?;

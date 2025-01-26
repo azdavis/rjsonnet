@@ -46,13 +46,13 @@ function(x)
       else
         assert !std.isBoolean(x.foo) && x.foo != null;
         std.length(x.foo)
-##                 ^ hover: { foo: string | array[any] | ((...) => any) | object, ... }
+##                 ^ hover: { foo: string | array[any] | function | object, ... }
     else
       std.length(x)
 ##               ^ type: { foo: never, ... }
   else
     std.length(std.toString(x))
-##                          ^ type: boolean | null | string | number | array[any] | ((...) => any)
+##                          ^ type: boolean | null | string | number | array[any] | function
 ```
 
 For flow typing, rjsonnet understands how the runtime behavior of certain expressions depends on the types of values, and thus uses that information to infer static types. We call these certain expressions the "flow tests".
@@ -123,7 +123,7 @@ function(f)
 ##  ^ type: ($a: any, $b: any) => any
   else
     f
-##  ^ type: (...) => any
+##  ^ type: function
 ```
 
 ### Array element types
@@ -275,7 +275,7 @@ If a function has multiple parameters, they are separated with `,`. If it has no
 
 When a parameter is optional, it has a `?` after the argument name, like `(x?: T1) => T2`.
 
-When a function's parameters are unknown, they are shown as `...`.
+`function` is the type of functions with an unknown number of parameters and an unknown return type.
 
 ### Precedence
 

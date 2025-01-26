@@ -77,14 +77,14 @@ fn is_fn() {
   let thing = r#"
 local bad(f) =
   assert std.isFunction(f) : "not a fn";
-##vvvvv diagnostic: not a pair of types that can be added with `+`; left: `(...) => any`; right: `number`
+##vvvvv diagnostic: not a pair of types that can be added with `+`; left: `function`; right: `number`
   f + 1
-# ^ hover: (...) => any
+# ^ hover: function
 ;
 
 [
   bad(3),
-##    ^ diagnostic: incompatible types; expected `(...) => any`; found `number`
+##    ^ diagnostic: incompatible types; expected `function`; found `number`
   bad(function() 3),
   bad(function(x) x + 3),
   bad(function(x, y) x + y),
@@ -146,7 +146,7 @@ local f(obj) =
     else
       assert !std.isBoolean(obj.a) && obj.a != null;
       std.length(obj.a)
-##               ^^^ hover: { a: string | array[any] | ((...) => any) | object, ... }
+##               ^^^ hover: { a: string | array[any] | function | object, ... }
   else
     std.length(obj)
 ##             ^^^ hover: { a: never, ... }
@@ -232,13 +232,13 @@ local f(x) =
 ##        ^ type: { a: string, b: number, ... }
       else
         x
-##      ^ type: { a: string, b: boolean | null | string | array[any] | ((...) => any) | object, ... } | { a: string, b: never, ... }
+##      ^ type: { a: string, b: boolean | null | string | array[any] | function | object, ... } | { a: string, b: never, ... }
     else
       x
-##    ^ type: { a: boolean | null | number | array[any] | ((...) => any) | object, ... } | { a: never, ... }
+##    ^ type: { a: boolean | null | number | array[any] | function | object, ... } | { a: never, ... }
   else
     x
-##  ^ type: boolean | null | string | number | array[any] | ((...) => any)
+##  ^ type: boolean | null | string | number | array[any] | function
 ;
 
 f(null)
@@ -280,7 +280,7 @@ local f(x) =
 ##    ^ type: ($a: any, $b: any) => any
     else
       x
-##    ^ type: (...) => any
+##    ^ type: function
   else
     x
 ##  ^ type: boolean | null | string | number | array[any] | object
