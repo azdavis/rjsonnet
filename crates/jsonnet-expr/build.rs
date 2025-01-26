@@ -26,10 +26,9 @@ fn main() {
     tmp
   };
   let unutterable = [
-    // std_unutterable is the same as std but it has a str that cannot be written in user code as an
-    // id, so it will never be shadowed. it is used in desugaring.
+    // the same as std, but since it is unutterable, it will never be shadowed. used in desugaring.
     mk_unutterable!("std"),
-    // this is used as the param names for a function f, which is itself a param for a std
+    // these are used as the param names for a function f, which is itself a param for a std
     // function. it is known that this function f will always be called with only positional params,
     // never named params. so the param names for f are intensionally not utterable in user code.
     //
@@ -37,19 +36,21 @@ fn main() {
     // the argument value for the param f of the std function, the user may choose any param name(s)
     // for that user-written function g.
     //
+    // the first one is for single-param std fn params. the others are more descriptive for
+    // multi-param std fn params.
     mk_unutterable!("a"),
-    // these are used for functions which do not have known parameter names, but are known via
-    // flow typing to have a certain number of parameters.
-    mk_unutterable!("b"),
-    mk_unutterable!("c"),
-    mk_unutterable!("d"),
-    mk_unutterable!("e"),
-    // these are used as more specific names for std functions params.
     mk_unutterable!("acc"),
     mk_unutterable!("elem"),
     mk_unutterable!("key"),
     mk_unutterable!("value"),
     mk_unutterable!("idx"),
+    // these are used for functions which do not have known parameter names, but are known via flow
+    // typing to have a certain number of parameters. the first one ("a") is re-used from the single
+    // param std fn param above.
+    mk_unutterable!("b"),
+    mk_unutterable!("c"),
+    mk_unutterable!("d"),
+    mk_unutterable!("e"),
   ];
   let builtin_identifiers = [
     S::new("std"),
