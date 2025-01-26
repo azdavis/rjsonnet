@@ -9,6 +9,12 @@ use std::fmt::Write as _;
 
 const JOINER: &str = "__";
 
+macro_rules! mk_unutterable {
+  ($x: literal) => {
+    S::named(concat!("$", $x), concat!($x, "_unutterable"))
+  };
+}
+
 #[expect(clippy::too_many_lines)]
 fn main() {
   let arg_names: BTreeSet<_> =
@@ -22,7 +28,7 @@ fn main() {
   let unutterable = [
     // std_unutterable is the same as std but it has a str that cannot be written in user code as an
     // id, so it will never be shadowed. it is used in desugaring.
-    S::named("$std", "std_unutterable"),
+    mk_unutterable!("std"),
     // this is used as the param names for a function f, which is itself a param for a std
     // function. it is known that this function f will always be called with only positional params,
     // never named params. so the param names for f are intensionally not utterable in user code.
@@ -31,19 +37,19 @@ fn main() {
     // the argument value for the param f of the std function, the user may choose any param name(s)
     // for that user-written function g.
     //
-    S::named("$a", "a_unutterable"),
+    mk_unutterable!("a"),
     // these are used for functions which do not have known parameter names, but are known via
     // flow typing to have a certain number of parameters.
-    S::named("$b", "b_unutterable"),
-    S::named("$c", "c_unutterable"),
-    S::named("$d", "d_unutterable"),
-    S::named("$e", "e_unutterable"),
+    mk_unutterable!("b"),
+    mk_unutterable!("c"),
+    mk_unutterable!("d"),
+    mk_unutterable!("e"),
     // these are used as more specific names for std functions params.
-    S::named("$acc", "acc_unutterable"),
-    S::named("$elem", "elem_unutterable"),
-    S::named("$key", "key_unutterable"),
-    S::named("$value", "value_unutterable"),
-    S::named("$idx", "idx_unutterable"),
+    mk_unutterable!("acc"),
+    mk_unutterable!("elem"),
+    mk_unutterable!("key"),
+    mk_unutterable!("value"),
+    mk_unutterable!("idx"),
   ];
   let builtin_identifiers = [
     S::new("std"),
