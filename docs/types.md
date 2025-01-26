@@ -71,16 +71,16 @@ The supported flow tests are as follows.
 
 ### Unary functions returning `boolean`
 
-- `std.isArray`
-- `std.isBoolean`
-- `std.isNumber`
-- `std.isObject`
-- `std.isString`
-- `std.isFunction`
-- `std.isEven`
-- `std.isOdd`
-- `std.isInteger`
-- `std.isDecimal`
+- `std.isArray(expr)`
+- `std.isBoolean(expr)`
+- `std.isNumber(expr)`
+- `std.isObject(expr)`
+- `std.isString(expr)`
+- `std.isFunction(expr)`
+- `std.isEven(expr)`
+- `std.isOdd(expr)`
+- `std.isInteger(expr)`
+- `std.isDecimal(expr)`
 
 ### `std.type`
 
@@ -109,7 +109,7 @@ These check for field membership on objects:
 
 ### Length
 
-`std.length(x) == NUM`, where `NUM` is a literal number, can be used on objects and functions.
+`std.length(expr) == NUM`, where `NUM` is a literal number, can be used on objects and functions.
 
 For objects, if `NUM` is the number of known fields, the object will then be marked as having no unknown fields.
 
