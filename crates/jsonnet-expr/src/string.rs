@@ -173,23 +173,13 @@ impl Id {
 
   #[must_use]
   pub fn is_unutterable(&self) -> bool {
-    matches!(
-      self.0,
-      IdRepr::Unutterable(_)
-        | IdRepr::Str(CopyStrRepr::Builtin(
-          BuiltinStr::std_unutterable
-            | BuiltinStr::a_unutterable
-            | BuiltinStr::b_unutterable
-            | BuiltinStr::c_unutterable
-            | BuiltinStr::d_unutterable
-            | BuiltinStr::e_unutterable
-            | BuiltinStr::acc_unutterable
-            | BuiltinStr::elem_unutterable
-            | BuiltinStr::key_unutterable
-            | BuiltinStr::value_unutterable
-            | BuiltinStr::idx_unutterable
-        ))
-    )
+    match self.0 {
+      IdRepr::Str(s) => match s {
+        CopyStrRepr::Builtin(builtin) => builtin.is_unutterable(),
+        CopyStrRepr::Idx(_) => false,
+      },
+      IdRepr::Unutterable(_) => true,
+    }
   }
 
   pub(crate) const fn builtin(bs: BuiltinStr) -> Self {

@@ -19,14 +19,10 @@ fn main() {
     tmp.retain(|x| !std_fn_names.contains(x));
     tmp
   };
-  let builtin_identifiers = [
-    S::new("std"),
+  let unutterable = [
     // std_unutterable is the same as std but it has a str that cannot be written in user code as an
     // id, so it will never be shadowed. it is used in desugaring.
     S::named("$std", "std_unutterable"),
-    S::named("self", "self_"),
-    S::named("super", "super_"),
-    S::named("$", "dollar"),
     // this is used as the param names for a function f, which is itself a param for a std
     // function. it is known that this function f will always be called with only positional params,
     // never named params. so the param names for f are intensionally not utterable in user code.
@@ -49,6 +45,12 @@ fn main() {
     S::named("$value", "value_unutterable"),
     S::named("$idx", "idx_unutterable"),
   ];
+  let builtin_identifiers = [
+    S::new("std"),
+    S::named("self", "self_"),
+    S::named("super", "super_"),
+    S::named("$", "dollar"),
+  ];
   let messages = [
     S::named("Assertion failed", "ASSERTION_FAILED"),
     S::new("array"),
@@ -69,6 +71,7 @@ fn main() {
 
   let all = || {
     std::iter::empty()
+      .chain(unutterable.iter().copied())
       .chain(builtin_identifiers.iter().copied())
       .chain(arg_names_except_std_fn_names.iter().map(|&x| S::new(x)))
       .chain(strings())
@@ -104,6 +107,10 @@ fn main() {
       let content = s.content();
       q! { #content => Self::#name, }
     });
+    let unutterable_pats = unutterable.iter().map(|s| {
+      let name = ident(s.ident());
+      q! { Self::#name }
+    });
 
     q! {
       #[expect(non_camel_case_types)]
@@ -118,6 +125,10 @@ fn main() {
           match self {
             #(#as_static_str_arms)*
           }
+        }
+
+        pub(crate) const fn is_unutterable(self) -> bool {
+          matches!(self, #(#unutterable_pats)|*)
         }
       }
 
@@ -149,6 +160,7 @@ fn main() {
 
   let impl_id = {
     let constants = std::iter::empty()
+      .chain(unutterable.iter().copied())
       .chain(builtin_identifiers.iter().copied())
       .chain(arg_names.iter().map(|&x| S::new(x)))
       .map(|s| {
