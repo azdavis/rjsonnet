@@ -66,7 +66,7 @@ pub fn token_parent(tok: &kind::SyntaxToken) -> Option<kind::SyntaxNode> {
 /// The returned token will never be trivia.
 #[must_use]
 pub fn node_token(syntax: &kind::SyntaxNode, offset: rowan::TextSize) -> Option<kind::SyntaxToken> {
-  let ret = node_token_inner(syntax, offset, priority)?;
+  let ret = node_token_inner(syntax, offset)?;
   (!ret.kind().is_trivia()).then_some(ret)
 }
 
@@ -78,7 +78,7 @@ pub fn node_token_for_arg(
   syntax: &kind::SyntaxNode,
   offset: rowan::TextSize,
 ) -> Option<kind::SyntaxToken> {
-  let mut ret = node_token_inner(syntax, offset, priority)?;
+  let mut ret = node_token_inner(syntax, offset)?;
   while ret.kind().is_trivia() {
     ret = ret.prev_token()?;
   }
@@ -88,7 +88,6 @@ pub fn node_token_for_arg(
 fn node_token_inner(
   syntax: &kind::SyntaxNode,
   offset: rowan::TextSize,
-  p: fn(kind::SyntaxKind) -> u8,
 ) -> Option<kind::SyntaxToken> {
   let range = syntax.text_range();
   if range.start() > offset || offset > range.end() {
@@ -99,7 +98,7 @@ fn node_token_inner(
     rowan::TokenAtOffset::None => None,
     rowan::TokenAtOffset::Single(t) => Some(t),
     rowan::TokenAtOffset::Between(t1, t2) => {
-      Some(if p(t1.kind()) >= p(t2.kind()) { t1 } else { t2 })
+      Some(if priority(t1.kind()) >= priority(t2.kind()) { t1 } else { t2 })
     }
   }
 }
