@@ -123,9 +123,8 @@ impl Expect {
           start: text_pos::PositionUtf16 { line: region.line, col: region.col_start },
           end: text_pos::PositionUtf16 { line: region.line, col: region.col_end },
         };
-        let Some(range_map) = ds_map.get_mut(&range) else {
-          panic!("{path_str}:{range}: no diagnostics at range")
-        };
+        let got = ds_map.get_mut(&range);
+        let Some(range_map) = got else { panic!("{path_str}:{range}: no diagnostics") };
         let want = self.msg.as_str();
         assert!(
           range_map.remove(want),
@@ -137,9 +136,8 @@ impl Expect {
       }
       Kind::Hover => {
         let pos = text_pos::PositionUtf16 { line: region.line, col: region.col_start };
-        let Some(got) = st.hover(fs, path.to_owned(), pos) else {
-          panic!("{path_str}:{pos}: no hover")
-        };
+        let got = st.hover(fs, path.to_owned(), pos);
+        let Some(got) = got else { panic!("{path_str}:{pos}: no hover") };
         let want = self.msg.as_str();
         assert!(
           got.lines().any(|line| line == want),
