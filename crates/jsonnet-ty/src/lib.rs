@@ -517,6 +517,7 @@ impl GlobalStore {
   /// Returns the known object fields underlying this type, if any.
   #[must_use]
   pub fn object_fields(&self, ty: Ty) -> Option<BTreeMap<&Str, Ty>> {
+    // TODO fix; this needs to possibly create new union types
     let mut ac = BTreeMap::<&Str, Ty>::new();
     self.object_fields_(ty, &mut ac).then_some(ac)
   }
