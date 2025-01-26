@@ -6,6 +6,7 @@ Things under "main" are not released yet.
 
 - Improve syntax highlighting for the `function` type.
 - Improve object field completions for unions.
+- Do not show hover info on comments and whitespace.
 
 ## v0.8.6
 
