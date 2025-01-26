@@ -171,7 +171,7 @@ fn mk_call_std_arm(func: &jsonnet_std_sig::Fn) -> proc_macro2::TokenStream {
       Ty::ArrKv => todo!("conv param ArrKv"),
       Ty::Obj => q! { let #name = util::get_obj(&#name, args.#name.unwrap_or(expr))?; },
       Ty::Fn1 => todo!("conv param Fn1"),
-      Ty::Fn2 => todo!("conv param Fn2"),
+      Ty::FnAccElem | Ty::FnKv | Ty::FnIdxElem => todo!("conv param Fn2"),
     };
     q! {
       let #name = exec::get(cx, env, args.#name)?;
@@ -202,7 +202,7 @@ fn mk_call_std_arm(func: &jsonnet_std_sig::Fn) -> proc_macro2::TokenStream {
     Ty::ArrStr => todo!("conv ret ArrStr"),
     Ty::ArrKv => todo!("conv ret ArrKv"),
     Ty::Obj => todo!("conv ret Obj"),
-    Ty::Fn1 | Ty::Fn2 => unreachable!("will not ret a Fn"),
+    Ty::Fn1 | Ty::FnAccElem | Ty::FnKv | Ty::FnIdxElem => unreachable!("will not ret a Fn"),
   };
   let (partial_args, partial_conv) =
     if func.total { (q! {}, q! {}) } else { (q! { expr, cx, }, q! { ? }) };

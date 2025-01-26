@@ -132,10 +132,14 @@ pub enum Ty {
   NumOrNull,
   /// A number or a string.
   NumOrStr,
-  /// A function with 1 param.
+  /// A function with 1 non-specifically-named param.
   Fn1,
-  /// A function with 2 params.
-  Fn2,
+  /// A function with 2 params: an accumulator and an array element. Used for folds.
+  FnAccElem,
+  /// A function with 2 params: a key and a value. Used for map with key.
+  FnKv,
+  /// A function with 2 params: an index and an array element. Used for map with index.
+  FnIdxElem,
 }
 
 /// Short for "required".
@@ -182,7 +186,7 @@ const OBJ_KEYS_VALUES: Sig = sig(&[req("o", Ty::Obj)], Ty::ArrKv);
 const MANIFEST_JSON: Sig = sig(&[req("value", Ty::Any)], Ty::Str);
 const ARR_HOF1: Sig = sig(&[req("func", Ty::Fn1), req("arr", Ty::ArrAny)], Ty::ArrAny);
 const FOLD: Sig =
-  sig(&[req("func", Ty::Fn2), req("arr", Ty::ArrAny), req("init", Ty::Any)], Ty::Any);
+  sig(&[req("func", Ty::FnAccElem), req("arr", Ty::ArrAny), req("init", Ty::Any)], Ty::Any);
 const ARR_KEY_F: Sig = sig(&[req("arr", Ty::ArrAny), KEY_F], Ty::ArrAny);
 const BINARY_SET_FN: Sig = sig(&[req("a", Ty::SetAny), req("b", Ty::SetAny), KEY_F], Ty::SetAny);
 
@@ -515,7 +519,7 @@ pub const FNS: [Fn; 126] = [
   Fn {
     name: S::new("mapWithKey"),
     implemented: false,
-    sig: sig(&[req("func", Ty::Fn2), req("obj", Ty::Obj)], Ty::Obj),
+    sig: sig(&[req("func", Ty::FnKv), req("obj", Ty::Obj)], Ty::Obj),
     total: true,
     available_since: Some(10),
     doc: indoc! {"
@@ -1866,7 +1870,7 @@ pub const FNS: [Fn; 126] = [
   Fn {
     name: S::new("mapWithIndex"),
     implemented: false,
-    sig: sig(&[req("func", Ty::Fn2), req("arr", Ty::ArrAny)], Ty::ArrAny),
+    sig: sig(&[req("func", Ty::FnIdxElem), req("arr", Ty::ArrAny)], Ty::ArrAny),
     total: true,
     available_since: Some(10),
     doc: indoc! {"

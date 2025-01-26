@@ -41,8 +41,10 @@ fn main() {
     (ident("STRING_OR_ARRAY"), q!(Data::mk_union([Ty::STRING, Ty::ARRAY]))),
     (ident("NUMBER_OR_NULL"), q!(Data::mk_union([Ty::NUMBER, Ty::NULL]))),
     (ident("NUMBER_OR_STRING"), q!(Data::mk_union([Ty::NUMBER, Ty::STRING]))),
-    (ident("STD_PARAM_FN1"), q!(Data::Fn(super::Fn::StdParam(super::ParamCount::One)))),
-    (ident("STD_PARAM_FN2"), q!(Data::Fn(super::Fn::StdParam(super::ParamCount::Two)))),
+    (ident("STD_PARAM_FN1"), q!(Data::Fn(super::Fn::StdParam(super::StdParam::One)))),
+    (ident("STD_PARAM_FN_ACC_ELEM"), q!(Data::Fn(super::Fn::StdParam(super::StdParam::AccElem)))),
+    (ident("STD_PARAM_FN_KEY_VALUE"), q!(Data::Fn(super::Fn::StdParam(super::StdParam::KeyValue)))),
+    (ident("STD_PARAM_FN_IDX_ELEM"), q!(Data::Fn(super::Fn::StdParam(super::StdParam::IdxElem)))),
     (
       ident("KEY_VALUE"),
       q!(Data::Object(super::Object {
@@ -180,7 +182,9 @@ fn mk_ty(ty: Ty) -> proc_macro2::TokenStream {
     Ty::NumOrNull => q!(Ty::NUMBER_OR_NULL),
     Ty::NumOrStr => q!(Ty::NUMBER_OR_STRING),
     Ty::Fn1 => q!(Ty::STD_PARAM_FN1),
-    Ty::Fn2 => q!(Ty::STD_PARAM_FN2),
+    Ty::FnAccElem => q!(Ty::STD_PARAM_FN_ACC_ELEM),
+    Ty::FnKv => q!(Ty::STD_PARAM_FN_KEY_VALUE),
+    Ty::FnIdxElem => q!(Ty::STD_PARAM_FN_IDX_ELEM),
   }
 }
 

@@ -27,7 +27,7 @@ fn main() {
     S::named("self", "self_"),
     S::named("super", "super_"),
     S::named("$", "dollar"),
-    // these are used as the param names for a function f, which is itself a param for a std
+    // this is used as the param names for a function f, which is itself a param for a std
     // function. it is known that this function f will always be called with only positional params,
     // never named params. so the param names for f are intensionally not utterable in user code.
     //
@@ -35,13 +35,19 @@ fn main() {
     // the argument value for the param f of the std function, the user may choose any param name(s)
     // for that user-written function g.
     //
-    // these are also used for functions which do not have known parameter names, but are known via
-    // flow typing to have a certain number of parameters.
     S::named("$a", "a_unutterable"),
+    // these are used for functions which do not have known parameter names, but are known via
+    // flow typing to have a certain number of parameters.
     S::named("$b", "b_unutterable"),
     S::named("$c", "c_unutterable"),
     S::named("$d", "d_unutterable"),
     S::named("$e", "e_unutterable"),
+    // these are used as more specific names for std functions params.
+    S::named("$acc", "acc_unutterable"),
+    S::named("$elem", "elem_unutterable"),
+    S::named("$key", "key_unutterable"),
+    S::named("$value", "value_unutterable"),
+    S::named("$idx", "idx_unutterable"),
   ];
   let messages = [
     S::named("Assertion failed", "ASSERTION_FAILED"),

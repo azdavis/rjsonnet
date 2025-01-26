@@ -195,7 +195,7 @@ pub enum Fn {
   /// required positional params. The params and return type are not known (aka any).
   ///
   /// Only used as the type of parameters in std fns, not writeable in user code.
-  StdParam(ParamCount),
+  StdParam(StdParam),
   /// A function for which the number of params or return type is not known at all. This is the type
   /// of locals that are checked with `std.isFunction`.
   Unknown,
@@ -225,10 +225,12 @@ impl Fn {
         let sig = StdFnSig::get(*func);
         Some((sig.params, sig.ret))
       }
-      Fn::StdParam(param_count) => {
-        let params = match param_count {
-          ParamCount::One => [Param::A].as_slice(),
-          ParamCount::Two => [Param::A, Param::B].as_slice(),
+      Fn::StdParam(std_param) => {
+        let params = match std_param {
+          StdParam::One => [Param::A].as_slice(),
+          StdParam::AccElem => [Param::ACC, Param::ELEM].as_slice(),
+          StdParam::KeyValue => [Param::KEY, Param::VALUE].as_slice(),
+          StdParam::IdxElem => [Param::IDX, Param::ELEM].as_slice(),
         };
         Some((params, Ty::ANY))
       }
@@ -237,22 +239,26 @@ impl Fn {
   }
 }
 
-/// A number of params a std param fn has.
+/// A param to a std fn.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum ParamCount {
-  /// 1 param.
+pub enum StdParam {
+  /// 1 generically-named param.
   One,
-  /// 2 params.
-  Two,
+  /// 2 params: `acc` and `elem`.
+  AccElem,
+  /// 2 params: `key` and `value`.
+  KeyValue,
+  /// 2 params: `idx` and `elem`.
+  IdxElem,
 }
 
-impl ParamCount {
-  /// Converts this to a usize.
+impl StdParam {
+  /// Converts this to a usize of the number of params for this.
   #[must_use]
   pub fn to_usize(self) -> usize {
     match self {
-      ParamCount::One => 1,
-      ParamCount::Two => 2,
+      StdParam::One => 1,
+      StdParam::AccElem | StdParam::KeyValue | StdParam::IdxElem => 2,
     }
   }
 }
@@ -293,12 +299,23 @@ pub struct Param {
 impl Param {
   const A: Self = Self::required_any(Id::a_unutterable);
   const B: Self = Self::required_any(Id::b_unutterable);
-  const UNUTTERABLE: [Self; 5] = [
+  const ACC: Self = Self::required_any(Id::acc_unutterable);
+  const ELEM: Self = Self::required_any(Id::elem_unutterable);
+  const KEY: Self = Self::required_any(Id::key_unutterable);
+  const VALUE: Self = Self::required_any(Id::value_unutterable);
+  const IDX: Self = Self::required_any(Id::idx_unutterable);
+
+  const UNUTTERABLE: [Self; 10] = [
     Self::A,
     Self::B,
     Self::required_any(Id::c_unutterable),
     Self::required_any(Id::d_unutterable),
     Self::required_any(Id::e_unutterable),
+    Self::ACC,
+    Self::ELEM,
+    Self::KEY,
+    Self::VALUE,
+    Self::IDX,
   ];
 
   const fn required_any(id: Id) -> Self {

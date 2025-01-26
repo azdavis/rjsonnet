@@ -183,6 +183,11 @@ impl Id {
             | BuiltinStr::c_unutterable
             | BuiltinStr::d_unutterable
             | BuiltinStr::e_unutterable
+            | BuiltinStr::acc_unutterable
+            | BuiltinStr::elem_unutterable
+            | BuiltinStr::key_unutterable
+            | BuiltinStr::value_unutterable
+            | BuiltinStr::idx_unutterable
         ))
     )
   }
