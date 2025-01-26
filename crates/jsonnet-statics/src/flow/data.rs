@@ -184,7 +184,7 @@ impl Repr {
       }
       // ignore:
       // 1. for Len, it's a bit odd to want to assert the length is *not* a certain known number
-      // 2. for Array, we would do apply_not with any but that likely would be too extreme
+      // 2. for Array, we have "not all are X", but it does not follow that "all are not X"
       Repr::Len(_) | Repr::Array(_) => ty,
       // de morgan's laws: !(a && b) == !a || !b. see the Or case from apply_to
       Repr::And(lhs, rhs) => {
