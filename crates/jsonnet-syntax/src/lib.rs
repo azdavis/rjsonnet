@@ -3,7 +3,6 @@
 #![allow(missing_debug_implementations, missing_docs)]
 
 use ast::AstNode as _;
-use token::Triviable as _;
 
 #[allow(clippy::pedantic, missing_debug_implementations, missing_docs)]
 pub mod ast {
@@ -63,32 +62,9 @@ pub fn token_parent(tok: &kind::SyntaxToken) -> Option<kind::SyntaxNode> {
 
 /// Returns the best token in the node at the offset.
 ///
-/// The returned token will never be trivia.
+/// The returned token may be trivia.
 #[must_use]
 pub fn node_token(syntax: &kind::SyntaxNode, offset: rowan::TextSize) -> Option<kind::SyntaxToken> {
-  let ret = node_token_inner(syntax, offset)?;
-  (!ret.kind().is_trivia()).then_some(ret)
-}
-
-/// Returns the best token in the node at the offset for arguments.
-///
-/// The returned token will never be trivia.
-#[must_use]
-pub fn node_token_for_arg(
-  syntax: &kind::SyntaxNode,
-  offset: rowan::TextSize,
-) -> Option<kind::SyntaxToken> {
-  let mut ret = node_token_inner(syntax, offset)?;
-  while ret.kind().is_trivia() {
-    ret = ret.prev_token()?;
-  }
-  Some(ret)
-}
-
-fn node_token_inner(
-  syntax: &kind::SyntaxNode,
-  offset: rowan::TextSize,
-) -> Option<kind::SyntaxToken> {
   let range = syntax.text_range();
   if range.start() > offset || offset > range.end() {
     // ensure precondition.

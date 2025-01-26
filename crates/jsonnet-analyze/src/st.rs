@@ -9,6 +9,7 @@ use paths::{PathId, PathMap};
 use rayon::iter::{IntoParallelIterator as _, ParallelIterator as _};
 use rustc_hash::FxHashSet;
 use std::collections::hash_map::Entry;
+use token::Triviable as _;
 
 /// The part of the state that vaguely has to do with the filesystem.
 ///
@@ -577,6 +578,9 @@ impl lang_srv_state::State for St {
       let root = arts.syntax.root.clone().into_ast()?;
       jsonnet_syntax::node_token(root.syntax(), ts)?
     };
+    if tok.kind().is_trivia() {
+      return None;
+    }
     let (node, param_pos) = match tok.parent() {
       None => (None, None),
       Some(node) => {
@@ -805,7 +809,11 @@ impl lang_srv_state::State for St {
     let tok = {
       let ts = arts.syntax.pos_db.text_size_utf16(pos)?;
       let root = arts.syntax.root.clone().into_ast()?;
-      jsonnet_syntax::node_token_for_arg(root.syntax(), ts)?
+      let mut tmp = jsonnet_syntax::node_token(root.syntax(), ts)?;
+      while tmp.kind().is_trivia() {
+        tmp = tmp.prev_token()?;
+      }
+      tmp
     };
     let node = jsonnet_syntax::token_parent(&tok)?;
     let call = {
