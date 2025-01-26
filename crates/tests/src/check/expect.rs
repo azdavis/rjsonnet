@@ -92,6 +92,7 @@ impl Expect {
   }
 
   #[expect(clippy::too_many_arguments)]
+  #[track_caller]
   pub(crate) fn check<F>(
     &self,
     region: &Region,
