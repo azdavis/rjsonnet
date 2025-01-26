@@ -145,7 +145,8 @@ impl Repr {
     match self {
       Repr::Prim(prim, _) => ty::logic::and(tys, ty, prim.as_ty()),
       Repr::Field(f) => {
-        let obj_ty = f.into_ty(tys);
+        let field_ty = f.inner.map_or(ty::Ty::ANY, |inner| inner.apply_to(tys, ty::Ty::ANY));
+        let obj_ty = obj_with_path_ty(tys, f.path, field_ty);
         ty::logic::and(tys, ty, obj_ty)
       }
       Repr::Len(n) => ty::logic::with_len(tys, ty, n),
@@ -177,7 +178,8 @@ impl Repr {
         Totality::Partial => ty,
       },
       Repr::Field(f) => {
-        let obj_ty = f.into_not(tys);
+        let field_ty = f.inner.map_or(ty::Ty::NEVER, |inner| inner.apply_not(tys, ty::Ty::TOP));
+        let obj_ty = obj_with_path_ty(tys, f.path, field_ty);
         ty::logic::and(tys, ty, obj_ty)
       }
       // ignore:
@@ -237,26 +239,15 @@ struct Field {
   inner: Option<Box<Repr>>,
 }
 
-impl Field {
-  fn into_ty(self, tys: &mut ty::MutStore<'_>) -> ty::Ty {
-    let field_ty = self.inner.map_or(ty::Ty::ANY, |inner| inner.apply_to(tys, ty::Ty::ANY));
-    self.path.into_iter().fold(field_ty, |ac, field| {
-      tys.get(ty::Data::Object(ty::Object {
-        known: BTreeMap::from([(field, ac)]),
-        has_unknown: true,
-      }))
-    })
-  }
-
-  fn into_not(self, tys: &mut ty::MutStore<'_>) -> ty::Ty {
-    let field_ty = self.inner.map_or(ty::Ty::NEVER, |inner| inner.apply_not(tys, ty::Ty::TOP));
-    self.path.into_iter().fold(field_ty, |ac, field| {
-      tys.get(ty::Data::Object(ty::Object {
-        known: BTreeMap::from([(field, ac)]),
-        has_unknown: true,
-      }))
-    })
-  }
+fn obj_with_path_ty(
+  tys: &mut jsonnet_ty::MutStore<'_>,
+  path: Vec<Str>,
+  ty: jsonnet_ty::Ty,
+) -> jsonnet_ty::Ty {
+  path.into_iter().fold(ty, |ac, field| {
+    let obj = ty::Object { known: BTreeMap::from([(field, ac)]), has_unknown: true };
+    tys.get(ty::Data::Object(obj))
+  })
 }
 
 /// How total a simple fact is.
