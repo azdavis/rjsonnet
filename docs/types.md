@@ -192,17 +192,17 @@ function(x)
 ##  ^ type: number
 ```
 
-## Type syntax
+## Syntax
 
 Although we don't introduce new syntax for types to the Jsonnet language, we do use a certain syntax to report types to the user.
 
-### Unknown type
+### Any
 
 `any` is the "type" of things that we don't know the type of.
 
 This is like [`any`][ts-any] in [TypeScript][ts] or [`T.untyped`][t-untyped] in [Sorbet][sorbet], a Ruby type checker.
 
-### Primitive types
+### Primitives
 
 They are:
 
@@ -216,11 +216,11 @@ These are fairly self-explanatory. Notably, the values `true`, `false`, and `nul
 
 `boolean` is the type that is the union of `true` and `false`. See docs for [union types](#union-types).
 
-### Array types
+### Arrays
 
 `array[T]` is the type of arrays where the elements have type `T`.
 
-### Set types
+### Sets
 
 `set[T]` is the type of sets where the elements have type `T`.
 
@@ -228,7 +228,7 @@ At runtime, sets are represented as sorted, duplicate-free arrays. Thus, for a t
 
 This is called "subtyping" in programming language theory jargon.
 
-### Object types
+### Objects
 
 `{ foo: T1, bar: T2 }` is the type of an object with two known fields: `foo` of type `T1`, and `bar` of type `T2`, and no unknown fields.
 
@@ -236,7 +236,7 @@ If an object may have unknown fields, an extra `...` is added at the end.
 
 `object` is the type of an object with no known fields that may have unknown fields. It is equivalent to `{ ... }`, but we prefer to show it as the former. It is distinct from `{}`, the type of the object known to have no fields.
 
-### Union types
+### Unions
 
 `T1 | T2` is the type of values that may be either of type `T1` or of type `T2`.
 
@@ -284,7 +284,7 @@ function(x)
 
 This may sound like `any`, but they are not quite identical.
 
-### Function types
+### Functions
 
 `(x: T1) => T2` is the type of functions with one required parameter `x` of type `T1` that return type `T2`.
 
