@@ -536,7 +536,9 @@ impl GlobalStore {
     let mut m = MutStore::new(&*self);
     let ok = m.known_fields(ty, &mut ac);
     let local = m.into_local();
-    always!(Subst::get(self, local).is_none());
+    // nothing to subst onto, since we know the local store's types are not anywhere else, since we
+    // created the mut store (and its local store) in this fn.
+    _ = Subst::get(self, local);
     ok.then_some(ac)
   }
 
@@ -575,6 +577,7 @@ impl Subst {
   /// # Panics
   ///
   /// On internal error in debug mode only.
+  #[must_use]
   pub fn get(global: &mut GlobalStore, mut local: LocalStore) -> Option<Self> {
     // topological sort to determine what order to add the data from the local store to the global
     // store.
