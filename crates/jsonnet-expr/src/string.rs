@@ -188,7 +188,7 @@ impl Id {
 
   #[must_use]
   pub fn display(self, ar: &StrArena) -> impl fmt::Display + use<'_> {
-    IdReprDisplay { this: self.0, ar }
+    IdReprDisplay { id: self.0, ar }
   }
 }
 
@@ -208,13 +208,13 @@ impl IdRepr {
 }
 
 struct IdReprDisplay<'a> {
-  this: IdRepr,
+  id: IdRepr,
   ar: &'a StrArena,
 }
 
 impl fmt::Display for IdReprDisplay<'_> {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    match self.this {
+    match self.id {
       IdRepr::Str(s) => s.display(self.ar).fmt(f),
       IdRepr::Unutterable(idx) => write!(f, "${idx}"),
     }
