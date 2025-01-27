@@ -101,7 +101,7 @@ impl Env {
             }
           }
         }
-        EnvElem::This(_) => continue,
+        EnvElem::This(_) => {}
         EnvElem::Single(other, env, expr) => {
           if *other == id {
             return Some(Get::Expr(env.clone(), *expr));
