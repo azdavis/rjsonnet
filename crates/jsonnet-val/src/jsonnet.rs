@@ -34,7 +34,7 @@ impl Env {
     Self { cycle_detector: cycle::Detector::new(path), store: Vec::new() }
   }
 
-  /// Append other after self, leaving other empty.
+  /// Append `other` after `self`, leaving `other` empty.
   pub fn append(&mut self, other: &mut Self) {
     self.store.append(&mut other.store);
   }
@@ -72,7 +72,7 @@ impl Env {
     self.store = iter.collect();
   }
 
-  /// Get an identifier. Returns None if it is not in scope.
+  /// Get an identifier. Returns `None` if it is not in scope.
   #[must_use]
   pub fn get(&self, id: Id) -> Option<Get> {
     if id == Id::self_ {
