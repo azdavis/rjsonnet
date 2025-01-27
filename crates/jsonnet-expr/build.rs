@@ -36,9 +36,9 @@ fn main() {
     // the argument value for the param f of the std function, the user may choose any param name(s)
     // for that user-written function g.
     //
-    // the first one is for single-param std fn params. the others are more descriptive for
-    // multi-param std fn params.
+    // the first one is for single-param std fn params.
     mk_unutterable!("a"),
+    // these are more descriptive for multi-param std fn params.
     mk_unutterable!("acc"),
     mk_unutterable!("elem"),
     mk_unutterable!("key"),

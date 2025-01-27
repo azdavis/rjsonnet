@@ -114,7 +114,7 @@ impl Env {
 
   /// Returns what `self` refers to in this env.
   #[must_use]
-  pub fn this(&self) -> Option<&Object> {
+  fn this(&self) -> Option<&Object> {
     self.store.iter().rev().find_map(|elem| {
       if let EnvElem::This(obj) = elem {
         Some(&**obj)
