@@ -86,6 +86,7 @@ impl Env {
     }
     for idx in (0..self.store.len()).rev() {
       match &self.store[idx] {
+        EnvElem::This(_) => {}
         EnvElem::Binds(binds, self_refer) => {
           for &(other, expr) in binds {
             if other == id {
@@ -101,7 +102,6 @@ impl Env {
             }
           }
         }
-        EnvElem::This(_) => {}
         EnvElem::Single(other, env, expr) => {
           if *other == id {
             return Some(Get::Expr(env.clone(), *expr));
