@@ -15,6 +15,10 @@ pub fn and(tys: &mut MutStore<'_>, x: Ty, y: Ty) -> Ty {
   if x == y || y == Ty::ANY {
     return x;
   }
+  // same here
+  if x == Ty::NEVER || y == Ty::NEVER {
+    return Ty::NEVER;
+  }
   match (tys.data(x), tys.data(y)) {
     (Data::Prim(Prim::Any), _) => y,
     (_, Data::Prim(Prim::Any)) => x,
@@ -177,16 +181,24 @@ pub fn with_len(tys: &mut MutStore<'_>, ty: Ty, n: usize) -> Ty {
 /// When such a type doesn't exist, e.g. when `x == y`, returns `never`.
 ///
 /// It's kind of like `x && !y`, where `!y` is like the union of everything EXCEPT `y`.
-pub fn minus(tys: &mut MutStore<'_>, x: Ty, y: Ty) -> Ty {
+pub fn minus(tys: &mut MutStore<'_>, mut x: Ty, y: Ty) -> Ty {
   // speed up simple cases (correctness is maintained if these are removed)
-  if x == y || x == Ty::NEVER {
+  if x == y || x == Ty::NEVER || y == Ty::ANY {
     return Ty::NEVER;
   }
+  // same here
   if y == Ty::NEVER {
     return x;
   }
+  // this is NOT an optimization. correctness is NOT maintained if this is removed.
+  if x == Ty::ANY {
+    x = Ty::TOP;
+  }
   match (tys.data(x), tys.data(y)) {
-    (Data::Prim(Prim::Any), _) => minus(tys, Ty::TOP, y),
+    (Data::Prim(Prim::Any), _) => {
+      always!(false, "x should be changed from ANY to TOP");
+      Ty::ANY
+    }
     (_, Data::Prim(Prim::Any)) => Ty::NEVER,
     (Data::Prim(xp), Data::Prim(yp)) => {
       always!(xp != yp, "should have returned already if x == y");
