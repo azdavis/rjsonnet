@@ -309,25 +309,25 @@ fn get_assert(st: &mut St, cx: Cx<'_>, yes: Expr, assert: ast::Assert, in_obj: b
   ExprData::If { cond, yes, no }
 }
 
-fn get_object(st: &mut St, cx: Cx<'_>, inside: ast::Object, in_obj: bool) -> ExprData {
-  if let Some(spec) = inside.comp_specs().next() {
+fn get_object(st: &mut St, cx: Cx<'_>, obj: ast::Object, in_obj: bool) -> ExprData {
+  if let Some(spec) = obj.comp_specs().next() {
     match spec {
       ast::CompSpec::ForSpec(_) => {}
       ast::CompSpec::IfSpec(_) => {
         st.err(&spec, error::Kind::FirstCompSpecNotFor);
       }
     }
-    get_object_comp(st, cx, inside, in_obj)
+    get_object_comp(st, cx, obj, in_obj)
   } else {
-    get_object_literal(st, cx, inside, in_obj)
+    get_object_literal(st, cx, obj, in_obj)
   }
 }
 
-fn get_object_literal(st: &mut St, cx: Cx<'_>, inside: ast::Object, in_obj: bool) -> ExprData {
+fn get_object_literal(st: &mut St, cx: Cx<'_>, obj: ast::Object, in_obj: bool) -> ExprData {
   let mut binds = Vec::<(Id, Expr)>::new();
   let mut asserts = Vec::<Expr>::new();
   let mut fields = Vec::<jsonnet_expr::Field>::new();
-  for member in inside.members() {
+  for member in obj.members() {
     let Some(member_kind) = member.member_kind() else { continue };
     match member_kind {
       ast::MemberKind::ObjectLocal(local) => {
@@ -406,13 +406,13 @@ fn get_object_literal(st: &mut St, cx: Cx<'_>, inside: ast::Object, in_obj: bool
   }
   // this is the only time we actually use the `in_obj` flag
   if !in_obj {
-    let ptr = ast::SyntaxNodePtr::new(inside.syntax());
+    let ptr = ast::SyntaxNodePtr::new(obj.syntax());
     let this = Some(st.expr(ptr, ExprData::Id(Id::self_)));
     binds.push((Id::dollar, this));
   }
   let count = asserts.len() + fields.len();
   if !binds.is_empty() {
-    let ptr = ast::SyntaxNodePtr::new(inside.syntax());
+    let ptr = ast::SyntaxNodePtr::new(obj.syntax());
     if count > 1 {
       for &(_, e) in &binds {
         let Some(e) = e else { continue };
@@ -430,10 +430,10 @@ fn get_object_literal(st: &mut St, cx: Cx<'_>, inside: ast::Object, in_obj: bool
   ExprData::Object { asserts, fields }
 }
 
-fn get_object_comp(st: &mut St, cx: Cx<'_>, inside: ast::Object, in_obj: bool) -> ExprData {
+fn get_object_comp(st: &mut St, cx: Cx<'_>, obj: ast::Object, in_obj: bool) -> ExprData {
   let mut binds = Vec::<(Id, Expr)>::new();
   let mut lowered_field = None::<(ast::SyntaxNodePtr, Expr, Expr)>;
-  for member in inside.members() {
+  for member in obj.members() {
     let Some(member_kind) = member.member_kind() else { continue };
     match member_kind {
       ast::MemberKind::ObjectLocal(local) => {
@@ -469,7 +469,7 @@ fn get_object_comp(st: &mut St, cx: Cx<'_>, inside: ast::Object, in_obj: bool) -
       }
     }
   }
-  let vars = inside.comp_specs().filter_map(|comp_spec| match comp_spec {
+  let vars = obj.comp_specs().filter_map(|comp_spec| match comp_spec {
     ast::CompSpec::ForSpec(spec) => {
       spec.id().map(|x| (ast::SyntaxNodePtr::new(spec.syntax()), st.id(x)))
     }
@@ -477,7 +477,7 @@ fn get_object_comp(st: &mut St, cx: Cx<'_>, inside: ast::Object, in_obj: bool) -
   });
   let vars: Vec<_> = vars.collect();
   let Some((ptr, name, body)) = lowered_field else {
-    st.err(&inside, error::Kind::ObjectCompNotOne);
+    st.err(&obj, error::Kind::ObjectCompNotOne);
     // this is a good "fake" return, since we knew this was going to be some kind of object,
     // but now we can't figure out what fields it should have. so let's say it has no fields.
     return ExprData::Object { asserts: Vec::new(), fields: Vec::new() };
@@ -503,7 +503,7 @@ fn get_object_comp(st: &mut St, cx: Cx<'_>, inside: ast::Object, in_obj: bool) -
   let vars = vars.into_iter().map(|(ptr, x)| Some(st.expr(ptr, ExprData::Id(x))));
   let vars: Vec<_> = vars.collect();
   let vars = Some(st.expr(ptr, ExprData::Array(vars)));
-  let vars = get_array_comp(st, cx, inside.comp_specs(), vars, in_obj);
+  let vars = get_array_comp(st, cx, obj.comp_specs(), vars, in_obj);
   let vars = Some(st.expr(ptr, vars));
   ExprData::ObjectComp { name, body, id: arr, ary: vars }
 }

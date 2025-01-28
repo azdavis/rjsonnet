@@ -89,15 +89,15 @@ fn self_in_field_name_override_field() {
   JsonnetInput::manifest(
     r#"
 {
-  foo: "a",
-  inner: {
-    [self.foo]: {
+  value: "a",
+  o: {
+    [self.value]: {
       x: 2,
       y: 3,
       z: 4,
     },
   } + {
-    [self.foo]: {
+    [self.value]: {
       x: 5,
     },
   },
@@ -105,8 +105,8 @@ fn self_in_field_name_override_field() {
 "#,
     r#"
 {
-  "foo": "a",
-  "inner": {
+  "value": "a",
+  "o": {
     "a": {
       "x": 5
     }
@@ -119,20 +119,20 @@ fn self_in_field_name_override_field() {
 
 /// TODO impl support for +: where field name uses super
 #[test]
-#[should_panic = "no such field: `foo`"]
+#[should_panic = "no such field: `value`"]
 fn self_in_field_name_add_field() {
   JsonnetInput::manifest(
     r#"
 {
-  foo: "a",
-  inner: {
-    [self.foo]: {
+  value: "a",
+  o: {
+    [self.value]: {
       x: 2,
       y: 3,
       z: 4,
     },
   } + {
-    [self.foo]+: {
+    [self.value]+: {
       x: 5,
     },
   },
@@ -140,8 +140,8 @@ fn self_in_field_name_add_field() {
 "#,
     r#"
 {
-  "foo": "a",
-  "inner": {
+  "value": "a",
+  "o": {
     "a": {
       "x": 5,
       "y": 3,
