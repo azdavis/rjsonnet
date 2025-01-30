@@ -685,7 +685,7 @@ impl lang_srv_state::State for St {
   {
     let path_id = self.path_id(path);
     let arts = self.with_fs.get_file_artifacts(&mut self.file_artifacts, fs, path_id).ok()?;
-    let tok = {
+    let id_tok = {
       let ts = arts.syntax.pos_db.text_size_utf16(pos)?;
       let root = arts.syntax.root.clone().into_ast()?;
       let cur = jsonnet_syntax::node_token(root.syntax(), ts)?;
@@ -706,7 +706,7 @@ impl lang_srv_state::State for St {
       tmp
     };
     let expr = {
-      let node = jsonnet_syntax::token_parent(&tok)?;
+      let node = jsonnet_syntax::token_parent(&id_tok)?;
       let ptr = jsonnet_syntax::ast::SyntaxNodePtr::new(&node);
       arts.syntax.pointers.get_idx(ptr)?
     };
