@@ -2,7 +2,7 @@
 
 Things under "main" are not released yet.
 
-## main
+## v0.9.0
 
 - Improve syntax highlighting for the `function` type.
 - Improve object field completions for unions.
