@@ -178,7 +178,9 @@ fn give_up_on_text_block(st: &mut St<'_>) {
   }
 }
 
-/// A wrapper for unescaping a byte slice.
+/// A wrapper for unescaping a byte slice via its [`fmt::Display`] impl.
+///
+/// When displayed, it will have `""` around the unescaped bytes.
 #[derive(Debug)]
 #[repr(transparent)]
 pub struct Unescape {
