@@ -15,6 +15,20 @@ obj.a
 }
 
 #[test]
+fn with_syntax_error() {
+  JsonnetInput::pre_eval_error(
+    r#"
+local obj = { a: 1, b: null, c: "hi" };
+##              v completions: a: number; b: null; c: string
+local res = obj.   ;
+##                 ^ diagnostic: expected an identifier
+res
+"#,
+  )
+  .check();
+}
+
+#[test]
 fn union_inside() {
   JsonnetInput::manifest_or_fn(
     r#"
