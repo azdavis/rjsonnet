@@ -115,6 +115,10 @@ pub struct CompletionItem {
   pub kind: CompletionItemKind,
   /// The documentation, as Markdown.
   pub doc: Option<String>,
+  /// The main text edit to apply.
+  pub text_edit: Option<TextEdit>,
+  /// Additional text edit to apply.
+  pub additional_text_edits: Option<Vec<TextEdit>>,
 }
 
 /// A kind of completion item.
@@ -122,6 +126,15 @@ pub struct CompletionItem {
 pub enum CompletionItemKind {
   /// A field, like for a "struct" or "object".
   Field,
+}
+
+/// A text edit.
+#[derive(Debug)]
+pub struct TextEdit {
+  /// The text of the edit.
+  pub text: String,
+  /// The range to replace with the edit text.
+  pub range: text_pos::RangeUtf16,
 }
 
 /// Signature help.

@@ -8,6 +8,7 @@ Things under "main" are not released yet.
 - Improve object field completions for unions.
 - Do not show hover info on comments and whitespace.
 - Add more specific std fn param names.
+- Handle non-identifier field completions by wrapping them in `["..."]`.
 
 ## v0.8.6
 

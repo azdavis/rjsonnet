@@ -551,6 +551,7 @@ dependencies = [
  "jsonnet-escape",
  "jsonnet-eval",
  "jsonnet-expr",
+ "jsonnet-ident",
  "jsonnet-lex",
  "jsonnet-parse",
  "jsonnet-resolve-import",

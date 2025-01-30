@@ -705,6 +705,13 @@ impl lang_srv_state::State for St {
       }
       tmp
     };
+    let dot_tok_range_start = {
+      let mut dot_tok = id_tok.next_token()?;
+      while dot_tok.kind() != SyntaxKind::Dot {
+        dot_tok = dot_tok.next_token()?;
+      }
+      arts.syntax.pos_db.range_utf16(dot_tok.text_range())?.start
+    };
     let expr = {
       let node = jsonnet_syntax::token_parent(&id_tok)?;
       let ptr = jsonnet_syntax::ast::SyntaxNodePtr::new(&node);
@@ -723,12 +730,29 @@ impl lang_srv_state::State for St {
       } else {
         None
       };
+      let name = wa.syntax.strings.get(&name);
       let ty = ty.display(self.multi_line, &wa.statics, None, &wa.syntax.strings);
+      let (text_edit, additional_text_edits) = if jsonnet_ident::is(name.as_bytes()) {
+        (None, None)
+      } else {
+        let unescape = jsonnet_escape::Unescape::new(name.as_bytes());
+        let main_edit = lang_srv_state::TextEdit {
+          text: format!("[{unescape}]"),
+          range: text_pos::RangeUtf16::zero(pos),
+        };
+        let remove_until_open_bracket = lang_srv_state::TextEdit {
+          text: String::new(),
+          range: text_pos::RangeUtf16 { start: dot_tok_range_start, end: pos },
+        };
+        (Some(main_edit), Some(vec![remove_until_open_bracket]))
+      };
       lang_srv_state::CompletionItem {
-        name: wa.syntax.strings.get(&name).to_owned(),
+        name: name.to_owned(),
         ty: ty.to_string(),
         kind: lang_srv_state::CompletionItemKind::Field,
         doc,
+        text_edit,
+        additional_text_edits,
       }
     });
     Some(fields.collect())

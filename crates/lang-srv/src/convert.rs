@@ -99,13 +99,19 @@ pub(crate) fn completion(c: lang_srv_state::CompletionItem) -> lsp_types::Comple
     insert_text: None,
     insert_text_format: None,
     insert_text_mode: None,
-    text_edit: None,
-    additional_text_edits: None,
+    text_edit: c.text_edit.map(|x| lsp_types::CompletionTextEdit::Edit(text_edit(x))),
+    additional_text_edits: c
+      .additional_text_edits
+      .map(|xs| xs.into_iter().map(text_edit).collect()),
     command: None,
     commit_characters: None,
     data: None,
     tags: None,
   }
+}
+
+fn text_edit(e: lang_srv_state::TextEdit) -> lsp_types::TextEdit {
+  lsp_types::TextEdit { range: lsp_range(e.range), new_text: e.text }
 }
 
 pub(crate) fn text_doc_position(
