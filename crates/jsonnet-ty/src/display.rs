@@ -257,10 +257,7 @@ impl fmt::Display for FieldDisplay<'_> {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     let key = self.stuff.str_ar.get(self.key);
     let key_bs = key.as_bytes();
-    let key_is_ident = key_bs.split_first().is_some_and(|(&fst, rest)| {
-      jsonnet_ident::is_start(fst) && rest.iter().copied().all(jsonnet_ident::is_continue)
-    });
-    if key_is_ident {
+    if jsonnet_ident::is(key_bs) {
       key.fmt(f)?;
     } else {
       jsonnet_escape::Unescape::new(key_bs).fmt(f)?;

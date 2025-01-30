@@ -11,3 +11,10 @@ pub fn is_start(b: u8) -> bool {
 pub fn is_continue(b: u8) -> bool {
   b.is_ascii_alphanumeric() || b == b'_'
 }
+
+/// Returns whether this is an ident.
+#[must_use]
+pub fn is(bs: &[u8]) -> bool {
+  bs.split_first()
+    .is_some_and(|(&fst, rest)| is_start(fst) && rest.iter().copied().all(is_continue))
+}
