@@ -3,7 +3,8 @@
 use crate::util::{GlobalArtifacts, PathIoError, Result};
 use crate::{const_eval, util};
 use always::always;
-use jsonnet_syntax::{ast::AstNode as _, kind::SyntaxKind};
+use jsonnet_syntax::ast::AstNode as _;
+use jsonnet_syntax::kind::{SyntaxKind, SyntaxToken};
 use jsonnet_ty::display::MultiLine;
 use paths::{PathId, PathMap};
 use rayon::iter::{IntoParallelIterator as _, ParallelIterator as _};
@@ -688,14 +689,14 @@ impl lang_srv_state::State for St {
       let ts = arts.syntax.pos_db.text_size_utf16(pos)?;
       let root = arts.syntax.root.clone().into_ast()?;
       let cur = jsonnet_syntax::node_token(root.syntax(), ts)?;
-      let prev = cur.prev_token()?;
+      let prev = non_trivia(cur.prev_token()?)?;
       let tmp = match cur.kind() {
         SyntaxKind::Dot => prev,
         SyntaxKind::Id => {
           if prev.kind() != SyntaxKind::Dot {
             return None;
           }
-          prev.prev_token()?
+          non_trivia(prev.prev_token()?)?
         }
         _ => return None,
       };
@@ -809,11 +810,8 @@ impl lang_srv_state::State for St {
     let tok = {
       let ts = arts.syntax.pos_db.text_size_utf16(pos)?;
       let root = arts.syntax.root.clone().into_ast()?;
-      let mut tmp = jsonnet_syntax::node_token(root.syntax(), ts)?;
-      while tmp.kind().is_trivia() {
-        tmp = tmp.prev_token()?;
-      }
-      tmp
+      let tmp = jsonnet_syntax::node_token(root.syntax(), ts)?;
+      non_trivia(tmp)?
     };
     let node = jsonnet_syntax::token_parent(&tok)?;
     let call = {
@@ -895,4 +893,11 @@ fn get_cur_param(
     }
     None
   }
+}
+
+fn non_trivia(mut ret: SyntaxToken) -> Option<SyntaxToken> {
+  while ret.kind().is_trivia() {
+    ret = ret.prev_token()?;
+  }
+  Some(ret)
 }
