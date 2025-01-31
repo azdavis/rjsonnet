@@ -157,11 +157,11 @@ const fn sig(params: &'static [Param], ret: Ty) -> Sig {
   Sig { params, ret }
 }
 
-/// Given `(func, arg, res)`, returns a static string of a Jsonnet expression that evaluates to
+/// Given `(func, res, arg)`, returns a static string of a Jsonnet expression that evaluates to
 /// whether the std `func` applied to `arg` returns a number that is epsilon-equal (i.e. very close)
 /// to `res`.
 macro_rules! epsilon_eq {
-  ($name:expr, $arg: expr, $res:expr) => {
+  ($name:expr, $res:expr, $arg:expr) => {
     concat!("std.abs(std.", $name, "(", $arg, ") - ", $res, ") <= 0.01")
   };
 }
@@ -610,7 +610,7 @@ pub const FNS: [Fn; 126] = [
       Returns $e^x$, i.e. $e$ to the $x$ power, where
       [$e \approx 2.71828$](<https://en.wikipedia.org/wiki/E_(mathematical_constant)>).
     "},
-    examples: &["std.exp(0) == 1", epsilon_eq!("exp", 1, 2.71), epsilon_eq!("exp", 2, 7.38)],
+    examples: &["std.exp(0) == 1", epsilon_eq!("exp", 2.71, 1), epsilon_eq!("exp", 7.38, 2)],
   },
   Fn {
     name: S::new("log"),
@@ -623,7 +623,7 @@ pub const FNS: [Fn; 126] = [
       i.e. the solution $y$ in $e^y = x$, where
       [$e \approx 2.71828$](<https://en.wikipedia.org/wiki/E_(mathematical_constant)>).
     "},
-    examples: &["std.log(1) == 0", epsilon_eq!("log", 123, 4.81), epsilon_eq!("log", 345, 5.84)],
+    examples: &["std.log(1) == 0", epsilon_eq!("log", 4.81, 123), epsilon_eq!("log", 5.84, 345)],
   },
   Fn {
     name: S::new("exponent"),
@@ -658,8 +658,8 @@ pub const FNS: [Fn; 126] = [
     examples: &[
       "std.mantissa(0) == 0",
       "std.mantissa(4) == 0.5",
-      epsilon_eq!("mantissa", 123456789, 0.91),
-      epsilon_eq!("mantissa", "-789456", "-0.75"),
+      epsilon_eq!("mantissa", 0.91, 123456789),
+      epsilon_eq!("mantissa", "-0.75", "-789456"),
     ],
   },
   Fn {
@@ -720,7 +720,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       Returns the sine of the argument.
     "},
-    examples: &["std.sin(0) == 0", epsilon_eq!("sin", 0.5, 0.47)],
+    examples: &["std.sin(0) == 0", epsilon_eq!("sin", 0.47, 0.5)],
   },
   Fn {
     name: S::new("cos"),
@@ -731,7 +731,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       Returns the cosine of its argument.
     "},
-    examples: &["std.cos(0) == 1", epsilon_eq!("cos", 0.5, 0.87)],
+    examples: &["std.cos(0) == 1", epsilon_eq!("cos", 0.87, 0.5)],
   },
   Fn {
     name: S::new("tan"),
@@ -742,7 +742,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       Returns the tangent of its argument.
     "},
-    examples: &["std.tan(0) == 0", epsilon_eq!("tan", 0.5, 0.54)],
+    examples: &["std.tan(0) == 0", epsilon_eq!("tan", 0.54, 0.5)],
   },
   Fn {
     name: S::new("asin"),
@@ -753,7 +753,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       Returns the arcsine of its argument.
     "},
-    examples: &["std.asin(0) == 0", epsilon_eq!("asin", 0.5, 0.52)],
+    examples: &["std.asin(0) == 0", epsilon_eq!("asin", 0.52, 0.5)],
   },
   Fn {
     name: S::new("acos"),
@@ -765,7 +765,7 @@ pub const FNS: [Fn; 126] = [
       Returns the arccosine of its argument.
       ```
     "},
-    examples: &[epsilon_eq!("acos", 0, 1.57), epsilon_eq!("acos", 0.5, 1.04)],
+    examples: &[epsilon_eq!("acos", 1.57, 0), epsilon_eq!("acos", 1.04, 0.5)],
   },
   Fn {
     name: S::new("atan"),
@@ -776,7 +776,7 @@ pub const FNS: [Fn; 126] = [
     doc: indoc! {"
       Returns the arctangent of its argument.
     "},
-    examples: &["std.atan(0) == 0", epsilon_eq!("atan", 0.5, 0.46)],
+    examples: &["std.atan(0) == 0", epsilon_eq!("atan", 0.46, 0.5)],
   },
   Fn {
     name: S::new("round"),
