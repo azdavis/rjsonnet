@@ -157,12 +157,14 @@ const fn sig(params: &'static [Param], ret: Ty) -> Sig {
   Sig { params, ret }
 }
 
-/// Given `(func, res, arg)`, returns a static string of a Jsonnet expression that evaluates to
-/// whether the std `func` applied to `arg` returns a number that is epsilon-equal (i.e. very close)
-/// to `res`.
+/// Given `(func, res, ...args)`, returns a static string of a Jsonnet expression that evaluates to
+/// whether the std `func` applied to `args` returns a number that is epsilon-equal (i.e. very
+/// close) to `res`.
+///
+/// The args must be separated by commas and there must be at least one arg.
 macro_rules! epsilon_eq {
-  ($name:expr, $res:expr, $arg:expr) => {
-    concat!("std.abs(std.", $name, "(", $arg, ") - ", $res, ") <= 0.01")
+  ($name:expr, $res:expr, $fst:expr $(, $rest:expr)* $(,)?) => {
+    concat!("std.abs(std.", $name, "(", $fst, $(", ", $rest, )* ") - ", $res, ") <= 0.01")
   };
 }
 
