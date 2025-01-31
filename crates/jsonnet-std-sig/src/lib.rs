@@ -174,6 +174,7 @@ const X_NUM_RET_BOOL: Sig = sig(&[req("x", Ty::Num)], Ty::Bool);
 const STR_RET_STR: Sig = sig(&[req("str", Ty::Str)], Ty::Str);
 const X_Y_BOOL_RET_BOOL: Sig = sig(&[req("x", Ty::Bool), req("y", Ty::Bool)], Ty::Bool);
 const A_B_STR_RET_BOOL: Sig = sig(&[req("a", Ty::Str), req("b", Ty::Str)], Ty::Bool);
+const A_B_NUM: Sig = sig(&[req("a", Ty::Num), req("b", Ty::Num)], Ty::Num);
 const STR_CHARS_STR_RET_STR: Sig = sig(&[req("str", Ty::Str), req("chars", Ty::Str)], Ty::Str);
 const STR_RET_NUM: Sig = sig(&[req("str", Ty::Str)], Ty::Num);
 const STR_RET_ANY: Sig = sig(&[req("str", Ty::Str)], Ty::Any);
@@ -563,7 +564,7 @@ pub const FNS: [Fn; 126] = [
   Fn {
     name: S::new("max"),
     implemented: true,
-    sig: sig(&[req("a", Ty::Num), req("b", Ty::Num)], Ty::Num),
+    sig: A_B_NUM,
     total: true,
     available_since: None,
     doc: indoc! {"
@@ -574,7 +575,7 @@ pub const FNS: [Fn; 126] = [
   Fn {
     name: S::new("min"),
     implemented: true,
-    sig: sig(&[req("a", Ty::Num), req("b", Ty::Num)], Ty::Num),
+    sig: A_B_NUM,
     total: true,
     available_since: None,
     doc: indoc! {"
