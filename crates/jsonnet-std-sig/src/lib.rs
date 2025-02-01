@@ -197,7 +197,21 @@ const ARR_KEY_F: Sig = sig(&[req("arr", Ty::ArrAny), KEY_F], Ty::ArrAny);
 const BINARY_SET_FN: Sig = sig(&[req("a", Ty::SetAny), req("b", Ty::SetAny), KEY_F], Ty::SetAny);
 
 /// The std fns.
-pub const FNS: [Fn; 132] = [
+pub const FNS: [Fn; 133] = [
+  Fn {
+    name: S::new("native"),
+    implemented: false,
+    sig: sig(&[req("x", Ty::Str)], Ty::Any),
+    total: true,
+    available_since: None,
+    doc: indoc! {"
+      Returns a natively-implemented function with the given name.
+
+      Some jsonnet interpreters implementing functions in the host language and exposing them via
+      this function.
+    "},
+    examples: Examples::EMPTY_ALLOWED,
+  },
   Fn {
     name: S::new("extVar"),
     implemented: false,
