@@ -98,13 +98,7 @@ fn main() {
   let ty_data = things.iter().map(|(_, td, _)| td);
   let map_entries = things.iter().map(|(name, td, _)| q! { (#td, Ty::#name) });
   let file = file!();
-  let all = q! {
-    use std::collections::BTreeMap;
-    use jsonnet_expr::{StdFn, Str, Id};
-    use super::{Ty, Data, StdFnSig, Param};
-
-    pub const _GENERATED_BY: &str = #file;
-
+  let impl_ty = q! {
     #[expect(missing_docs, non_upper_case_globals)]
     impl Ty {
       #(#impl_ty_const)*
@@ -116,7 +110,8 @@ fn main() {
         }
       }
     }
-
+  };
+  let impl_object = q! {
     impl super::Object {
       #[expect(clippy::too_many_lines)]
       fn std() -> Self {
@@ -126,7 +121,8 @@ fn main() {
         }
       }
     }
-
+  };
+  let impl_store = q! {
     impl super::Store {
       #[doc = "Returns a store with the builtin types, like `Ty::ANY`."]
       #[expect(clippy::too_many_lines)]
@@ -143,7 +139,8 @@ fn main() {
         ret
       }
     }
-
+  };
+  let impl_std_fn_sig = q! {
     impl StdFnSig {
       #[doc = "Get the signature for the std fn."]
       #[must_use]
@@ -159,6 +156,21 @@ fn main() {
         }
       }
     }
+  };
+  let all = q! {
+    use std::collections::BTreeMap;
+    use jsonnet_expr::{StdFn, Str, Id};
+    use super::{Ty, Data, StdFnSig, Param};
+
+    pub const _GENERATED_BY: &str = #file;
+
+    #impl_ty
+
+    #impl_object
+
+    #impl_store
+
+    #impl_std_fn_sig
   };
   write_rs_tokens::go(all, "generated.rs");
 }
