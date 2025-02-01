@@ -18,26 +18,6 @@ func(obj.field, 4)
 }
 
 #[test]
-fn for_comp_obj() {
-  JsonnetInput::eval_error(
-    r#"
-{
-  [x]: std.length(x)
-  for x in ["foo", "bar quz"]
-}
-"#,
-    "not yet implemented: makeArray",
-  )
-  .check();
-  /*
-  {
-    "a": 3,
-    "b": 7
-  }
-   */
-}
-
-#[test]
 fn import_chain() {
   Input::default()
     .with_jsonnet("a.jsonnet", JsonnetInput::manifest("6 - 5 + 2", "3"))

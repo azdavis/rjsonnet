@@ -2,6 +2,7 @@
 
 use crate::check::JsonnetInput;
 
+mod comprehension;
 mod plus;
 
 #[test]
