@@ -365,8 +365,8 @@ fn get_object_literal(st: &mut St, cx: Cx<'_>, obj: ast::Object, in_obj: bool) -
           Some(ast::FieldName::FieldNameExpr(name)) => get_expr(st, cx, name.expr(), in_obj, false),
         };
         let vis = get_vis(field.visibility());
-        let (plus, val) = match field.field_extra() {
-          None => (false, get_expr(st, cx, field.expr(), true, false)),
+        let val = match field.field_extra() {
+          None => get_expr(st, cx, field.expr(), true, false),
           Some(ast::FieldExtra::FieldPlus(field_plus)) => {
             let ptr = ast::SyntaxNodePtr::new(field_plus.syntax());
             // this is the one time we use `SubstOuter`
@@ -378,16 +378,15 @@ fn get_object_literal(st: &mut St, cx: Cx<'_>, obj: ast::Object, in_obj: bool) -
             let sup_field = Some(st.expr(ptr, ExprData::Subscript { on: sup, idx: key }));
             let yes = bop(BinaryOp::Add, sup_field, val);
             let yes = Some(st.expr(ptr, yes));
-            let if_ = Some(st.expr(ptr, ExprData::If { cond, yes, no: val }));
-            (true, if_)
+            Some(st.expr(ptr, ExprData::If { cond, yes, no: val }))
           }
           Some(ast::FieldExtra::ParenParams(paren_params)) => {
             let ptr = ast::SyntaxNodePtr::new(paren_params.syntax());
             let expr = get_fn(st, cx, Some(paren_params), field.expr(), true);
-            (false, Some(st.expr(ptr, expr)))
+            Some(st.expr(ptr, expr))
           }
         };
-        fields.push(jsonnet_expr::Field { key, plus, vis, val });
+        fields.push(jsonnet_expr::Field { key, vis, val });
       }
     }
   }

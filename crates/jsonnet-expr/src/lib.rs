@@ -76,7 +76,6 @@ pub struct Artifacts {
 #[derive(Debug, Clone)]
 pub struct Field {
   pub key: Expr,
-  pub plus: bool,
   pub vis: Visibility,
   pub val: Expr,
 }

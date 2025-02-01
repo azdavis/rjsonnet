@@ -44,10 +44,9 @@ impl fmt::Display for ExprDisplay<'_> {
         }
         for field in fields {
           let key = self.with(field.key);
-          let plus = if field.plus { "+" } else { "" };
           let vis = field.vis;
           let val = self.with(field.val);
-          write!(f, "{key}{plus}{vis} {val}, ")?;
+          write!(f, "{key}{vis} {val}, ")?;
         }
         f.write_str("}")
       }
