@@ -67,8 +67,8 @@ fn main() {
     let consts = things.iter().enumerate().map(|(idx, (name, _, is_pub))| {
       #[expect(clippy::disallowed_methods, reason = "ok to panic in build script")]
       let idx = u32::try_from(idx).expect("usize to u32");
-      // NOTE: we depend on the layout of Ty being just a regular index with no extra bit manipulation
-      // for the shared case here.
+      // NOTE: we depend on the layout of Ty being just a regular index with no extra bit
+      // manipulation for the shared case here.
       let vis = if *is_pub {
         q! { pub }
       } else {
@@ -162,11 +162,11 @@ fn main() {
       impl StdFnSig {
         #[doc = "Get the signature for the std fn."]
         #[must_use]
-        // NOTE: we almost entirely avoid triggering the match_same_arms lint because to generate the
-        // arms we iter over the unique sigs, instead of iter'ing over the std fns (some of which
-        // share sigs). but despite our efforts, it is still triggered sometimes, because we have some
-        // std sig Ty variants that encode extra information (like Uint) but then map to identical
-        // statics tys as other ones (like Num).
+        // NOTE: we almost entirely avoid triggering the match_same_arms lint because to generate
+        // the arms we iter over the unique sigs, instead of iter'ing over the std fns (some of
+        // which share sigs). but despite our efforts, it is still triggered sometimes, because we
+        // have some std sig Ty variants that encode extra information (like Uint) but then map to
+        // identical statics tys as other ones (like Num).
         #[expect(clippy::too_many_lines, clippy::match_same_arms)]
         pub fn get(f: StdFn) -> Self {
           match f {
