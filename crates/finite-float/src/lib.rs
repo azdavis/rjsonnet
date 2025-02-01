@@ -90,6 +90,12 @@ impl From<usize> for Float {
   }
 }
 
+impl From<u8> for Float {
+  fn from(value: u8) -> Self {
+    Self(value.into())
+  }
+}
+
 impl std::ops::Neg for Float {
   type Output = Self;
 

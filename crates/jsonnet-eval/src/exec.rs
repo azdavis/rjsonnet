@@ -251,7 +251,17 @@ pub(crate) fn get(cx: &mut Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
         None => Err(error::Error::NoPath(path)),
       },
       jsonnet_expr::ImportKind::Binary => match cx.import_bin.get(&path) {
-        Some(_) => Err(mk_todo(expr, "yes binary import")),
+        Some(bs) => {
+          let Some(exprs) = cx.exprs.get_mut(&env.path()) else {
+            always!(false, "should have already gotten immutable arena earlier");
+            return Err(error::Error::NoPath(env.path()));
+          };
+          let elems = bs.iter().map(|&n| {
+            let n = ExprData::Prim(Prim::Number(finite_float::Float::from(n)));
+            Some(exprs.ar.alloc(n))
+          });
+          Ok(Val::Array(Array::new(Env::empty(path), elems.collect())))
+        }
         None => Err(error::Error::NoPath(path)),
       },
     },
