@@ -58,14 +58,6 @@ fn main() {
     let name = ident(f.name.ident());
     (name.clone(), q!(Data::Fn(super::Fn::Std(StdFn::#name))), false)
   });
-  let std_fn_match_arms = jsonnet_std_sig::FNS.iter().map(|f| {
-    let name = ident(f.name.ident());
-    q! { StdFn::#name => Ty::#name, }
-  });
-  let std_fn_map_entries = jsonnet_std_sig::FNS.iter().map(|f| {
-    let name = ident(f.name.ident());
-    q! { (Str::#name, Ty::#name) }
-  });
   let all_std_sigs = {
     let mut tmp = BTreeMap::<jsonnet_std_sig::Sig, BTreeSet<jsonnet_std_sig::S>>::new();
     for f in &jsonnet_std_sig::FNS {
@@ -73,90 +65,116 @@ fn main() {
     }
     tmp
   };
-  let std_fn_sig_arms = all_std_sigs.iter().map(|(sig, names)| {
-    let names = names.iter().map(|x| {
-      let name = ident(x.ident());
-      q! { StdFn::#name }
-    });
-    let params = sig.params.iter().map(|p| mk_param(*p));
-    let ret = mk_ty(sig.ret);
-    q! { #(#names)|* => StdFnSig { params: &[ #(#params,)* ], ret: #ret } }
-  });
   let things: Vec<_> = things.into_iter().map(|(a, b)| (a, b, true)).chain(std_fn_types).collect();
-  let impl_ty_const = things.iter().enumerate().map(|(idx, (name, _, is_pub))| {
-    #[expect(clippy::disallowed_methods, reason = "ok to panic in build script")]
-    let idx = u32::try_from(idx).expect("usize to u32");
-    // NOTE: we depend on the layout of Ty being just a regular index with no extra bit manipulation
-    // for the shared case here.
-    let vis = if *is_pub {
-      q! { pub }
-    } else {
-      q! {}
-    };
-    q! { #vis const #name: Self = Self(#idx); }
-  });
-  let ty_data = things.iter().map(|(_, td, _)| td);
-  let map_entries = things.iter().map(|(name, td, _)| q! { (#td, Ty::#name) });
   let file = file!();
-  let impl_ty = q! {
-    #[expect(missing_docs, non_upper_case_globals)]
-    impl Ty {
-      #(#impl_ty_const)*
 
-      #[expect(clippy::too_many_lines)]
-      pub(crate) fn std_fn(f: StdFn) -> Self {
-        match f {
-          #(#std_fn_match_arms)*
+  let impl_ty = {
+    let consts = things.iter().enumerate().map(|(idx, (name, _, is_pub))| {
+      #[expect(clippy::disallowed_methods, reason = "ok to panic in build script")]
+      let idx = u32::try_from(idx).expect("usize to u32");
+      // NOTE: we depend on the layout of Ty being just a regular index with no extra bit manipulation
+      // for the shared case here.
+      let vis = if *is_pub {
+        q! { pub }
+      } else {
+        q! {}
+      };
+      q! { #vis const #name: Self = Self(#idx); }
+    });
+
+    let std_fn_match_arms = jsonnet_std_sig::FNS.iter().map(|f| {
+      let name = ident(f.name.ident());
+      q! { StdFn::#name => Ty::#name, }
+    });
+
+    q! {
+      #[expect(missing_docs, non_upper_case_globals)]
+      impl Ty {
+        #(#consts)*
+
+        #[expect(clippy::too_many_lines)]
+        pub(crate) fn std_fn(f: StdFn) -> Self {
+          match f {
+            #(#std_fn_match_arms)*
+          }
         }
       }
     }
   };
-  let impl_object = q! {
-    impl super::Object {
-      #[expect(clippy::too_many_lines)]
-      fn std() -> Self {
-        Self {
-          known: BTreeMap::from([(Str::thisFile, Ty::STRING), #(#std_fn_map_entries,)*]),
-          has_unknown: false,
+
+  let impl_object = {
+    let std_fn_map_entries = jsonnet_std_sig::FNS.iter().map(|f| {
+      let name = ident(f.name.ident());
+      q! { (Str::#name, Ty::#name) }
+    });
+
+    q! {
+      impl super::Object {
+        #[expect(clippy::too_many_lines)]
+        fn std() -> Self {
+          Self {
+            known: BTreeMap::from([(Str::thisFile, Ty::STRING), #(#std_fn_map_entries,)*]),
+            has_unknown: false,
+          }
         }
       }
     }
   };
-  let impl_store = q! {
-    impl super::Store {
-      #[doc = "Returns a store with the builtin types, like `Ty::ANY`."]
-      #[expect(clippy::too_many_lines)]
-      pub(crate) fn with_builtin() -> Self {
-        let ret = Self {
-          idx_to_data: vec![
-            #(#ty_data,)*
-          ],
-          data_to_idx: rustc_hash::FxHashMap::from_iter([
-            #(#map_entries,)*
-          ]),
-        };
-        debug_assert_eq!(ret.data_to_idx.len(), ret.idx_to_data.len());
-        ret
-      }
-    }
-  };
-  let impl_std_fn_sig = q! {
-    impl StdFnSig {
-      #[doc = "Get the signature for the std fn."]
-      #[must_use]
-      // NOTE: we almost entirely avoid triggering the match_same_arms lint because to generate the
-      // arms we iter over the unique sigs, instead of iter'ing over the std fns (some of which
-      // share sigs). but despite our efforts, it is still triggered sometimes, because we have some
-      // std sig Ty variants that encode extra information (like Uint) but then map to identical
-      // statics tys as other ones (like Num).
-      #[expect(clippy::too_many_lines, clippy::match_same_arms)]
-      pub fn get(f: StdFn) -> Self {
-        match f {
-          #(#std_fn_sig_arms,)*
+
+  let impl_store = {
+    let ty_data = things.iter().map(|(_, td, _)| td);
+    let map_entries = things.iter().map(|(name, td, _)| q! { (#td, Ty::#name) });
+
+    q! {
+      impl super::Store {
+        #[doc = "Returns a store with the builtin types, like `Ty::ANY`."]
+        #[expect(clippy::too_many_lines)]
+        pub(crate) fn with_builtin() -> Self {
+          let ret = Self {
+            idx_to_data: vec![
+              #(#ty_data,)*
+            ],
+            data_to_idx: rustc_hash::FxHashMap::from_iter([
+              #(#map_entries,)*
+            ]),
+          };
+          debug_assert_eq!(ret.data_to_idx.len(), ret.idx_to_data.len());
+          ret
         }
       }
     }
   };
+
+  let impl_std_fn_sig = {
+    let std_fn_sig_arms = all_std_sigs.iter().map(|(sig, names)| {
+      let names = names.iter().map(|x| {
+        let name = ident(x.ident());
+        q! { StdFn::#name }
+      });
+      let params = sig.params.iter().map(|p| mk_param(*p));
+      let ret = mk_ty(sig.ret);
+      q! { #(#names)|* => StdFnSig { params: &[ #(#params,)* ], ret: #ret } }
+    });
+
+    q! {
+      impl StdFnSig {
+        #[doc = "Get the signature for the std fn."]
+        #[must_use]
+        // NOTE: we almost entirely avoid triggering the match_same_arms lint because to generate the
+        // arms we iter over the unique sigs, instead of iter'ing over the std fns (some of which
+        // share sigs). but despite our efforts, it is still triggered sometimes, because we have some
+        // std sig Ty variants that encode extra information (like Uint) but then map to identical
+        // statics tys as other ones (like Num).
+        #[expect(clippy::too_many_lines, clippy::match_same_arms)]
+        pub fn get(f: StdFn) -> Self {
+          match f {
+            #(#std_fn_sig_arms,)*
+          }
+        }
+      }
+    }
+  };
+
   let all = q! {
     use std::collections::BTreeMap;
     use jsonnet_expr::{StdFn, Str, Id};
