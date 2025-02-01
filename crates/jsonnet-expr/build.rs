@@ -51,6 +51,9 @@ fn main() {
     mk_unutterable!("c"),
     mk_unutterable!("d"),
     mk_unutterable!("e"),
+    // these are used for +: fields in the desugaring
+    mk_unutterable!("outerself"),
+    mk_unutterable!("outersuper"),
   ];
   let builtin_identifiers = [
     S::new("std"),

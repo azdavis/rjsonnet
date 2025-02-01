@@ -76,6 +76,7 @@ where
         Some(ret.into())
       }
     }
+    ExprData::SubstOuter(e) => from_expr(st, seen, fs, path_id, e),
     // Id, Import: would have been covered by defs.get above if we knew anything about them
     // Prim, Object, Array, Function: literals are values, they do not evaluate further
     // Error: errors do not evaluate to values

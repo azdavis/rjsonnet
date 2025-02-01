@@ -117,6 +117,10 @@ impl fmt::Display for ExprDisplay<'_> {
         let p = jsonnet_escape::Unescape::new(p);
         write!(f, "{kind} {p}")
       }
+      ExprData::SubstOuter(e) => {
+        let e = self.with(*e);
+        write!(f, "({e})[$outerself/self,$outersuper/super]")
+      }
     }
   }
 }

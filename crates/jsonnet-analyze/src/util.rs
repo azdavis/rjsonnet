@@ -339,9 +339,12 @@ fn expr_def_range(
         None
       })
       .or_else(|| {
-        log::warn!("local fallback: {node_ptr:?}");
         let node = node_ptr.try_to_node(root)?;
-        log::warn!("node: {node:?}");
+        if node_ptr.kind() == jsonnet_syntax::kind::SyntaxKind::ExprObject {
+          log::debug!("local fallback with Object (probably outerself/outersuper)");
+        } else {
+          log::warn!("local fallback: {node_ptr:?}; node: {node:?}");
+        }
         Some(node.text_range())
       }),
     // NOTE because of desugaring, possibly not all expr fns are actually from ast fns

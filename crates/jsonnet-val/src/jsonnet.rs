@@ -53,6 +53,12 @@ impl Env {
     self.store.push(EnvElem::Single(id, env, expr));
   }
 
+  /// Causes `self` and `super` to reference the `$outerself` and `$outersuper` variables. Use with
+  /// caution.
+  pub fn use_outer_self_super(&mut self) {
+    self.store.push(EnvElem::Outer);
+  }
+
   /// Removes an id from this env. Use with caution. The id MUST be utterable.
   pub fn remove(&mut self, id: Id) {
     always!(!id.is_unutterable());
@@ -69,25 +75,32 @@ impl Env {
         }
       }
       EnvElem::This(object) => Some(EnvElem::This(object)),
+      EnvElem::Outer => Some(EnvElem::Outer),
     });
     self.store = iter.collect();
   }
 
   /// Get an identifier. Returns `None` if it is not in scope.
   #[must_use]
-  pub fn get(&self, id: Id) -> Option<Get> {
+  pub fn get(&self, mut id: Id) -> Option<Get> {
     if id == Id::self_ {
-      return self.this().map(|this| Get::Object(this.clone()));
+      match self.this()? {
+        This::Object(obj) => return Some(Get::Object(obj.clone())),
+        This::Outer => id = Id::outerself_unutterable,
+      }
     }
     if id == Id::super_ {
-      return self.this().map(|this| Get::Object(this.parent()));
+      match self.this()? {
+        This::Object(obj) => return Some(Get::Object(obj.parent())),
+        This::Outer => id = Id::outersuper_unutterable,
+      }
     }
     if id == Id::std_unutterable {
       return Some(Get::Object(Object::std_lib()));
     }
     for idx in (0..self.store.len()).rev() {
       match &self.store[idx] {
-        EnvElem::This(_) => {}
+        EnvElem::This(_) | EnvElem::Outer => {}
         EnvElem::Binds(binds, self_refer) => {
           for &(other, expr) in binds {
             if other == id {
@@ -115,13 +128,11 @@ impl Env {
 
   /// Returns what `self` refers to in this env.
   #[must_use]
-  fn this(&self) -> Option<&Object> {
-    self.store.iter().rev().find_map(|elem| {
-      if let EnvElem::This(obj) = elem {
-        Some(&**obj)
-      } else {
-        None
-      }
+  fn this(&self) -> Option<This<'_>> {
+    self.store.iter().rev().find_map(|elem| match elem {
+      EnvElem::This(obj) => Some(This::Object(obj)),
+      EnvElem::Outer => Some(This::Outer),
+      _ => None,
     })
   }
 }
@@ -131,6 +142,12 @@ enum EnvElem {
   Binds(Vec<(Id, Expr)>, SelfRefer),
   Single(Id, Env, Expr),
   This(Box<Object>),
+  Outer,
+}
+
+enum This<'a> {
+  Object(&'a Object),
+  Outer,
 }
 
 /// The output when getting an identifier.

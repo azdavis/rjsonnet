@@ -255,6 +255,11 @@ pub(crate) fn get(cx: &mut Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
         None => Err(error::Error::NoPath(path)),
       },
     },
+    ExprData::SubstOuter(expr) => {
+      let mut env = env.clone();
+      env.use_outer_self_super();
+      get(cx, &env, expr)
+    }
   }
 }
 

@@ -140,6 +140,9 @@ pub enum ExprData {
     kind: ImportKind,
     path: paths::PathId,
   },
+  /// used for desugaring `+:` fields to subst outer(self/super) for self/super. not writeable in
+  /// user code.
+  SubstOuter(Expr),
 }
 
 impl ExprData {
@@ -164,7 +167,8 @@ impl ExprData {
       | ExprData::If { .. }
       | ExprData::BinaryOp { .. }
       | ExprData::UnaryOp { .. }
-      | ExprData::Error(_) => {}
+      | ExprData::Error(_)
+      | ExprData::SubstOuter(_) => {}
     }
   }
 }

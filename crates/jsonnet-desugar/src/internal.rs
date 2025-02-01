@@ -368,16 +368,10 @@ fn get_object_literal(st: &mut St, cx: Cx<'_>, obj: ast::Object, in_obj: bool) -
         let (plus, val) = match field.field_extra() {
           None => (false, get_expr(st, cx, field.expr(), true, false)),
           Some(ast::FieldExtra::FieldPlus(field_plus)) => {
-            // TODO: the spec says do substitution with self and super and outerself and outersuper,
-            // and afterwards remove the distinction between regular fields and field-plus fields,
-            // when desugaring. instead, maybe something with the same effect would be to carry
-            // through the field-plus-ness of the field past desugaring (as we do here), and then
-            // during evaluation, have the env have another 'this' field for the 'outer this', and
-            // we could set that up correctly in the corresponding place in the spec where we set
-            // outerself and outersuper. then when evaluating "field plus" fields we would replace
-            // the regular 'this' with that 'outer this'.
-            let val = get_expr(st, cx, field.expr(), true, false);
             let ptr = ast::SyntaxNodePtr::new(field_plus.syntax());
+            // this is the one time we use `SubstOuter`
+            let key = Some(st.expr(ptr, ExprData::SubstOuter(key)));
+            let val = get_expr(st, cx, field.expr(), true, false);
             let sup = Some(st.expr(ptr, ExprData::Id(Id::super_)));
             let cond = call_std_func_data(st, ptr, Str::objectHasAll, vec![sup, key]);
             let cond = Some(st.expr(ptr, cond));
@@ -397,15 +391,15 @@ fn get_object_literal(st: &mut St, cx: Cx<'_>, obj: ast::Object, in_obj: bool) -
       }
     }
   }
-  // this is the only time we actually use the `in_obj` flag
+  // this is one of two times we actually use the `in_obj` flag
   if !in_obj {
     let ptr = ast::SyntaxNodePtr::new(obj.syntax());
     let this = Some(st.expr(ptr, ExprData::Id(Id::self_)));
     binds.push((Id::dollar, this));
   }
   let count = asserts.len() + fields.len();
+  let ptr = ast::SyntaxNodePtr::new(obj.syntax());
   if !binds.is_empty() {
-    let ptr = ast::SyntaxNodePtr::new(obj.syntax());
     if count > 1 {
       for &(_, e) in &binds {
         let Some(e) = e else { continue };
@@ -420,7 +414,21 @@ fn get_object_literal(st: &mut St, cx: Cx<'_>, obj: ast::Object, in_obj: bool) -
       *e = Some(st.expr(ptr, ExprData::Local { binds: binds.clone(), body: *e }));
     }
   }
-  ExprData::Object { asserts, fields }
+  // this is the second of two times we use the `in_obj` flag
+  let obj = ExprData::Object { asserts, fields };
+  if in_obj {
+    let outer_self = Some(st.expr(ptr, ExprData::Id(Id::self_)));
+    let outer_super = Some(st.expr(ptr, ExprData::Id(Id::super_)));
+    ExprData::Local {
+      binds: vec![
+        (Id::outerself_unutterable, outer_self),
+        (Id::outersuper_unutterable, outer_super),
+      ],
+      body: Some(st.expr(ptr, obj)),
+    }
+  } else {
+    obj
+  }
 }
 
 fn get_object_comp(st: &mut St, cx: Cx<'_>, obj: ast::Object, in_obj: bool) -> ExprData {

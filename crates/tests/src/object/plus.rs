@@ -117,9 +117,7 @@ fn self_in_field_name_override_field() {
   .check();
 }
 
-/// TODO impl support for +: where field name uses super
 #[test]
-#[should_panic = "no such field: `value`"]
 fn self_in_field_name_add_field() {
   JsonnetInput::manifest(
     r#"

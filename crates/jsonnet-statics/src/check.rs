@@ -247,6 +247,7 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
       jsonnet_expr::ImportKind::String => ty::Ty::STRING,
       jsonnet_expr::ImportKind::Binary => ty::Ty::ARRAY_NUMBER,
     },
+    ExprData::SubstOuter(e) => get(st, ar, *e),
   };
   // NOTE: we CANNOT assert that this always return None. i'm pretty confident it's because of
   // duplication of expressions when lowering array/object comprehensions. i don't think that's a
@@ -398,7 +399,7 @@ fn define_binds(
 
 fn undefine(st: &mut st::St<'_>, ar: &ExprArena, id: Id) {
   let Some(ed) = st.scope.undefine(id) else { return };
-  if is_actually_unused(st, ar, ed) {
+  if !id.is_unutterable() && is_actually_unused(st, ar, ed) {
     st.err(ed.expr, error::Kind::UnusedVar(id, ed.kind));
   }
 }
