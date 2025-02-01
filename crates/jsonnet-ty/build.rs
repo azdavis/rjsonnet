@@ -54,18 +54,15 @@ fn main() {
     ),
     (ident("STD"), q!(Data::Object(super::Object::std()))),
   ];
-  let std_fn_types = jsonnet_std_sig::FNS.iter().map(|f| {
-    let name = ident(f.name.ident());
-    (name.clone(), q!(Data::Fn(super::Fn::Std(StdFn::#name))), false)
-  });
-  let all_std_sigs = {
-    let mut tmp = BTreeMap::<jsonnet_std_sig::Sig, BTreeSet<jsonnet_std_sig::S>>::new();
-    for f in &jsonnet_std_sig::FNS {
-      assert!(tmp.entry(f.sig).or_default().insert(f.name));
-    }
-    tmp
+
+  let things: Vec<_> = {
+    let std_fn_types = jsonnet_std_sig::FNS.iter().map(|f| {
+      let name = ident(f.name.ident());
+      (name.clone(), q!(Data::Fn(super::Fn::Std(StdFn::#name))), false)
+    });
+    things.into_iter().map(|(a, b)| (a, b, true)).chain(std_fn_types).collect()
   };
-  let things: Vec<_> = things.into_iter().map(|(a, b)| (a, b, true)).chain(std_fn_types).collect();
+
   let file = file!();
 
   let impl_ty = {
@@ -146,6 +143,13 @@ fn main() {
   };
 
   let impl_std_fn_sig = {
+    let all_std_sigs = {
+      let mut tmp = BTreeMap::<jsonnet_std_sig::Sig, BTreeSet<jsonnet_std_sig::S>>::new();
+      for f in &jsonnet_std_sig::FNS {
+        assert!(tmp.entry(f.sig).or_default().insert(f.name));
+      }
+      tmp
+    };
     let std_fn_sig_arms = all_std_sigs.iter().map(|(sig, names)| {
       let names = names.iter().map(|x| {
         let name = ident(x.ident());
