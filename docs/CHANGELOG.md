@@ -2,6 +2,19 @@
 
 Things under "main" are not released yet.
 
+## main
+
+- Allow hidden fields in object comprehensions.
+- Add new std fields:
+  - `std.pi`
+  - `std.log2`
+  - `std.log10`
+  - `std.atan2`
+  - `std.hypot`
+  - `std.deg2rad`
+  - `std.rad2deg`
+  - `std.native`
+
 ## v0.9.0
 
 - Improve syntax highlighting for the `function` type.
