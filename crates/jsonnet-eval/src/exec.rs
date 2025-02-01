@@ -85,6 +85,7 @@ pub(crate) fn get(cx: &mut Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
                 .into_boxed_str();
               Ok(Val::Prim(Prim::String(cx.str_ar.str_shared(s))))
             }
+            StdField::pi => Ok(Val::Prim(Prim::Number(finite_float::Float::PI))),
             StdField::Fn(f) => Ok(Val::Fn(Fn::Std(f))),
           },
           Field::Expr(env, expr) => get(cx, &env, expr),

@@ -17,6 +17,9 @@ impl Float {
   /// -1
   pub const NEGATIVE_ONE: Self = Self(-1.0);
 
+  /// π
+  pub const PI: Self = Self(std::f64::consts::PI);
+
   /// Exposes the inner value of this number. It will be finite.
   #[must_use]
   pub fn value(&self) -> f64 {

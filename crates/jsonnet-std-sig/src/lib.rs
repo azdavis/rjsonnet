@@ -194,7 +194,7 @@ const ARR_KEY_F: Sig = sig(&[req("arr", Ty::ArrAny), KEY_F], Ty::ArrAny);
 const BINARY_SET_FN: Sig = sig(&[req("a", Ty::SetAny), req("b", Ty::SetAny), KEY_F], Ty::SetAny);
 
 /// The std fns.
-pub const FNS: [Fn; 126] = [
+pub const FNS: [Fn; 132] = [
   Fn {
     name: S::new("extVar"),
     implemented: false,
@@ -621,11 +621,32 @@ pub const FNS: [Fn; 126] = [
     total: true,
     available_since: None,
     doc: indoc! {r"
-      Returns the natural logarithm of $x$,
-      i.e. the solution $y$ in $e^y = x$, where
+      Returns the natural logarithm of $x$, i.e. the solution $y$ in $e^y = x$, where
       [$e \approx 2.71828$](<https://en.wikipedia.org/wiki/E_(mathematical_constant)>).
     "},
     examples: &["std.log(1) == 0", epsilon_eq!("log", 4.81, 123), epsilon_eq!("log", 5.84, 345)],
+  },
+  Fn {
+    name: S::new("log2"),
+    implemented: false,
+    sig: X_NUM_RET_NUM,
+    total: true,
+    available_since: None,
+    doc: indoc! {r"
+      Returns the base-2 logarithm of $x$, i.e. the solution $y$ in $2^y = x$.
+    "},
+    examples: &["std.log2(1) == 0", "std.log2(8) == 3"],
+  },
+  Fn {
+    name: S::new("log10"),
+    implemented: false,
+    sig: X_NUM_RET_NUM,
+    total: true,
+    available_since: None,
+    doc: indoc! {r"
+      Returns the base-10 logarithm of $x$, i.e. the solution $y$ in $10^y = x$.
+    "},
+    examples: &["std.log10(1) == 0", "std.log10(100) == 2"],
   },
   Fn {
     name: S::new("exponent"),
@@ -779,6 +800,71 @@ pub const FNS: [Fn; 126] = [
       Returns the arctangent of its argument.
     "},
     examples: &["std.atan(0) == 0", epsilon_eq!("atan", 0.46, 0.5)],
+  },
+  Fn {
+    name: S::new("atan2"),
+    implemented: false,
+    sig: sig(&[req("y", Ty::Num), req("x", Ty::Num)], Ty::Num),
+    total: true,
+    available_since: None,
+    doc: indoc! {"
+      Returns the argument (also called phase or angle) of the complex number $x + iy$.
+    "},
+    examples: &[
+      epsilon_eq!("atan2", 0, 0, 1),
+      epsilon_eq!("atan2", "std.pi / 4", 1, 1),
+      epsilon_eq!("atan2", "-std.pi / 4", "-1", 1),
+      epsilon_eq!("atan2", "std.pi", 0, "-1"),
+      epsilon_eq!("atan2", 2.83, 1.2, "-3.8"),
+    ],
+  },
+  Fn {
+    name: S::new("hypot"),
+    implemented: false,
+    sig: A_B_NUM,
+    total: true,
+    available_since: None,
+    doc: indoc! {"
+      Returns the square root of the sum of the squares of x and y.
+    "},
+    examples: &[
+      "std.hypot(3, 4) == 5",
+      "std.hypot(5, 12) == 13",
+      "std.hypot(8, 15) == 17",
+      "std.hypot(7, 24) == 25",
+    ],
+  },
+  Fn {
+    name: S::new("deg2rad"),
+    implemented: false,
+    sig: X_NUM_RET_NUM,
+    total: true,
+    available_since: None,
+    doc: indoc! {"
+      Converts the argument from degrees to radians.
+    "},
+    examples: &[
+      "std.deg2rad(0) == 0",
+      epsilon_eq!("deg2rad", "std.pi / 4", 45),
+      epsilon_eq!("deg2rad", "std.pi / 2", 90),
+      epsilon_eq!("deg2rad", 3, 172),
+    ],
+  },
+  Fn {
+    name: S::new("rad2deg"),
+    implemented: false,
+    sig: X_NUM_RET_NUM,
+    total: true,
+    available_since: None,
+    doc: indoc! {"
+      Converts the argument from radians to degrees.
+    "},
+    examples: &[
+      "std.rad2deg(0) == 0",
+      epsilon_eq!("rad2deg", 45, "std.pi / 4",),
+      epsilon_eq!("rad2deg", 90, "std.pi / 2",),
+      epsilon_eq!("rad2deg", 172, 3,),
+    ],
   },
   Fn {
     name: S::new("round"),
@@ -2568,5 +2654,11 @@ pub struct Field {
 }
 
 /// The fields (non-functions).
-pub const FIELDS: [Field; 1] =
-  [Field { name: S::new("thisFile"), ty: Ty::Str, doc: "The current filename." }];
+pub const FIELDS: [Field; 2] = [
+  Field { name: S::new("thisFile"), ty: Ty::Str, doc: "The current filename." },
+  Field {
+    name: S::new("pi"),
+    ty: Ty::Num,
+    doc: "Archimedes' constant (π), the ratio of a circle's circumference to its diameter.",
+  },
+];

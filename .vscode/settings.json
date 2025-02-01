@@ -7,6 +7,7 @@
   "rust-analyzer.check.command": "clippy",
   "cSpell.words": [
     "aarch",
+    "apos",
     "arrs",
     "autocrlf",
     "azdavis",
@@ -35,6 +36,7 @@
     "Hasher",
     "hexdigit",
     "Hindley",
+    "hypot",
     "Importbin",
     "Importstr",
     "indoc",
