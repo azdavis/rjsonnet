@@ -2667,7 +2667,11 @@ pub const FNS: [Fn; 133] = [
     doc: indoc! {"
       Returns whether the two arguments equal each other.
     "},
-    examples: Examples::new(&["std.equals(1 + 1, 2)", "!std.equals(2 + 2, 5)"]),
+    examples: Examples::new(&[
+      "std.equals(1 + 1, 2)",
+      "std.equals('train' + 'ing', 'training')",
+      "!std.equals(2 + 2, 5)",
+    ]),
   },
   Fn {
     name: S::new("objectHasEx"),
