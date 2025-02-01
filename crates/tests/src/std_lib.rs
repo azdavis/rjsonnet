@@ -13,6 +13,18 @@ std.type(3)
   .check();
 }
 
+#[test]
+fn this_file() {
+  JsonnetInput::string(
+    r"
+##  v type: string
+std.thisFile
+",
+    "/f.jsonnet",
+  )
+  .check();
+}
+
 // TODO need to lazily evaluate std function arguments just like regular function arguments
 #[test]
 #[should_panic = "not yet implemented: get"]
