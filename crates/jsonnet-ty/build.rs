@@ -62,7 +62,7 @@ fn main() {
     let name = ident(f.name.ident());
     q! { StdFn::#name => Ty::#name, }
   });
-  let std_map_entries = jsonnet_std_sig::FNS.iter().map(|f| {
+  let std_fn_map_entries = jsonnet_std_sig::FNS.iter().map(|f| {
     let name = ident(f.name.ident());
     q! { (Str::#name, Ty::#name) }
   });
@@ -121,7 +121,7 @@ fn main() {
       #[expect(clippy::too_many_lines)]
       fn std() -> Self {
         Self {
-          known: BTreeMap::from([(Str::thisFile, Ty::STRING), #(#std_map_entries,)*]),
+          known: BTreeMap::from([(Str::thisFile, Ty::STRING), #(#std_fn_map_entries,)*]),
           has_unknown: false,
         }
       }
