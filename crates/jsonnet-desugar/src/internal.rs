@@ -367,18 +367,9 @@ fn get_object_literal(st: &mut St, cx: Cx<'_>, obj: ast::Object, in_obj: bool) -
         let vis = get_vis(field.visibility());
         let val = match field.field_extra() {
           None => get_expr(st, cx, field.expr(), true, false),
-          Some(ast::FieldExtra::FieldPlus(field_plus)) => {
-            let ptr = ast::SyntaxNodePtr::new(field_plus.syntax());
-            // this is the one time we use `SubstOuter`
-            let key = Some(st.expr(ptr, ExprData::SubstOuter(key)));
+          Some(ast::FieldExtra::FieldPlus(fp)) => {
             let val = get_expr(st, cx, field.expr(), true, false);
-            let sup = Some(st.expr(ptr, ExprData::Id(Id::super_)));
-            let cond = call_std_func_data(st, ptr, Str::objectHasAll, vec![sup, key]);
-            let cond = Some(st.expr(ptr, cond));
-            let sup_field = Some(st.expr(ptr, ExprData::Subscript { on: sup, idx: key }));
-            let yes = bop(BinaryOp::Add, sup_field, val);
-            let yes = Some(st.expr(ptr, yes));
-            Some(st.expr(ptr, ExprData::If { cond, yes, no: val }))
+            Some(get_field_plus(st, key, val, fp))
           }
           Some(ast::FieldExtra::ParenParams(paren_params)) => {
             let ptr = ast::SyntaxNodePtr::new(paren_params.syntax());
@@ -428,6 +419,19 @@ fn get_object_literal(st: &mut St, cx: Cx<'_>, obj: ast::Object, in_obj: bool) -
   } else {
     obj
   }
+}
+
+/// this is the one time we use `SubstOuter`
+fn get_field_plus(st: &mut St, key: Expr, val: Expr, fp: ast::FieldPlus) -> jsonnet_expr::ExprMust {
+  let ptr = ast::SyntaxNodePtr::new(fp.syntax());
+  let key = Some(st.expr(ptr, ExprData::SubstOuter(key)));
+  let sup = Some(st.expr(ptr, ExprData::Id(Id::super_)));
+  let cond = call_std_func_data(st, ptr, Str::objectHasAll, vec![sup, key]);
+  let cond = Some(st.expr(ptr, cond));
+  let sup_field = Some(st.expr(ptr, ExprData::Subscript { on: sup, idx: key }));
+  let yes = bop(BinaryOp::Add, sup_field, val);
+  let yes = Some(st.expr(ptr, yes));
+  st.expr(ptr, ExprData::If { cond, yes, no: val })
 }
 
 fn get_object_comp(st: &mut St, cx: Cx<'_>, obj: ast::Object, in_obj: bool) -> ExprData {
