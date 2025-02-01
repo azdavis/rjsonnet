@@ -75,7 +75,7 @@ pub(crate) fn get(cx: &mut Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
         }
         match field {
           Field::Std(field) => match field {
-            StdField::ThisFile => {
+            StdField::thisFile => {
               let s = cx
                 .paths
                 .get_path(env.path())

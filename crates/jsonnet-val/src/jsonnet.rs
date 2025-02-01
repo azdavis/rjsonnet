@@ -269,7 +269,7 @@ impl Object {
           }
         }
         ObjectKind::Std => {
-          for (name, field) in StdField::all() {
+          for (name, field) in StdField::ALL {
             if !seen.insert(name.clone()) {
               continue;
             }

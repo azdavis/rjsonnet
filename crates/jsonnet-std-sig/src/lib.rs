@@ -1,4 +1,4 @@
-//! Info about the standard library functions.
+//! Info about the standard library.
 //!
 //! Based on [the original std lib docs](https://jsonnet.org/ref/stdlib.html).
 
@@ -2555,3 +2555,18 @@ pub const FNS: [Fn; 126] = [
     ],
   },
 ];
+
+/// A field (non-function).
+#[derive(Debug)]
+pub struct Field {
+  /// The name.
+  pub name: S,
+  /// The type.
+  pub ty: Ty,
+  /// The documentation.
+  pub doc: &'static str,
+}
+
+/// The fields (non-functions).
+pub const FIELDS: [Field; 1] =
+  [Field { name: S::new("thisFile"), ty: Ty::Str, doc: "The current filename." }];

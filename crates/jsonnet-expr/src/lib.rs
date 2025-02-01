@@ -11,7 +11,7 @@ pub mod def;
 pub mod display;
 mod string;
 
-pub use generated::StdFn;
+pub use generated::{StdField, StdFn};
 pub use string::{Id, Str, StrArena, Subst};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -231,43 +231,6 @@ impl Prim {
 pub struct Arenas {
   pub str: StrArena,
   pub expr: ExprArena,
-}
-
-#[derive(Debug, Clone, Copy)]
-pub enum StdField {
-  ThisFile,
-  Fn(StdFn),
-}
-
-impl StdField {
-  pub fn all() -> impl Iterator<Item = (Str, Self)> {
-    let it = StdFn::ALL.into_iter().map(|(a, b)| (a, StdField::Fn(b)));
-    std::iter::once((Str::thisFile, StdField::ThisFile)).chain(it)
-  }
-
-  #[must_use]
-  pub fn doc(&self) -> &'static str {
-    match self {
-      StdField::ThisFile => {
-        "Note that this is a field. It contains the current Jsonnet filename as a string."
-      }
-      StdField::Fn(std_fn) => std_fn.doc(),
-    }
-  }
-}
-
-impl TryFrom<&Str> for StdField {
-  type Error = ();
-
-  fn try_from(s: &Str) -> Result<Self, Self::Error> {
-    if *s == Str::thisFile {
-      return Ok(Self::ThisFile);
-    }
-    match StdFn::try_from(s) {
-      Ok(x) => Ok(Self::Fn(x)),
-      Err(()) => Err(()),
-    }
-  }
 }
 
 #[derive(Debug, Default, Clone)]

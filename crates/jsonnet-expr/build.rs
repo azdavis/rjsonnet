@@ -199,11 +199,6 @@ fn main() {
 
   let std_fn = {
     let variants = jsonnet_std_sig::FNS.iter().map(|f| ident(f.name.ident()));
-    let count = jsonnet_std_sig::FNS.len();
-    let str_variant_tuples = jsonnet_std_sig::FNS.iter().map(|f| {
-      let name = ident(f.name.ident());
-      q! { (Str::#name, Self::#name) }
-    });
     let from_str_arms = jsonnet_std_sig::FNS.iter().map(|f| {
       let name = ident(f.name.ident());
       q! { Str::#name => Self::#name, }
@@ -254,10 +249,6 @@ fn main() {
 
       #[expect(clippy::too_many_lines)]
       impl StdFn {
-        pub const ALL: [(Str, Self); #count] = [
-          #(#str_variant_tuples,)*
-        ];
-
         #[doc = "Returns a static str for this."]
         #[must_use]
         pub const fn as_static_str(self) -> &'static str {
@@ -298,6 +289,68 @@ fn main() {
     }
   };
 
+  let std_field = {
+    let field_variants = jsonnet_std_sig::FIELDS.iter().map(|x| ident(x.name.ident()));
+    let count = jsonnet_std_sig::FNS.len() + jsonnet_std_sig::FIELDS.len();
+    let str_variant_tuples = std::iter::empty()
+      .chain(jsonnet_std_sig::FNS.iter().map(|x| {
+        let name = ident(x.name.ident());
+        q! { (Str::#name, Self::Fn(StdFn::#name)) }
+      }))
+      .chain(jsonnet_std_sig::FIELDS.iter().map(|x| {
+        let name = ident(x.name.ident());
+        q! { (Str::#name, Self::#name) }
+      }));
+    let field_doc_arms = jsonnet_std_sig::FIELDS.iter().map(|x| {
+      let name = ident(x.name.ident());
+      let doc = x.doc;
+      q! { Self::#name => #doc, }
+    });
+    let from_str_ifs = jsonnet_std_sig::FIELDS.iter().map(|x| {
+      let name = ident(x.name.ident());
+      q! {
+        if *s == Str::#name {
+          return Ok(Self::#name);
+        }
+      }
+    });
+
+    q! {
+      #[expect(non_camel_case_types)]
+      #[derive(Debug, Clone, Copy)]
+      pub enum StdField {
+        #(#field_variants,)*
+        Fn(StdFn),
+      }
+
+      impl StdField {
+        pub const ALL: [(Str, Self); #count] = [
+          #(#str_variant_tuples,)*
+        ];
+
+        #[must_use]
+        pub fn doc(&self) -> &'static str {
+          match self {
+            #(#field_doc_arms)*
+            StdField::Fn(std_fn) => std_fn.doc(),
+          }
+        }
+      }
+
+      impl TryFrom<&Str> for StdField {
+        type Error = ();
+
+        fn try_from(s: &Str) -> Result<Self, Self::Error> {
+          #(#from_str_ifs)*
+          match StdFn::try_from(s) {
+            Ok(x) => Ok(Self::Fn(x)),
+            Err(()) => Err(()),
+          }
+        }
+      }
+    }
+  };
+
   let file = file!();
 
   let contents = q! {
@@ -312,6 +365,8 @@ fn main() {
     #impl_str
 
     #std_fn
+
+    #std_field
   };
   write_rs_tokens::go(contents, "generated.rs");
 }
