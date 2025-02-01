@@ -25,6 +25,18 @@ std.thisFile
   .check();
 }
 
+#[test]
+fn pi() {
+  JsonnetInput::manifest(
+    r"
+##             v type: number
+std.round(std.pi)
+",
+    "3",
+  )
+  .check();
+}
+
 // TODO need to lazily evaluate std function arguments just like regular function arguments
 #[test]
 #[should_panic = "not yet implemented: get"]
