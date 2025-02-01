@@ -364,14 +364,7 @@ fn get_object_literal(st: &mut St, cx: Cx<'_>, obj: ast::Object, in_obj: bool) -
           },
           Some(ast::FieldName::FieldNameExpr(name)) => get_expr(st, cx, name.expr(), in_obj, false),
         };
-        let vis = match field.visibility() {
-          Some(vis) => match vis.kind {
-            ast::VisibilityKind::Colon => Visibility::Default,
-            ast::VisibilityKind::ColonColon => Visibility::Hidden,
-            ast::VisibilityKind::ColonColonColon => Visibility::Visible,
-          },
-          None => Visibility::Default,
-        };
+        let vis = get_vis(field.visibility());
         let (plus, val) = match field.field_extra() {
           None => (false, get_expr(st, cx, field.expr(), true, false)),
           Some(ast::FieldExtra::FieldPlus(field_plus)) => {
@@ -432,7 +425,7 @@ fn get_object_literal(st: &mut St, cx: Cx<'_>, obj: ast::Object, in_obj: bool) -
 
 fn get_object_comp(st: &mut St, cx: Cx<'_>, obj: ast::Object, in_obj: bool) -> ExprData {
   let mut binds = Vec::<(Id, Expr)>::new();
-  let mut lowered_field = None::<(ast::SyntaxNodePtr, Expr, Expr)>;
+  let mut lowered_field = None::<(ast::SyntaxNodePtr, Expr, Visibility, Expr)>;
   for member in obj.members() {
     let Some(member_kind) = member.member_kind() else { continue };
     match member_kind {
@@ -456,16 +449,11 @@ fn get_object_comp(st: &mut St, cx: Cx<'_>, obj: ast::Object, in_obj: bool) -> E
         if let Some(field_extra) = field.field_extra() {
           st.err(&field_extra, error::Kind::ObjectCompFieldExtra);
         }
-        if let Some(vis) = field.visibility() {
-          let is_colon = matches!(vis.kind, ast::VisibilityKind::Colon);
-          if !is_colon {
-            st.err_token(&vis.token, error::Kind::ObjectCompVisibility);
-          }
-        }
+        let vis = get_vis(field.visibility());
         let name = get_expr(st, cx, name.expr(), in_obj, false);
         let body = get_expr(st, cx, field.expr(), in_obj, false);
         let ptr = ast::SyntaxNodePtr::new(field.syntax());
-        lowered_field = Some((ptr, name, body));
+        lowered_field = Some((ptr, name, vis, body));
       }
     }
   }
@@ -476,7 +464,7 @@ fn get_object_comp(st: &mut St, cx: Cx<'_>, obj: ast::Object, in_obj: bool) -> E
     ast::CompSpec::IfSpec(_) => None,
   });
   let vars: Vec<_> = vars.collect();
-  let Some((ptr, name, body)) = lowered_field else {
+  let Some((ptr, name, vis, body)) = lowered_field else {
     st.err(&obj, error::Kind::ObjectCompNotOne);
     // this is a good "fake" return, since we knew this was going to be some kind of object,
     // but now we can't figure out what fields it should have. so let's say it has no fields.
@@ -505,7 +493,7 @@ fn get_object_comp(st: &mut St, cx: Cx<'_>, obj: ast::Object, in_obj: bool) -> E
   let vars = Some(st.expr(ptr, ExprData::Array(vars)));
   let vars = get_array_comp(st, cx, obj.comp_specs(), vars, in_obj);
   let vars = Some(st.expr(ptr, vars));
-  ExprData::ObjectComp { name, body, id: arr, ary: vars }
+  ExprData::ObjectComp { name, vis, body, id: arr, ary: vars }
 }
 
 fn bop(op: BinaryOp, lhs: Expr, rhs: Expr) -> ExprData {
@@ -548,5 +536,16 @@ fn get_binary_op(
       let yes = Some(st.expr(ptr, ExprData::Prim(Prim::Bool(true))));
       ExprData::If { cond: lhs, yes, no: rhs }
     }
+  }
+}
+
+fn get_vis(v: Option<ast::Visibility>) -> Visibility {
+  match v {
+    Some(vis) => match vis.kind {
+      ast::VisibilityKind::Colon => Visibility::Default,
+      ast::VisibilityKind::ColonColon => Visibility::Hidden,
+      ast::VisibilityKind::ColonColonColon => Visibility::Visible,
+    },
+    None => Visibility::Default,
   }
 }

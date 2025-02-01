@@ -52,7 +52,7 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
       st.undefine_self_super();
       st.tys.get(ty::Data::Object(obj))
     }
-    ExprData::ObjectComp { name, body, id, ary } => {
+    ExprData::ObjectComp { name, vis: _, body, id, ary } => {
       let ary_ty = get(st, ar, *ary);
       must_reachable(st, expr, ary_ty);
       let def = def::ExprDef { expr, kind: def::ExprDefKind::ObjectCompId };

@@ -28,7 +28,6 @@ pub(crate) enum Kind {
   ObjectCompLiteralFieldName,
   ObjectCompNotOne,
   ObjectCompFieldExtra,
-  ObjectCompVisibility,
   PathNotFound(String),
   PositionalArgAfterNamedArg,
   ImportTextBlock,
@@ -53,7 +52,6 @@ impl fmt::Display for Error {
       Kind::ObjectCompFieldExtra => {
         f.write_str("object comprehension field must not have `+` or parameters")
       }
-      Kind::ObjectCompVisibility => f.write_str("object comprehension field must use `:`"),
       Kind::PathNotFound(p) => write!(f, "path not found: `{p}`"),
       Kind::PositionalArgAfterNamedArg => {
         f.write_str("positional arguments must not appear after named arguments")

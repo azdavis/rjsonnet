@@ -51,10 +51,10 @@ impl fmt::Display for ExprDisplay<'_> {
         }
         f.write_str("}")
       }
-      ExprData::ObjectComp { name, body, id, ary } => {
+      ExprData::ObjectComp { name, vis, body, id, ary } => {
         write!(
           f,
-          "{{ [{}]: {} for {} in {} }}",
+          "{{ [{}]{vis} {} for {} in {} }}",
           self.with(*name),
           self.with(*body),
           id.display(self.str_ar),

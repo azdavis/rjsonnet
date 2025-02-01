@@ -91,6 +91,7 @@ pub enum ExprData {
   /// object comprehension fields ARE desugared into the body itself, as the spec suggests.
   ObjectComp {
     name: Expr,
+    vis: Visibility,
     body: Expr,
     id: Id,
     ary: Expr,

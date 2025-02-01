@@ -33,7 +33,7 @@ pub(crate) fn get(cx: &mut Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
       }
       Ok(Val::Object(Object::new(env.clone(), asserts.clone(), named_fields)))
     }
-    ExprData::ObjectComp { name, body, id, ary } => {
+    ExprData::ObjectComp { name, vis, body, id, ary } => {
       let Val::Array(array) = get(cx, env, ary)? else {
         return Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes });
       };
@@ -51,7 +51,7 @@ pub(crate) fn get(cx: &mut Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
               ExprData::Prim(_) => body,
               _ => return Err(mk_todo(expr, "subst for object body")),
             };
-            if fields.insert(s.clone(), (Visibility::Default, Some(body))).is_some() {
+            if fields.insert(s.clone(), (vis, Some(body))).is_some() {
               return Err(error::Error::Exec { expr, kind: error::Kind::DuplicateField(s) });
             }
           }
