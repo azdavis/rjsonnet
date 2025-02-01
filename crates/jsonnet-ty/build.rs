@@ -63,8 +63,6 @@ fn main() {
     things.into_iter().map(|(a, b)| (a, b, true)).chain(std_fn_types).collect()
   };
 
-  let file = file!();
-
   let impl_ty = {
     let consts = things.iter().enumerate().map(|(idx, (name, _, is_pub))| {
       #[expect(clippy::disallowed_methods, reason = "ok to panic in build script")]
@@ -178,6 +176,8 @@ fn main() {
       }
     }
   };
+
+  let file = file!();
 
   let all = q! {
     use std::collections::BTreeMap;
