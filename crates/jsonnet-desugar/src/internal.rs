@@ -457,12 +457,17 @@ fn get_object_comp(st: &mut St, cx: Cx<'_>, obj: ast::Object, in_obj: bool) -> E
         if lowered_field.is_some() {
           st.err(&field, error::Kind::ObjectCompNotOne);
         }
-        if let Some(field_extra) = field.field_extra() {
-          st.err(&field_extra, error::Kind::ObjectCompFieldExtra);
-        }
         let vis = get_vis(field.visibility());
         let name = get_expr(st, cx, name.expr(), in_obj, false);
-        let body = get_expr(st, cx, field.expr(), true, false);
+        let mut body = get_expr(st, cx, field.expr(), true, false);
+        if let Some(field_extra) = field.field_extra() {
+          match field_extra {
+            ast::FieldExtra::FieldPlus(fp) => {
+              body = Some(get_field_plus(st, name, body, fp));
+            }
+            ast::FieldExtra::ParenParams(pp) => st.err(&pp, error::Kind::ObjectCompFieldParams),
+          }
+        }
         let ptr = ast::SyntaxNodePtr::new(field.syntax());
         lowered_field = Some((ptr, name, vis, body));
       }

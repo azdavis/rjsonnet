@@ -23,15 +23,15 @@ fn smoke() {
 }
 
 #[test]
-fn no_plus() {
-  JsonnetInput::pre_eval_error(
+fn plus() {
+  JsonnetInput::eval_error(
     r#"
 {
   [x]+: "hi"
-##   ^ diagnostic: object comprehension field must not have `+` or parameters
   for x in ["a", "b"]
 }
 "#,
+    "not yet implemented: makeArray",
   )
   .check();
 }
@@ -42,7 +42,7 @@ fn no_params() {
     r#"
 {
   [x](y): "hi"
-##   ^^^ diagnostic: object comprehension field must not have `+` or parameters
+##   ^^^ diagnostic: object comprehension field must not have parameters
   for x in ["a", "b"]
 }
 "#,

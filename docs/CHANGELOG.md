@@ -4,7 +4,7 @@ Things under "main" are not released yet.
 
 ## main
 
-- Allow hidden fields in object comprehensions.
+- Allow hidden and plus fields in object comprehensions.
 - Add new std fields:
   - `std.pi`
   - `std.log2`

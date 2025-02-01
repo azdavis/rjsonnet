@@ -27,7 +27,7 @@ pub(crate) enum Kind {
   ObjectCompAssert,
   ObjectCompLiteralFieldName,
   ObjectCompNotOne,
-  ObjectCompFieldExtra,
+  ObjectCompFieldParams,
   PathNotFound(String),
   PositionalArgAfterNamedArg,
   ImportTextBlock,
@@ -49,8 +49,8 @@ impl fmt::Display for Error {
         f.write_str("object comprehension must not contain literal field names")
       }
       Kind::ObjectCompNotOne => f.write_str("object comprehension must contain exactly one field"),
-      Kind::ObjectCompFieldExtra => {
-        f.write_str("object comprehension field must not have `+` or parameters")
+      Kind::ObjectCompFieldParams => {
+        f.write_str("object comprehension field must not have parameters")
       }
       Kind::PathNotFound(p) => write!(f, "path not found: `{p}`"),
       Kind::PositionalArgAfterNamedArg => {
