@@ -458,7 +458,7 @@ fn get_object_comp(st: &mut St, cx: Cx<'_>, obj: ast::Object, in_obj: bool) -> E
         }
         let vis = get_vis(field.visibility());
         let name = get_expr(st, cx, name.expr(), in_obj, false);
-        let body = get_expr(st, cx, field.expr(), in_obj, false);
+        let body = get_expr(st, cx, field.expr(), true, false);
         let ptr = ast::SyntaxNodePtr::new(field.syntax());
         lowered_field = Some((ptr, name, vis, body));
       }
