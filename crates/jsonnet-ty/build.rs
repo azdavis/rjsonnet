@@ -98,17 +98,23 @@ fn main() {
   };
 
   let impl_object = {
-    let std_fn_map_entries = jsonnet_std_sig::FNS.iter().map(|f| {
-      let name = ident(f.name.ident());
-      q! { (Str::#name, Ty::#name) }
-    });
+    let std_fn_map_entries = std::iter::empty()
+      .chain(jsonnet_std_sig::FNS.iter().map(|f| {
+        let name = ident(f.name.ident());
+        q! { (Str::#name, Ty::#name) }
+      }))
+      .chain(jsonnet_std_sig::FIELDS.iter().map(|x| {
+        let name = ident(x.name.ident());
+        let ty = mk_ty(x.ty);
+        q! { (Str::#name, #ty) }
+      }));
 
     q! {
       impl super::Object {
         #[expect(clippy::too_many_lines)]
         fn std() -> Self {
           Self {
-            known: BTreeMap::from([(Str::thisFile, Ty::STRING), #(#std_fn_map_entries,)*]),
+            known: BTreeMap::from([#(#std_fn_map_entries,)*]),
             has_unknown: false,
           }
         }

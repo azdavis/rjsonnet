@@ -71,8 +71,9 @@ fn main() {
     S::new("key"),
   ];
   let strings = || {
-    std::iter::once(S::new("thisFile"))
+    std::iter::empty()
       .chain(jsonnet_std_sig::FNS.iter().map(|f| f.name))
+      .chain(jsonnet_std_sig::FIELDS.iter().map(|f| f.name))
       .chain(messages.iter().copied())
   };
 
