@@ -47,7 +47,7 @@ pub(crate) fn get_expr(
         Ok(x) => x,
         Err(_) => {
           st.err(&expr, error::Kind::CannotRepresentNumber);
-          Float::positive_zero()
+          Float::POSITIVE_ZERO
         }
       };
       ExprData::Prim(Prim::Number(num))

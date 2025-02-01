@@ -8,23 +8,14 @@ use std::fmt;
 pub struct Float(f64);
 
 impl Float {
-  /// Returns positive zero.
-  #[must_use]
-  pub fn positive_zero() -> Self {
-    Self(0.0)
-  }
+  /// 0
+  pub const POSITIVE_ZERO: Self = Self(0.0);
 
-  /// Returns positive one.
-  #[must_use]
-  pub fn positive_one() -> Self {
-    Self(1.0)
-  }
+  /// 1
+  pub const POSITIVE_ONE: Self = Self(1.0);
 
-  /// Returns negative one.
-  #[must_use]
-  pub fn negative_one() -> Self {
-    Self(-1.0)
-  }
+  /// -1
+  pub const NEGATIVE_ONE: Self = Self(-1.0);
 
   /// Exposes the inner value of this number. It will be finite.
   #[must_use]
