@@ -7,6 +7,9 @@
 #[cfg(test)]
 mod tests;
 
+pub mod examples;
+
+use examples::Examples;
 use indoc::indoc;
 
 /// A name-content string pair.
@@ -62,7 +65,7 @@ pub struct Fn {
   pub doc: &'static str,
   /// Some examples to show in the doc. Each element is a Jsonnet expression that should evaluate to
   /// `true`.
-  pub examples: &'static [&'static str],
+  pub examples: Examples,
 }
 
 /// A signature for a std fn.
@@ -205,7 +208,7 @@ pub const FNS: [Fn; 132] = [
       If an external variable with the given name was defined, return its value. Otherwise, raise
       an error.
     "},
-    examples: &[],
+    examples: Examples::EMPTY_ALLOWED,
   },
   Fn {
     name: S::named("type", "type_"),
@@ -224,12 +227,12 @@ pub const FNS: [Fn; 132] = [
       - `"object"`
       - `"string"`
     "#},
-    examples: &[
+    examples: Examples::new(&[
       r#" std.type([1]) == "array" "#,
       r#" std.type(null) == "null" "#,
       r#" std.type({}) == "object" "#,
       r#" std.type(3) == "number" "#,
-    ],
+    ]),
   },
   Fn {
     name: S::new("isArray"),
@@ -238,7 +241,12 @@ pub const FNS: [Fn; 132] = [
     total: true,
     available_since: None,
     doc: "Returns whether the argument is an array.",
-    examples: &["std.isArray([1, 2])", "std.isArray([])", "!std.isArray(null)", "!std.isArray(4)"],
+    examples: Examples::new(&[
+      "std.isArray([1, 2])",
+      "std.isArray([])",
+      "!std.isArray(null)",
+      "!std.isArray(4)",
+    ]),
   },
   Fn {
     name: S::new("isBoolean"),
@@ -247,12 +255,12 @@ pub const FNS: [Fn; 132] = [
     total: true,
     available_since: None,
     doc: "Returns whether the argument is a boolean, i.e. `true` or `false`.",
-    examples: &[
+    examples: Examples::new(&[
       "std.isBoolean(true)",
       "std.isBoolean(false)",
       "!std.isBoolean(null)",
       "!std.isBoolean(4)",
-    ],
+    ]),
   },
   Fn {
     name: S::new("isFunction"),
@@ -261,12 +269,12 @@ pub const FNS: [Fn; 132] = [
     total: true,
     available_since: None,
     doc: "Returns whether the argument is a function.",
-    examples: &[
+    examples: Examples::new(&[
       "std.isFunction(function(x) x + 1)",
       "std.isFunction(std.mod)",
       "!std.isFunction(null)",
       "!std.isFunction(4)",
-    ],
+    ]),
   },
   Fn {
     name: S::new("isNumber"),
@@ -275,12 +283,12 @@ pub const FNS: [Fn; 132] = [
     total: true,
     available_since: None,
     doc: "Returns whether the argument is a number.",
-    examples: &[
+    examples: Examples::new(&[
       "std.isNumber(3)",
       "std.isNumber(-123.345)",
       "!std.isNumber(null)",
       "!std.isNumber([])",
-    ],
+    ]),
   },
   Fn {
     name: S::new("isObject"),
@@ -289,12 +297,12 @@ pub const FNS: [Fn; 132] = [
     total: true,
     available_since: None,
     doc: "Returns whether the argument is an object.",
-    examples: &[
+    examples: Examples::new(&[
       "std.isObject({})",
       "std.isObject({ a: 1 } + { b: 2 })",
       "!std.isObject(null)",
       "!std.isObject([])",
-    ],
+    ]),
   },
   Fn {
     name: S::new("isString"),
@@ -303,12 +311,12 @@ pub const FNS: [Fn; 132] = [
     total: true,
     available_since: None,
     doc: "Returns whether the argument is a string.",
-    examples: &[
+    examples: Examples::new(&[
       r#" std.isString("hi") "#,
       r#" std.isString("") "#,
       r#" !std.isString(null) "#,
       r#" !std.isString({}) "#,
-    ],
+    ]),
   },
   Fn {
     name: S::new("length"),
@@ -329,7 +337,7 @@ pub const FNS: [Fn; 132] = [
 
       Raises an error if given `null`, `true`, `false`, or a number.
     "#},
-    examples: &[
+    examples: Examples::new(&[
       r#" std.length("hi") == 2 "#,
       r#" std.length("") == 0 "#,
       r#" std.length("あ") == 1 "#,
@@ -341,7 +349,7 @@ pub const FNS: [Fn; 132] = [
       r#" std.length({}) == 0 "#,
       r#" std.length({ a: 3, b: 5 }) == 2 "#,
       r#" std.length({ x:: 9, y::: 7 }) == 1 "#,
-    ],
+    ]),
   },
   Fn {
     name: S::new("get"),
@@ -361,12 +369,12 @@ pub const FNS: [Fn; 132] = [
       Returns the object `o`'s field `f` if it exists or `default` value otherwise. `inc_hidden`
       controls whether to include hidden fields.
     "},
-    examples: &[
+    examples: Examples::new(&[
       r#" std.get({hi: 4}, "hi", 3) == 4 "#,
       r#" std.get({}, "hi", 3) == 3 "#,
       r#" std.get({hi:: 5}, "hi", 3) == 5 "#,
       r#" std.get({hi:: 5}, "hi", 3, false) == 3 "#,
-    ],
+    ]),
   },
   Fn {
     name: S::new("objectHas"),
@@ -379,11 +387,11 @@ pub const FNS: [Fn; 132] = [
 
       Returns `false` if the field is hidden.
     "},
-    examples: &[
+    examples: Examples::new(&[
       r#" !std.objectHas({}, "hi") "#,
       r#" std.objectHas({hi: 3}, "hi") "#,
       r#" !std.objectHas({hi:: 3}, "hi") "#,
-    ],
+    ]),
   },
   Fn {
     name: S::new("objectFields"),
@@ -396,11 +404,11 @@ pub const FNS: [Fn; 132] = [
 
       **Does not** include hidden fields.
     "},
-    examples: &[
+    examples: Examples::new(&[
       r#" std.objectFields({}) == [] "#,
       r#" std.objectFields({a: 1, b: 2}) == ["a", "b"] "#,
       r#" std.objectFields({a:: 1, b: 2}) == ["b"] "#,
-    ],
+    ]),
   },
   Fn {
     name: S::new("objectValues"),
@@ -413,11 +421,11 @@ pub const FNS: [Fn; 132] = [
 
       **Does not** include hidden fields.
     "},
-    examples: &[
+    examples: Examples::new(&[
       r#" std.objectValues({}) == [] "#,
       r#" std.objectValues({a: 1, b: 2}) == [1, 2] "#,
       r#" std.objectValues({a:: 1, b: 2}) == [2] "#,
-    ],
+    ]),
   },
   Fn {
     name: S::new("objectKeysValues"),
@@ -431,11 +439,11 @@ pub const FNS: [Fn; 132] = [
 
       **Does not** include hidden fields.
     "},
-    examples: &[
+    examples: Examples::new(&[
       r#" std.objectKeysValues({}) == [] "#,
       r#" std.objectKeysValues({a: 1, b: 2}) == [{key: "a", value: 1 }, { key: "b", value: 2 }] "#,
       r#" std.objectKeysValues({a:: 1, b: 2}) == [{ key: "b", value: 2 }] "#,
-    ],
+    ]),
   },
   Fn {
     name: S::new("objectHasAll"),
@@ -446,11 +454,11 @@ pub const FNS: [Fn; 132] = [
     doc: indoc! {"
       Like `std.objectHas` but also includes hidden fields.
     "},
-    examples: &[
+    examples: Examples::new(&[
       r#" !std.objectHasAll({}, "hi") "#,
       r#" std.objectHasAll({hi: 3}, "hi") "#,
       r#" std.objectHasAll({hi:: 3}, "hi") "#,
-    ],
+    ]),
   },
   Fn {
     name: S::new("objectFieldsAll"),
@@ -461,11 +469,11 @@ pub const FNS: [Fn; 132] = [
     doc: indoc! {"
       Like `std.objectFields` but also includes hidden fields.
     "},
-    examples: &[
+    examples: Examples::new(&[
       r#" std.objectFieldsAll({}) == [] "#,
       r#" std.objectFieldsAll({a: 1, b: 2}) == ["a", "b"] "#,
       r#" std.objectFieldsAll({a:: 1, b: 2}) == ["a", "b"] "#,
-    ],
+    ]),
   },
   Fn {
     name: S::new("objectValuesAll"),
@@ -476,11 +484,11 @@ pub const FNS: [Fn; 132] = [
     doc: indoc! {"
       Like `std.objectValues` but also includes hidden fields.
     "},
-    examples: &[
+    examples: Examples::new(&[
       r#" std.objectValuesAll({}) == [] "#,
       r#" std.objectValuesAll({a: 1, b: 2}) == [1, 2] "#,
       r#" std.objectValuesAll({a:: 1, b: 2}) == [1, 2] "#,
-    ],
+    ]),
   },
   Fn {
     name: S::new("objectKeysValuesAll"),
@@ -491,11 +499,11 @@ pub const FNS: [Fn; 132] = [
     doc: indoc! {"
       Like `std.objectKeysValues` but also includes hidden fields.
     "},
-    examples: &[
+    examples: Examples::new(&[
       r#" std.objectKeysValuesAll({}) == [] "#,
       r#" std.objectKeysValuesAll({a: 1, b: 2}) == [{key: "a", value: 1 }, { key: "b", value: 2 }] "#,
       r#" std.objectKeysValuesAll({a:: 1, b: 2}) == [{key: "a", value: 1 }, { key: "b", value: 2 }] "#,
-    ],
+    ]),
   },
   Fn {
     name: S::new("prune"),
@@ -512,12 +520,12 @@ pub const FNS: [Fn; 132] = [
 
       The argument may have any type.
     "#},
-    examples: &[
+    examples: Examples::new(&[
       r#" std.prune([1, [], 2, {}, 3, null]) == [1, 2, 3] "#,
       r#" std.prune({a: 3}) == {a: 3} "#,
       r#" std.prune({w: 0, x: "", y: [], z: null}) == {w: 0, x: ""} "#,
       r#" std.prune(null) == null "#,
-    ],
+    ]),
   },
   Fn {
     name: S::new("mapWithKey"),
@@ -531,7 +539,7 @@ pub const FNS: [Fn; 132] = [
       `func` is expected to take the field name as the first parameter and the field value as the
       second.
     "},
-    examples: &[
+    examples: Examples::new(&[
       indoc! {r#"
         std.mapWithKey(function(a, b) a + b, {a: 1, b: 2}) == {
           a: "a1",
@@ -539,7 +547,7 @@ pub const FNS: [Fn; 132] = [
         }
       "#},
       r#" std.mapWithKey(function(a, b) a + b, {a:: 1, b: 2}) == {b: "b2"} "#,
-    ],
+    ]),
   },
   Fn {
     name: S::new("abs"),
@@ -550,7 +558,7 @@ pub const FNS: [Fn; 132] = [
     doc: indoc! {"
       Returns the absolute value of the number.
     "},
-    examples: &["std.abs(3) == 3", "std.abs(-1.2) == 1.2", "std.abs(0) == 0"],
+    examples: Examples::new(&["std.abs(3) == 3", "std.abs(-1.2) == 1.2", "std.abs(0) == 0"]),
   },
   Fn {
     name: S::new("sign"),
@@ -561,7 +569,7 @@ pub const FNS: [Fn; 132] = [
     doc: indoc! {"
       Returns `-1`, `0`, or `1` if the number is negative, zero, or positive respectively.
     "},
-    examples: &["std.sign(3) == 1", "std.sign(-1.2) == -1", "std.sign(0) == 0"],
+    examples: Examples::new(&["std.sign(3) == 1", "std.sign(-1.2) == -1", "std.sign(0) == 0"]),
   },
   Fn {
     name: S::new("max"),
@@ -572,7 +580,7 @@ pub const FNS: [Fn; 132] = [
     doc: indoc! {"
       Returns the maximum of the two arguments.
     "},
-    examples: &["std.max(3, 2) == 3", "std.max(4, 4) == 4", "std.max(-5, 1) == 1"],
+    examples: Examples::new(&["std.max(3, 2) == 3", "std.max(4, 4) == 4", "std.max(-5, 1) == 1"]),
   },
   Fn {
     name: S::new("min"),
@@ -583,7 +591,7 @@ pub const FNS: [Fn; 132] = [
     doc: indoc! {"
       Returns the minimum of the two arguments.
     "},
-    examples: &["std.min(3, 2) == 2", "std.min(4, 4) == 4", "std.min(-5, 1) == -5"],
+    examples: Examples::new(&["std.min(3, 2) == 2", "std.min(4, 4) == 4", "std.min(-5, 1) == -5"]),
   },
   Fn {
     name: S::new("pow"),
@@ -594,13 +602,13 @@ pub const FNS: [Fn; 132] = [
     doc: indoc! {"
       Returns $x^n$, i.e. $x$ to the $n$ power.
     "},
-    examples: &[
+    examples: Examples::new(&[
       "std.pow(2, 3) == 8",
       "std.pow(3, 2) == 9",
       "std.pow(1, 99) == 1",
       "std.pow(0, 2) == 0",
       "std.pow(99, 0) == 1",
-    ],
+    ]),
   },
   Fn {
     name: S::new("exp"),
@@ -612,7 +620,11 @@ pub const FNS: [Fn; 132] = [
       Returns $e^x$, i.e. $e$ to the $x$ power, where
       [$e \approx 2.71828$](<https://en.wikipedia.org/wiki/E_(mathematical_constant)>).
     "},
-    examples: &["std.exp(0) == 1", epsilon_eq!("exp", 2.71, 1), epsilon_eq!("exp", 7.38, 2)],
+    examples: Examples::new(&[
+      "std.exp(0) == 1",
+      epsilon_eq!("exp", 2.71, 1),
+      epsilon_eq!("exp", 7.38, 2),
+    ]),
   },
   Fn {
     name: S::new("log"),
@@ -624,7 +636,11 @@ pub const FNS: [Fn; 132] = [
       Returns the natural logarithm of $x$, i.e. the solution $y$ in $e^y = x$, where
       [$e \approx 2.71828$](<https://en.wikipedia.org/wiki/E_(mathematical_constant)>).
     "},
-    examples: &["std.log(1) == 0", epsilon_eq!("log", 4.81, 123), epsilon_eq!("log", 5.84, 345)],
+    examples: Examples::new(&[
+      "std.log(1) == 0",
+      epsilon_eq!("log", 4.81, 123),
+      epsilon_eq!("log", 5.84, 345),
+    ]),
   },
   Fn {
     name: S::new("log2"),
@@ -635,7 +651,7 @@ pub const FNS: [Fn; 132] = [
     doc: indoc! {r"
       Returns the base-2 logarithm of $x$, i.e. the solution $y$ in $2^y = x$.
     "},
-    examples: &["std.log2(1) == 0", "std.log2(8) == 3"],
+    examples: Examples::new(&["std.log2(1) == 0", "std.log2(8) == 3"]),
   },
   Fn {
     name: S::new("log10"),
@@ -646,7 +662,7 @@ pub const FNS: [Fn; 132] = [
     doc: indoc! {r"
       Returns the base-10 logarithm of $x$, i.e. the solution $y$ in $10^y = x$.
     "},
-    examples: &["std.log10(1) == 0", "std.log10(100) == 2"],
+    examples: Examples::new(&["std.log10(1) == 0", "std.log10(100) == 2"]),
   },
   Fn {
     name: S::new("exponent"),
@@ -659,12 +675,12 @@ pub const FNS: [Fn; 132] = [
 
       This is the integer $b$ in the solution of $x = a \times 2^b$.
     "},
-    examples: &[
+    examples: Examples::new(&[
       "std.exponent(0) == 0",
       "std.exponent(4) == 3",
       "std.exponent(123456789) == 27",
       "std.exponent(-789456) == 20",
-    ],
+    ]),
   },
   Fn {
     name: S::new("mantissa"),
@@ -678,12 +694,12 @@ pub const FNS: [Fn; 132] = [
 
       This is the number $a$ in the solution of $x = a \times 2^b$ where $b$ is an integer.
     "},
-    examples: &[
+    examples: Examples::new(&[
       "std.mantissa(0) == 0",
       "std.mantissa(4) == 0.5",
       epsilon_eq!("mantissa", 0.91, 123456789),
       epsilon_eq!("mantissa", "-0.75", "-789456"),
-    ],
+    ]),
   },
   Fn {
     name: S::new("floor"),
@@ -694,7 +710,7 @@ pub const FNS: [Fn; 132] = [
     doc: indoc! {"
       Returns the smallest integer greater than or equal to the argument.
     "},
-    examples: &[
+    examples: Examples::new(&[
       "std.floor(1) == 1",
       "std.floor(1.99) == 1",
       "std.floor(2.01) == 2",
@@ -702,7 +718,7 @@ pub const FNS: [Fn; 132] = [
       "std.floor(-1.01) == -2",
       "std.floor(-1.99) == -2",
       "std.floor(-2.01) == -3",
-    ],
+    ]),
   },
   Fn {
     name: S::new("ceil"),
@@ -713,7 +729,7 @@ pub const FNS: [Fn; 132] = [
     doc: indoc! {"
       Returns the greatest integer smaller than or equal to the argument.
     "},
-    examples: &[
+    examples: Examples::new(&[
       "std.ceil(1) == 1",
       "std.ceil(1.99) == 2",
       "std.ceil(2.01) == 3",
@@ -721,7 +737,7 @@ pub const FNS: [Fn; 132] = [
       "std.ceil(-1.01) == -1",
       "std.ceil(-1.99) == -1",
       "std.ceil(-2.01) == -2",
-    ],
+    ]),
   },
   Fn {
     name: S::new("sqrt"),
@@ -732,7 +748,7 @@ pub const FNS: [Fn; 132] = [
     doc: indoc! {"
       Returns the square root of the argument.
     "},
-    examples: &["std.sqrt(9) == 3", "std.sqrt(4) == 2", "std.sqrt(1) == 1"],
+    examples: Examples::new(&["std.sqrt(9) == 3", "std.sqrt(4) == 2", "std.sqrt(1) == 1"]),
   },
   Fn {
     name: S::new("sin"),
@@ -743,7 +759,7 @@ pub const FNS: [Fn; 132] = [
     doc: indoc! {"
       Returns the sine of the argument.
     "},
-    examples: &["std.sin(0) == 0", epsilon_eq!("sin", 0.47, 0.5)],
+    examples: Examples::new(&["std.sin(0) == 0", epsilon_eq!("sin", 0.47, 0.5)]),
   },
   Fn {
     name: S::new("cos"),
@@ -754,7 +770,7 @@ pub const FNS: [Fn; 132] = [
     doc: indoc! {"
       Returns the cosine of its argument.
     "},
-    examples: &["std.cos(0) == 1", epsilon_eq!("cos", 0.87, 0.5)],
+    examples: Examples::new(&["std.cos(0) == 1", epsilon_eq!("cos", 0.87, 0.5)]),
   },
   Fn {
     name: S::new("tan"),
@@ -765,7 +781,7 @@ pub const FNS: [Fn; 132] = [
     doc: indoc! {"
       Returns the tangent of its argument.
     "},
-    examples: &["std.tan(0) == 0", epsilon_eq!("tan", 0.54, 0.5)],
+    examples: Examples::new(&["std.tan(0) == 0", epsilon_eq!("tan", 0.54, 0.5)]),
   },
   Fn {
     name: S::new("asin"),
@@ -776,7 +792,7 @@ pub const FNS: [Fn; 132] = [
     doc: indoc! {"
       Returns the arcsine of its argument.
     "},
-    examples: &["std.asin(0) == 0", epsilon_eq!("asin", 0.52, 0.5)],
+    examples: Examples::new(&["std.asin(0) == 0", epsilon_eq!("asin", 0.52, 0.5)]),
   },
   Fn {
     name: S::new("acos"),
@@ -788,7 +804,7 @@ pub const FNS: [Fn; 132] = [
       Returns the arccosine of its argument.
       ```
     "},
-    examples: &[epsilon_eq!("acos", 1.57, 0), epsilon_eq!("acos", 1.04, 0.5)],
+    examples: Examples::new(&[epsilon_eq!("acos", 1.57, 0), epsilon_eq!("acos", 1.04, 0.5)]),
   },
   Fn {
     name: S::new("atan"),
@@ -799,7 +815,7 @@ pub const FNS: [Fn; 132] = [
     doc: indoc! {"
       Returns the arctangent of its argument.
     "},
-    examples: &["std.atan(0) == 0", epsilon_eq!("atan", 0.46, 0.5)],
+    examples: Examples::new(&["std.atan(0) == 0", epsilon_eq!("atan", 0.46, 0.5)]),
   },
   Fn {
     name: S::new("atan2"),
@@ -810,13 +826,13 @@ pub const FNS: [Fn; 132] = [
     doc: indoc! {"
       Returns the argument (also called phase or angle) of the complex number $x + iy$.
     "},
-    examples: &[
+    examples: Examples::new(&[
       epsilon_eq!("atan2", 0, 0, 1),
       epsilon_eq!("atan2", "std.pi / 4", 1, 1),
       epsilon_eq!("atan2", "-std.pi / 4", "-1", 1),
       epsilon_eq!("atan2", "std.pi", 0, "-1"),
       epsilon_eq!("atan2", 2.83, 1.2, "-3.8"),
-    ],
+    ]),
   },
   Fn {
     name: S::new("hypot"),
@@ -827,12 +843,12 @@ pub const FNS: [Fn; 132] = [
     doc: indoc! {"
       Returns the square root of the sum of the squares of x and y.
     "},
-    examples: &[
+    examples: Examples::new(&[
       "std.hypot(3, 4) == 5",
       "std.hypot(5, 12) == 13",
       "std.hypot(8, 15) == 17",
       "std.hypot(7, 24) == 25",
-    ],
+    ]),
   },
   Fn {
     name: S::new("deg2rad"),
@@ -843,12 +859,12 @@ pub const FNS: [Fn; 132] = [
     doc: indoc! {"
       Converts the argument from degrees to radians.
     "},
-    examples: &[
+    examples: Examples::new(&[
       "std.deg2rad(0) == 0",
       epsilon_eq!("deg2rad", "std.pi / 4", 45),
       epsilon_eq!("deg2rad", "std.pi / 2", 90),
       epsilon_eq!("deg2rad", 3, 172),
-    ],
+    ]),
   },
   Fn {
     name: S::new("rad2deg"),
@@ -859,12 +875,12 @@ pub const FNS: [Fn; 132] = [
     doc: indoc! {"
       Converts the argument from radians to degrees.
     "},
-    examples: &[
+    examples: Examples::new(&[
       "std.rad2deg(0) == 0",
       epsilon_eq!("rad2deg", 45, "std.pi / 4",),
       epsilon_eq!("rad2deg", 90, "std.pi / 2",),
       epsilon_eq!("rad2deg", 172, 3,),
-    ],
+    ]),
   },
   Fn {
     name: S::new("round"),
@@ -875,7 +891,7 @@ pub const FNS: [Fn; 132] = [
     doc: indoc! {"
       Returns the argument rounded to the nearest integer.
     "},
-    examples: &[
+    examples: Examples::new(&[
       "std.round(1) == 1",
       "std.round(1.1) == 1",
       "std.round(1.5) == 2",
@@ -884,7 +900,7 @@ pub const FNS: [Fn; 132] = [
       "std.round(-1.1) == -1",
       "std.round(-1.5) == -2",
       "std.round(-1.9) == -2",
-    ],
+    ]),
   },
   Fn {
     name: S::new("isEven"),
@@ -897,7 +913,7 @@ pub const FNS: [Fn; 132] = [
 
       Raises if the argument is not a number.
     "},
-    examples: &[
+    examples: Examples::new(&[
       "std.isEven(2)",
       "std.isEven(0)",
       "std.isEven(-2)",
@@ -906,7 +922,7 @@ pub const FNS: [Fn; 132] = [
       "!std.isEven(-5)",
       "!std.isEven(4.4)",
       "!std.isEven(5.5)",
-    ],
+    ]),
   },
   Fn {
     name: S::new("isOdd"),
@@ -919,7 +935,7 @@ pub const FNS: [Fn; 132] = [
 
       Raises if the argument is not a number.
     "},
-    examples: &[
+    examples: Examples::new(&[
       "std.isOdd(1)",
       "std.isOdd(9)",
       "std.isOdd(-5)",
@@ -928,7 +944,7 @@ pub const FNS: [Fn; 132] = [
       "!std.isOdd(-2)",
       "!std.isOdd(4.4)",
       "!std.isOdd(5.5)",
-    ],
+    ]),
   },
   Fn {
     name: S::new("isInteger"),
@@ -941,14 +957,14 @@ pub const FNS: [Fn; 132] = [
 
       Raises if the argument is not a number.
     "},
-    examples: &[
+    examples: Examples::new(&[
       "std.isInteger(1)",
       "std.isInteger(0)",
       "std.isInteger(-5)",
       "!std.isInteger(0.1)",
       "!std.isInteger(4.4)",
       "!std.isInteger(2.0001)",
-    ],
+    ]),
   },
   Fn {
     name: S::new("isDecimal"),
@@ -962,14 +978,14 @@ pub const FNS: [Fn; 132] = [
 
       Raises if the argument is not a number.
     "},
-    examples: &[
+    examples: Examples::new(&[
       "std.isDecimal(0.1)",
       "std.isDecimal(4.4)",
       "std.isDecimal(2.0001)",
       "!std.isDecimal(1)",
       "!std.isDecimal(0)",
       "!std.isDecimal(-5)",
-    ],
+    ]),
   },
   Fn {
     name: S::named("mod", "mod_"),
@@ -982,7 +998,7 @@ pub const FNS: [Fn; 132] = [
       hand side is a number, or if the left hand side is a string, it does Python-style string
       formatting with `std.format`.
     "},
-    examples: &[],
+    examples: Examples::EMPTY_ALLOWED,
   },
   Fn {
     name: S::new("clamp"),
@@ -995,7 +1011,11 @@ pub const FNS: [Fn; 132] = [
 
       Equivalent to `std.max(minVal, std.min(x, maxVal))`.
     "},
-    examples: &["std.clamp(-3, 0, 5) == 0", "std.clamp(4, 0, 5) == 4", "std.clamp(7, 0, 5) == 5"],
+    examples: Examples::new(&[
+      "std.clamp(-3, 0, 5) == 0",
+      "std.clamp(4, 0, 5) == 4",
+      "std.clamp(7, 0, 5) == 5",
+    ]),
   },
   Fn {
     name: S::new("assertEqual"),
@@ -1008,7 +1028,7 @@ pub const FNS: [Fn; 132] = [
 
       Returns `true` if so, else throws an error message.
     "},
-    examples: &["std.assertEqual(2 + 2, 4)", "std.assertEqual(12 - 34, -22)"],
+    examples: Examples::new(&["std.assertEqual(2 + 2, 4)", "std.assertEqual(12 - 34, -22))"]),
   },
   Fn {
     name: S::new("toString"),
@@ -1019,13 +1039,13 @@ pub const FNS: [Fn; 132] = [
     doc: indoc! {"
       Converts the given argument to a string.
     "},
-    examples: &[
+    examples: Examples::new(&[
       r#" std.toString("a") == "a" "#,
       r#" std.toString(123) == "123" "#,
       r#" std.toString(null) == "null" "#,
       r#" std.toString([2, 5]) == "[2, 5]" "#,
       r#" std.toString({a: 1}) == "{\"a\": 1}" "#,
-    ],
+    ]),
   },
   Fn {
     name: S::new("codepoint"),
@@ -1039,11 +1059,11 @@ pub const FNS: [Fn; 132] = [
 
       This function is the inverse of `std.char`.
     "},
-    examples: &[
+    examples: Examples::new(&[
       r#" std.codepoint("A") == 65 "#,
       r#" std.codepoint("a") == 97 "#,
       r#" std.codepoint("あ") == 12354 "#,
-    ],
+    ]),
   },
   Fn {
     name: S::new("char"),
@@ -1056,11 +1076,11 @@ pub const FNS: [Fn; 132] = [
 
       This function is the inverse of `std.codepoint`.
     "},
-    examples: &[
+    examples: Examples::new(&[
       r#" std.char(65) == "A" "#,
       r#" std.char(97) == "a" "#,
       r#" std.char(12354) == "あ" "#,
-    ],
+    ]),
   },
   Fn {
     name: S::new("substr"),
@@ -1075,11 +1095,11 @@ pub const FNS: [Fn; 132] = [
       If the string `str` is shorter than `from + len`, returns the suffix starting at position
       `from`.
     "},
-    examples: &[
+    examples: Examples::new(&[
       r#" std.substr("think", 1, 2) == "hi" "#,
       r#" std.substr("develop", 4, 3) == "lop" "#,
       r#" std.substr("hello world", 6, 99) == "world" "#,
-    ],
+    ]),
   },
   Fn {
     name: S::new("findSubstr"),
@@ -1090,11 +1110,11 @@ pub const FNS: [Fn; 132] = [
     doc: indoc! {"
       Returns an array that contains the indexes of all occurrences of `pat` in `str`.
     "},
-    examples: &[
+    examples: Examples::new(&[
       r#" std.findSubstr("e", "envelope") == [0, 3, 7] "#,
       r#" std.findSubstr("hi", "hi Chidi") == [0, 4] "#,
       r#" std.findSubstr("fork", "shirt") == [] "#,
-    ],
+    ]),
   },
   Fn {
     name: S::new("startsWith"),
@@ -1105,10 +1125,10 @@ pub const FNS: [Fn; 132] = [
     doc: indoc! {r#"
       Returns whether the string `a` is prefixed by the string `b`.
     "#},
-    examples: &[
+    examples: Examples::new(&[
       r#" std.startsWith("hi Chidi", "hi") "#,
       r#" !std.startsWith("hi Chidi", "fork") "#,
-    ],
+    ]),
   },
   Fn {
     name: S::new("endsWith"),
@@ -1119,7 +1139,10 @@ pub const FNS: [Fn; 132] = [
     doc: indoc! {r#"
       Returns whether the string `a` is suffixed by the string `b`.
     "#},
-    examples: &[r#" std.endsWith("thank you", "you") "#, r#" !std.endsWith("thank you", "no") "#],
+    examples: Examples::new(&[
+      r#" std.endsWith("thank you", "you") "#,
+      r#" !std.endsWith("thank you", "no") "#,
+    ]),
   },
   Fn {
     name: S::new("stripChars"),
@@ -1131,11 +1154,11 @@ pub const FNS: [Fn; 132] = [
       Removes characters from the string `chars`, treated as a set of characters, from the beginning
       and end of `str`.
     "#},
-    examples: &[
+    examples: Examples::new(&[
       r#" std.stripChars(" test test test ", " ") == "test test test" "#,
       r#" std.stripChars("aaabbbbcccc", "ac") == "bbbb" "#,
       r#" std.stripChars("cacabbbbaacc", "ac") == "bbbb" "#,
-    ],
+    ]),
   },
   Fn {
     name: S::new("lstripChars"),
@@ -1147,11 +1170,11 @@ pub const FNS: [Fn; 132] = [
       Removes characters from the string `chars`, treated as a set of characters, from the beginning
       of `str`.
     "#},
-    examples: &[
+    examples: Examples::new(&[
       r#" std.lstripChars(" test test test ", " ") == "test test test " "#,
       r#" std.lstripChars("aaabbbbcccc", "ac") == "bbbbcccc" "#,
       r#" std.lstripChars("cacabbbbaacc", "ac") == "bbbbaacc" "#,
-    ],
+    ]),
   },
   Fn {
     name: S::new("rstripChars"),
@@ -1163,11 +1186,11 @@ pub const FNS: [Fn; 132] = [
       Removes characters from the string `chars`, treated as a set of characters, from the end
       of `str`.
     "#},
-    examples: &[
+    examples: Examples::new(&[
       r#" std.rstripChars(" test test test ", " ") == " test test test" "#,
       r#" std.rstripChars("aaabbbbcccc", "ac") == "aaabbbb" "#,
       r#" std.rstripChars("cacabbbbaacc", "ac") == "cacabbbb" "#,
-    ],
+    ]),
   },
   Fn {
     name: S::new("split"),
@@ -1180,10 +1203,10 @@ pub const FNS: [Fn; 132] = [
 
       Note: Versions up to and including 0.18.0 require `c` to be a single character.
     "#},
-    examples: &[
+    examples: Examples::new(&[
       r#" std.split("foo/bar", "/") == ["foo", "bar"] "#,
       r#" std.split("/foo/bar", "/") == ["", "foo", "bar"] "#,
-    ],
+    ]),
   },
   Fn {
     name: S::new("splitLimit"),
@@ -1198,10 +1221,10 @@ pub const FNS: [Fn; 132] = [
 
       Note: Versions up to and including 0.18.0 require `c` to be a single character.
     "#},
-    examples: &[
+    examples: Examples::new(&[
       r#" std.splitLimit("foo/bar", "/", 1) == ["foo", "bar"] "#,
       r#" std.splitLimit("/foo/bar", "/", 1) == ["", "foo/bar"] "#,
-    ],
+    ]),
   },
   Fn {
     name: S::new("splitLimitR"),
@@ -1212,10 +1235,10 @@ pub const FNS: [Fn; 132] = [
     doc: indoc! {r#"
       Identical to `std.splitLimit(str, c, maxsplits)`, but will split from right to left.
     "#},
-    examples: &[
+    examples: Examples::new(&[
       r#" std.splitLimitR("/foo/bar", "/", 1) == ["/foo", "bar"] "#,
       r#" std.splitLimitR("/foo/bar", "/", 2) == ["", "foo", "bar"] "#,
-    ],
+    ]),
   },
   Fn {
     name: S::new("strReplace"),
@@ -1226,14 +1249,14 @@ pub const FNS: [Fn; 132] = [
     doc: indoc! {r#"
       Replaces all occurrences of string `from` with string `to` in `str`.
     "#},
-    examples: &[
+    examples: Examples::new(&[
       r#"  std.strReplace("pet the dog", "dog", "cat") == "pet the cat" "#,
       r#"  std.strReplace("pet the dog", "fish", "unicorn") == "pet the dog" "#,
       indoc! {r#"
         std.strReplace("I like to skate with my skateboard", "skate", "surf")
           == "I like to surf with my surfboard"
       "#},
-    ],
+    ]),
   },
   Fn {
     name: S::new("isEmpty"),
@@ -1244,11 +1267,11 @@ pub const FNS: [Fn; 132] = [
     doc: indoc! {r#"
       Returns whether the given string has zero length.
     "#},
-    examples: &[
+    examples: Examples::new(&[
       r#" std.isEmpty("") "#,
       r#" !std.isEmpty("hi") "#,
       r#" !std.isEmpty("hello world") "#,
-    ],
+    ]),
   },
   Fn {
     name: S::new("asciiUpper"),
@@ -1262,10 +1285,10 @@ pub const FNS: [Fn; 132] = [
       Non-ASCII letters, even those which may have a notion of upper or lower case, will not be
       changed.
     "#},
-    examples: &[
+    examples: Examples::new(&[
       r#" std.asciiUpper("100 Cats!") == "100 CATS!" "#,
       r#" std.asciiUpper("César") == "CéSAR" "#,
-    ],
+    ]),
   },
   Fn {
     name: S::new("asciiLower"),
@@ -1279,10 +1302,10 @@ pub const FNS: [Fn; 132] = [
       Non-ASCII letters, even those which may have a notion of upper or lower case, will not be
       changed.
     "#},
-    examples: &[
+    examples: Examples::new(&[
       r#" std.asciiLower("100 Cats!") == "100 cats!" "#,
       r#" std.asciiLower("CÉSAR") == "cÉsar" "#,
-    ],
+    ]),
   },
   Fn {
     name: S::new("stringChars"),
@@ -1293,11 +1316,11 @@ pub const FNS: [Fn; 132] = [
     doc: indoc! {r#"
       Split the string into an array of strings, each containing a single codepoint.
     "#},
-    examples: &[
+    examples: Examples::new(&[
       r#" std.stringChars("foo") == ["f", "o", "o"] "#,
       r#" std.stringChars("はい") == ["は", "い"]"#,
       r#" std.stringChars("") == []"#,
-    ],
+    ]),
   },
   Fn {
     name: S::new("format"),
@@ -1315,7 +1338,7 @@ pub const FNS: [Fn; 132] = [
 
       The `%` operator can be used as a shorthand for this function.
     "#},
-    examples: &[
+    examples: Examples::new(&[
       r#" std.format("Hello %03d", 12) == "Hello 012" "#,
       r#" "Hello %03d" % 12 == "Hello 012" "#,
       r#" "Hello %s, age %d" % ["Foo", 25] == "Hello Foo, age 25" "#,
@@ -1323,7 +1346,7 @@ pub const FNS: [Fn; 132] = [
       "Hello %(name)s, age %(age)d" % {age: 25, name: "Foo"}
         == "Hello Foo, age 25"
       "#},
-    ],
+    ]),
   },
   Fn {
     name: S::new("escapeStringBash"),
@@ -1337,10 +1360,10 @@ pub const FNS: [Fn; 132] = [
 
       This allows injection of arbitrary strings as arguments of commands in bash scripts.
     "#},
-    examples: &[
+    examples: Examples::new(&[
       r#" std.escapeStringBash("echo 'hi'") == "'echo '\"'\"'hi'\"'\"''" "#,
       r#" std.escapeStringBash("ls -l") == "'ls -l'" "#,
-    ],
+    ]),
   },
   Fn {
     name: S::new("escapeStringDollars"),
@@ -1354,10 +1377,10 @@ pub const FNS: [Fn; 132] = [
       This allows injection of arbitrary strings into systems that use `$` for string
       interpolation, like Terraform.
     "},
-    examples: &[
+    examples: Examples::new(&[
       r#" std.escapeStringDollars("1 + $x") == "1 + $$x" "#,
       r#" std.escapeStringDollars("hi there") == "hi there" "#,
-    ],
+    ]),
   },
   Fn {
     name: S::new("escapeStringJson"),
@@ -1370,13 +1393,13 @@ pub const FNS: [Fn; 132] = [
 
       This adds quotes, escapes backslashes, and escapes unprintable characters.
     "#},
-    examples: &[
+    examples: Examples::new(&[
       indoc! {r#"
         "{name: %s}" % std.escapeStringJson("Multiline\nc:\\path")
           == "{name: \"Multiline\\nc:\\\\path\"}"
       "#},
       r#" std.escapeStringJson("hi") == '"hi"' "#,
-    ],
+    ]),
   },
   Fn {
     name: S::new("escapeStringPython"),
@@ -1389,13 +1412,13 @@ pub const FNS: [Fn; 132] = [
 
       This is an alias for `escapeStringJson`.
     "},
-    examples: &[
+    examples: Examples::new(&[
       indoc! {r#"
         "{name: %s}" % std.escapeStringPython("Multiline\nc:\\path")
           == "{name: \"Multiline\\nc:\\\\path\"}"
       "#},
       r#" std.escapeStringPython("hi") == '"hi"' "#,
-    ],
+    ]),
   },
   Fn {
     name: S::new("escapeStringXml"),
@@ -1415,10 +1438,10 @@ pub const FNS: [Fn; 132] = [
       | `"`     | `&quot;` |
       | `'`     | `&apos;` |
     "#},
-    examples: &[
+    examples: Examples::new(&[
       r#" std.escapeStringXml("2 > 1") == "2 &gt; 1" "#,
       r#" std.escapeStringXml("that's great") == "that&apos;s great" "#,
-    ],
+    ]),
   },
   Fn {
     name: S::new("parseInt"),
@@ -1429,7 +1452,10 @@ pub const FNS: [Fn; 132] = [
     doc: indoc! {r#"
       Parses a signed decimal integer from the input string.
     "#},
-    examples: &[r#" std.parseInt("123") == 123 "#, r#" std.parseInt("-123") == -123 "#],
+    examples: Examples::new(&[
+      r#" std.parseInt("123") == 123 "#,
+      r#" std.parseInt("-123") == -123 "#,
+    ]),
   },
   Fn {
     name: S::new("parseOctal"),
@@ -1440,7 +1466,10 @@ pub const FNS: [Fn; 132] = [
     doc: indoc! {r#"
       Parses an unsigned octal integer from the input string. Initial zeroes are tolerated.
     "#},
-    examples: &[r#" std.parseOctal("755") == 493 "#, r#" std.parseOctal("0755") == 493 "#],
+    examples: Examples::new(&[
+      r#" std.parseOctal("755") == 493 "#,
+      r#" std.parseOctal("0755") == 493 "#,
+    ]),
   },
   Fn {
     name: S::new("parseHex"),
@@ -1451,7 +1480,10 @@ pub const FNS: [Fn; 132] = [
     doc: indoc! {r#"
       Parses an unsigned hexadecimal integer, from the input string. Case insensitive.
     "#},
-    examples: &[r#" std.parseHex("ff") == 255 "#, r#" std.parseHex("BADc0de") == 195936478 "#],
+    examples: Examples::new(&[
+      r#" std.parseHex("ff") == 255 "#,
+      r#" std.parseHex("BADc0de") == 195936478 "#,
+    ]),
   },
   Fn {
     name: S::new("parseJson"),
@@ -1462,11 +1494,11 @@ pub const FNS: [Fn; 132] = [
     doc: indoc! {r#"
       Parses a JSON string.
     "#},
-    examples: &[
+    examples: Examples::new(&[
       r#" std.parseJson("null") == null "#,
       r#" std.parseJson("[2, false]") == [2, false] "#,
       r#" std.parseJson('{"foo": "bar"}') == { "foo": "bar" } "#,
-    ],
+    ]),
   },
   Fn {
     name: S::new("parseYaml"),
@@ -1480,16 +1512,16 @@ pub const FNS: [Fn; 132] = [
       This is provided as a "best-effort" mechanism and should not be relied on to provide a fully
       standards compliant YAML parser.
 
-      YAML is a superset of JSON, consequently "downcasting" or manifestation of YAML into JSON or
+      YAML is a superset of JSON, consequently "down-casting" or manifestation of YAML into JSON or
       Jsonnet values will only succeed when using the subset of YAML that is compatible with JSON.
 
       The parser does not support YAML documents with scalar values at the root. The root node of a
       YAML document must start with either a YAML sequence or map to be successfully parsed.
     "#},
-    examples: &[
+    examples: Examples::new(&[
       r#" std.parseYaml("foo: bar") == { "foo": "bar" } "#,
       r#" std.parseYaml([1, 2]) == [1, 2] "#,
-    ],
+    ]),
   },
   Fn {
     name: S::new("encodeUTF8"),
@@ -1500,10 +1532,10 @@ pub const FNS: [Fn; 132] = [
     doc: indoc! {"
       Encode a string using UTF8. Returns an array of numbers representing bytes.
     "},
-    examples: &[
+    examples: Examples::new(&[
       r#" std.encodeUTF8("hey") == [104, 101, 121] "#,
       r#" std.encodeUTF8("あ") == [227, 129, 130] "#,
-    ],
+    ]),
   },
   Fn {
     name: S::new("decodeUTF8"),
@@ -1514,10 +1546,10 @@ pub const FNS: [Fn; 132] = [
     doc: indoc! {"
       Decode an array of numbers representing bytes using UTF8. Returns a string.
     "},
-    examples: &[
+    examples: Examples::new(&[
       r#" std.decodeUTF8([104, 101, 121]) == "hey" "#,
       r#" std.decodeUTF8([227, 129, 130]) == "あ" "#,
-    ],
+    ]),
   },
   Fn {
     name: S::new("manifestIni"),
@@ -1560,7 +1592,7 @@ pub const FNS: [Fn; 132] = [
       q =
       ```
     "#},
-    examples: &[],
+    examples: Examples::EMPTY_ALLOWED,
   },
   Fn {
     name: S::new("manifestPython"),
@@ -1601,7 +1633,7 @@ pub const FNS: [Fn; 132] = [
       }
       ```
     "#},
-    examples: &[],
+    examples: Examples::EMPTY_ALLOWED,
   },
   Fn {
     name: S::new("manifestPythonVars"),
@@ -1635,7 +1667,7 @@ pub const FNS: [Fn; 132] = [
       e = {"f1": False, "f2": 42}
       ```
     "#},
-    examples: &[],
+    examples: Examples::EMPTY_ALLOWED,
   },
   Fn {
     name: S::new("manifestJsonEx"),
@@ -1661,7 +1693,7 @@ pub const FNS: [Fn; 132] = [
 
       `key_val_sep` is used to separate the key and value of an object field.
     "#},
-    examples: &[],
+    examples: Examples::EMPTY_TODO,
   },
   Fn {
     name: S::new("manifestJson"),
@@ -1674,7 +1706,7 @@ pub const FNS: [Fn; 132] = [
 
       Under the covers, it calls `std.manifestJsonEx` with a 4-space indent.
     "},
-    examples: &[],
+    examples: Examples::EMPTY_TODO,
   },
   Fn {
     name: S::new("manifestJsonMinified"),
@@ -1687,7 +1719,7 @@ pub const FNS: [Fn; 132] = [
 
       Under the covers, it calls `std.manifestJsonEx`.
     "},
-    examples: &[],
+    examples: Examples::EMPTY_TODO,
   },
   Fn {
     name: S::new("manifestYamlDoc"),
@@ -1747,7 +1779,7 @@ pub const FNS: [Fn; 132] = [
           - 2
       ```
     "#},
-    examples: &[],
+    examples: Examples::EMPTY_ALLOWED,
   },
   Fn {
     name: S::new("manifestYamlStream"),
@@ -1799,7 +1831,7 @@ pub const FNS: [Fn; 132] = [
       []
       ```
     "#},
-    examples: &[],
+    examples: Examples::EMPTY_ALLOWED,
   },
   Fn {
     name: S::new("manifestXmlJsonml"),
@@ -1861,7 +1893,7 @@ pub const FNS: [Fn; 132] = [
       ])
       ```
     "#},
-    examples: &[],
+    examples: Examples::EMPTY_ALLOWED,
   },
   Fn {
     name: S::new("manifestTomlEx"),
@@ -1875,7 +1907,7 @@ pub const FNS: [Fn; 132] = [
       `indent` is a string containing one or more whitespace characters that are used for
       indentation.
     "},
-    examples: &[],
+    examples: Examples::EMPTY_TODO,
   },
   Fn {
     name: S::new("makeArray"),
@@ -1889,10 +1921,10 @@ pub const FNS: [Fn; 132] = [
       `func` is a function that takes a single parameter, the index of the element it should
       initialize.
     "},
-    examples: &[
+    examples: Examples::new(&[
       r#" std.makeArray(3, function(x) x * x) == [0, 1, 4] "#,
       r#" std.makeArray(0, function(x) error "called on %d" % x) == [] "#,
-    ],
+    ]),
   },
   Fn {
     name: S::new("member"),
@@ -1905,12 +1937,12 @@ pub const FNS: [Fn; 132] = [
 
       Argument `arr` may be an array or a string.
     "},
-    examples: &[
+    examples: Examples::new(&[
       r#" std.member([1, 2], 2) "#,
       r#" !std.member([1, 2], 3) "#,
       r#" std.member("hello", "l") "#,
       r#" !std.member("hello", "z") "#,
-    ],
+    ]),
   },
   Fn {
     name: S::new("count"),
@@ -1921,11 +1953,11 @@ pub const FNS: [Fn; 132] = [
     doc: indoc! {"
       `std.count(arr, x)` returns the number of times that `x` occurs in `arr`.
     "},
-    examples: &[
+    examples: Examples::new(&[
       r#" std.count([1, 2], 2) == 1 "#,
       r#" std.count([1, 2], 3) == 0 "#,
       r#" std.count([3, 1, 3, 0], 3) == 2 "#,
-    ],
+    ]),
   },
   Fn {
     name: S::new("find"),
@@ -1936,11 +1968,11 @@ pub const FNS: [Fn; 132] = [
     doc: indoc! {"
       Returns an array that contains the indexes of all occurrences of `value` in `arr`.
     "},
-    examples: &[
+    examples: Examples::new(&[
       r#" std.find(2, [1, 2]) == [0] "#,
       r#" std.find(3, [1, 2]) == [] "#,
       r#" std.find(3, [3, 1, 3, 0]) == [0, 2] "#,
-    ],
+    ]),
   },
   Fn {
     name: S::new("map"),
@@ -1951,10 +1983,10 @@ pub const FNS: [Fn; 132] = [
     doc: indoc! {"
       Applies the given `func` to every element of `arr` to form a new array.
     "},
-    examples: &[
+    examples: Examples::new(&[
       r#" std.map(function(x) x + 1, [2, 4]) == [3, 5] "#,
       r#" std.map(function(x) error "oh no", []) == [] "#,
-    ],
+    ]),
   },
   Fn {
     name: S::new("mapWithIndex"),
@@ -1968,10 +2000,10 @@ pub const FNS: [Fn; 132] = [
       The function is expected to take the index as the first parameter and the element as the
       second.
     "},
-    examples: &[
+    examples: Examples::new(&[
       r#" std.mapWithIndex(function(i, x) x + i, [2, 4]) == [2, 5] "#,
       r#" std.mapWithIndex(function(i, x) error "oh no", []) == [] "#,
-    ],
+    ]),
   },
   Fn {
     name: S::new("filterMap"),
@@ -1985,7 +2017,7 @@ pub const FNS: [Fn; 132] = [
     doc: indoc! {"
       First filters with `filter_func`, then maps with `map_func`, the given array `arr`.
     "},
-    examples: &[
+    examples: Examples::new(&[
       indoc! {"
         std.filterMap(
           function(x) x > 3,
@@ -2003,7 +2035,7 @@ pub const FNS: [Fn; 132] = [
           [1, 6, 2, 5],
         ) == []
       "#},
-    ],
+    ]),
   },
   Fn {
     name: S::new("flatMap"),
@@ -2021,7 +2053,7 @@ pub const FNS: [Fn; 132] = [
 
       Can be thought of as a generalized `map`, with each element mapped to 0, 1 or more elements.
     "#},
-    examples: &[
+    examples: Examples::new(&[
       indoc! {"
         std.flatMap(function(x) [x, x], [1, 2, 3])
           == [1, 1, 2, 2, 3, 3]
@@ -2035,10 +2067,10 @@ pub const FNS: [Fn; 132] = [
           == [3, 2, 9, 6]
       "},
       indoc! {r#"
-        std.flatMap(function(x) x + x, "foo")
-          == "ffoooo"
+        std.flatMap(function(x) x + x, "a&b")
+          == "aa&&bb"
       "#},
-    ],
+    ]),
   },
   Fn {
     name: S::new("filter"),
@@ -2050,10 +2082,10 @@ pub const FNS: [Fn; 132] = [
       Returns a new array containing all the elements of `arr` for which the `func` function returns
       `true`.
     "},
-    examples: &[
+    examples: Examples::new(&[
       " std.filter(function(x) x > 3, [1, 6, 2, 8, 3, 8]) == [6, 8, 8] ",
       " std.filter(function(x) false, [1, 6, 2, 8, 3, 8]) == [] ",
-    ],
+    ]),
   },
   Fn {
     name: S::new("foldl"),
@@ -2067,13 +2099,13 @@ pub const FNS: [Fn; 132] = [
 
       Traverses `arr` from left to right.
     "#},
-    examples: &[
+    examples: Examples::new(&[
       indoc! {r#"
         std.foldl(function(ac, x) "(%s %s)" % [ac, x], ["a", "b", "c"], "_")
           == "(((_ a) b) c)"
       "#},
       r" std.foldl(function(ac, x) ac + x, [1, 2, 3], 0) == 6 ",
-    ],
+    ]),
   },
   Fn {
     name: S::new("foldr"),
@@ -2087,13 +2119,13 @@ pub const FNS: [Fn; 132] = [
 
       Traverses `arr` from right to left.
     "#},
-    examples: &[
+    examples: Examples::new(&[
       indoc! {r#"
         std.foldr(function(ac, x) "(%s %s)" % [ac, x], ["a", "b", "c"], "_")
           == "(((_ c) b) a)"
       "#},
       r" std.foldr(function(ac, x) ac + x, [1, 2, 3], 0) == 6 ",
-    ],
+    ]),
   },
   Fn {
     name: S::new("range"),
@@ -2106,11 +2138,11 @@ pub const FNS: [Fn; 132] = [
 
       Raises if `from` or `to` are not integers.
     "},
-    examples: &[
+    examples: Examples::new(&[
       r#" std.range(2, 6) == [2, 3, 4, 5, 6] "#,
       r#" std.range(-1, 3) == [-1, 0, 1, 2, 3] "#,
       r#" std.range(0, 0) == [0] "#,
-    ],
+    ]),
   },
   Fn {
     name: S::new("repeat"),
@@ -2121,10 +2153,10 @@ pub const FNS: [Fn; 132] = [
     doc: indoc! {r#"
       Repeats an array or a string `what` a number of times specified by an integer `count`.
     "#},
-    examples: &[
+    examples: Examples::new(&[
       r#" std.repeat([1, 2], 3) == [1, 2, 1, 2, 1, 2] "#,
       r#" std.repeat("boo", 2) == "booboo" "#,
-    ],
+    ]),
   },
   Fn {
     name: S::new("slice"),
@@ -2147,12 +2179,12 @@ pub const FNS: [Fn; 132] = [
       Note that it's recommended to use dedicated slicing syntax both for arrays and strings,
       e.g. `arr[0:4:1]` instead of `std.slice(arr, 0, 4, 1)`.
     "#},
-    examples: &[
+    examples: Examples::new(&[
       r#" std.slice([1, 2, 3, 4, 5, 6], 0, 4, 1) == [1, 2, 3, 4] "#,
       r#" std.slice([1, 2, 3, 4, 5, 6], 1, 6, 2) == [2, 4, 6] "#,
       r#" std.slice("jsonnet", 0, 4, 1) == "json" "#,
       r#" std.slice("jsonnet", -3, null, null) == "net" "#,
-    ],
+    ]),
   },
   Fn {
     name: S::new("join"),
@@ -2169,10 +2201,10 @@ pub const FNS: [Fn; 132] = [
       If `sep` is an array, then `arr` must be an array of arrays, in which case the arrays are
       concatenated in the same way, to produce a single array.
     "#},
-    examples: &[
+    examples: Examples::new(&[
       r#" std.join(".", ["www", "google", "com"]) == "www.google.com" "#,
       r#" std.join([9, 9], [[1], [2, 3]]) == [ 1, 9, 9, 2, 3 ] "#,
-    ],
+    ]),
   },
   Fn {
     name: S::new("lines"),
@@ -2185,7 +2217,7 @@ pub const FNS: [Fn; 132] = [
 
       This is suitable for constructing bash scripts and the like.
     "},
-    examples: &[
+    examples: Examples::new(&[
       indoc! {r#"
         std.lines([
           "cd /tmp",
@@ -2194,7 +2226,7 @@ pub const FNS: [Fn; 132] = [
         ]) == "cd /tmp\nls -l\nmkdir -p foo\n"
       "#},
       r#" std.lines([]) == "" "#,
-    ],
+    ]),
   },
   Fn {
     name: S::new("flattenArrays"),
@@ -2207,14 +2239,14 @@ pub const FNS: [Fn; 132] = [
 
       Does not recursively flatten deeply nested arrays.
     "},
-    examples: &[
+    examples: Examples::new(&[
       indoc! {"
         std.flattenArrays([[1, 2], [3], [[4], [5, 6]]])
           == [1, 2, 3, [4], [5, 6]]
       "},
       "std.flattenArrays([]) == []",
       "std.flattenArrays([[]]) == []",
-    ],
+    ]),
   },
   Fn {
     name: S::new("reverse"),
@@ -2225,11 +2257,11 @@ pub const FNS: [Fn; 132] = [
     doc: indoc! {"
       Returns the argument array reversed.
     "},
-    examples: &[
+    examples: Examples::new(&[
       "std.reverse([2, 4, 6]) == [6, 4, 2]",
       "std.reverse([8]) == [8]",
       "std.reverse([]) == []",
-    ],
+    ]),
   },
   Fn {
     name: S::new("sort"),
@@ -2259,7 +2291,7 @@ pub const FNS: [Fn; 132] = [
       ];
       ```
     "#},
-    examples: &[],
+    examples: Examples::EMPTY_ALLOWED,
   },
   Fn {
     name: S::new("uniq"),
@@ -2275,7 +2307,10 @@ pub const FNS: [Fn; 132] = [
       The optional argument `keyF` is a single argument function used to extract comparison key from
       each array element.
     "},
-    examples: &["std.uniq([1, 1, 1]) == [1]", "std.uniq([1, 2, 2, 3, 2]) == [1, 2, 3, 2]"],
+    examples: Examples::new(&[
+      "std.uniq([1, 1, 1]) == [1]",
+      "std.uniq([1, 2, 2, 3, 2]) == [1, 2, 3, 2])",
+    ]),
   },
   Fn {
     name: S::new("all"),
@@ -2288,12 +2323,12 @@ pub const FNS: [Fn; 132] = [
 
       Raises if `arr` is not an array, or `arr` contains non-boolean values.
     "},
-    examples: &[
+    examples: Examples::new(&[
       "std.all([true, true])",
       "std.all([])",
       "!std.all([true, false])",
       "!std.all([true, true, true, false, true])",
-    ],
+    ]),
   },
   Fn {
     name: S::new("any"),
@@ -2306,12 +2341,12 @@ pub const FNS: [Fn; 132] = [
 
       Raises if `arr` is not an array, or `arr` contains non-boolean values.
     "},
-    examples: &[
+    examples: Examples::new(&[
       "std.any([true, false])",
       "std.any([false, false, false, true, false])",
       "!std.any([false, false])",
       "!std.any([])",
-    ],
+    ]),
   },
   Fn {
     name: S::new("sum"),
@@ -2322,7 +2357,7 @@ pub const FNS: [Fn; 132] = [
     doc: indoc! {"
       Returns the sum of all the elements.
     "},
-    examples: &["std.sum([]) == 0", "std.sum([1, 2, 3, 4]) == 10"],
+    examples: Examples::new(&["std.sum([]) == 0", "std.sum([1, 2, 3, 4]) == 10"]),
   },
   Fn {
     name: S::new("avg"),
@@ -2335,11 +2370,11 @@ pub const FNS: [Fn; 132] = [
 
       Raises if the input is empty.
     "},
-    examples: &[
+    examples: Examples::new(&[
       "std.avg([1, 3]) == 2",
       "std.avg([2, 4, 6, 5, 6, 7]) == 5",
       "std.avg([1, 2]) == 1.5",
-    ],
+    ]),
   },
   Fn {
     name: S::new("set"),
@@ -2355,7 +2390,7 @@ pub const FNS: [Fn; 132] = [
       The optional `keyF` function can be used to extract a key to use from each element. This key
       is used for the purpose of identifying uniqueness.
     "},
-    examples: &[r#" std.set([1, 6, 2, 6]) == [1, 2, 6] "#, r#" std.set([]) == [] "#],
+    examples: Examples::new(&[r#" std.set([1, 6, 2, 6]) == [1, 2, 6] "#, r#" std.set([]) == [] "#]),
   },
   Fn {
     name: S::new("setInter"),
@@ -2372,11 +2407,11 @@ pub const FNS: [Fn; 132] = [
       The optional `keyF` function can be used to extract a key to use from each element. This key
       is used for the purpose of identifying uniqueness.
     "},
-    examples: &[
+    examples: Examples::new(&[
       r#" std.setInter([1, 2], [2, 3]) == [2] "#,
       r#" std.setInter([1, 2], []) == []"#,
       r#" std.setInter([], [1, 2]) == []"#,
-    ],
+    ]),
   },
   Fn {
     name: S::new("setUnion"),
@@ -2396,7 +2431,7 @@ pub const FNS: [Fn; 132] = [
       The optional `keyF` function can be used to extract a key to use from each element. This key
       is used for the purpose of identifying uniqueness.
     "#},
-    examples: &[
+    examples: Examples::new(&[
       "std.setUnion([1, 2], [2, 3]) == [1, 2, 3]",
       indoc! {r#"
         std.setUnion(
@@ -2405,7 +2440,7 @@ pub const FNS: [Fn; 132] = [
           keyF=function(x) x.n
         ) == [{ "n": "A", "v": 1 }, { "n": "B" }, { "n": "C" }]
       "#},
-    ],
+    ]),
   },
   Fn {
     name: S::new("setDiff"),
@@ -2422,11 +2457,11 @@ pub const FNS: [Fn; 132] = [
       The optional `keyF` function can be used to extract a key to use from each element. This key
       is used for the purpose of identifying uniqueness.
     "},
-    examples: &[
+    examples: Examples::new(&[
       r#" std.setDiff([1, 2], [2, 3]) == [1] "#,
       r#" std.setDiff([1, 2], []) == [1, 2] "#,
       r#" std.setDiff([], [1, 2]) == [] "#,
-    ],
+    ]),
   },
   Fn {
     name: S::new("setMember"),
@@ -2443,7 +2478,7 @@ pub const FNS: [Fn; 132] = [
       The optional `keyF` function can be used to extract a key to use from each element. This key
       is used for the purpose of identifying uniqueness.
     "},
-    examples: &[r#" std.setMember(1, [1, 2]) "#, r#" !std.setMember(3, [1, 2]) "#],
+    examples: Examples::new(&[r#" std.setMember(1, [1, 2]) "#, r#" !std.setMember(3, [1, 2]) "#]),
   },
   Fn {
     name: S::new("base64"),
@@ -2462,10 +2497,10 @@ pub const FNS: [Fn; 132] = [
 
       The resulting string has no line breaks.
     "},
-    examples: &[
+    examples: Examples::new(&[
       r#" std.base64("hello world") == "aGVsbG8gd29ybGQ=" "#,
       r#" std.base64("") == "" "#,
-    ],
+    ]),
   },
   Fn {
     name: S::new("base64DecodeBytes"),
@@ -2479,10 +2514,10 @@ pub const FNS: [Fn; 132] = [
       Currently assumes the input string has no line breaks and is padded to a multiple of 4
       (with the `=` character). In other words, it consumes the output of `base64`.
     "},
-    examples: &[
+    examples: Examples::new(&[
       r#" std.decodeUTF8(std.base64DecodeBytes("aGVsbG8gd29ybGQ=")) == "hello world" "#,
       r#" std.base64DecodeBytes("") == [] "#,
-    ],
+    ]),
   },
   Fn {
     name: S::new("base64Decode"),
@@ -2497,7 +2532,7 @@ pub const FNS: [Fn; 132] = [
       Behaves like `std.base64DecodeBytes` except returns a naively encoded string instead of an
       array of bytes.
     "},
-    examples: &[],
+    examples: Examples::EMPTY_ALLOWED,
   },
   Fn {
     name: S::new("md5"),
@@ -2508,10 +2543,10 @@ pub const FNS: [Fn; 132] = [
     doc: indoc! {"
       Encodes the given value into an MD5 string.
     "},
-    examples: &[
+    examples: Examples::new(&[
       r#" std.md5("hello world") == "5eb63bbbe01eeed093cb22bb8f5acdc3" "#,
       r#" std.md5("") == "d41d8cd98f00b204e9800998ecf8427e" "#,
-    ],
+    ]),
   },
   Fn {
     name: S::new("xor"),
@@ -2522,12 +2557,12 @@ pub const FNS: [Fn; 132] = [
     doc: indoc! {"
       Returns the xor (exclusive or) of the two given booleans.
     "},
-    examples: &[
+    examples: Examples::new(&[
       "!std.xor(true, true)",
       "std.xor(true, false)",
       "std.xor(false, true)",
       "!std.xor(false, false)",
-    ],
+    ]),
   },
   Fn {
     name: S::new("xnor"),
@@ -2538,12 +2573,12 @@ pub const FNS: [Fn; 132] = [
     doc: indoc! {"
       Returns the xnor (exclusive nor) of the two given booleans.
     "},
-    examples: &[
+    examples: Examples::new(&[
       "std.xnor(true, true)",
       "!std.xnor(true, false)",
       "!std.xnor(false, true)",
       "std.xnor(false, false)",
-    ],
+    ]),
   },
   Fn {
     name: S::new("mergePatch"),
@@ -2555,7 +2590,7 @@ pub const FNS: [Fn; 132] = [
       Applies `patch` to `target` according to
       [RFC7396](https://tools.ietf.org/html/rfc7396).
     "},
-    examples: &[
+    examples: Examples::new(&[
       r#" std.mergePatch({ a: 1, b: 2 }, "hi") == "hi" "#,
       indoc! {"
         std.mergePatch(
@@ -2567,7 +2602,7 @@ pub const FNS: [Fn; 132] = [
           c: 4,
         }
       "},
-    ],
+    ]),
   },
   Fn {
     name: S::new("trace"),
@@ -2606,7 +2641,7 @@ pub const FNS: [Fn; 132] = [
       }
       ```
     "#},
-    examples: &[],
+    examples: Examples::EMPTY_ALLOWED,
   },
   // alluded to in the spec but not mentioned on the std lib page
   Fn {
@@ -2618,7 +2653,7 @@ pub const FNS: [Fn; 132] = [
     doc: indoc! {"
       Returns whether the two arguments equal each other.
     "},
-    examples: &["std.equals(1 + 1, 2)", "!std.equals(2 + 2, 5)"],
+    examples: Examples::new(&["std.equals(1 + 1, 2)", "!std.equals(2 + 2, 5)"]),
   },
   Fn {
     name: S::new("objectHasEx"),
@@ -2635,10 +2670,10 @@ pub const FNS: [Fn; 132] = [
       - `std.objectHasAll(obj, fname)` when `hidden` is `true`;
       - `std.objectHas(obj, fname)` when `hidden` is `false`.
     "},
-    examples: &[
+    examples: Examples::new(&[
       r#" std.objectHasEx({a:: 1}, "a", true) "#,
       r#" !std.objectHasEx({a:: 1}, "a", false) "#,
-    ],
+    ]),
   },
 ];
 

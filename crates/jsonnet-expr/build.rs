@@ -214,7 +214,7 @@ fn main() {
       let mut content = f.doc.to_owned();
       if !f.examples.is_empty() {
         content.push_str("\n\n```jsonnet\n");
-        for example in f.examples {
+        for example in f.examples.get() {
           writeln!(content, "assert {};", example.trim()).unwrap();
         }
         content.push_str("```\n");

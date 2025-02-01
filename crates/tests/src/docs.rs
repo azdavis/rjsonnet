@@ -30,7 +30,7 @@ fn std_lib() {
       continue;
     }
     markdown::check(f.doc);
-    for (idx, &example) in f.examples.iter().enumerate() {
+    for (idx, &example) in f.examples.get().iter().enumerate() {
       let path = format!("{}_{}.jsonnet", f.name.content(), idx);
       Input::default()
         .with_jsonnet(path.as_str(), JsonnetInput::manifest(example, "true"))
