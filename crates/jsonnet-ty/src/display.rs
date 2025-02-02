@@ -131,7 +131,7 @@ impl fmt::Display for TyDisplay<'_> {
       }
       Data::Object(obj) => {
         let [cur_level, new_level, rec_level] = increase_level(obj.known.len(), self.stuff.level);
-        let mut iter = obj.known.iter().map(|(key, ty)| FieldDisplay {
+        let mut iter = obj.known.iter().map(|(&key, ty)| FieldDisplay {
           key,
           ty: *ty,
           stuff: Stuff { level: rec_level, ..self.stuff },
@@ -248,7 +248,7 @@ impl fmt::Display for FnDisplay<'_> {
 
 #[derive(Clone, Copy)]
 struct FieldDisplay<'a> {
-  key: &'a jsonnet_expr::Str,
+  key: jsonnet_expr::Str,
   ty: Ty,
   stuff: Stuff<'a>,
 }

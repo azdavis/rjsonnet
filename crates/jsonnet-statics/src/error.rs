@@ -110,13 +110,13 @@ impl Unify {
   pub(crate) fn no_such_field(
     str_ar: &jsonnet_expr::StrArena,
     obj: &jsonnet_ty::Object,
-    no_such: &Str,
+    no_such: Str,
   ) -> Option<Self> {
     if obj.has_unknown {
       return None;
     }
-    let suggest = suggestion::approx(str_ar.get(no_such), obj.known.keys().map(|x| str_ar.get(x)));
-    Some(Self::NoSuchField(no_such.clone(), suggest))
+    let suggest = suggestion::approx(str_ar.get(no_such), obj.known.keys().map(|&x| str_ar.get(x)));
+    Some(Self::NoSuchField(no_such, suggest))
   }
 }
 
@@ -166,7 +166,7 @@ impl fmt::Display for Display<'_> {
         }
         Ok(())
       }
-      Kind::DuplicateField(s) => write!(f, "duplicate field: `{}`", self.str_ar.get(s)),
+      Kind::DuplicateField(s) => write!(f, "duplicate field: `{}`", self.str_ar.get(*s)),
       Kind::DuplicateNamedArg(id) => {
         write!(f, "duplicate named argument: `{}`", id.display(self.str_ar))
       }
@@ -206,7 +206,7 @@ impl fmt::Display for Display<'_> {
           write!(f, "found `{got}`")
         }
         Unify::NoSuchField(no_such, suggest) => {
-          write!(f, "no such field: `{}`", self.str_ar.get(no_such))?;
+          write!(f, "no such field: `{}`", self.str_ar.get(*no_such))?;
           if let Some(suggest) = suggest {
             match self.multi_line {
               MultiLine::MustNot => f.write_str("; ")?,

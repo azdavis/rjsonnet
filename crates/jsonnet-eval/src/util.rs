@@ -43,8 +43,8 @@ pub(crate) fn get_obj(v: &Val, expr: ExprMust) -> Result<&Object> {
   }
 }
 
-pub(crate) fn get_str(v: &Val, expr: ExprMust) -> Result<&jsonnet_expr::Str> {
-  if let Val::Prim(Prim::String(s)) = v {
+pub(crate) fn get_str(v: &Val, expr: ExprMust) -> Result<jsonnet_expr::Str> {
+  if let Val::Prim(Prim::String(s)) = *v {
     Ok(s)
   } else {
     Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes })

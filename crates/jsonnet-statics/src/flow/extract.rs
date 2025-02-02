@@ -62,17 +62,17 @@ pub(crate) fn get_cond(scope: &Scope, ar: &ExprArena, ac: &mut Facts, cond: Expr
         let (&[Some(param)], []) = (&pos[..], &named[..]) else { return };
         add_fact(ar, ac, param, fact);
       } else {
-        match *func_name {
+        match func_name {
           Str::objectHas | Str::objectHasAll => {
             let (&[Some(obj), Some(field)], []) = (&pos[..], &named[..]) else { return };
-            let ExprData::Prim(Prim::String(field)) = &ar[field] else { return };
-            let fact = Fact::has_field(field.clone());
+            let ExprData::Prim(Prim::String(field)) = ar[field] else { return };
+            let fact = Fact::has_field(field);
             add_fact(ar, ac, obj, fact);
           }
           Str::objectHasEx => {
             let (&[Some(obj), Some(field), Some(_)], []) = (&pos[..], &named[..]) else { return };
-            let ExprData::Prim(Prim::String(field)) = &ar[field] else { return };
-            let fact = Fact::has_field(field.clone());
+            let ExprData::Prim(Prim::String(field)) = ar[field] else { return };
+            let fact = Fact::has_field(field);
             add_fact(ar, ac, obj, fact);
           }
           Str::all => {
@@ -130,8 +130,8 @@ pub(crate) fn get_cond(scope: &Scope, ar: &ExprArena, ac: &mut Facts, cond: Expr
   }
 }
 
-fn unary_std_fn_fact(fn_name: &Str) -> Option<Fact> {
-  let ret = match *fn_name {
+fn unary_std_fn_fact(fn_name: Str) -> Option<Fact> {
+  let ret = match fn_name {
     Str::isArray => Fact::array(Totality::Total),
     Str::isBoolean => Fact::boolean(),
     Str::isNumber => Fact::number(Totality::Total),
@@ -144,7 +144,7 @@ fn unary_std_fn_fact(fn_name: &Str) -> Option<Fact> {
   Some(ret)
 }
 
-fn get_unary_std_fn_param(scope: &Scope, ar: &ExprArena, call: ExprMust, fn_name: &Str) -> Expr {
+fn get_unary_std_fn_param(scope: &Scope, ar: &ExprArena, call: ExprMust, fn_name: Str) -> Expr {
   let ExprData::Call { func: Some(func), positional, named } = &ar[call] else { return None };
   if std_field(scope, ar, *func).is_none_or(|got| got != fn_name) {
     return None;
@@ -153,18 +153,18 @@ fn get_unary_std_fn_param(scope: &Scope, ar: &ExprArena, call: ExprMust, fn_name
   Some(param)
 }
 
-fn std_field<'a>(scope: &Scope, ar: &'a ExprArena, func: ExprMust) -> Option<&'a Str> {
+fn std_field(scope: &Scope, ar: &ExprArena, func: ExprMust) -> Option<Str> {
   let ExprData::Subscript { on: Some(on), idx: Some(idx) } = ar[func] else { return None };
   let ExprData::Id(std_id) = &ar[on] else { return None };
   if !scope.is_std(*std_id) {
     return None;
   }
-  let ExprData::Prim(Prim::String(name)) = &ar[idx] else { return None };
+  let ExprData::Prim(Prim::String(name)) = ar[idx] else { return None };
   Some(name)
 }
 
 fn get_ty_eq(scope: &Scope, ar: &ExprArena, ac: &mut Facts, call: ExprMust, type_str: ExprMust) {
-  let Some(param) = get_unary_std_fn_param(scope, ar, call, &Str::type_) else { return };
+  let Some(param) = get_unary_std_fn_param(scope, ar, call, Str::type_) else { return };
   let ExprData::Prim(Prim::String(type_str)) = &ar[type_str] else { return };
   let fact = match *type_str {
     Str::array => Fact::array(Totality::Total),
@@ -180,7 +180,7 @@ fn get_ty_eq(scope: &Scope, ar: &ExprArena, ac: &mut Facts, call: ExprMust, type
 }
 
 fn get_len_eq(scope: &Scope, ar: &ExprArena, ac: &mut Facts, call: ExprMust, n: ExprMust) {
-  let Some(param) = get_unary_std_fn_param(scope, ar, call, &Str::length) else { return };
+  let Some(param) = get_unary_std_fn_param(scope, ar, call, Str::length) else { return };
   let ExprData::Prim(Prim::Number(n)) = &ar[n] else { return };
   let Some(n) = get_uint(n.value()) else { return };
   add_fact(ar, ac, param, Fact::has_len(n));
@@ -218,7 +218,7 @@ fn get_eq_lit(ar: &ExprArena, ac: &mut Facts, var: ExprMust, lit: ExprMust) {
 
 fn get_all(scope: &Scope, ar: &ExprArena, ac: &mut Facts, arg: ExprMust) {
   let ExprData::Call { func: Some(func), positional: pos, named } = &ar[arg] else { return };
-  if std_field(scope, ar, *func).is_none_or(|got| got != &Str::map) {
+  if std_field(scope, ar, *func).is_none_or(|got| got != Str::map) {
     return;
   }
   let (&[Some(map_fn), Some(array)], []) = (&pos[..], &named[..]) else { return };
@@ -244,8 +244,8 @@ fn add_fact(ar: &ExprArena, ac: &mut Facts, mut expr: ExprMust, fact: Fact) {
   let id = loop {
     match ar[expr] {
       ExprData::Subscript { on: Some(on), idx: Some(idx) } => {
-        let ExprData::Prim(Prim::String(idx)) = &ar[idx] else { return };
-        path.push(idx.clone());
+        let ExprData::Prim(Prim::String(idx)) = ar[idx] else { return };
+        path.push(idx);
         expr = on;
       }
       ExprData::Id(id) => break id,

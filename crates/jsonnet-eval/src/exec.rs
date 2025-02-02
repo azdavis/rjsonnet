@@ -23,7 +23,7 @@ pub(crate) fn get(cx: &mut Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
         match get(cx, env, field.key)? {
           Val::Prim(Prim::String(s)) => {
             let f = ExprField { vis: field.vis, expr: field.val, comp_subst: None };
-            if named_fields.insert(s.clone(), f).is_some() {
+            if named_fields.insert(s, f).is_some() {
               return Err(error::Error::Exec { expr, kind: error::Kind::DuplicateField(s) });
             }
           }
@@ -49,7 +49,7 @@ pub(crate) fn get(cx: &mut Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
             // the e (elem) and x (id) on the object and update the env when we evaluate the field.
             let subst = Subst { id, env: part_env.clone(), expr: elem };
             let f = ExprField { vis, expr: Some(body), comp_subst: Some(subst) };
-            if fields.insert(s.clone(), f).is_some() {
+            if fields.insert(s, f).is_some() {
               return Err(error::Error::Exec { expr, kind: error::Kind::DuplicateField(s) });
             }
           }
@@ -65,8 +65,8 @@ pub(crate) fn get(cx: &mut Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
         let Val::Prim(Prim::String(name)) = get(cx, env, idx)? else {
           return Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes });
         };
-        let Some(field) = object.get_field(&name) else {
-          return Err(error::Error::Exec { expr, kind: error::Kind::NoSuchField(name.clone()) });
+        let Some(field) = object.get_field(name) else {
+          return Err(error::Error::Exec { expr, kind: error::Kind::NoSuchField(name) });
         };
         for (env, assert) in object.asserts() {
           get(cx, &env, assert)?;
@@ -142,11 +142,11 @@ pub(crate) fn get(cx: &mut Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
       BinOp::Add => match (get(cx, env, lhs)?, get(cx, env, rhs)?) {
         (Val::Prim(Prim::String(lhs)), rhs) => {
           let rhs = str_conv(cx, rhs)?;
-          Ok(Val::Prim(Prim::String(str_concat(cx.str_ar, &lhs, &rhs))))
+          Ok(Val::Prim(Prim::String(str_concat(cx.str_ar, lhs, rhs))))
         }
         (lhs, Val::Prim(Prim::String(rhs))) => {
           let lhs = str_conv(cx, lhs)?;
-          Ok(Val::Prim(Prim::String(str_concat(cx.str_ar, &lhs, &rhs))))
+          Ok(Val::Prim(Prim::String(str_concat(cx.str_ar, lhs, rhs))))
         }
         (Val::Prim(Prim::Number(lhs)), Val::Prim(Prim::Number(rhs))) => {
           let n = match Float::try_from(lhs.value() + rhs.value()) {
@@ -458,7 +458,7 @@ where
 fn cmp_val(expr: ExprMust, cx: &mut Cx<'_>, lhs: &Val, rhs: &Val) -> Result<Ordering> {
   match (lhs, rhs) {
     (Val::Prim(lhs), Val::Prim(rhs)) => match (lhs, rhs) {
-      (Prim::String(lhs), Prim::String(rhs)) => Ok(cx.str_ar.get(lhs).cmp(cx.str_ar.get(rhs))),
+      (Prim::String(lhs), Prim::String(rhs)) => Ok(cx.str_ar.get(*lhs).cmp(cx.str_ar.get(*rhs))),
       (Prim::Number(lhs), Prim::Number(rhs)) => Ok(lhs.cmp(rhs)),
       _ => Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes }),
     },
@@ -524,7 +524,7 @@ fn str_conv(cx: &mut Cx<'_>, val: Val) -> Result<Str> {
   }
 }
 
-fn str_concat(ar: &mut StrArena, lhs: &Str, rhs: &Str) -> Str {
+fn str_concat(ar: &mut StrArena, lhs: Str, rhs: Str) -> Str {
   let lhs = ar.get(lhs);
   let rhs = ar.get(rhs);
   let both = format!("{lhs}{rhs}").into_boxed_str();

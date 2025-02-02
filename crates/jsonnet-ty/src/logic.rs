@@ -40,13 +40,13 @@ pub fn and(tys: &mut MutStore<'_>, x: Ty, y: Ty) -> Ty {
       }
       let x = x.clone();
       let y = y.clone();
-      let keys: BTreeSet<_> = x.known.keys().chain(y.known.keys()).collect();
+      let keys: BTreeSet<_> = x.known.keys().chain(y.known.keys()).copied().collect();
       let mut known = BTreeMap::<jsonnet_expr::Str, Ty>::new();
       for key in keys {
-        let &x = x.known.get(key).unwrap_or(&Ty::ANY);
-        let &y = y.known.get(key).unwrap_or(&Ty::ANY);
+        let &x = x.known.get(&key).unwrap_or(&Ty::ANY);
+        let &y = y.known.get(&key).unwrap_or(&Ty::ANY);
         let ty = and(tys, x, y);
-        always!(known.insert(key.clone(), ty).is_none());
+        always!(known.insert(key, ty).is_none());
         // NOTE: we do NOT return never even if a field has type never. this is because the language
         // is lazy - we can have a lazy field of type never and not witness the never-ness if we
         // don't access that field. it's a little wonky.

@@ -277,8 +277,8 @@ impl Object {
     for this in self.ancestry_considering_superness() {
       match &this.kind {
         ObjectKind::Regular(this) => {
-          for (name, field) in &this.fields {
-            if !seen.insert(name.clone()) {
+          for (&name, field) in &this.fields {
+            if !seen.insert(name) {
               continue;
             }
             let mut env = self.set_this(&this.env);
@@ -286,12 +286,12 @@ impl Object {
               env.insert(subst.clone());
             }
             let f = Field::Expr(field.vis, env, field.expr);
-            ret.push((name.clone(), f));
+            ret.push((name, f));
           }
         }
         ObjectKind::Std => {
           for (name, field) in StdField::ALL {
-            if !seen.insert(name.clone()) {
+            if !seen.insert(name) {
               continue;
             }
             ret.push((name, Field::Std(field)));
@@ -304,14 +304,14 @@ impl Object {
 
   /// Gets a field off an object.
   #[must_use]
-  pub fn get_field(&self, name: &Str) -> Option<Field> {
+  pub fn get_field(&self, name: Str) -> Option<Field> {
     self.ancestry_considering_superness().find_map(|this| match &this.kind {
       ObjectKind::Std => {
         let field = StdField::try_from(name).ok()?;
         Some(Field::Std(field))
       }
       ObjectKind::Regular(this) => {
-        let field = this.fields.get(name)?;
+        let field = this.fields.get(&name)?;
         Some(Field::Expr(field.vis, self.set_this(&this.env), field.expr))
       }
     })

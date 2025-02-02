@@ -72,7 +72,7 @@ impl fmt::Display for ValDisplay<'_> {
       Val::Object(map) => {
         f.write_str("{")?;
         let iter =
-          map.iter().map(|(k, v)| KvDisplay { k, v, ar: self.ar, indent: self.indent + 1 });
+          map.iter().map(|(&k, v)| KvDisplay { k, v, ar: self.ar, indent: self.indent + 1 });
         write_comma_sep(iter, self.indent, f)?;
         f.write_str("}")
       }
@@ -87,7 +87,7 @@ impl fmt::Display for ValDisplay<'_> {
 }
 
 struct KvDisplay<'a> {
-  k: &'a Str,
+  k: Str,
   v: &'a Val,
   ar: &'a jsonnet_expr::StrArena,
   indent: usize,

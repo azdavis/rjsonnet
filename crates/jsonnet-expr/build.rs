@@ -279,11 +279,11 @@ fn main() {
       }
 
       #[expect(clippy::too_many_lines)]
-      impl TryFrom<&Str> for StdFn {
+      impl TryFrom<Str> for StdFn {
         type Error = ();
 
-        fn try_from(s: &Str) -> Result<Self, Self::Error> {
-          let ret = match *s {
+        fn try_from(s: Str) -> Result<Self, Self::Error> {
+          let ret = match s {
             #(#from_str_arms)*
             _ => return Err(()),
           };
@@ -313,7 +313,7 @@ fn main() {
     let from_str_ifs = jsonnet_std_sig::FIELDS.iter().map(|x| {
       let name = ident(x.name.ident());
       q! {
-        if *s == Str::#name {
+        if s == Str::#name {
           return Ok(Self::#name);
         }
       }
@@ -341,10 +341,10 @@ fn main() {
         }
       }
 
-      impl TryFrom<&Str> for StdField {
+      impl TryFrom<Str> for StdField {
         type Error = ();
 
-        fn try_from(s: &Str) -> Result<Self, Self::Error> {
+        fn try_from(s: Str) -> Result<Self, Self::Error> {
           #(#from_str_ifs)*
           match StdFn::try_from(s) {
             Ok(x) => Ok(Self::Fn(x)),

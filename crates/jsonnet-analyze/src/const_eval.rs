@@ -153,12 +153,12 @@ where
   }
   let idx = {
     let file = st.get_file_expr(fs, idx.path_id).ok()?;
-    let ExprData::Prim(Prim::String(idx)) = &file.ar[idx.expr] else { return None };
-    idx.clone()
+    let ExprData::Prim(Prim::String(idx)) = file.ar[idx.expr] else { return None };
+    idx
   };
   let on = match from_expr(st, seen, fs, path_id, on)? {
     ConstEval::Std(None) => {
-      let field = jsonnet_expr::StdField::try_from(&idx).ok()?;
+      let field = jsonnet_expr::StdField::try_from(idx).ok()?;
       return Some(ConstEval::Std(Some(field)));
     }
     ConstEval::Std(Some(_)) => return None,

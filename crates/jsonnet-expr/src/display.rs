@@ -198,7 +198,7 @@ impl fmt::Display for PrimDisplay<'_> {
       Prim::Null => f.write_str("null"),
       Prim::Bool(b) => b.fmt(f),
       Prim::String(s) => {
-        let bs = self.ar.get(s).as_bytes();
+        let bs = self.ar.get(*s).as_bytes();
         jsonnet_escape::Unescape::new(bs).fmt(f)
       }
       Prim::Number(n) => n.fmt(f),

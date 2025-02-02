@@ -70,14 +70,14 @@ pub(crate) fn get(st: &mut St<'_>, store: &ty::MutStore<'_>, want: ty::Ty, got: 
       get(st, store, want, got);
     }
     (ty::Data::Object(want), ty::Data::Object(got)) => {
-      for (name, w) in &want.known {
-        let Some(g) = got.known.get(name) else {
+      for (&name, &w) in &want.known {
+        let Some(&g) = got.known.get(&name) else {
           if let Some(u) = error::Unify::no_such_field(st.str_ar, got, name) {
             st.err(u);
           }
           continue;
         };
-        get(st, store, *w, *g);
+        get(st, store, w, g);
       }
       // we used to error when `want.has_unknown && !got.has_unknown`. the idea was that this may
       // arguably be an error, since it means that we are doing something like e.g. `"foo" in {}`,

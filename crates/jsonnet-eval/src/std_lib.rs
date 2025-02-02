@@ -53,7 +53,7 @@ pub(crate) fn length(x: &Val, expr: ExprMust, cx: &mut Cx<'_>) -> Result<usize> 
         Err(Error::Exec { expr, kind: error::Kind::IncompatibleTypes })
       }
       // we want "number of codepoints", NOT byte length.
-      Prim::String(s) => Ok(cx.str_ar.get(s).chars().count()),
+      Prim::String(s) => Ok(cx.str_ar.get(*s).chars().count()),
     },
     Val::Object(obj) => Ok(obj.fields().iter().filter(|(_, f)| !f.is_hidden()).count()),
     Val::Array(arr) => Ok(arr.len()),
@@ -66,7 +66,7 @@ pub(crate) fn join(sep: &Val, arr: &Array, expr: ExprMust, cx: &mut Cx<'_>) -> R
   match sep {
     Val::Prim(Prim::String(sep)) => {
       let mut ret = String::new();
-      let sep = cx.str_ar.get(sep).to_owned();
+      let sep = cx.str_ar.get(*sep).to_owned();
       let mut first = true;
       for (env, elem) in arr.iter() {
         if !first {
@@ -79,7 +79,7 @@ pub(crate) fn join(sep: &Val, arr: &Array, expr: ExprMust, cx: &mut Cx<'_>) -> R
             kind: error::Kind::IncompatibleTypes,
           });
         };
-        ret.push_str(cx.str_ar.get(&elem));
+        ret.push_str(cx.str_ar.get(elem));
       }
       Ok(Val::Prim(Prim::String(cx.str_ar.str(ret.into_boxed_str()))))
     }
@@ -277,15 +277,15 @@ pub(crate) fn xnor(a: bool, b: bool) -> bool {
   a == b
 }
 
-pub(crate) fn objectHas(o: &Object, f: &Str) -> bool {
+pub(crate) fn objectHas(o: &Object, f: Str) -> bool {
   o.get_field(f).is_some_and(|f| !f.is_hidden())
 }
 
-pub(crate) fn objectHasAll(o: &Object, f: &Str) -> bool {
+pub(crate) fn objectHasAll(o: &Object, f: Str) -> bool {
   o.get_field(f).is_some()
 }
 
-pub(crate) fn objectHasEx(o: &Object, f: &Str, hidden: bool) -> bool {
+pub(crate) fn objectHasEx(o: &Object, f: Str, hidden: bool) -> bool {
   if hidden {
     objectHasAll(o, f)
   } else {

@@ -732,11 +732,11 @@ impl lang_srv_state::State for St {
     let wa = &self.with_fs.artifacts;
     let fields = fields.into_iter().map(|(name, ty)| {
       let doc = if expr_is_std {
-        jsonnet_expr::StdField::try_from(&name).ok().map(|x| x.doc().to_owned())
+        jsonnet_expr::StdField::try_from(name).ok().map(|x| x.doc().to_owned())
       } else {
         None
       };
-      let name = wa.syntax.strings.get(&name);
+      let name = wa.syntax.strings.get(name);
       let ty = ty.display(self.multi_line, &wa.statics, None, &wa.syntax.strings);
       let (text_edit, additional_text_edits) = if jsonnet_ident::is(name.as_bytes()) {
         (None, None)

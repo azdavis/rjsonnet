@@ -225,7 +225,7 @@ impl<'a> JsonnetInput<'a> {
       }
 
       (OutcomeKind::String, Ok(got)) => {
-        let jsonnet_val::json::Val::Prim(jsonnet_expr::Prim::String(got)) = &got else {
+        let jsonnet_val::json::Val::Prim(jsonnet_expr::Prim::String(got)) = got else {
           panic!("did not get a String")
         };
         let got = st.strings().get(got);

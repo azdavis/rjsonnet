@@ -35,8 +35,8 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
           obj.has_unknown = true;
           continue;
         };
-        if obj.known.insert(s.clone(), ty::Ty::ANY).is_some() {
-          st.err(key, error::Kind::DuplicateField(s.clone()));
+        if obj.known.insert(*s, ty::Ty::ANY).is_some() {
+          st.err(key, error::Kind::DuplicateField(*s));
         }
       }
       st.define_self_super();
@@ -44,7 +44,7 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
         let ty = get(st, ar, field.val);
         let Some(key) = field.key else { continue };
         let ExprData::Prim(Prim::String(s)) = &ar[key] else { continue };
-        always!(obj.known.insert(s.clone(), ty).is_some());
+        always!(obj.known.insert(*s, ty).is_some());
       }
       for &cond in asserts {
         get(st, ar, cond);
@@ -284,8 +284,7 @@ fn get_add(st: &mut st::St<'_>, expr: ExprMust, lhs_ty: ty::Ty, rhs_ty: ty::Ty) 
     (ty::Data::Object(lhs_obj), ty::Data::Object(rhs_obj)) => {
       let mut obj = lhs_obj.clone();
       // right overrides left.
-      let rhs_known = rhs_obj.known.iter().map(|(k, &v)| (k.clone(), v));
-      obj.known.extend(rhs_known);
+      obj.known.extend(rhs_obj.known.iter());
       // this has unknown if either has unknown.
       obj.has_unknown = obj.has_unknown || rhs_obj.has_unknown;
       st.tys.get(ty::Data::Object(obj))
@@ -334,14 +333,14 @@ fn get_subscript(
     // object field get
     ty::Data::Object(obj) => {
       st.unify(idx_expr, ty::Ty::STRING, idx_ty);
-      let idx = idx.and_then(|x| match &ar[x] {
+      let idx = idx.and_then(|x| match ar[x] {
         ExprData::Prim(Prim::String(s)) => Some(s),
         _ => None,
       });
       match idx {
         // we do know what field we're asking for.
         Some(s) => {
-          match obj.known.get(s) {
+          match obj.known.get(&s) {
             // we know the type of that field.
             Some(&ty) => ty,
             // we don't know the type.
