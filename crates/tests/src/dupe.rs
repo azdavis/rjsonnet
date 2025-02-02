@@ -45,7 +45,7 @@ fn object_local() {
 }
 
 #[test]
-fn field() {
+fn field_pre_eval() {
   JsonnetInput::pre_eval_error(
     r"
 {
@@ -54,6 +54,21 @@ fn field() {
 ##^ diagnostic: duplicate field: `a`
 }
 ",
+  )
+  .check();
+}
+
+#[test]
+fn field_eval() {
+  JsonnetInput::eval_error(
+    r#"
+local a = "a";
+{
+  [a]: 1,
+  [a]: 2,
+}
+"#,
+    "duplicate field: `a`",
   )
   .check();
 }
