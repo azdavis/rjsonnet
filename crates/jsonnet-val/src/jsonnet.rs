@@ -281,7 +281,12 @@ impl Object {
             if !seen.insert(name.clone()) {
               continue;
             }
-            ret.push((name.clone(), Field::Expr(field.vis, self.set_this(&this.env), field.expr)));
+            let mut env = self.set_this(&this.env);
+            if let Some(subst) = &field.comp_subst {
+              env.insert(subst.clone());
+            }
+            let f = Field::Expr(field.vis, env, field.expr);
+            ret.push((name.clone(), f));
           }
         }
         ObjectKind::Std => {
@@ -345,6 +350,8 @@ pub struct ExprField {
   pub vis: Vis,
   /// The expression.
   pub expr: Expr,
+  /// An extra subst for object comprehensions.
+  pub comp_subst: Option<Subst>,
 }
 
 /// An subst in an env.

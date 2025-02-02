@@ -1,7 +1,7 @@
 //! Executing Jsonnet expression to produce Jsonnet values.
 
 use crate::error::{self, Result};
-use crate::{manifest, mk_todo, Cx};
+use crate::{manifest, Cx};
 use always::always;
 use finite_float::Float;
 use jsonnet_expr::{arg, BinOp, Expr, ExprData, ExprMust, Id, Prim, StdField, Str, StrArena};
@@ -22,7 +22,7 @@ pub(crate) fn get(cx: &mut Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
       for field in fields {
         match get(cx, env, field.key)? {
           Val::Prim(Prim::String(s)) => {
-            let f = ExprField { vis: field.vis, expr: field.val };
+            let f = ExprField { vis: field.vis, expr: field.val, comp_subst: None };
             if named_fields.insert(s.clone(), f).is_some() {
               return Err(error::Error::Exec { expr, kind: error::Kind::DuplicateField(s) });
             }
@@ -45,14 +45,10 @@ pub(crate) fn get(cx: &mut Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
         match get(cx, &env, name)? {
           Val::Prim(Prim::String(s)) => {
             let Some(body) = body else { continue };
-            // TODO the spec says to do `[e/x]body` here. we'd rather not substitute eagerly. we
-            // should do something like put the e and x on the object literal and update the env
-            // when we would evaluate the field.
-            let body = match cx.exprs[&env.path()].ar[body] {
-              ExprData::Prim(_) => body,
-              _ => return Err(mk_todo(expr, "subst for object body")),
-            };
-            let f = ExprField { vis, expr: Some(body) };
+            // the spec says to do `[e/x]body` here. we don't substitute eagerly, so instead we put
+            // the e (elem) and x (id) on the object and update the env when we evaluate the field.
+            let subst = Subst { id, env: part_env.clone(), expr: elem };
+            let f = ExprField { vis, expr: Some(body), comp_subst: Some(subst) };
             if fields.insert(s.clone(), f).is_some() {
               return Err(error::Error::Exec { expr, kind: error::Kind::DuplicateField(s) });
             }
