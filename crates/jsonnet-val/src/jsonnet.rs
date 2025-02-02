@@ -49,7 +49,7 @@ impl Env {
 
   /// Insert an id-expr mapping.
   pub fn insert(&mut self, id: Id, env: Env, expr: Expr) {
-    self.store.push(EnvElem::Single(id, env, expr));
+    self.store.push(EnvElem::Single(Subst { id, env, expr }));
   }
 
   /// Causes `self` and `super` to reference the `$outerself` and `$outersuper` variables. Use with
@@ -66,11 +66,11 @@ impl Env {
         let iter = vec.into_iter().filter(|&(x, _)| x != id);
         Some(EnvElem::Binds(iter.collect(), self_refer))
       }
-      EnvElem::Single(x, env, expr) => {
-        if x == id {
+      EnvElem::Single(subst) => {
+        if subst.id == id {
           None
         } else {
-          Some(EnvElem::Single(x, env, expr))
+          Some(EnvElem::Single(subst))
         }
       }
       EnvElem::This(object) => Some(EnvElem::This(object)),
@@ -115,9 +115,9 @@ impl Env {
             }
           }
         }
-        EnvElem::Single(other, env, expr) => {
-          if *other == id {
-            return Some(Get::Expr(env.clone(), *expr));
+        EnvElem::Single(subst) => {
+          if subst.id == id {
+            return Some(Get::Expr(subst.env.clone(), subst.expr));
           }
         }
       }
@@ -139,7 +139,7 @@ impl Env {
 #[derive(Debug, Clone)]
 enum EnvElem {
   Binds(Vec<(Id, Expr)>, SelfRefer),
-  Single(Id, Env, Expr),
+  Single(Subst),
   This(Box<Object>),
   Outer,
 }
@@ -344,6 +344,17 @@ pub struct ExprField {
   /// The visibility.
   pub vis: Vis,
   /// The expression.
+  pub expr: Expr,
+}
+
+/// An subst in an env.
+#[derive(Debug, Clone)]
+struct Subst {
+  /// The id to subst.
+  pub id: Id,
+  /// The env under which the expr is evaluated for the id.
+  pub env: Env,
+  /// The expr.
   pub expr: Expr,
 }
 
