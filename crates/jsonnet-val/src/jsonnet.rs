@@ -8,8 +8,8 @@ use rustc_hash::FxHashSet;
 /// An environment, which stores a mapping of identifiers to unevaluated expressions.
 #[derive(Debug, Clone)]
 pub struct Env {
-  cycle_detector: cycle::Detector<paths::PathId>,
   store: Vec<EnvElem>,
+  cycle_detector: cycle::Detector<paths::PathId>,
 }
 
 impl Env {
@@ -30,7 +30,7 @@ impl Env {
   /// Returns an empty env.
   #[must_use]
   pub fn empty(path: paths::PathId) -> Self {
-    Self { cycle_detector: cycle::Detector::new(path), store: Vec::new() }
+    Self { store: Vec::new(), cycle_detector: cycle::Detector::new(path) }
   }
 
   /// Append `other` after `self`, leaving `other` empty.
@@ -44,7 +44,7 @@ impl Env {
   ///
   /// If there would be a cycle.
   pub fn empty_with_paths(&self, path: paths::PathId) -> Result<Self, Cycle<paths::PathId>> {
-    Ok(Self { cycle_detector: self.cycle_detector.clone().try_push(path)?, store: Vec::new() })
+    Ok(Self { store: Vec::new(), cycle_detector: self.cycle_detector.clone().try_push(path)? })
   }
 
   /// Insert an id-expr mapping.
