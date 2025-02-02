@@ -179,16 +179,19 @@ impl<'a> JsonnetInput<'a> {
   }
 
   pub(crate) fn eval_error(text: &'a str, message: &'a str) -> Self {
+    assert!(!text.is_empty());
     Self { text, outcome: message, kind: OutcomeKind::EvalError }
   }
 
   pub(crate) fn pre_eval_error(text: &'a str) -> Self {
+    assert!(!text.is_empty());
     Self { text, outcome: "", kind: OutcomeKind::PreEvalError }
   }
 
   /// only do this if we expect one pre eval error and don't want to specify the range. useful in
   /// doc tests.
   pub(crate) fn pre_eval_error_one(text: &'a str, outcome: &'a str) -> Self {
+    assert!(!text.is_empty());
     Self { text, outcome, kind: OutcomeKind::PreEvalError }
   }
 
