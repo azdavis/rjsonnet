@@ -48,8 +48,8 @@ impl Env {
   }
 
   /// Insert an id-expr mapping.
-  pub fn insert(&mut self, id: Id, env: Env, expr: Expr) {
-    self.store.push(EnvElem::Single(Subst { id, env, expr }));
+  pub fn insert(&mut self, subst: Subst) {
+    self.store.push(EnvElem::Single(subst));
   }
 
   /// Causes `self` and `super` to reference the `$outerself` and `$outersuper` variables. Use with
@@ -349,7 +349,7 @@ pub struct ExprField {
 
 /// An subst in an env.
 #[derive(Debug, Clone)]
-struct Subst {
+pub struct Subst {
   /// The id to subst.
   pub id: Id,
   /// The env under which the expr is evaluated for the id.

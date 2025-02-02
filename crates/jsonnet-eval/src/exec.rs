@@ -6,7 +6,7 @@ use always::always;
 use finite_float::Float;
 use jsonnet_expr::{arg, BinOp, Expr, ExprData, ExprMust, Id, Prim, StdField, Str, StrArena};
 use jsonnet_val::jsonnet::{
-  Array, Env, ExprField, ExprFields, Field, Fn, Get, Object, RegularFn, SelfRefer, Val,
+  Array, Env, ExprField, ExprFields, Field, Fn, Get, Object, RegularFn, SelfRefer, Subst, Val,
 };
 use rustc_hash::FxHashSet;
 use std::cmp::Ordering;
@@ -40,7 +40,8 @@ pub(crate) fn get(cx: &mut Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
       let mut fields = ExprFields::default();
       for (part_env, elem) in array.iter() {
         let mut env = env.clone();
-        env.insert(id, part_env.clone(), elem);
+        let subst = Subst { id, env: part_env.clone(), expr: elem };
+        env.insert(subst);
         match get(cx, &env, name)? {
           Val::Prim(Prim::String(s)) => {
             let Some(body) = body else { continue };
