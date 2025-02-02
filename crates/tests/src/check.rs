@@ -216,7 +216,7 @@ impl<'a> JsonnetInput<'a> {
           return;
         }
         let want: serde_json::Value = serde_json::from_str(want).expect("test input json");
-        let want = jsonnet_val::json::Val::from_serde(st.strings(), want);
+        let want = jsonnet_val::json::Val::from_serde(st.strings_mut(), want);
         if want != got {
           let want = want.display(st.strings());
           let got = got.display(st.strings());

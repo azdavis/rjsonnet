@@ -19,7 +19,7 @@ pub enum Val {
 impl Val {
   /// Turn a [`serde_json::Value`] into one of these.
   #[must_use]
-  pub fn from_serde(ar: &jsonnet_expr::StrArena, serde: serde_json::Value) -> Self {
+  pub fn from_serde(ar: &mut jsonnet_expr::StrArena, serde: serde_json::Value) -> Self {
     match serde {
       serde_json::Value::Null => Self::Prim(Prim::Null),
       serde_json::Value::Bool(b) => Self::Prim(Prim::Bool(b)),
@@ -34,7 +34,7 @@ impl Val {
         Self::Prim(Prim::Number(num))
       }
       serde_json::Value::String(str) => {
-        let str = ar.str_shared(str.into_boxed_str());
+        let str = ar.str(str.into_boxed_str());
         Self::Prim(Prim::String(str))
       }
       serde_json::Value::Array(vs) => {
@@ -43,7 +43,7 @@ impl Val {
       }
       serde_json::Value::Object(map) => {
         let iter = map.into_iter().map(|(k, v)| {
-          let k = ar.str_shared(k.into_boxed_str());
+          let k = ar.str(k.into_boxed_str());
           let v = Self::from_serde(ar, v);
           (k, v)
         });

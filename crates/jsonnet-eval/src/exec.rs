@@ -81,7 +81,7 @@ pub(crate) fn get(cx: &mut Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
                 .to_string_lossy()
                 .into_owned()
                 .into_boxed_str();
-              Ok(Val::Prim(Prim::String(cx.str_ar.str_shared(s))))
+              Ok(Val::Prim(Prim::String(cx.str_ar.str(s))))
             }
             StdField::pi => Ok(Val::Prim(Prim::Number(finite_float::Float::PI))),
             StdField::Fn(f) => Ok(Val::Fn(Fn::Std(f))),
@@ -245,7 +245,7 @@ pub(crate) fn get(cx: &mut Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
         None => Err(error::Error::NoPath(path)),
       },
       jsonnet_expr::ImportKind::String => match cx.import_str.get(&path) {
-        Some(s) => Ok(Val::Prim(Prim::String(cx.str_ar.str_shared(s.clone().into_boxed_str())))),
+        Some(s) => Ok(Val::Prim(Prim::String(cx.str_ar.str(s.clone().into_boxed_str())))),
         None => Err(error::Error::NoPath(path)),
       },
       jsonnet_expr::ImportKind::Binary => match cx.import_bin.get(&path) {
@@ -520,13 +520,13 @@ fn str_conv(cx: &mut Cx<'_>, val: Val) -> Result<Str> {
   } else {
     let json = manifest::get(cx, val)?;
     let string = json.display(cx.str_ar).to_string();
-    Ok(cx.str_ar.str_shared(string.into_boxed_str()))
+    Ok(cx.str_ar.str(string.into_boxed_str()))
   }
 }
 
-fn str_concat(ar: &StrArena, lhs: &Str, rhs: &Str) -> Str {
+fn str_concat(ar: &mut StrArena, lhs: &Str, rhs: &Str) -> Str {
   let lhs = ar.get(lhs);
   let rhs = ar.get(rhs);
   let both = format!("{lhs}{rhs}").into_boxed_str();
-  ar.str_shared(both)
+  ar.str(both)
 }

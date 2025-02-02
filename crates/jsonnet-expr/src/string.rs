@@ -15,7 +15,6 @@ impl Str {
   pub fn apply(&mut self, subst: &Subst) {
     match &mut self.0 {
       StrRepr::Copy(repr) => repr.apply(subst),
-      StrRepr::Alloc(_) => {}
     }
   }
 
@@ -27,7 +26,6 @@ impl Str {
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 enum StrRepr {
   Copy(CopyStrRepr),
-  Alloc(Box<str>),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -111,19 +109,6 @@ impl StrArena {
     Str(StrRepr::Copy(self.mk_copy_repr(contents)))
   }
 
-  /// uses the contents if it was in the arena already, else does NOT insert
-  #[must_use]
-  pub fn str_shared(&self, contents: Box<str>) -> Str {
-    // invariant: if there is a str idx for the contents, always return that instead of allocating
-    match contents.as_ref().parse::<BuiltinStr>() {
-      Ok(bs) => Str(StrRepr::Copy(CopyStrRepr::Builtin(bs))),
-      Err(_) => match self.data_to_idx.get(contents.as_ref()) {
-        Some(idx) => Str(StrRepr::Copy(CopyStrRepr::Idx(*idx))),
-        None => Str(StrRepr::Alloc(contents)),
-      },
-    }
-  }
-
   pub fn id(&mut self, contents: Box<str>) -> Id {
     Id(IdRepr::Str(self.mk_copy_repr(contents)))
   }
@@ -142,7 +127,6 @@ impl StrArena {
   pub fn get<'a>(&'a self, s: &'a Str) -> &'a str {
     match s.0 {
       StrRepr::Copy(repr) => self.get_copy_str(repr),
-      StrRepr::Alloc(ref s) => s.as_ref(),
     }
   }
 

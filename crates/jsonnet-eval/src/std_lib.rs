@@ -81,7 +81,7 @@ pub(crate) fn join(sep: &Val, arr: &Array, expr: ExprMust, cx: &mut Cx<'_>) -> R
         };
         ret.push_str(cx.str_ar.get(&elem));
       }
-      Ok(Val::Prim(Prim::String(cx.str_ar.str_shared(ret.into_boxed_str()))))
+      Ok(Val::Prim(Prim::String(cx.str_ar.str(ret.into_boxed_str()))))
     }
     Val::Array(sep) => {
       let mut ret = Array::default();

@@ -51,8 +51,8 @@ pub(crate) fn get_str(v: &Val, expr: ExprMust) -> Result<&jsonnet_expr::Str> {
   }
 }
 
-pub(crate) fn mk_str(sa: &StrArena, s: String) -> Val {
-  sa.str_shared(s.into_boxed_str()).into()
+pub(crate) fn mk_str(sa: &mut StrArena, s: String) -> Val {
+  sa.str(s.into_boxed_str()).into()
 }
 
 #[expect(clippy::float_cmp, clippy::cast_possible_truncation, clippy::cast_sign_loss)]

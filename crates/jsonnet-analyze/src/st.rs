@@ -362,6 +362,12 @@ impl St {
     &self.with_fs.artifacts.syntax.strings
   }
 
+  /// Returns the mutable strings for this.
+  #[must_use]
+  pub fn strings_mut(&mut self) -> &mut jsonnet_expr::StrArena {
+    &mut self.with_fs.artifacts.syntax.strings
+  }
+
   /// Brings all the transitive deps of the Jsonnet file with path id `path_id` into memory.
   ///
   /// It is NOT recommended to bring a massive amount of files into memory at once.
