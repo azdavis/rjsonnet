@@ -3,6 +3,7 @@
 use crate::check::JsonnetInput;
 
 #[test]
+#[should_panic = "not yet implemented: makeArray"]
 fn smoke() {
   JsonnetInput::eval_error(
     r#"
@@ -11,18 +12,18 @@ fn smoke() {
   for x in ["foo", "bar quz"]
 }
 "#,
-    "not yet implemented: makeArray",
+    r#"
+{
+  "foo": 3,
+  "bar quz": 7
+}
+"#,
   )
   .check();
-  /*
-  {
-    "a": 3,
-    "b": 7
-  }
-   */
 }
 
 #[test]
+#[should_panic = "not yet implemented: makeArray"]
 fn plus() {
   JsonnetInput::eval_error(
     r#"
@@ -31,7 +32,12 @@ fn plus() {
   for x in ["a", "b"]
 }
 "#,
-    "not yet implemented: makeArray",
+    r#"
+{
+  "a": "hi",
+  "b": "hi"
+}
+"#,
   )
   .check();
 }

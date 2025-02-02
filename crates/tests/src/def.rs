@@ -259,6 +259,7 @@ fn obj_local() {
 }
 
 #[test]
+#[should_panic = "not yet implemented: makeArray"]
 fn obj_comp_local() {
   JsonnetInput::eval_error(
     r#"
@@ -270,20 +271,20 @@ fn obj_comp_local() {
   for k in ["f", "gg"]
 }
 "#,
-    "not yet implemented: makeArray",
+    r#"
+{
+  "f": 2,
+  "gg": 3
+}
+"#,
   )
-  /*
-  {
-    "f": 2,
-    "gg": 3
-  }
-  */
   .check();
 }
 
 #[test]
+#[should_panic = "not yet implemented: makeArray"]
 fn array_comp() {
-  JsonnetInput::eval_error(
+  JsonnetInput::manifest(
     r#"
 [
   1 + x
@@ -292,13 +293,13 @@ fn array_comp() {
 ##    ^ def: x
 ]
 "#,
-    "not yet implemented: makeArray",
+    "[3, 5]",
   )
   .check();
-  // [3, 5]
 }
 
 #[test]
+#[should_panic = "not yet implemented: makeArray"]
 fn obj_comp_key() {
   JsonnetInput::eval_error(
     r#"
@@ -310,15 +311,14 @@ fn obj_comp_key() {
 ##    ^ def: k
 }
 "#,
-    "not yet implemented: makeArray",
+    r#"
+{
+  "a": 1,
+  "bbb": 3
+}
+"#,
   )
   .check();
-  /*
-  {
-    "a": 1,
-    "bbb": 3
-  }
-  */
 }
 
 #[test]

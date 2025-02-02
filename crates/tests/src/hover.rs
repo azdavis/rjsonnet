@@ -102,6 +102,7 @@ mkNull()
 }
 
 #[test]
+#[should_panic = "not yet implemented: foldl"]
 fn foldl() {
   JsonnetInput::eval_error(
     r"
@@ -114,7 +115,14 @@ local result = std.foldl(objAdd, [{a: 1}, {b: 2}, {c: 3}], {d: 4});
 result
 ## ^ hover: object | { d: number }
 ",
-    "not yet implemented: foldl",
+    r#"
+{
+  "a": 1,
+  "b": 2,
+  "c": 3,
+  "d": 4
+}
+"#,
   )
   .check();
 }

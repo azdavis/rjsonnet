@@ -98,18 +98,20 @@ fn no_field() {
 }
 
 #[test]
+#[should_panic = "not yet implemented: makeArray"]
 fn array_comp() {
   JsonnetInput::eval_error(
     r#"
 [3 for x in []]
 ##     ^ diagnostic: unused variable: `x`
 "#,
-    "not yet implemented: makeArray",
+    "[]",
   )
   .check();
 }
 
 #[test]
+#[should_panic = "not yet implemented: makeArray"]
 fn object_comp() {
   JsonnetInput::eval_error(
     r#"
@@ -118,12 +120,13 @@ fn object_comp() {
 ##^^^^^^^^^^ diagnostic: unused variable: `x`
 }
 "#,
-    "not yet implemented: makeArray",
+    "duplicate field: `foo`",
   )
   .check();
 }
 
 #[test]
+#[should_panic = "not yet implemented: makeArray"]
 fn object_comp_only_key() {
   JsonnetInput::eval_error(
     r#"
@@ -131,12 +134,18 @@ fn object_comp_only_key() {
   [x]: 0 for x in ["a", "b"]
 }
 "#,
-    "not yet implemented: makeArray",
+    r#"
+{
+  "a": 0,
+  "b": 0
+}
+"#,
   )
   .check();
 }
 
 #[test]
+#[should_panic = "not yet implemented: makeArray"]
 fn object_comp_only_val() {
   JsonnetInput::eval_error(
     r#"
@@ -144,12 +153,17 @@ fn object_comp_only_val() {
   ["foo"]: x for x in [0]
 }
 "#,
-    "not yet implemented: makeArray",
+    r#"
+{
+  "foo": 0
+}
+"#,
   )
   .check();
 }
 
 #[test]
+#[should_panic = "not yet implemented: makeArray"]
 fn object_comp_extra_local() {
   JsonnetInput::eval_error(
     r#"
@@ -160,7 +174,12 @@ fn object_comp_extra_local() {
   for k in ["a", "b"]
 }
 "#,
-    "not yet implemented: makeArray",
+    r#"
+{
+  "a": false,
+  "b": false
+}
+"#,
   )
   .check();
 }
