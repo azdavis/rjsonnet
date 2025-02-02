@@ -272,8 +272,8 @@ impl Object {
 
   /// TODO this should be a generator
   #[must_use]
-  pub fn fields(&self) -> Vec<(Str, Visibility, Field)> {
-    let mut ret = Vec::<(Str, Visibility, Field)>::new();
+  pub fn fields(&self) -> Vec<(Str, Field)> {
+    let mut ret = Vec::<(Str, Field)>::new();
     let mut seen = FxHashSet::<Str>::default();
     for this in self.ancestry_considering_superness() {
       match &this.kind {
@@ -282,7 +282,7 @@ impl Object {
             if !seen.insert(name.clone()) {
               continue;
             }
-            ret.push((name.clone(), vis, Field::Expr(self.set_this(&this.env), expr)));
+            ret.push((name.clone(), Field::Expr(vis, self.set_this(&this.env), expr)));
           }
         }
         ObjectKind::Std => {
@@ -290,7 +290,7 @@ impl Object {
             if !seen.insert(name.clone()) {
               continue;
             }
-            ret.push((name, Visibility::Hidden, Field::Std(field)));
+            ret.push((name, Field::Std(field)));
           }
         }
       }
@@ -300,15 +300,15 @@ impl Object {
 
   /// Gets a field off an object.
   #[must_use]
-  pub fn get_field(&self, name: &Str) -> Option<(Visibility, Field)> {
+  pub fn get_field(&self, name: &Str) -> Option<Field> {
     self.ancestry_considering_superness().find_map(|this| match &this.kind {
       ObjectKind::Std => {
         let field = StdField::try_from(name).ok()?;
-        Some((Visibility::Hidden, Field::Std(field)))
+        Some(Field::Std(field))
       }
       ObjectKind::Regular(this) => {
         let &(vis, expr) = this.fields.get(name)?;
-        Some((vis, Field::Expr(self.set_this(&this.env), expr)))
+        Some(Field::Expr(vis, self.set_this(&this.env), expr))
       }
     })
   }
@@ -337,13 +337,21 @@ struct RegularObjectKind {
   fields: BTreeMap<Str, (Visibility, Expr)>,
 }
 
-/// A field of an object.
+/// An object field.
 #[derive(Debug)]
 pub enum Field {
-  /// A standard library field.
+  /// A standard library field. Always hidden.
   Std(StdField),
   /// A regular expression field.
-  Expr(Env, Expr),
+  Expr(Visibility, Env, Expr),
+}
+
+impl Field {
+  /// Returns whether this is hidden.
+  #[must_use]
+  pub fn is_hidden(&self) -> bool {
+    matches!(*self, Self::Std(_) | Self::Expr(Visibility::Hidden, _, _))
+  }
 }
 
 /// A lazy array.

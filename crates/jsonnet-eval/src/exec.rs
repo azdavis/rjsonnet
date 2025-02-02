@@ -67,7 +67,7 @@ pub(crate) fn get(cx: &mut Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
         let Val::Prim(Prim::String(name)) = get(cx, env, idx)? else {
           return Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes });
         };
-        let Some((_, field)) = object.get_field(&name) else {
+        let Some(field) = object.get_field(&name) else {
           return Err(error::Error::Exec { expr, kind: error::Kind::NoSuchField(name.clone()) });
         };
         for (env, assert) in object.asserts() {
@@ -88,7 +88,7 @@ pub(crate) fn get(cx: &mut Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
             StdField::pi => Ok(Val::Prim(Prim::Number(finite_float::Float::PI))),
             StdField::Fn(f) => Ok(Val::Fn(Fn::Std(f))),
           },
-          Field::Expr(env, expr) => get(cx, &env, expr),
+          Field::Expr(_, env, expr) => get(cx, &env, expr),
         }
       }
       Val::Array(array) => {

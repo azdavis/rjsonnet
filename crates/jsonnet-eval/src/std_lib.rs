@@ -4,7 +4,7 @@
 
 use crate::error::{self, Error, Result};
 use crate::{exec, Cx};
-use jsonnet_expr::{ExprMust, Prim, Str, Visibility};
+use jsonnet_expr::{ExprMust, Prim, Str};
 use jsonnet_val::jsonnet::{Array, Fn, Object, Val};
 use rustc_hash::FxHashSet;
 
@@ -55,9 +55,7 @@ pub(crate) fn length(x: &Val, expr: ExprMust, cx: &mut Cx<'_>) -> Result<usize> 
       // we want "number of codepoints", NOT byte length.
       Prim::String(s) => Ok(cx.str_ar.get(s).chars().count()),
     },
-    Val::Object(obj) => {
-      Ok(obj.fields().iter().filter(|&&(_, vis, _)| vis != Visibility::Hidden).count())
-    }
+    Val::Object(obj) => Ok(obj.fields().iter().filter(|(_, f)| !f.is_hidden()).count()),
     Val::Array(arr) => Ok(arr.len()),
     Val::Fn(Fn::Regular(func)) => Ok(func.params.iter().filter(|(_, d)| d.is_none()).count()),
     Val::Fn(Fn::Std(func)) => Ok(func.required_params_count()),
@@ -280,7 +278,7 @@ pub(crate) fn xnor(a: bool, b: bool) -> bool {
 }
 
 pub(crate) fn objectHas(o: &Object, f: &Str) -> bool {
-  o.get_field(f).is_some_and(|(vis, _)| matches!(vis, Visibility::Default | Visibility::Visible))
+  o.get_field(f).is_some_and(|f| !f.is_hidden())
 }
 
 pub(crate) fn objectHasAll(o: &Object, f: &Str) -> bool {
