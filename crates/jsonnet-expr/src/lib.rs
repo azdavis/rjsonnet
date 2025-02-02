@@ -76,7 +76,7 @@ pub struct Artifacts {
 #[derive(Debug, Clone)]
 pub struct Field {
   pub key: Expr,
-  pub vis: Visibility,
+  pub vis: Vis,
   pub val: Expr,
 }
 
@@ -90,7 +90,7 @@ pub enum ExprData {
   /// object comprehension fields ARE desugared into the body itself, as the spec suggests.
   ObjectComp {
     name: Expr,
-    vis: Visibility,
+    vis: Vis,
     body: Expr,
     id: Id,
     ary: Expr,
@@ -115,16 +115,16 @@ pub enum ExprData {
     yes: Expr,
     no: Expr,
   },
-  BinaryOp {
+  BinOp {
     lhs: Expr,
-    op: BinaryOp,
+    op: BinOp,
     rhs: Expr,
   },
-  UnaryOp {
-    op: UnaryOp,
+  UnOp {
+    op: UnOp,
     inner: Expr,
   },
-  Function {
+  Fn {
     params: Vec<(Id, Option<Expr>)>,
     body: Expr,
   },
@@ -154,7 +154,7 @@ impl ExprData {
           bind.apply(subst);
         }
       }
-      ExprData::Function { params, .. } => {
+      ExprData::Fn { params, .. } => {
         for (bind, _) in params {
           bind.apply(subst);
         }
@@ -164,8 +164,8 @@ impl ExprData {
       | ExprData::Object { .. }
       | ExprData::Subscript { .. }
       | ExprData::If { .. }
-      | ExprData::BinaryOp { .. }
-      | ExprData::UnaryOp { .. }
+      | ExprData::BinOp { .. }
+      | ExprData::UnOp { .. }
       | ExprData::Error(_)
       | ExprData::SubstOuter(_) => {}
     }
@@ -180,14 +180,14 @@ pub enum ImportKind {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum Visibility {
+pub enum Vis {
   Default,
   Hidden,
   Visible,
 }
 
 #[derive(Debug, Clone, Copy)]
-pub enum BinaryOp {
+pub enum BinOp {
   Mul,
   Div,
   Add,
@@ -206,7 +206,7 @@ pub enum BinaryOp {
 }
 
 #[derive(Debug, Clone, Copy)]
-pub enum UnaryOp {
+pub enum UnOp {
   Neg,
   Pos,
   BitNot,

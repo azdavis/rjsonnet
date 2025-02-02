@@ -4,9 +4,7 @@ use crate::error::{self, Result};
 use crate::{manifest, mk_todo, Cx};
 use always::always;
 use finite_float::Float;
-use jsonnet_expr::{
-  arg, BinaryOp, Expr, ExprData, ExprMust, Id, Prim, StdField, Str, StrArena, Visibility,
-};
+use jsonnet_expr::{arg, BinOp, Expr, ExprData, ExprMust, Id, Prim, StdField, Str, StrArena, Vis};
 use jsonnet_val::jsonnet::{Array, Env, Field, Fn, Get, Object, RegularFn, SelfRefer, Val};
 use rustc_hash::FxHashSet;
 use std::cmp::Ordering;
@@ -19,7 +17,7 @@ pub(crate) fn get(cx: &mut Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
   match cx.exprs[&env.path()].ar[expr].clone() {
     ExprData::Prim(p) => Ok(Val::Prim(p.clone())),
     ExprData::Object { asserts, fields } => {
-      let mut named_fields = BTreeMap::<Str, (Visibility, Expr)>::default();
+      let mut named_fields = BTreeMap::<Str, (Vis, Expr)>::default();
       for field in fields {
         match get(cx, env, field.key)? {
           Val::Prim(Prim::String(s)) => {
@@ -37,7 +35,7 @@ pub(crate) fn get(cx: &mut Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
       let Val::Array(array) = get(cx, env, ary)? else {
         return Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes });
       };
-      let mut fields = BTreeMap::<Str, (Visibility, Expr)>::default();
+      let mut fields = BTreeMap::<Str, (Vis, Expr)>::default();
       for (part_env, elem) in array.iter() {
         let mut env = env.clone();
         env.insert(id, part_env.clone(), elem);
@@ -139,9 +137,9 @@ pub(crate) fn get(cx: &mut Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
       let expr = if b { yes } else { no };
       get(cx, env, expr)
     }
-    ExprData::BinaryOp { lhs, op, rhs } => match op {
+    ExprData::BinOp { lhs, op, rhs } => match op {
       // add
-      BinaryOp::Add => match (get(cx, env, lhs)?, get(cx, env, rhs)?) {
+      BinOp::Add => match (get(cx, env, lhs)?, get(cx, env, rhs)?) {
         (Val::Prim(Prim::String(lhs)), rhs) => {
           let rhs = str_conv(cx, rhs)?;
           Ok(Val::Prim(Prim::String(str_concat(cx.str_ar, &lhs, &rhs))))
@@ -168,51 +166,51 @@ pub(crate) fn get(cx: &mut Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
         _ => Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes }),
       },
       // arithmetic
-      BinaryOp::Mul => float_op(expr, cx, env, lhs, rhs, std::ops::Mul::mul),
-      BinaryOp::Div => float_op(expr, cx, env, lhs, rhs, std::ops::Div::div),
-      BinaryOp::Sub => float_op(expr, cx, env, lhs, rhs, std::ops::Sub::sub),
+      BinOp::Mul => float_op(expr, cx, env, lhs, rhs, std::ops::Mul::mul),
+      BinOp::Div => float_op(expr, cx, env, lhs, rhs, std::ops::Div::div),
+      BinOp::Sub => float_op(expr, cx, env, lhs, rhs, std::ops::Sub::sub),
       // bitwise
-      BinaryOp::Shl => int_op(expr, cx, env, lhs, rhs, std::ops::Shl::shl),
-      BinaryOp::Shr => int_op(expr, cx, env, lhs, rhs, std::ops::Shr::shr),
-      BinaryOp::BitAnd => int_op(expr, cx, env, lhs, rhs, std::ops::BitAnd::bitand),
-      BinaryOp::BitXor => int_op(expr, cx, env, lhs, rhs, std::ops::BitXor::bitxor),
-      BinaryOp::BitOr => int_op(expr, cx, env, lhs, rhs, std::ops::BitOr::bitor),
+      BinOp::Shl => int_op(expr, cx, env, lhs, rhs, std::ops::Shl::shl),
+      BinOp::Shr => int_op(expr, cx, env, lhs, rhs, std::ops::Shr::shr),
+      BinOp::BitAnd => int_op(expr, cx, env, lhs, rhs, std::ops::BitAnd::bitand),
+      BinOp::BitXor => int_op(expr, cx, env, lhs, rhs, std::ops::BitXor::bitxor),
+      BinOp::BitOr => int_op(expr, cx, env, lhs, rhs, std::ops::BitOr::bitor),
       // comparison
-      BinaryOp::Eq => {
+      BinOp::Eq => {
         let lhs = get(cx, env, lhs)?;
         let rhs = get(cx, env, rhs)?;
         Ok(Val::Prim(Prim::Bool(eq_val(expr, cx, &lhs, &rhs)?)))
       }
-      BinaryOp::Lt => cmp_bool_op(expr, cx, env, lhs, rhs, Ordering::is_lt),
-      BinaryOp::LtEq => cmp_bool_op(expr, cx, env, lhs, rhs, Ordering::is_le),
-      BinaryOp::Gt => cmp_bool_op(expr, cx, env, lhs, rhs, Ordering::is_gt),
-      BinaryOp::GtEq => cmp_bool_op(expr, cx, env, lhs, rhs, Ordering::is_ge),
+      BinOp::Lt => cmp_bool_op(expr, cx, env, lhs, rhs, Ordering::is_lt),
+      BinOp::LtEq => cmp_bool_op(expr, cx, env, lhs, rhs, Ordering::is_le),
+      BinOp::Gt => cmp_bool_op(expr, cx, env, lhs, rhs, Ordering::is_gt),
+      BinOp::GtEq => cmp_bool_op(expr, cx, env, lhs, rhs, Ordering::is_ge),
     },
-    ExprData::UnaryOp { op, inner } => {
+    ExprData::UnOp { op, inner } => {
       let inner = get(cx, env, inner)?;
       match op {
-        jsonnet_expr::UnaryOp::Neg => {
+        jsonnet_expr::UnOp::Neg => {
           if let Val::Prim(Prim::Number(n)) = inner {
             Ok(Val::Prim(Prim::Number(-n)))
           } else {
             Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes })
           }
         }
-        jsonnet_expr::UnaryOp::Pos => {
+        jsonnet_expr::UnOp::Pos => {
           if matches!(inner, Val::Prim(Prim::Number(_))) {
             Ok(inner)
           } else {
             Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes })
           }
         }
-        jsonnet_expr::UnaryOp::LogicalNot => {
+        jsonnet_expr::UnOp::LogicalNot => {
           if let Val::Prim(Prim::Bool(b)) = inner {
             Ok(Val::Prim(Prim::Bool(!b)))
           } else {
             Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes })
           }
         }
-        jsonnet_expr::UnaryOp::BitNot => {
+        jsonnet_expr::UnOp::BitNot => {
           if let Val::Prim(Prim::Number(n)) = inner {
             let n = n.value().round();
             #[expect(clippy::cast_precision_loss)]
@@ -230,7 +228,7 @@ pub(crate) fn get(cx: &mut Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
         }
       }
     }
-    ExprData::Function { params, body } => {
+    ExprData::Fn { params, body } => {
       Ok(Val::Fn(Fn::Regular(RegularFn { env: env.clone(), params: params.clone(), body })))
     }
     ExprData::Error(inner) => {

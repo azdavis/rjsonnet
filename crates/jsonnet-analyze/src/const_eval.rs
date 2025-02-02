@@ -86,13 +86,13 @@ where
     | ExprData::Prim(_)
     | ExprData::Object { .. }
     | ExprData::Array(_)
-    | ExprData::Function { .. }
+    | ExprData::Fn { .. }
     | ExprData::Error(_)
     | ExprData::ObjectComp { .. }
     | ExprData::Call { .. }
     | ExprData::If { .. }
-    | ExprData::BinaryOp { .. }
-    | ExprData::UnaryOp { .. } => Some(ret.into()),
+    | ExprData::BinOp { .. }
+    | ExprData::UnOp { .. } => Some(ret.into()),
   }
 }
 

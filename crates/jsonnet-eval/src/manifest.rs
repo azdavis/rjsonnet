@@ -21,7 +21,7 @@ pub fn get(cx: &mut Cx<'_>, val: jsonnet::Val) -> error::Result<json::Val> {
       for (name, field) in object.fields() {
         let (env, expr) = match field {
           jsonnet::Field::Expr(vis, env, expr) => {
-            if matches!(vis, jsonnet_expr::Visibility::Hidden) {
+            if matches!(vis, jsonnet_expr::Vis::Hidden) {
               continue;
             }
             (env, expr)

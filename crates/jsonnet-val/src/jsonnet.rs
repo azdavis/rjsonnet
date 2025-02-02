@@ -2,7 +2,7 @@
 
 use always::always;
 use cycle::Cycle;
-use jsonnet_expr::{Expr, Id, Prim, StdField, StdFn, Str, Visibility};
+use jsonnet_expr::{Expr, Id, Prim, StdField, StdFn, Str, Vis};
 use rustc_hash::FxHashSet;
 use std::collections::BTreeMap;
 
@@ -231,7 +231,7 @@ impl Object {
 
   /// Returns a new regular (non-std) object.
   #[must_use]
-  pub fn new(env: Env, asserts: Vec<Expr>, fields: BTreeMap<Str, (Visibility, Expr)>) -> Self {
+  pub fn new(env: Env, asserts: Vec<Expr>, fields: BTreeMap<Str, (Vis, Expr)>) -> Self {
     let kind = ObjectKind::Regular(RegularObjectKind { env, asserts, fields });
     Self { parent: None, kind, is_super: false }
   }
@@ -334,7 +334,7 @@ struct RegularObjectKind {
   env: Env,
   asserts: Vec<Expr>,
   /// we want non-random order
-  fields: BTreeMap<Str, (Visibility, Expr)>,
+  fields: BTreeMap<Str, (Vis, Expr)>,
 }
 
 /// An object field.
@@ -343,14 +343,14 @@ pub enum Field {
   /// A standard library field. Always hidden.
   Std(StdField),
   /// A regular expression field.
-  Expr(Visibility, Env, Expr),
+  Expr(Vis, Env, Expr),
 }
 
 impl Field {
   /// Returns whether this is hidden.
   #[must_use]
   pub fn is_hidden(&self) -> bool {
-    matches!(*self, Self::Std(_) | Self::Expr(Visibility::Hidden, _, _))
+    matches!(*self, Self::Std(_) | Self::Expr(Vis::Hidden, _, _))
   }
 }
 

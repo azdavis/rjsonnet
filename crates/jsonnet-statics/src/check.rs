@@ -4,7 +4,7 @@ mod call;
 
 use crate::{error, flow, st, suggestion};
 use always::always;
-use jsonnet_expr::{def, BinaryOp, Expr, ExprArena, ExprData, ExprMust, Id, Prim, UnaryOp};
+use jsonnet_expr::{def, BinOp, Expr, ExprArena, ExprData, ExprMust, Id, Prim, UnOp};
 use jsonnet_ty as ty;
 use rustc_hash::{FxHashMap, FxHashSet};
 
@@ -125,7 +125,7 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
       }
       ty
     }
-    ExprData::Function { params, body } => {
+    ExprData::Fn { params, body } => {
       let m = def::ExprDefKindMulti::FnParam;
       let param_tys = {
         let mut tmp = FxHashMap::<Id, ty::Ty>::default();
@@ -184,31 +184,31 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
       st.scope.remove_facts(&fs);
       st.tys.get(ty::Data::mk_union([yes_ty, no_ty]))
     }
-    ExprData::BinaryOp { lhs, op, rhs } => {
+    ExprData::BinOp { lhs, op, rhs } => {
       let lhs_ty = get(st, ar, *lhs);
       let rhs_ty = get(st, ar, *rhs);
       match op {
-        BinaryOp::Add => get_add(st, expr, lhs_ty, rhs_ty),
-        BinaryOp::Mul
-        | BinaryOp::Div
-        | BinaryOp::Sub
-        | BinaryOp::Shl
-        | BinaryOp::Shr
-        | BinaryOp::BitXor
-        | BinaryOp::BitOr
-        | BinaryOp::BitAnd => {
+        BinOp::Add => get_add(st, expr, lhs_ty, rhs_ty),
+        BinOp::Mul
+        | BinOp::Div
+        | BinOp::Sub
+        | BinOp::Shl
+        | BinOp::Shr
+        | BinOp::BitXor
+        | BinOp::BitOr
+        | BinOp::BitAnd => {
           must_reachable(st, expr, lhs_ty);
           must_reachable(st, expr, rhs_ty);
           st.unify(lhs.unwrap_or(expr), ty::Ty::NUMBER, lhs_ty);
           st.unify(rhs.unwrap_or(expr), ty::Ty::NUMBER, rhs_ty);
           ty::Ty::NUMBER
         }
-        BinaryOp::Eq => {
+        BinOp::Eq => {
           must_reachable(st, expr, lhs_ty);
           must_reachable(st, expr, rhs_ty);
           ty::Ty::BOOLEAN
         }
-        BinaryOp::Lt | BinaryOp::LtEq | BinaryOp::Gt | BinaryOp::GtEq => {
+        BinOp::Lt | BinOp::LtEq | BinOp::Gt | BinOp::GtEq => {
           // TODO something about how the lhs_ty and rhs_ty need to be "similar" somehow (both
           // numbers or both strings, etc)
           must_reachable(st, expr, lhs_ty);
@@ -223,13 +223,13 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
         }
       }
     }
-    ExprData::UnaryOp { inner, op } => {
+    ExprData::UnOp { inner, op } => {
       let inner_ty = get(st, ar, *inner);
       must_reachable(st, expr, inner_ty);
       let e = inner.unwrap_or(expr);
       let want = match op {
-        UnaryOp::Neg | UnaryOp::Pos | UnaryOp::BitNot => ty::Ty::NUMBER,
-        UnaryOp::LogicalNot => ty::Ty::BOOLEAN,
+        UnOp::Neg | UnOp::Pos | UnOp::BitNot => ty::Ty::NUMBER,
+        UnOp::LogicalNot => ty::Ty::BOOLEAN,
       };
       st.unify(e, want, inner_ty);
       want
@@ -428,7 +428,7 @@ fn canonical_expr(expr: &jsonnet_expr::ExprData, expr_def: def::ExprDef) -> Expr
         e
       }
       def::ExprDefKindMulti::FnParam => {
-        let ExprData::Function { params, .. } = expr else { return None };
+        let ExprData::Fn { params, .. } = expr else { return None };
         let &(_, e) = params.get(n)?;
         e.unwrap_or(Some(expr_def.expr))
       }

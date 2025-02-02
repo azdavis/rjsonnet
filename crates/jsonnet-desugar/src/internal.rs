@@ -3,7 +3,7 @@
 use crate::st::St;
 use crate::{cx::Cx, error};
 use finite_float::Float;
-use jsonnet_expr::{BinaryOp, Expr, ExprData, Id, ImportKind, Prim, Str, UnaryOp, Visibility};
+use jsonnet_expr::{BinOp, Expr, ExprData, Id, ImportKind, Prim, Str, UnOp, Vis};
 use jsonnet_syntax::ast::{self, AstNode as _};
 
 pub(crate) fn get_expr(
@@ -146,12 +146,12 @@ pub(crate) fn get_expr(
     ast::Expr::ExprUnaryOp(expr) => {
       let inner = get_expr(st, cx, expr.expr(), in_obj, false);
       let op = match expr.unary_op()?.kind {
-        ast::UnaryOpKind::Minus => UnaryOp::Neg,
-        ast::UnaryOpKind::Plus => UnaryOp::Pos,
-        ast::UnaryOpKind::Bang => UnaryOp::LogicalNot,
-        ast::UnaryOpKind::Tilde => UnaryOp::BitNot,
+        ast::UnaryOpKind::Minus => UnOp::Neg,
+        ast::UnaryOpKind::Plus => UnOp::Pos,
+        ast::UnaryOpKind::Bang => UnOp::LogicalNot,
+        ast::UnaryOpKind::Tilde => UnOp::BitNot,
       };
-      ExprData::UnaryOp { op, inner }
+      ExprData::UnOp { op, inner }
     }
     ast::Expr::ExprImplicitObjectPlus(expr) => {
       let lhs = get_expr(st, cx, expr.expr(), in_obj, false);
@@ -159,7 +159,7 @@ pub(crate) fn get_expr(
       let rhs_ptr = ast::SyntaxNodePtr::new(rhs.syntax());
       let rhs = get_object(st, cx, rhs, in_obj);
       let rhs = Some(st.expr(rhs_ptr, rhs));
-      bop(BinaryOp::Add, lhs, rhs)
+      bop(BinOp::Add, lhs, rhs)
     }
     ast::Expr::ExprFunction(expr) => get_fn(st, cx, expr.paren_params(), expr.expr(), in_obj),
     ast::Expr::ExprAssert(expr) => {
@@ -250,7 +250,7 @@ where
         let subscript = Some(st.expr(ptr, ExprData::Subscript { on: arr_expr, idx: idx_expr }));
         let recur_with_subscript = ExprData::Local { binds: vec![(for_var, subscript)], body: ac };
         let recur_with_subscript = Some(st.expr(ptr, recur_with_subscript));
-        let lambda = ExprData::Function { params: vec![(idx, None)], body: recur_with_subscript };
+        let lambda = ExprData::Fn { params: vec![(idx, None)], body: recur_with_subscript };
         let lambda_recur_with_subscript = Some(st.expr(ptr, lambda));
         let make_array =
           call_std_func(st, ptr, Str::makeArray, vec![length, lambda_recur_with_subscript]);
@@ -295,7 +295,7 @@ fn get_fn(
     params.push((lhs, rhs));
   }
   let body = get_expr(st, cx, body, in_obj, false);
-  ExprData::Function { params, body }
+  ExprData::Fn { params, body }
 }
 
 fn get_assert(st: &mut St, cx: Cx<'_>, yes: Expr, assert: ast::Assert, in_obj: bool) -> ExprData {
@@ -429,14 +429,14 @@ fn get_field_plus(st: &mut St, key: Expr, val: Expr, fp: ast::FieldPlus) -> json
   let cond = call_std_func_data(st, ptr, Str::objectHasAll, vec![sup, key]);
   let cond = Some(st.expr(ptr, cond));
   let sup_field = Some(st.expr(ptr, ExprData::Subscript { on: sup, idx: key }));
-  let yes = bop(BinaryOp::Add, sup_field, val);
+  let yes = bop(BinOp::Add, sup_field, val);
   let yes = Some(st.expr(ptr, yes));
   st.expr(ptr, ExprData::If { cond, yes, no: val })
 }
 
 fn get_object_comp(st: &mut St, cx: Cx<'_>, obj: ast::Object, in_obj: bool) -> ExprData {
   let mut binds = Vec::<(Id, Expr)>::new();
-  let mut lowered_field = None::<(ast::SyntaxNodePtr, Expr, Visibility, Expr)>;
+  let mut lowered_field = None::<(ast::SyntaxNodePtr, Expr, Vis, Expr)>;
   for member in obj.members() {
     let Some(member_kind) = member.member_kind() else { continue };
     match member_kind {
@@ -512,8 +512,8 @@ fn get_object_comp(st: &mut St, cx: Cx<'_>, obj: ast::Object, in_obj: bool) -> E
   ExprData::ObjectComp { name, vis, body, id: arr, ary: vars }
 }
 
-fn bop(op: BinaryOp, lhs: Expr, rhs: Expr) -> ExprData {
-  ExprData::BinaryOp { lhs, op, rhs }
+fn bop(op: BinOp, lhs: Expr, rhs: Expr) -> ExprData {
+  ExprData::BinOp { lhs, op, rhs }
 }
 
 fn get_binary_op(
@@ -524,26 +524,26 @@ fn get_binary_op(
   rhs: Expr,
 ) -> ExprData {
   match op {
-    ast::BinaryOpKind::Star => bop(BinaryOp::Mul, lhs, rhs),
-    ast::BinaryOpKind::Slash => bop(BinaryOp::Div, lhs, rhs),
+    ast::BinaryOpKind::Star => bop(BinOp::Mul, lhs, rhs),
+    ast::BinaryOpKind::Slash => bop(BinOp::Div, lhs, rhs),
     ast::BinaryOpKind::Percent => call_std_func_data(st, ptr, Str::mod_, vec![lhs, rhs]),
-    ast::BinaryOpKind::Plus => bop(BinaryOp::Add, lhs, rhs),
-    ast::BinaryOpKind::Minus => bop(BinaryOp::Sub, lhs, rhs),
-    ast::BinaryOpKind::LtLt => bop(BinaryOp::Shl, lhs, rhs),
-    ast::BinaryOpKind::GtGt => bop(BinaryOp::Shr, lhs, rhs),
-    ast::BinaryOpKind::Lt => bop(BinaryOp::Lt, lhs, rhs),
-    ast::BinaryOpKind::LtEq => bop(BinaryOp::LtEq, lhs, rhs),
-    ast::BinaryOpKind::Gt => bop(BinaryOp::Gt, lhs, rhs),
-    ast::BinaryOpKind::GtEq => bop(BinaryOp::GtEq, lhs, rhs),
-    ast::BinaryOpKind::EqEq => bop(BinaryOp::Eq, lhs, rhs),
+    ast::BinaryOpKind::Plus => bop(BinOp::Add, lhs, rhs),
+    ast::BinaryOpKind::Minus => bop(BinOp::Sub, lhs, rhs),
+    ast::BinaryOpKind::LtLt => bop(BinOp::Shl, lhs, rhs),
+    ast::BinaryOpKind::GtGt => bop(BinOp::Shr, lhs, rhs),
+    ast::BinaryOpKind::Lt => bop(BinOp::Lt, lhs, rhs),
+    ast::BinaryOpKind::LtEq => bop(BinOp::LtEq, lhs, rhs),
+    ast::BinaryOpKind::Gt => bop(BinOp::Gt, lhs, rhs),
+    ast::BinaryOpKind::GtEq => bop(BinOp::GtEq, lhs, rhs),
+    ast::BinaryOpKind::EqEq => bop(BinOp::Eq, lhs, rhs),
     ast::BinaryOpKind::BangEq => {
-      let inner = Some(st.expr(ptr, bop(BinaryOp::Eq, lhs, rhs)));
-      ExprData::UnaryOp { op: UnaryOp::LogicalNot, inner }
+      let inner = Some(st.expr(ptr, bop(BinOp::Eq, lhs, rhs)));
+      ExprData::UnOp { op: UnOp::LogicalNot, inner }
     }
     ast::BinaryOpKind::InKw => call_std_func_data(st, ptr, Str::objectHasAll, vec![rhs, lhs]),
-    ast::BinaryOpKind::And => bop(BinaryOp::BitAnd, lhs, rhs),
-    ast::BinaryOpKind::Carat => bop(BinaryOp::BitXor, lhs, rhs),
-    ast::BinaryOpKind::Bar => bop(BinaryOp::BitOr, lhs, rhs),
+    ast::BinaryOpKind::And => bop(BinOp::BitAnd, lhs, rhs),
+    ast::BinaryOpKind::Carat => bop(BinOp::BitXor, lhs, rhs),
+    ast::BinaryOpKind::Bar => bop(BinOp::BitOr, lhs, rhs),
     ast::BinaryOpKind::AndAnd => {
       let no = Some(st.expr(ptr, ExprData::Prim(Prim::Bool(false))));
       ExprData::If { cond: lhs, yes: rhs, no }
@@ -555,13 +555,13 @@ fn get_binary_op(
   }
 }
 
-fn get_vis(v: Option<ast::Visibility>) -> Visibility {
+fn get_vis(v: Option<ast::Visibility>) -> Vis {
   match v {
     Some(vis) => match vis.kind {
-      ast::VisibilityKind::Colon => Visibility::Default,
-      ast::VisibilityKind::ColonColon => Visibility::Hidden,
-      ast::VisibilityKind::ColonColonColon => Visibility::Visible,
+      ast::VisibilityKind::Colon => Vis::Default,
+      ast::VisibilityKind::ColonColon => Vis::Hidden,
+      ast::VisibilityKind::ColonColonColon => Vis::Visible,
     },
-    None => Visibility::Default,
+    None => Vis::Default,
   }
 }

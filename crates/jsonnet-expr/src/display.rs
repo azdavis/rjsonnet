@@ -1,6 +1,6 @@
 //! Displaying various things.
 
-use super::{BinaryOp, Expr, ExprArena, ExprData, ImportKind, Prim, StrArena, UnaryOp, Visibility};
+use super::{BinOp, Expr, ExprArena, ExprData, ImportKind, Prim, StrArena, UnOp, Vis};
 use std::fmt;
 
 /// Displays an expression, sort of. Mostly for debugging. (We already derive Debug.)
@@ -90,11 +90,11 @@ impl fmt::Display for ExprDisplay<'_> {
       ExprData::If { cond, yes, no } => {
         write!(f, "if {} then {} else {}", self.with(*cond), self.with(*yes), self.with(*no))
       }
-      ExprData::BinaryOp { lhs, op, rhs } => {
+      ExprData::BinOp { lhs, op, rhs } => {
         write!(f, "{} {} {}", self.with(*lhs), op, self.with(*rhs))
       }
-      ExprData::UnaryOp { op, inner } => write!(f, "{}{}", op, self.with(*inner)),
-      ExprData::Function { params, body } => {
+      ExprData::UnOp { op, inner } => write!(f, "{}{}", op, self.with(*inner)),
+      ExprData::Fn { params, body } => {
         f.write_str("function(")?;
         for &(bind, default) in params {
           bind.display(self.str_ar).fmt(f)?;
@@ -135,46 +135,46 @@ impl fmt::Display for ImportKind {
   }
 }
 
-impl fmt::Display for Visibility {
+impl fmt::Display for Vis {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     let s = match self {
-      Visibility::Default => ":",
-      Visibility::Hidden => "::",
-      Visibility::Visible => ":::",
+      Vis::Default => ":",
+      Vis::Hidden => "::",
+      Vis::Visible => ":::",
     };
     f.write_str(s)
   }
 }
 
-impl fmt::Display for BinaryOp {
+impl fmt::Display for BinOp {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     let s = match self {
-      BinaryOp::Mul => "*",
-      BinaryOp::Div => "/",
-      BinaryOp::Add => "+",
-      BinaryOp::Sub => "-",
-      BinaryOp::Shl => "<<",
-      BinaryOp::Shr => ">>",
-      BinaryOp::Lt => "<",
-      BinaryOp::LtEq => "<=",
-      BinaryOp::Eq => "==",
-      BinaryOp::Gt => ">",
-      BinaryOp::GtEq => ">=",
-      BinaryOp::BitAnd => "&",
-      BinaryOp::BitXor => "^",
-      BinaryOp::BitOr => "|",
+      BinOp::Mul => "*",
+      BinOp::Div => "/",
+      BinOp::Add => "+",
+      BinOp::Sub => "-",
+      BinOp::Shl => "<<",
+      BinOp::Shr => ">>",
+      BinOp::Lt => "<",
+      BinOp::LtEq => "<=",
+      BinOp::Eq => "==",
+      BinOp::Gt => ">",
+      BinOp::GtEq => ">=",
+      BinOp::BitAnd => "&",
+      BinOp::BitXor => "^",
+      BinOp::BitOr => "|",
     };
     f.write_str(s)
   }
 }
 
-impl fmt::Display for UnaryOp {
+impl fmt::Display for UnOp {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     let s = match self {
-      UnaryOp::Neg => "-",
-      UnaryOp::Pos => "+",
-      UnaryOp::LogicalNot => "!",
-      UnaryOp::BitNot => "~",
+      UnOp::Neg => "-",
+      UnOp::Pos => "+",
+      UnOp::LogicalNot => "!",
+      UnOp::BitNot => "~",
     };
     f.write_str(s)
   }

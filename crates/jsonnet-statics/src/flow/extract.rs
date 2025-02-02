@@ -105,7 +105,7 @@ pub(crate) fn get_cond(scope: &Scope, ar: &ExprArena, ac: &mut Facts, cond: Expr
         }
       }
     }
-    &ExprData::BinaryOp { lhs: Some(lhs), op: jsonnet_expr::BinaryOp::Eq, rhs: Some(rhs) } => {
+    &ExprData::BinOp { lhs: Some(lhs), op: jsonnet_expr::BinOp::Eq, rhs: Some(rhs) } => {
       // for all of these, call each fn twice with lhs and rhs swapped. if one works, the other
       // won't, but we'll just return.
       //
@@ -119,7 +119,7 @@ pub(crate) fn get_cond(scope: &Scope, ar: &ExprArena, ac: &mut Facts, cond: Expr
       get_eq_lit(ar, ac, lhs, rhs);
       get_eq_lit(ar, ac, rhs, lhs);
     }
-    &ExprData::UnaryOp { op: jsonnet_expr::UnaryOp::LogicalNot, inner } => {
+    &ExprData::UnOp { op: jsonnet_expr::UnOp::LogicalNot, inner } => {
       let mut neg = Facts::default();
       get_cond(scope, ar, &mut neg, inner);
       for (id, fact) in neg.into_iter() {
@@ -229,7 +229,7 @@ fn get_all(scope: &Scope, ar: &ExprArena, ac: &mut Facts, arg: ExprMust) {
 pub(crate) fn get_predicate(scope: &Scope, ar: &ExprArena, func: ExprMust) -> Option<Fact> {
   if let Some(field) = std_field(scope, ar, func) {
     unary_std_fn_fact(field)
-  } else if let ExprData::Function { params, body } = &ar[func] {
+  } else if let ExprData::Fn { params, body } = &ar[func] {
     let &[(id, _)] = &params[..] else { return None };
     let mut body_ac = Facts::default();
     get_cond(scope, ar, &mut body_ac, *body);
