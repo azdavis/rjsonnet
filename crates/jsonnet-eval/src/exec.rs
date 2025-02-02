@@ -4,11 +4,12 @@ use crate::error::{self, Result};
 use crate::{manifest, mk_todo, Cx};
 use always::always;
 use finite_float::Float;
-use jsonnet_expr::{arg, BinOp, Expr, ExprData, ExprMust, Id, Prim, StdField, Str, StrArena, Vis};
-use jsonnet_val::jsonnet::{Array, Env, Field, Fn, Get, Object, RegularFn, SelfRefer, Val};
+use jsonnet_expr::{arg, BinOp, Expr, ExprData, ExprMust, Id, Prim, StdField, Str, StrArena};
+use jsonnet_val::jsonnet::{
+  Array, Env, ExprField, ExprFields, Field, Fn, Get, Object, RegularFn, SelfRefer, Val,
+};
 use rustc_hash::FxHashSet;
 use std::cmp::Ordering;
-use std::collections::BTreeMap;
 
 const EPSILON: f64 = 0.0001;
 
@@ -17,11 +18,12 @@ pub(crate) fn get(cx: &mut Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
   match cx.exprs[&env.path()].ar[expr].clone() {
     ExprData::Prim(p) => Ok(Val::Prim(p.clone())),
     ExprData::Object { asserts, fields } => {
-      let mut named_fields = BTreeMap::<Str, (Vis, Expr)>::default();
+      let mut named_fields = ExprFields::default();
       for field in fields {
         match get(cx, env, field.key)? {
           Val::Prim(Prim::String(s)) => {
-            if named_fields.insert(s.clone(), (field.vis, field.val)).is_some() {
+            let f = ExprField { vis: field.vis, expr: field.val };
+            if named_fields.insert(s.clone(), f).is_some() {
               return Err(error::Error::Exec { expr, kind: error::Kind::DuplicateField(s) });
             }
           }
@@ -35,7 +37,7 @@ pub(crate) fn get(cx: &mut Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
       let Val::Array(array) = get(cx, env, ary)? else {
         return Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes });
       };
-      let mut fields = BTreeMap::<Str, (Vis, Expr)>::default();
+      let mut fields = ExprFields::default();
       for (part_env, elem) in array.iter() {
         let mut env = env.clone();
         env.insert(id, part_env.clone(), elem);
@@ -49,7 +51,8 @@ pub(crate) fn get(cx: &mut Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
               ExprData::Prim(_) => body,
               _ => return Err(mk_todo(expr, "subst for object body")),
             };
-            if fields.insert(s.clone(), (vis, Some(body))).is_some() {
+            let f = ExprField { vis, expr: Some(body) };
+            if fields.insert(s.clone(), f).is_some() {
               return Err(error::Error::Exec { expr, kind: error::Kind::DuplicateField(s) });
             }
           }

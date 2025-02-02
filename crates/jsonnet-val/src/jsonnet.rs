@@ -4,7 +4,6 @@ use always::always;
 use cycle::Cycle;
 use jsonnet_expr::{Expr, Id, Prim, StdField, StdFn, Str, Vis};
 use rustc_hash::FxHashSet;
-use std::collections::BTreeMap;
 
 /// An environment, which stores a mapping of identifiers to unevaluated expressions.
 #[derive(Debug, Clone)]
@@ -231,7 +230,7 @@ impl Object {
 
   /// Returns a new regular (non-std) object.
   #[must_use]
-  pub fn new(env: Env, asserts: Vec<Expr>, fields: BTreeMap<Str, (Vis, Expr)>) -> Self {
+  pub fn new(env: Env, asserts: Vec<Expr>, fields: ExprFields) -> Self {
     let kind = ObjectKind::Regular(RegularObjectKind { env, asserts, fields });
     Self { parent: None, kind, is_super: false }
   }
@@ -278,11 +277,11 @@ impl Object {
     for this in self.ancestry_considering_superness() {
       match &this.kind {
         ObjectKind::Regular(this) => {
-          for (name, &(vis, expr)) in &this.fields {
+          for (name, field) in &this.fields {
             if !seen.insert(name.clone()) {
               continue;
             }
-            ret.push((name.clone(), Field::Expr(vis, self.set_this(&this.env), expr)));
+            ret.push((name.clone(), Field::Expr(field.vis, self.set_this(&this.env), field.expr)));
           }
         }
         ObjectKind::Std => {
@@ -307,8 +306,8 @@ impl Object {
         Some(Field::Std(field))
       }
       ObjectKind::Regular(this) => {
-        let &(vis, expr) = this.fields.get(name)?;
-        Some(Field::Expr(vis, self.set_this(&this.env), expr))
+        let field = this.fields.get(name)?;
+        Some(Field::Expr(field.vis, self.set_this(&this.env), field.expr))
       }
     })
   }
@@ -333,8 +332,19 @@ enum ObjectKind {
 struct RegularObjectKind {
   env: Env,
   asserts: Vec<Expr>,
-  /// we want non-random order
-  fields: BTreeMap<Str, (Vis, Expr)>,
+  fields: ExprFields,
+}
+
+/// Expr fields, in a deterministic order.
+pub type ExprFields = std::collections::BTreeMap<Str, ExprField>;
+
+/// An expr field.
+#[derive(Debug, Clone)]
+pub struct ExprField {
+  /// The visibility.
+  pub vis: Vis,
+  /// The expression.
+  pub expr: Expr,
 }
 
 /// An object field.
