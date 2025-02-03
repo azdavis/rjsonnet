@@ -4,6 +4,7 @@
 use crate::error::{self, Error, Result};
 use crate::util;
 use crate::{exec, generated::fns, mk_todo, Cx};
+use finite_float::Float;
 use jsonnet_expr::{Expr, ExprMust, Id, Prim, StdFn, Str};
 use jsonnet_val::jsonnet::{Array, Env, Fn, Val};
 use rustc_hash::FxHashSet;
@@ -77,7 +78,7 @@ pub(crate) fn get_call(
         Val::Fn(Fn::Regular(func)) => func.params.iter().filter(|(_, d)| d.is_none()).count(),
         Val::Fn(Fn::Std(func)) => func.required_params_count(),
       };
-      Ok(finite_float::Float::from(ret).into())
+      Ok(Float::from(ret).into())
     }
 
     StdFn::join => {
@@ -130,11 +131,11 @@ pub(crate) fn get_call(
     StdFn::sign => {
       let n = fns::sign::new(pos, named, expr)?.n(cx, env)?;
       let ret = if n == 0.0 {
-        finite_float::Float::POSITIVE_ZERO
+        Float::POSITIVE_ZERO
       } else if n.is_sign_positive() {
-        finite_float::Float::POSITIVE_ONE
+        Float::POSITIVE_ONE
       } else {
-        finite_float::Float::NEGATIVE_ONE
+        Float::NEGATIVE_ONE
       };
       Ok(ret.into())
     }
