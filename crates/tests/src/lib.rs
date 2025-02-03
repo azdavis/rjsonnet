@@ -14,6 +14,7 @@ mod dupe;
 mod flow;
 mod function;
 mod hover;
+mod import;
 mod keyword_lit;
 mod misc;
 mod number;

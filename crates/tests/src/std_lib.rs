@@ -80,3 +80,15 @@ xs[1]
   )
   .check();
 }
+
+#[test]
+fn length_num() {
+  JsonnetInput::eval_error(
+    r#"
+std.length(3)
+##         ^ diagnostic: not a type which has length: `number`
+"#,
+    "incompatible types",
+  )
+  .check();
+}
