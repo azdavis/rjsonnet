@@ -200,6 +200,12 @@ impl From<finite_float::Float> for Val {
   }
 }
 
+impl From<Array> for Val {
+  fn from(xs: Array) -> Self {
+    Val::Array(xs)
+  }
+}
+
 /// A lazy object, with an ancestry chain from `+`.
 #[derive(Debug, Clone)]
 pub struct Object {
