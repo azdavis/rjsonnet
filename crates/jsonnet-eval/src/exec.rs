@@ -322,18 +322,16 @@ fn get_call(
   let mut provided_binds = Vec::<(Id, Expr)>::with_capacity(provided.len());
   let mut default_binds = Vec::<(Id, Expr)>::new();
   for (id, rhs) in func.params {
-    match rhs {
-      // from my (not super close) reading of the spec, it seems like for function parameters
-      // without default values, the default value should be set to `error "Parameter not
-      // bound"`, which will _lazily_ emit the error if the parameter is accessed. but the
-      // behavior of the impl on the website is to _eagerly_ error if a param is not defined. so
-      // we do that here.
-      None => return Err(error::Error::Exec { expr, kind: arg::ErrorKind::NotDefined(id).into() }),
-      Some(rhs) => {
-        let binds = if provided.contains(&id) { &mut provided_binds } else { &mut default_binds };
-        binds.push((id, rhs));
-      }
-    }
+    // from my (not super close) reading of the spec, it seems like for function parameters
+    // without default values, the default value should be set to `error "Parameter not
+    // bound"`, which will _lazily_ emit the error if the parameter is accessed. but the
+    // behavior of the impl on the website is to _eagerly_ error if a param is not defined. so
+    // we do that here.
+    let Some(rhs) = rhs else {
+      return Err(error::Error::Exec { expr, kind: arg::ErrorKind::NotDefined(id).into() });
+    };
+    let binds = if provided.contains(&id) { &mut provided_binds } else { &mut default_binds };
+    binds.push((id, rhs));
   }
   // first remove the provided binds from the func env, so we don't accidentally shadow them
   // when we add the func env so we can evaluate the default binds.
