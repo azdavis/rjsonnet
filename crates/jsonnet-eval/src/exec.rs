@@ -6,7 +6,7 @@ use always::always;
 use finite_float::Float;
 use jsonnet_expr::{arg, BinOp, Expr, ExprData, ExprMust, Id, Prim, StdField, Str, StrArena};
 use jsonnet_val::jsonnet::{
-  Array, Env, ExprField, ExprFields, Field, Fn, Get, Object, RegularFn, SelfRefer, Subst, Val,
+  Array, Env, ExprField, ExprFields, Field, Fn, Object, RegularFn, SelfRefer, Subst, Val,
   ValOrExpr, ValOrExprRef,
 };
 use rustc_hash::FxHashSet;
@@ -124,11 +124,8 @@ pub(crate) fn get(cx: &mut Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
     ExprData::Id(id) => match env.get(id) {
       None => Err(error::Error::Exec { expr, kind: error::Kind::UndefinedVar(id) }),
       Some(got) => match got {
-        Get::Object(obj) => Ok(Val::Object(obj)),
-        Get::ValOrExpr(v_or_e) => match v_or_e {
-          ValOrExpr::Val(val) => Ok(val),
-          ValOrExpr::Expr(env, e) => get(cx, &env, e),
-        },
+        ValOrExpr::Val(val) => Ok(val),
+        ValOrExpr::Expr(env, e) => get(cx, &env, e),
       },
     },
     ExprData::Local { binds, body } => {

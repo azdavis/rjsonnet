@@ -80,21 +80,21 @@ impl Env {
 
   /// Get an identifier. Returns `None` if it is not in scope.
   #[must_use]
-  pub fn get(&self, mut id: Id) -> Option<Get> {
+  pub fn get(&self, mut id: Id) -> Option<ValOrExpr> {
     if id == Id::self_ {
       match self.this()? {
-        This::Object(obj) => return Some(Get::Object(obj.clone())),
+        This::Object(obj) => return Some(ValOrExpr::Val(obj.clone().into())),
         This::Outer => id = Id::outerself_unutterable,
       }
     }
     if id == Id::super_ {
       match self.this()? {
-        This::Object(obj) => return Some(Get::Object(obj.parent())),
+        This::Object(obj) => return Some(ValOrExpr::Val(obj.parent().into())),
         This::Outer => id = Id::outersuper_unutterable,
       }
     }
     if id == Id::std_unutterable {
-      return Some(Get::Object(Object::std_lib()));
+      return Some(ValOrExpr::Val(Object::std_lib().into()));
     }
     for idx in (0..self.store.len()).rev() {
       match &self.store[idx] {
@@ -110,18 +110,18 @@ impl Env {
                 store: self.store.iter().take(idx + extra).cloned().collect(),
                 cycle_detector: self.cycle_detector.clone(),
               };
-              return Some(Get::ValOrExpr(ValOrExpr::Expr(env, expr)));
+              return Some(ValOrExpr::Expr(env, expr));
             }
           }
         }
         EnvElem::Single(subst) => {
           if subst.id == id {
-            return Some(Get::ValOrExpr(subst.v_or_e.clone()));
+            return Some(subst.v_or_e.clone());
           }
         }
       }
     }
-    (id == Id::std).then(|| Get::Object(Object::std_lib()))
+    (id == Id::std).then(|| ValOrExpr::Val(Object::std_lib().into()))
   }
 
   /// Returns what `self` refers to in this env.
@@ -146,15 +146,6 @@ enum EnvElem {
 enum This<'a> {
   Object(&'a Object),
   Outer,
-}
-
-/// The output when getting an identifier.
-#[derive(Debug)]
-pub enum Get {
-  /// The id mapped to a val or expr.
-  ValOrExpr(ValOrExpr),
-  /// The id returns an object (self, super, or std).
-  Object(Object),
 }
 
 /// A Jsonnet value.
@@ -202,6 +193,12 @@ impl From<finite_float::Float> for Val {
 impl From<Array> for Val {
   fn from(xs: Array) -> Self {
     Val::Array(xs)
+  }
+}
+
+impl From<Object> for Val {
+  fn from(obj: Object) -> Self {
+    Val::Object(obj)
   }
 }
 
