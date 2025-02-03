@@ -68,3 +68,16 @@ local sc2 = std.prune(null);
   )
   .check();
 }
+
+#[test]
+#[should_panic = "not yet implemented: makeArray"]
+fn make_array_calls() {
+  JsonnetInput::eval_error(
+    r#"
+local xs = std.makeArray(3, function(x) if x == 1 then error "zero" else x + 1);
+xs[1]
+"#,
+    "zero",
+  )
+  .check();
+}
