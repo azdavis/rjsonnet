@@ -303,10 +303,10 @@ fn get_call(
         kind: arg::ErrorKind::Duplicate(arg_name).into(),
       });
     }
-    // we're getting a little fancy here. this iterates across the mutable params, and if we
-    // could find a param whose name matches the arg's name, then this sets the param to that
-    // arg and short circuits with true. note `==` with comparing the names and `=` with setting
-    // the actual exprs. note the usage of `bool::then` with `find_map` and `is_none`.
+    // we're getting a little fancy here. this iterates across the mutable params, and if we could
+    // find a param whose name matches the arg's name, then this sets the param to that arg and
+    // short circuits with true. note `==` with comparing the names and `=` with setting the actual
+    // exprs. note the usage of `bool::then` with `find_map` and `is_none`.
     let arg_not_requested = func
       .params
       .iter_mut()
@@ -322,19 +322,18 @@ fn get_call(
   let mut provided_binds = Vec::<(Id, Expr)>::with_capacity(provided.len());
   let mut default_binds = Vec::<(Id, Expr)>::new();
   for (id, rhs) in func.params {
-    // from my (not super close) reading of the spec, it seems like for function parameters
-    // without default values, the default value should be set to `error "Parameter not
-    // bound"`, which will _lazily_ emit the error if the parameter is accessed. but the
-    // behavior of the impl on the website is to _eagerly_ error if a param is not defined. so
-    // we do that here.
+    // from my (not super close) reading of the spec, it seems like for function parameters without
+    // default values, the default value should be set to `error "Parameter not bound"`, which will
+    // _lazily_ emit the error if the parameter is accessed. but the behavior of the impl on the
+    // website is to _eagerly_ error if a param is not defined. so we do that here.
     let Some(rhs) = rhs else {
       return Err(error::Error::Exec { expr, kind: arg::ErrorKind::NotDefined(id).into() });
     };
     let binds = if provided.contains(&id) { &mut provided_binds } else { &mut default_binds };
     binds.push((id, rhs));
   }
-  // first remove the provided binds from the func env, so we don't accidentally shadow them
-  // when we add the func env so we can evaluate the default binds.
+  // first remove the provided binds from the func env, so we don't accidentally shadow them when we
+  // add the func env so we can evaluate the default binds.
   let mut func_env = func.env.clone();
   for &(id, _) in &provided_binds {
     func_env.remove(id);
@@ -351,18 +350,18 @@ fn get_call(
   env.add_binds(provided_binds, SelfRefer::No);
   // then append the func env onto the current env.
   //
-  // if the func default params or body mention names that are defined in both the current env
-  // and the func env, they will be shadowed by the func env, except for the provided binds
-  // which we already removed.
+  // if the func default params or body mention names that are defined in both the current env and
+  // the func env, they will be shadowed by the func env, except for the provided binds which we
+  // already removed.
   //
-  // if the func default params or body mention names that are only in the func env, they will
-  // be defined by the func env.
+  // if the func default params or body mention names that are only in the func env, they will be
+  // defined by the func env.
   //
-  // the func body cannot mention names that are only in the current env but not the fn's env,
-  // since this is prohibited by statics.
+  // the func body cannot mention names that are only in the current env but not the fn's env, since
+  // this is prohibited by statics.
   env.append(&mut func_env);
-  // finally add the default binds. these are the arguments that were not provided and will
-  // default to the default argument values, to be evaluated under the func env.
+  // finally add the default binds. these are the arguments that were not provided and will default
+  // to the default argument values, to be evaluated under the func env.
   //
   // these binds MAY refer to themselves. for example, in
   //
