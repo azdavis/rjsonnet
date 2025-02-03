@@ -115,7 +115,9 @@ pub(crate) fn get(cx: &mut Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
       _ => Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes }),
     },
     ExprData::Call { func, positional, named } => {
-      let func = get(cx, env, func)?;
+      let Val::Fn(func) = get(cx, env, func)? else {
+        return Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes });
+      };
       get_call(cx, env, expr, func, &positional, &named)
     }
     ExprData::Id(id) => match env.get(id) {
@@ -275,12 +277,12 @@ pub(crate) fn get_call(
   cx: &mut Cx<'_>,
   env: &Env,
   expr: ExprMust,
-  func_val: Val,
+  func: Fn,
   positional: &[Expr],
   named: &[(Id, Expr)],
 ) -> Result<Val> {
-  match func_val {
-    Val::Fn(Fn::Regular(mut func)) => {
+  match func {
+    Fn::Regular(mut func) => {
       if let Some(tma) = arg::TooMany::new(
         func.params.iter().map(|&(id, _)| id),
         positional.len(),
@@ -375,10 +377,7 @@ pub(crate) fn get_call(
       // now evaluate the body.
       get(cx, &env, func.body)
     }
-    Val::Fn(Fn::Std(std_fn)) => {
-      crate::generated::call_std(cx, env, positional, named, expr, std_fn)
-    }
-    _ => Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes }),
+    Fn::Std(std_fn) => crate::generated::call_std(cx, env, positional, named, expr, std_fn),
   }
 }
 
