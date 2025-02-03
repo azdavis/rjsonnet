@@ -56,6 +56,25 @@ importstr "hi.txt"
 }
 
 #[test]
+fn bin() {
+  Input::default()
+    .with_jsonnet(
+      "a.jsonnet",
+      JsonnetInput::manifest(
+        r#"
+importbin "hi.txt"
+"#,
+        r#"
+[104, 101, 121]
+"#,
+      ),
+    )
+    .with_raw("hi.txt", "hey")
+    .add("a.jsonnet")
+    .check();
+}
+
+#[test]
 fn cycle() {
   Input::default()
     .with_jsonnet(
