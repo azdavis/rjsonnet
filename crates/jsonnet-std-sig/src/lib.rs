@@ -207,7 +207,7 @@ pub const FNS: [Fn; 133] = [
     doc: indoc! {"
       Returns a natively-implemented function with the given name.
 
-      Some jsonnet interpreters implementing functions in the host language and exposing them via
+      Some interpreters permit implementing functions in the host language and exposing them via
       this function.
     "},
     examples: Examples::EMPTY_ALLOWED,
