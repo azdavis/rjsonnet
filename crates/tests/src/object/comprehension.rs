@@ -53,3 +53,56 @@ fn no_params() {
   )
   .check();
 }
+
+#[test]
+fn plus_field_no_plus() {
+  JsonnetInput::manifest(
+    r#"
+local list = ["a", "b"];
+{
+  a: { bar: "world" }
+} + {
+  [x]: { foo: "hello" }
+  for x in list
+}
+"#,
+    r#"
+{
+  "a": {
+    "foo": "hello"
+  },
+  "b": {
+    "foo": "hello"
+  }
+}
+"#,
+  )
+  .check();
+}
+
+#[test]
+fn plus_field_yes_plus() {
+  JsonnetInput::manifest(
+    r#"
+local list = ["a", "b"];
+{
+  a: { bar: "world" }
+} + {
+  [x]+: { foo: "hello" }
+  for x in list
+}
+"#,
+    r#"
+{
+  "a": {
+    "bar": "world",
+    "foo": "hello"
+  },
+  "b": {
+    "foo": "hello"
+  }
+}
+"#,
+  )
+  .check();
+}
