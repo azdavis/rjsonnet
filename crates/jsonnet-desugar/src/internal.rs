@@ -100,7 +100,7 @@ pub(crate) fn get_expr(
       } else {
         let indices = [expr.idx_a(), expr.idx_b(), expr.idx_c()];
         let [idx_a, idx_b, idx_c] = indices.map(|idx| get_expr_or_null(st, cx, ptr, idx, in_obj));
-        call_std_func_data(st, ptr, Str::slice, vec![on, idx_a, idx_b, idx_c])
+        mk_std_call_data(st, ptr, Str::slice, vec![on, idx_a, idx_b, idx_c])
       }
     }
     ast::Expr::ExprCall(expr) => {
@@ -210,17 +210,12 @@ fn get_expr_or_null(
 }
 
 #[expect(clippy::unnecessary_wraps)]
-fn call_std_func(st: &mut St, ptr: ast::SyntaxNodePtr, name: Str, args: Vec<Expr>) -> Expr {
-  let data = call_std_func_data(st, ptr, name, args);
+fn mk_std_call(st: &mut St, ptr: ast::SyntaxNodePtr, name: Str, args: Vec<Expr>) -> Expr {
+  let data = mk_std_call_data(st, ptr, name, args);
   Some(st.expr(ptr, data))
 }
 
-fn call_std_func_data(
-  st: &mut St,
-  ptr: ast::SyntaxNodePtr,
-  name: Str,
-  args: Vec<Expr>,
-) -> ExprData {
+fn mk_std_call_data(st: &mut St, ptr: ast::SyntaxNodePtr, name: Str, args: Vec<Expr>) -> ExprData {
   let std = Some(st.expr(ptr, ExprData::Id(Id::std_unutterable)));
   let idx = Some(st.expr(ptr, ExprData::Prim(Prim::String(name))));
   let func = Some(st.expr(ptr, ExprData::Subscript { on: std, idx }));
@@ -246,15 +241,15 @@ where
         let idx = st.fresh();
         let arr_expr = Some(st.expr(ptr, ExprData::Id(arr)));
         let idx_expr = Some(st.expr(ptr, ExprData::Id(idx)));
-        let length = call_std_func(st, ptr, Str::length, vec![arr_expr]);
+        let length = mk_std_call(st, ptr, Str::length, vec![arr_expr]);
         let subscript = Some(st.expr(ptr, ExprData::Subscript { on: arr_expr, idx: idx_expr }));
         let recur_with_subscript = ExprData::Local { binds: vec![(for_var, subscript)], body: ac };
         let recur_with_subscript = Some(st.expr(ptr, recur_with_subscript));
         let lambda = ExprData::Fn { params: vec![(idx, None)], body: recur_with_subscript };
         let lambda_recur_with_subscript = Some(st.expr(ptr, lambda));
         let make_array =
-          call_std_func(st, ptr, Str::makeArray, vec![length, lambda_recur_with_subscript]);
-        let join = call_std_func(st, ptr, Str::join, vec![empty_array, make_array]);
+          mk_std_call(st, ptr, Str::makeArray, vec![length, lambda_recur_with_subscript]);
+        let join = mk_std_call(st, ptr, Str::join, vec![empty_array, make_array]);
         ExprData::Local { binds: vec![(arr, in_expr)], body: join }
       }
       ast::CompSpec::IfSpec(if_spec) => {
@@ -426,7 +421,7 @@ fn get_field_plus(st: &mut St, key: Expr, val: Expr, fp: ast::FieldPlus) -> json
   let ptr = ast::SyntaxNodePtr::new(fp.syntax());
   let key = Some(st.expr(ptr, ExprData::SubstOuter(key)));
   let sup = Some(st.expr(ptr, ExprData::Id(Id::super_)));
-  let cond = call_std_func_data(st, ptr, Str::objectHasAll, vec![sup, key]);
+  let cond = mk_std_call_data(st, ptr, Str::objectHasAll, vec![sup, key]);
   let cond = Some(st.expr(ptr, cond));
   let sup_field = Some(st.expr(ptr, ExprData::Subscript { on: sup, idx: key }));
   let yes = bop(BinOp::Add, sup_field, val);
@@ -526,7 +521,7 @@ fn get_binary_op(
   match op {
     ast::BinaryOpKind::Star => bop(BinOp::Mul, lhs, rhs),
     ast::BinaryOpKind::Slash => bop(BinOp::Div, lhs, rhs),
-    ast::BinaryOpKind::Percent => call_std_func_data(st, ptr, Str::mod_, vec![lhs, rhs]),
+    ast::BinaryOpKind::Percent => mk_std_call_data(st, ptr, Str::mod_, vec![lhs, rhs]),
     ast::BinaryOpKind::Plus => bop(BinOp::Add, lhs, rhs),
     ast::BinaryOpKind::Minus => bop(BinOp::Sub, lhs, rhs),
     ast::BinaryOpKind::LtLt => bop(BinOp::Shl, lhs, rhs),
@@ -540,7 +535,7 @@ fn get_binary_op(
       let inner = Some(st.expr(ptr, bop(BinOp::Eq, lhs, rhs)));
       ExprData::UnOp { op: UnOp::LogicalNot, inner }
     }
-    ast::BinaryOpKind::InKw => call_std_func_data(st, ptr, Str::objectHasAll, vec![rhs, lhs]),
+    ast::BinaryOpKind::InKw => mk_std_call_data(st, ptr, Str::objectHasAll, vec![rhs, lhs]),
     ast::BinaryOpKind::And => bop(BinOp::BitAnd, lhs, rhs),
     ast::BinaryOpKind::Carat => bop(BinOp::BitXor, lhs, rhs),
     ast::BinaryOpKind::Bar => bop(BinOp::BitOr, lhs, rhs),
