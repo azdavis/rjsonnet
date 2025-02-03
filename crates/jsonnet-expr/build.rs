@@ -7,8 +7,6 @@ use quote::quote as q;
 use std::collections::{BTreeMap, BTreeSet, HashSet};
 use std::fmt::Write as _;
 
-const JOINER: &str = "__";
-
 macro_rules! mk_unutterable {
   ($x: literal) => {
     S::named(concat!("$", $x), concat!($x, "_unutterable"))
@@ -93,7 +91,6 @@ fn main() {
   for s in all() {
     assert!(names.insert(s.ident()), "duplicate ident: {}", s.ident());
     assert!(contents.insert(s.content()), "duplicate content: {}", s.content());
-    assert!(!s.ident().contains(JOINER));
   }
 
   // needed for { key: string, value: T } for std.objectKeysValues

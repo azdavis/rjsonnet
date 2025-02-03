@@ -1,16 +1,22 @@
 //! Generate code for calling the standard library functions.
 
-use jsonnet_std_sig::Ty;
-use quote::quote as q;
-use std::collections::BTreeSet;
+#![expect(clippy::disallowed_methods, reason = "ok to panic in build scripts")]
 
-const JOINER: &str = "__";
+use jsonnet_std_sig::{Param, Ty};
+use quote::quote as q;
+use std::collections::{BTreeMap, BTreeSet};
 
 fn main() {
-  let unique_param_lists: BTreeSet<Vec<_>> = jsonnet_std_sig::FNS.iter().map(param_names).collect();
-  let get_params = unique_param_lists.iter().map(|params| mk_get_params(params));
-  let call_std_arms =
-    jsonnet_std_sig::FNS.iter().filter(|func| func.implemented).map(mk_call_std_arm);
+  let unique_param_lists: BTreeMap<_, _> = {
+    let tmp: BTreeSet<_> = jsonnet_std_sig::FNS.iter().map(|x| x.sig.params).collect();
+    tmp.into_iter().enumerate().map(|(idx, ps)| (ps, idx)).collect()
+  };
+  let get_params = unique_param_lists.iter().map(|(&ps, &idx)| mk_get_params(idx, ps));
+  let call_std_arms = jsonnet_std_sig::FNS.iter().filter(|func| func.implemented).map(|func| {
+    let &idx =
+      unique_param_lists.get(func.sig.params).expect("params list should contain all params");
+    mk_call_std_arm(idx, func)
+  });
 
   let file = file!();
 
@@ -36,7 +42,7 @@ fn main() {
     }
 
 
-    #[expect(dead_code, non_camel_case_types, non_snake_case)]
+    #[expect(dead_code, non_snake_case)]
     mod params {
       use jsonnet_expr::arg::{Result, TooMany, Error, ErrorKind};
       use jsonnet_expr::{Id, Expr, ExprMust};
@@ -47,29 +53,28 @@ fn main() {
   write_rs_tokens::go(contents, "generated.rs");
 }
 
-fn mk_get_params(params: &[&str]) -> proc_macro2::TokenStream {
-  let name = params.join(JOINER);
-  let name = ident(name.as_str());
-  let in_progress = quote::format_ident!("TMP{JOINER}{name}");
+fn mk_get_params(index: usize, params: &[Param]) -> proc_macro2::TokenStream {
+  let name = param_struct(index);
+  let in_progress = quote::format_ident!("T{index}");
   let num_params = params.len();
-  let ids = params.iter().map(|&param| {
-    let param = ident(param);
+  let ids = params.iter().map(|param| {
+    let param = ident(param.name);
     q! { Id::#param, }
   });
-  let fields = params.iter().map(|&param| {
-    let param = ident(param);
-    q! { pub #param: Expr, }
+  let fields = params.iter().map(|param| {
+    let param = ident(param.name);
+    q! { pub(crate) #param: Expr, }
   });
-  let opt_fields = params.iter().map(|&param| {
-    let param = ident(param);
+  let opt_fields = params.iter().map(|param| {
+    let param = ident(param.name);
     q! { #param: Option<Expr>, }
   });
-  let init_from_positional = params.iter().map(|&param| {
-    let param = ident(param);
+  let init_from_positional = params.iter().map(|param| {
+    let param = ident(param.name);
     q! { #param: pos.next(), }
   });
-  let set_from_named = params.iter().map(|&param| {
-    let param = ident(param);
+  let set_from_named = params.iter().map(|param| {
+    let param = ident(param.name);
     q! {
       if arg_name == Id::#param {
         if in_progress.#param.is_some() {
@@ -79,20 +84,20 @@ fn mk_get_params(params: &[&str]) -> proc_macro2::TokenStream {
       } else
     }
   });
-  let require_vars_set = params.iter().map(|&param| {
-    let param = ident(param);
+  let require_vars_set = params.iter().map(|param| {
+    let param = ident(param.name);
     q! {
       if in_progress.#param.is_none() {
         return Err(Error { expr, kind: ErrorKind::NotDefined(Id::#param) });
       }
     }
   });
-  let unwraps_unchecked = params.iter().map(|&param| {
-    let param = ident(param);
+  let unwraps_unchecked = params.iter().map(|param| {
+    let param = ident(param.name);
     q! { #param: unsafe { in_progress.#param.unwrap_unchecked() }, }
   });
   q! {
-    pub struct #name {
+    pub(crate) struct #name {
       #(#fields)*
     }
 
@@ -105,7 +110,7 @@ fn mk_get_params(params: &[&str]) -> proc_macro2::TokenStream {
         #(#ids)*
       ];
 
-      pub fn get(
+      pub(crate) fn new(
         pos: &[Expr],
         named: &[(Id, Expr)],
         expr: ExprMust,
@@ -134,13 +139,9 @@ fn mk_get_params(params: &[&str]) -> proc_macro2::TokenStream {
   }
 }
 
-fn param_names(f: &jsonnet_std_sig::Fn) -> Vec<&'static str> {
-  f.sig.params.iter().map(|x| x.name).collect()
-}
-
 /// NOTE: there is an assumption that the param names for std fns (e.g. `x`, `arr`) will not clash
 /// with the param names and local vars in the actual rust function (e.g. `env`, `args`)
-fn mk_call_std_arm(func: &jsonnet_std_sig::Fn) -> proc_macro2::TokenStream {
+fn mk_call_std_arm(idx: usize, func: &jsonnet_std_sig::Fn) -> proc_macro2::TokenStream {
   let name = ident(func.name.ident());
   let get_args = func.sig.params.iter().map(|param| {
     let name = ident(param.name);
@@ -206,11 +207,10 @@ fn mk_call_std_arm(func: &jsonnet_std_sig::Fn) -> proc_macro2::TokenStream {
   };
   let (partial_args, partial_conv) =
     if func.total { (q! {}, q! {}) } else { (q! { expr, cx, }, q! { ? }) };
-  let args_struct = param_names(func).join(JOINER);
-  let args_struct = ident(args_struct.as_str());
+  let args_struct = param_struct(idx);
   q! {
     StdFn::#name => {
-      let args = params::#args_struct::get(pos, named, expr)?;
+      let args = params::#args_struct::new(pos, named, expr)?;
       #(#get_args)*
       let res = std_lib::#name(#(#send_args,)* #partial_args) #partial_conv;
       #conv_res
@@ -220,4 +220,8 @@ fn mk_call_std_arm(func: &jsonnet_std_sig::Fn) -> proc_macro2::TokenStream {
 
 fn ident(s: &str) -> proc_macro2::Ident {
   quote::format_ident!("{s}")
+}
+
+fn param_struct(idx: usize) -> proc_macro2::Ident {
+  quote::format_ident!("P{idx}")
 }
