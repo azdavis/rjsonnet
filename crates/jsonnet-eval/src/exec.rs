@@ -118,10 +118,7 @@ pub(crate) fn get(cx: &mut Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
       let Val::Fn(func) = get(cx, env, func)? else {
         return Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes });
       };
-      match func {
-        Fn::Regular(func) => get_call(cx, env, expr, func, &positional, &named),
-        Fn::Std(func) => crate::std_lib::get_call(cx, env, expr, func, &positional, &named),
-      }
+      get_call(cx, env, expr, func, &positional, &named)
     }
     ExprData::Id(id) => match env.get(id) {
       None => Err(error::Error::Exec { expr, kind: error::Kind::UndefinedVar(id) }),
@@ -277,6 +274,20 @@ pub(crate) fn get(cx: &mut Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
 }
 
 fn get_call(
+  cx: &mut Cx<'_>,
+  env: &Env,
+  expr: ExprMust,
+  func: Fn,
+  pos: &[Expr],
+  named: &[(Id, Expr)],
+) -> Result<Val> {
+  match func {
+    Fn::Regular(func) => get_regular_call(cx, env, expr, func, pos, named),
+    Fn::Std(func) => crate::std_lib::get_call(cx, env, expr, func, pos, named),
+  }
+}
+
+fn get_regular_call(
   cx: &mut Cx<'_>,
   env: &Env,
   expr: ExprMust,
