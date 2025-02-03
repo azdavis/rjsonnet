@@ -30,7 +30,7 @@ fn main() {
       use crate::{exec, util, Cx};
       use jsonnet_expr::arg::{TooMany, Error, ErrorKind};
       use jsonnet_expr::{Id, Expr, ExprMust, Str};
-      use jsonnet_val::jsonnet::{Env, Object, Array, Val};
+      use jsonnet_val::jsonnet::{Array, Env, Fn, Object, Val};
 
       #(#get_params)*
     }
@@ -116,8 +116,9 @@ fn mk_get_params(index: usize, params: &[Param]) -> proc_macro2::TokenStream {
       Ty::ArrStr => todo!("conv param ArrStr"),
       Ty::ArrKv => todo!("conv param ArrKv"),
       Ty::Obj => (q! {Object}, q! { util::get_obj(ret, expr) }),
-      Ty::Fn1 => todo!("conv param Fn1"),
-      Ty::FnAccElem | Ty::FnKv | Ty::FnIdxElem => todo!("conv param Fn2"),
+      Ty::Fn1 | Ty::FnAccElem | Ty::FnKv | Ty::FnIdxElem => {
+        (q! {Fn}, q! { util::get_fn(ret, expr) })
+      }
     };
     q! {
       pub(crate) fn #name(&self, cx: &mut Cx<'_>, env: &Env) -> crate::error::Result<#ret_ty> {
