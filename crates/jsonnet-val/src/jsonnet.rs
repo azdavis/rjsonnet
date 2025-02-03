@@ -110,13 +110,13 @@ impl Env {
                 store: self.store.iter().take(idx + extra).cloned().collect(),
                 cycle_detector: self.cycle_detector.clone(),
               };
-              return Some(Get::Expr(env, expr));
+              return Some(Get::ValOrExpr(ValOrExpr::Expr(env, expr)));
             }
           }
         }
         EnvElem::Single(subst) => {
           if subst.id == id {
-            return Some(Get::Expr(subst.env.clone(), subst.expr));
+            return Some(Get::ValOrExpr(subst.v_or_e.clone()));
           }
         }
       }
@@ -151,8 +151,8 @@ enum This<'a> {
 /// The output when getting an identifier.
 #[derive(Debug)]
 pub enum Get {
-  /// The id mapped to an expr.
-  Expr(Env, Expr),
+  /// The id mapped to a val or expr.
+  ValOrExpr(ValOrExpr),
   /// The id returns an object (self, super, or std).
   Object(Object),
 }
@@ -364,10 +364,8 @@ pub struct ExprField {
 pub struct Subst {
   /// The id to subst.
   pub id: Id,
-  /// The env under which the expr is evaluated for the id.
-  pub env: Env,
-  /// The expr.
-  pub expr: Expr,
+  /// The val or expr to subst for the id.
+  pub v_or_e: ValOrExpr,
 }
 
 /// An object field.
@@ -402,18 +400,33 @@ impl Array {
     Self { parts: ArrayPart::new(env, elems).into_iter().collect() }
   }
 
-  /// Iterates over the elements in order.
-  pub fn iter(&self) -> impl Iterator<Item = (&Env, Expr)> {
-    self.parts.iter().flat_map(|part| part.elems.iter().map(|&elem| (&part.env, elem)))
+  /// Returns a new array with value elements.
+  #[must_use]
+  pub fn vals(elems: Vec<Val>) -> Self {
+    Self { parts: ArrayPart::vals(elems).into_iter().collect() }
+  }
+
+  /// Returns the elements in order.
+  #[must_use]
+  pub fn elems(&self) -> Vec<ValOrExprRef<'_>> {
+    // TODO this should be a generator
+    let mut ret = Vec::<ValOrExprRef<'_>>::with_capacity(self.len());
+    for part in &self.parts {
+      match part {
+        ArrayPart::Exprs(env, es) => ret.extend(es.iter().map(|&x| ValOrExprRef::Expr(env, x))),
+        ArrayPart::Vals(vs) => ret.extend(vs.iter().map(ValOrExprRef::Val)),
+      }
+    }
+    ret
   }
 
   /// Gets the nth element.
   #[must_use]
-  pub fn get(&self, mut idx: usize) -> Option<(&Env, Expr)> {
+  pub fn get(&self, mut idx: usize) -> Option<ValOrExprRef<'_>> {
     for part in &self.parts {
-      match part.elems.get(idx) {
-        Some(&elem) => return Some((&part.env, elem)),
-        None => idx -= part.elems.len(),
+      match part.get(idx) {
+        Some(res) => return Some(res),
+        None => idx = idx.checked_sub(part.len())?,
       }
     }
     None
@@ -427,7 +440,7 @@ impl Array {
   /// Returns the length of this.
   #[must_use]
   pub fn len(&self) -> usize {
-    self.parts.iter().map(|x| x.elems.len()).sum()
+    self.parts.iter().map(ArrayPart::len).sum()
   }
 
   /// Returns whether this is empty.
@@ -440,10 +453,11 @@ impl Array {
 }
 
 #[derive(Debug, Clone)]
-struct ArrayPart {
-  env: Env,
-  /// INVARIANT: non-empty.
-  elems: Vec<Expr>,
+enum ArrayPart {
+  /// INVARIANT: vec is non-empty.
+  Exprs(Env, Vec<Expr>),
+  /// INVARIANT: vec is non-empty.
+  Vals(Vec<Val>),
 }
 
 impl ArrayPart {
@@ -451,7 +465,29 @@ impl ArrayPart {
     if elems.is_empty() {
       None
     } else {
-      Some(Self { env, elems })
+      Some(Self::Exprs(env, elems))
+    }
+  }
+
+  fn vals(elems: Vec<Val>) -> Option<Self> {
+    if elems.is_empty() {
+      None
+    } else {
+      Some(Self::Vals(elems))
+    }
+  }
+
+  fn len(&self) -> usize {
+    match self {
+      ArrayPart::Exprs(_, es) => es.len(),
+      ArrayPart::Vals(vs) => vs.len(),
+    }
+  }
+
+  fn get(&self, idx: usize) -> Option<ValOrExprRef<'_>> {
+    match self {
+      ArrayPart::Exprs(env, es) => es.get(idx).map(|&e| ValOrExprRef::Expr(env, e)),
+      ArrayPart::Vals(vs) => vs.get(idx).map(ValOrExprRef::Val),
     }
   }
 }
@@ -487,4 +523,33 @@ pub enum SelfRefer {
   Yes,
   /// They may not.
   No,
+}
+
+/// A reference to either a val or an expression.
+#[derive(Debug, Clone, Copy)]
+pub enum ValOrExprRef<'a> {
+  /// A value.
+  Val(&'a Val),
+  /// An expression.
+  Expr(&'a Env, Expr),
+}
+
+impl ValOrExprRef<'_> {
+  /// Returns the owned form of this.
+  #[must_use]
+  pub fn to_owned(self) -> ValOrExpr {
+    match self {
+      ValOrExprRef::Val(val) => ValOrExpr::Val(val.clone()),
+      ValOrExprRef::Expr(env, e) => ValOrExpr::Expr(env.clone(), e),
+    }
+  }
+}
+
+/// Either a val or an expression.
+#[derive(Debug, Clone)]
+pub enum ValOrExpr {
+  /// A value.
+  Val(Val),
+  /// An expression.
+  Expr(Env, Expr),
 }

@@ -35,7 +35,7 @@ pub fn get(cx: &mut Cx<'_>, val: jsonnet::Val) -> error::Result<json::Val> {
       Ok(json::Val::Object(val_fields))
     }
     jsonnet::Val::Array(parts) => {
-      let iter = parts.iter().map(|(env, elem)| get_(cx, env, elem));
+      let iter = parts.elems().into_iter().map(|elem| get_v_or_e(cx, elem));
       let vs = iter.collect::<error::Result<Vec<_>>>()?;
       Ok(json::Val::Array(vs))
     }
@@ -47,4 +47,11 @@ pub fn get(cx: &mut Cx<'_>, val: jsonnet::Val) -> error::Result<json::Val> {
 fn get_(cx: &mut Cx<'_>, env: &jsonnet::Env, expr: jsonnet_expr::Expr) -> error::Result<json::Val> {
   let val = exec::get(cx, env, expr)?;
   get(cx, val)
+}
+
+fn get_v_or_e(cx: &mut Cx<'_>, v_or_e: jsonnet::ValOrExprRef<'_>) -> error::Result<json::Val> {
+  match v_or_e {
+    jsonnet::ValOrExprRef::Val(val) => get(cx, val.clone()),
+    jsonnet::ValOrExprRef::Expr(env, e) => get_(cx, env, e),
+  }
 }

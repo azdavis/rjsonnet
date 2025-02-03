@@ -7,6 +7,7 @@ use finite_float::Float;
 use jsonnet_expr::{arg, BinOp, Expr, ExprData, ExprMust, Id, Prim, StdField, Str, StrArena};
 use jsonnet_val::jsonnet::{
   Array, Env, ExprField, ExprFields, Field, Fn, Get, Object, RegularFn, SelfRefer, Subst, Val,
+  ValOrExpr, ValOrExprRef,
 };
 use rustc_hash::FxHashSet;
 use std::cmp::Ordering;
@@ -38,16 +39,16 @@ pub(crate) fn get(cx: &mut Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
         return Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes });
       };
       let mut fields = ExprFields::default();
-      for (part_env, elem) in array.iter() {
+      for elem in array.elems() {
         let mut env = env.clone();
-        let subst = Subst { id, env: part_env.clone(), expr: elem };
+        let subst = Subst { id, v_or_e: elem.to_owned() };
         env.insert(subst);
         match get(cx, &env, name)? {
           Val::Prim(Prim::String(s)) => {
             let Some(body) = body else { continue };
             // the spec says to do `[e/x]body` here. we don't substitute eagerly, so instead we put
             // the e (elem) and x (id) on the object and update the env when we evaluate the field.
-            let subst = Subst { id, env: part_env.clone(), expr: elem };
+            let subst = Subst { id, v_or_e: elem.to_owned() };
             let f = ExprField { vis, expr: Some(body), comp_subst: Some(subst) };
             if fields.insert(s, f).is_some() {
               return Err(error::Error::Exec { expr, kind: error::Kind::DuplicateField(s) });
@@ -108,7 +109,7 @@ pub(crate) fn get(cx: &mut Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
           return Err(error::Error::Exec { expr, kind: error::Kind::ArrayIdxOutOfRange });
         };
         match array.get(idx) {
-          Some((env, elem)) => get(cx, env, elem),
+          Some(elem) => get_v_or_e(cx, elem).map(|(x, _)| x),
           None => Err(error::Error::Exec { expr, kind: error::Kind::ArrayIdxOutOfRange }),
         }
       }
@@ -124,7 +125,10 @@ pub(crate) fn get(cx: &mut Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
       None => Err(error::Error::Exec { expr, kind: error::Kind::UndefinedVar(id) }),
       Some(got) => match got {
         Get::Object(obj) => Ok(Val::Object(obj)),
-        Get::Expr(env, expr) => get(cx, &env, expr),
+        Get::ValOrExpr(v_or_e) => match v_or_e {
+          ValOrExpr::Val(val) => Ok(val),
+          ValOrExpr::Expr(env, e) => get(cx, &env, e),
+        },
       },
     },
     ExprData::Local { binds, body } => {
@@ -252,15 +256,8 @@ pub(crate) fn get(cx: &mut Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
       },
       jsonnet_expr::ImportKind::Binary => match cx.import_bin.get(&path) {
         Some(bs) => {
-          let Some(exprs) = cx.exprs.get_mut(&env.path()) else {
-            always!(false, "should have already gotten immutable arena earlier");
-            return Err(error::Error::NoPath(env.path()));
-          };
-          let elems = bs.iter().map(|&n| {
-            let n = ExprData::Prim(Prim::Number(finite_float::Float::from(n)));
-            Some(exprs.ar.alloc(n))
-          });
-          Ok(Val::Array(Array::new(Env::empty(path), elems.collect())))
+          let elems = bs.iter().map(|&n| Val::from(finite_float::Float::from(n)));
+          Ok(Array::vals(elems.collect()).into())
         }
         None => Err(error::Error::NoPath(path)),
       },
@@ -465,16 +462,18 @@ fn cmp_val(expr: ExprMust, cx: &mut Cx<'_>, lhs: &Val, rhs: &Val) -> Result<Orde
       _ => Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes }),
     },
     (Val::Array(lhs), Val::Array(rhs)) => {
-      let mut lhs = lhs.iter();
-      let mut rhs = rhs.iter();
+      let lhs = lhs.elems();
+      let rhs = rhs.elems();
+      let mut lhs = lhs.into_iter();
+      let mut rhs = rhs.into_iter();
       let ord = loop {
         match (lhs.next(), rhs.next()) {
           (None, Some(_)) => break Ordering::Less,
           (None, None) => break Ordering::Equal,
           (Some(_), None) => break Ordering::Greater,
-          (Some((le, lhs)), Some((re, rhs))) => {
-            let lhs = get(cx, le, lhs)?;
-            let rhs = get(cx, re, rhs)?;
+          (Some(lhs), Some(rhs)) => {
+            let (lhs, _) = get_v_or_e(cx, lhs)?;
+            let (rhs, _) = get_v_or_e(cx, rhs)?;
             match cmp_val(expr, cx, &lhs, &rhs)? {
               Ordering::Equal => {}
               ord => break ord,
@@ -495,9 +494,11 @@ pub(crate) fn eq_val(expr: ExprMust, cx: &mut Cx<'_>, lhs: &Val, rhs: &Val) -> R
       if lhs.len() != rhs.len() {
         return Ok(false);
       }
-      for ((le, lhs), (re, rhs)) in lhs.iter().zip(rhs.iter()) {
-        let lhs = get(cx, le, lhs)?;
-        let rhs = get(cx, re, rhs)?;
+      let lhs = lhs.elems();
+      let rhs = rhs.elems();
+      for (lhs, rhs) in lhs.into_iter().zip(rhs) {
+        let (lhs, _) = get_v_or_e(cx, lhs)?;
+        let (rhs, _) = get_v_or_e(cx, rhs)?;
         let eq = eq_val(expr, cx, &lhs, &rhs)?;
         if !eq {
           return Ok(false);
@@ -531,4 +532,11 @@ fn str_concat(ar: &mut StrArena, lhs: Str, rhs: Str) -> Str {
   let rhs = ar.get(rhs);
   let both = format!("{lhs}{rhs}").into_boxed_str();
   ar.str(both)
+}
+
+pub(crate) fn get_v_or_e(cx: &mut Cx<'_>, v_or_e: ValOrExprRef<'_>) -> Result<(Val, Expr)> {
+  match v_or_e {
+    ValOrExprRef::Val(val) => Ok((val.clone(), None)),
+    ValOrExprRef::Expr(env, e) => get(cx, env, e).map(|v| (v, e)),
+  }
 }

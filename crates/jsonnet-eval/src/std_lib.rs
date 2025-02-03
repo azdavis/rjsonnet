@@ -89,14 +89,15 @@ pub(crate) fn get_call(
           let mut ret = String::new();
           let sep = cx.str_ar.get(sep).to_owned();
           let mut first = true;
-          for (env, elem) in arr.iter() {
+          for elem in arr.elems() {
             if !first {
               ret.push_str(sep.as_str());
             };
             first = false;
-            let Val::Prim(Prim::String(elem)) = exec::get(cx, env, elem)? else {
+            let (val, elem_e) = exec::get_v_or_e(cx, elem)?;
+            let Val::Prim(Prim::String(elem)) = val else {
               return Err(error::Error::Exec {
-                expr: elem.unwrap_or(expr),
+                expr: elem_e.unwrap_or(expr),
                 kind: error::Kind::IncompatibleTypes,
               });
             };
@@ -107,14 +108,15 @@ pub(crate) fn get_call(
         Val::Array(sep) => {
           let mut ret = Array::default();
           let mut first = true;
-          for (env, elem) in arr.iter() {
+          for elem in arr.elems() {
             if !first {
               ret.append(&mut sep.clone());
             };
             first = false;
-            let Val::Array(mut elem) = exec::get(cx, env, elem)? else {
+            let (val, elem_e) = exec::get_v_or_e(cx, elem)?;
+            let Val::Array(mut elem) = val else {
               return Err(error::Error::Exec {
-                expr: elem.unwrap_or(expr),
+                expr: elem_e.unwrap_or(expr),
                 kind: error::Kind::IncompatibleTypes,
               });
             };
