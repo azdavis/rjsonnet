@@ -5,7 +5,7 @@ use crate::check::JsonnetInput;
 #[test]
 #[should_panic = "not yet implemented: makeArray"]
 fn smoke() {
-  JsonnetInput::eval_error(
+  JsonnetInput::manifest(
     r#"
 {
   [x]: std.length(x)
@@ -25,7 +25,7 @@ fn smoke() {
 #[test]
 #[should_panic = "not yet implemented: makeArray"]
 fn plus() {
-  JsonnetInput::eval_error(
+  JsonnetInput::manifest(
     r#"
 {
   [x]+: "hi"

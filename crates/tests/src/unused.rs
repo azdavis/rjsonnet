@@ -100,7 +100,7 @@ fn no_field() {
 #[test]
 #[should_panic = "not yet implemented: makeArray"]
 fn array_comp() {
-  JsonnetInput::eval_error(
+  JsonnetInput::manifest(
     r#"
 [3 for x in []]
 ##     ^ diagnostic: unused variable: `x`
@@ -128,7 +128,7 @@ fn object_comp() {
 #[test]
 #[should_panic = "not yet implemented: makeArray"]
 fn object_comp_only_key() {
-  JsonnetInput::eval_error(
+  JsonnetInput::manifest(
     r#"
 {
   [x]: 0 for x in ["a", "b"]
@@ -147,7 +147,7 @@ fn object_comp_only_key() {
 #[test]
 #[should_panic = "not yet implemented: makeArray"]
 fn object_comp_only_val() {
-  JsonnetInput::eval_error(
+  JsonnetInput::manifest(
     r#"
 {
   ["foo"]: x for x in [0]
@@ -165,7 +165,7 @@ fn object_comp_only_val() {
 #[test]
 #[should_panic = "not yet implemented: makeArray"]
 fn object_comp_extra_local() {
-  JsonnetInput::eval_error(
+  JsonnetInput::manifest(
     r#"
 {
   local no = k,

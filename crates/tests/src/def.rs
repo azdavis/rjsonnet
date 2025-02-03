@@ -261,7 +261,7 @@ fn obj_local() {
 #[test]
 #[should_panic = "not yet implemented: makeArray"]
 fn obj_comp_local() {
-  JsonnetInput::eval_error(
+  JsonnetInput::manifest(
     r#"
 {
   local a = k + "e",
@@ -301,7 +301,7 @@ fn array_comp() {
 #[test]
 #[should_panic = "not yet implemented: makeArray"]
 fn obj_comp_key() {
-  JsonnetInput::eval_error(
+  JsonnetInput::manifest(
     r#"
 {
 ## v use: k
