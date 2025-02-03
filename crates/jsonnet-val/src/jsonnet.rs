@@ -58,9 +58,8 @@ impl Env {
     self.store.push(EnvElem::Outer);
   }
 
-  /// Removes an id from this env. The id MUST be utterable. Use with caution.
+  /// Removes an id from this env. Use with caution.
   pub fn remove(&mut self, id: Id) {
-    always!(!id.is_unutterable());
     let iter = std::mem::take(&mut self.store).into_iter().filter_map(|elem| match elem {
       EnvElem::Binds(vec, self_refer) => {
         let iter = vec.into_iter().filter(|&(x, _)| x != id);
