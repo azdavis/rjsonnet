@@ -506,11 +506,10 @@ pub(crate) fn eq_val(expr: ExprMust, cx: &mut Cx<'_>, lhs: &Val, rhs: &Val) -> R
     (Val::Object(_), Val::Object(_)) => {
       Err(error::Error::Exec { expr, kind: error::Kind::Todo("object-object equality") })
     }
+    (Val::Fn(_), _) | (_, Val::Fn(_)) => Err(error::Error::Exec { expr, kind: error::Kind::EqFn }),
     (Val::Prim(_), Val::Object(_) | Val::Array(_))
     | (Val::Object(_), Val::Prim(_) | Val::Array(_))
-    | (Val::Array(_), Val::Prim(_) | Val::Object(_))
-    | (Val::Fn(_), _)
-    | (_, Val::Fn(_)) => Ok(false),
+    | (Val::Array(_), Val::Prim(_) | Val::Object(_)) => Ok(false),
   }
 }
 

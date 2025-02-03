@@ -48,6 +48,7 @@ pub enum Kind {
   Cycle(cycle::Cycle<paths::PathId>),
   IdxOutOfRange(usize),
   IdxNotUtf8Boundary(usize),
+  EqFn,
 }
 
 impl From<arg::ErrorKind> for Kind {
@@ -100,6 +101,7 @@ impl fmt::Display for ErrorDisplay<'_> {
         }
         Kind::IdxOutOfRange(n) => write!(f, "index out of range: {n}"),
         Kind::IdxNotUtf8Boundary(n) => write!(f, "index not on UTF-8 boundary: {n}"),
+        Kind::EqFn => f.write_str("cannot test equality of functions"),
       },
       Error::ManifestFn => f.write_str("cannot manifest function"),
       Error::NoPath(p) => {
