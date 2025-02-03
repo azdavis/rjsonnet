@@ -1,294 +1,409 @@
 //! The standard library for Jsonnet, implemented in Rust.
 
 #![allow(non_snake_case)]
-
 use crate::error::{self, Error, Result};
-use crate::{exec, Cx};
-use jsonnet_expr::{ExprMust, Prim, Str};
-use jsonnet_val::jsonnet::{Array, Fn, Object, Val};
+use crate::util;
+use crate::{exec, generated::fns, mk_todo, Cx};
+use jsonnet_expr::{Expr, ExprMust, Id, Prim, StdFn, Str};
+use jsonnet_val::jsonnet::{Array, Env, Fn, Val};
 use rustc_hash::FxHashSet;
 
-pub(crate) fn type_(x: &Val) -> Str {
-  match x {
-    Val::Prim(prim) => match prim {
-      Prim::Null => Str::null,
-      Prim::Bool(_) => Str::boolean,
-      Prim::String(_) => Str::string,
-      Prim::Number(_) => Str::number,
-    },
-    Val::Object(_) => Str::object,
-    Val::Array(_) => Str::array,
-    Val::Fn(_) => Str::function,
-  }
-}
-
-pub(crate) fn isArray(v: &Val) -> bool {
-  matches!(v, Val::Array(_))
-}
-
-pub(crate) fn isBoolean(v: &Val) -> bool {
-  matches!(v, Val::Prim(Prim::Bool(_)))
-}
-
-pub(crate) fn isFunction(v: &Val) -> bool {
-  matches!(v, Val::Fn(_))
-}
-
-pub(crate) fn isNumber(v: &Val) -> bool {
-  matches!(v, Val::Prim(Prim::Number(_)))
-}
-
-pub(crate) fn isObject(v: &Val) -> bool {
-  matches!(v, Val::Object(_))
-}
-
-pub(crate) fn isString(v: &Val) -> bool {
-  matches!(v, Val::Prim(Prim::String(_)))
-}
-
-pub(crate) fn length(x: &Val, expr: ExprMust, cx: &mut Cx<'_>) -> Result<usize> {
-  match x {
-    Val::Prim(prim) => match prim {
-      Prim::Null | Prim::Bool(_) | Prim::Number(_) => {
-        Err(Error::Exec { expr, kind: error::Kind::IncompatibleTypes })
-      }
-      // we want "number of codepoints", NOT byte length.
-      Prim::String(s) => Ok(cx.str_ar.get(*s).chars().count()),
-    },
-    Val::Object(obj) => Ok(obj.fields().iter().filter(|(_, f)| !f.is_hidden()).count()),
-    Val::Array(arr) => Ok(arr.len()),
-    Val::Fn(Fn::Regular(func)) => Ok(func.params.iter().filter(|(_, d)| d.is_none()).count()),
-    Val::Fn(Fn::Std(func)) => Ok(func.required_params_count()),
-  }
-}
-
-pub(crate) fn join(sep: &Val, arr: &Array, expr: ExprMust, cx: &mut Cx<'_>) -> Result<Val> {
-  match sep {
-    Val::Prim(Prim::String(sep)) => {
-      let mut ret = String::new();
-      let sep = cx.str_ar.get(*sep).to_owned();
-      let mut first = true;
-      for (env, elem) in arr.iter() {
-        if !first {
-          ret.push_str(sep.as_str());
-        };
-        first = false;
-        let Val::Prim(Prim::String(elem)) = exec::get(cx, env, elem)? else {
-          return Err(error::Error::Exec {
-            expr: elem.unwrap_or(expr),
-            kind: error::Kind::IncompatibleTypes,
-          });
-        };
-        ret.push_str(cx.str_ar.get(elem));
-      }
-      Ok(Val::Prim(Prim::String(cx.str_ar.str(ret.into_boxed_str()))))
-    }
-    Val::Array(sep) => {
-      let mut ret = Array::default();
-      let mut first = true;
-      for (env, elem) in arr.iter() {
-        if !first {
-          ret.append(&mut sep.clone());
-        };
-        first = false;
-        let Val::Array(mut elem) = exec::get(cx, env, elem)? else {
-          return Err(error::Error::Exec {
-            expr: elem.unwrap_or(expr),
-            kind: error::Kind::IncompatibleTypes,
-          });
-        };
-        ret.append(&mut elem);
-      }
-      Ok(Val::Array(ret))
-    }
-    Val::Prim(_) | Val::Object(_) | Val::Fn(_) => {
-      Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes })
-    }
-  }
-}
-
-pub(crate) fn sign(n: f64) -> f64 {
-  if n == 0.0 {
-    0.0
-  } else if n.is_sign_positive() {
-    1.0
-  } else {
-    -1.0
-  }
-}
-
-pub(crate) fn max(a: f64, b: f64) -> f64 {
-  a.max(b)
-}
-
-pub(crate) fn min(a: f64, b: f64) -> f64 {
-  a.min(b)
-}
-
-pub(crate) fn pow(x: f64, n: f64) -> f64 {
-  x.powf(n)
-}
-
-pub(crate) fn exp(x: f64) -> f64 {
-  x.exp()
-}
-
-pub(crate) fn log(x: f64) -> f64 {
-  x.ln()
-}
-
-pub(crate) fn abs(n: f64) -> f64 {
-  n.abs()
-}
-
-pub(crate) fn floor(n: f64) -> f64 {
-  n.floor()
-}
-
-pub(crate) fn ceil(n: f64) -> f64 {
-  n.ceil()
-}
-
-pub(crate) fn sqrt(n: f64) -> f64 {
-  n.sqrt()
-}
-
-pub(crate) fn sin(n: f64) -> f64 {
-  n.sin()
-}
-
-pub(crate) fn cos(n: f64) -> f64 {
-  n.cos()
-}
-
-pub(crate) fn tan(n: f64) -> f64 {
-  n.tan()
-}
-
-pub(crate) fn asin(n: f64) -> f64 {
-  n.asin()
-}
-
-pub(crate) fn acos(n: f64) -> f64 {
-  n.acos()
-}
-
-pub(crate) fn atan(n: f64) -> f64 {
-  n.atan()
-}
-
-pub(crate) fn round(n: f64) -> f64 {
-  n.round()
-}
-
-pub(crate) fn equals(lhs: &Val, rhs: &Val, expr: ExprMust, cx: &mut Cx<'_>) -> Result<bool> {
-  exec::eq_val(expr, cx, lhs, rhs)
-}
-
-pub(crate) fn isEven(n: f64) -> bool {
-  n.abs() % 2.0 == 0.0
-}
-
-#[expect(clippy::float_cmp)]
-pub(crate) fn isOdd(n: f64) -> bool {
-  n.abs() % 2.0 == 1.0
-}
-
-#[expect(clippy::float_cmp)]
-pub(crate) fn isInteger(n: f64) -> bool {
-  n.trunc() == n
-}
-
-pub(crate) fn isDecimal(n: f64) -> bool {
-  !isInteger(n)
-}
-
-pub(crate) fn clamp(n: f64, min: f64, max: f64) -> f64 {
-  n.clamp(min, max)
-}
-
-pub(crate) fn isEmpty(s: &str) -> bool {
-  s.is_empty()
-}
-
-pub(crate) fn asciiUpper(s: &str) -> String {
-  s.to_ascii_uppercase()
-}
-
-pub(crate) fn asciiLower(s: &str) -> String {
-  s.to_ascii_lowercase()
-}
-
-pub(crate) fn strReplace(str: &str, from: &str, to: &str) -> String {
-  str.replace(from, to)
-}
-
-pub(crate) fn substr(
-  str: &str,
-  from: usize,
-  len: usize,
+pub(crate) fn get_call(
+  cx: &mut Cx<'_>,
+  env: &Env,
   expr: ExprMust,
-  _: &mut Cx<'_>,
-) -> Result<String> {
-  if from >= str.len() {
-    return Err(error::Error::Exec { expr, kind: error::Kind::IdxOutOfRange(from) });
-  }
-  let Some(fst) = str.get(from..) else {
-    return Err(error::Error::Exec { expr, kind: error::Kind::IdxNotUtf8Boundary(from) });
-  };
-  if fst.len() < len {
-    Ok(fst.to_owned())
-  } else {
-    match fst.get(..len) {
-      Some(x) => Ok(x.to_owned()),
-      None => Err(error::Error::Exec { expr, kind: error::Kind::IdxNotUtf8Boundary(len) }),
+  func: StdFn,
+  pos: &[Expr],
+  named: &[(Id, Expr)],
+) -> Result<Val> {
+  match func {
+    StdFn::type_ => {
+      let arg = fns::type_::new(pos, named, expr)?.x(cx, env)?;
+      let ret = match arg {
+        Val::Prim(prim) => match prim {
+          Prim::Null => Str::null,
+          Prim::Bool(_) => Str::boolean,
+          Prim::String(_) => Str::string,
+          Prim::Number(_) => Str::number,
+        },
+        Val::Object(_) => Str::object,
+        Val::Array(_) => Str::array,
+        Val::Fn(_) => Str::function,
+      };
+      Ok(ret.into())
     }
-  }
-}
 
-pub(crate) fn startsWith(a: &str, b: &str) -> bool {
-  a.starts_with(b)
-}
+    StdFn::isArray => {
+      let arg = fns::isArray::new(pos, named, expr)?.v(cx, env)?;
+      Ok(matches!(arg, Val::Array(_)).into())
+    }
 
-pub(crate) fn endsWith(a: &str, b: &str) -> bool {
-  a.ends_with(b)
-}
+    StdFn::isBoolean => {
+      let arg = fns::isBoolean::new(pos, named, expr)?.v(cx, env)?;
+      Ok(matches!(arg, Val::Prim(Prim::Bool(_))).into())
+    }
 
-pub(crate) fn stripChars(s: &str, cs: &str) -> String {
-  let cs: FxHashSet<_> = cs.chars().collect();
-  s.trim_matches(|c| cs.contains(&c)).to_owned()
-}
+    StdFn::isFunction => {
+      let arg = fns::isFunction::new(pos, named, expr)?.v(cx, env)?;
+      Ok(matches!(arg, Val::Fn(_)).into())
+    }
 
-pub(crate) fn lstripChars(s: &str, cs: &str) -> String {
-  let cs: FxHashSet<_> = cs.chars().collect();
-  s.trim_start_matches(|c| cs.contains(&c)).to_owned()
-}
+    StdFn::isNumber => {
+      let arg = fns::isNumber::new(pos, named, expr)?.v(cx, env)?;
+      Ok(matches!(arg, Val::Prim(Prim::Number(_))).into())
+    }
 
-pub(crate) fn rstripChars(s: &str, cs: &str) -> String {
-  let cs: FxHashSet<_> = cs.chars().collect();
-  s.trim_end_matches(|c| cs.contains(&c)).to_owned()
-}
+    StdFn::isObject => {
+      let arg = fns::isObject::new(pos, named, expr)?.v(cx, env)?;
+      Ok(matches!(arg, Val::Object(_)).into())
+    }
 
-pub(crate) fn xor(a: bool, b: bool) -> bool {
-  a != b
-}
+    StdFn::isString => {
+      let arg = fns::isString::new(pos, named, expr)?.v(cx, env)?;
+      Ok(matches!(arg, Val::Prim(Prim::String(_))).into())
+    }
 
-pub(crate) fn xnor(a: bool, b: bool) -> bool {
-  a == b
-}
+    StdFn::length => {
+      let ret = match fns::length::new(pos, named, expr)?.x(cx, env)? {
+        Val::Prim(prim) => match prim {
+          Prim::Null | Prim::Bool(_) | Prim::Number(_) => {
+            return Err(Error::Exec { expr, kind: error::Kind::IncompatibleTypes })
+          }
+          // we want "number of codepoints", NOT byte length.
+          Prim::String(s) => cx.str_ar.get(s).chars().count(),
+        },
+        Val::Object(obj) => obj.fields().iter().filter(|(_, f)| !f.is_hidden()).count(),
+        Val::Array(arr) => arr.len(),
+        Val::Fn(Fn::Regular(func)) => func.params.iter().filter(|(_, d)| d.is_none()).count(),
+        Val::Fn(Fn::Std(func)) => func.required_params_count(),
+      };
+      Ok(finite_float::Float::from(ret).into())
+    }
 
-pub(crate) fn objectHas(o: &Object, f: Str) -> bool {
-  o.get_field(f).is_some_and(|f| !f.is_hidden())
-}
+    StdFn::join => {
+      let args = fns::join::new(pos, named, expr)?;
+      let arr = args.arr(cx, env)?;
+      match args.sep(cx, env)? {
+        Val::Prim(Prim::String(sep)) => {
+          let mut ret = String::new();
+          let sep = cx.str_ar.get(sep).to_owned();
+          let mut first = true;
+          for (env, elem) in arr.iter() {
+            if !first {
+              ret.push_str(sep.as_str());
+            };
+            first = false;
+            let Val::Prim(Prim::String(elem)) = exec::get(cx, env, elem)? else {
+              return Err(error::Error::Exec {
+                expr: elem.unwrap_or(expr),
+                kind: error::Kind::IncompatibleTypes,
+              });
+            };
+            ret.push_str(cx.str_ar.get(elem));
+          }
+          Ok(util::mk_str(cx.str_ar, ret))
+        }
+        Val::Array(sep) => {
+          let mut ret = Array::default();
+          let mut first = true;
+          for (env, elem) in arr.iter() {
+            if !first {
+              ret.append(&mut sep.clone());
+            };
+            first = false;
+            let Val::Array(mut elem) = exec::get(cx, env, elem)? else {
+              return Err(error::Error::Exec {
+                expr: elem.unwrap_or(expr),
+                kind: error::Kind::IncompatibleTypes,
+              });
+            };
+            ret.append(&mut elem);
+          }
+          Ok(Val::Array(ret))
+        }
+        Val::Prim(_) | Val::Object(_) | Val::Fn(_) => {
+          Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes })
+        }
+      }
+    }
 
-pub(crate) fn objectHasAll(o: &Object, f: Str) -> bool {
-  o.get_field(f).is_some()
-}
+    StdFn::sign => {
+      let n = fns::sign::new(pos, named, expr)?.n(cx, env)?;
+      let ret = if n == 0.0 {
+        finite_float::Float::POSITIVE_ZERO
+      } else if n.is_sign_positive() {
+        finite_float::Float::POSITIVE_ONE
+      } else {
+        finite_float::Float::NEGATIVE_ONE
+      };
+      Ok(ret.into())
+    }
 
-pub(crate) fn objectHasEx(o: &Object, f: Str, hidden: bool) -> bool {
-  if hidden {
-    objectHasAll(o, f)
-  } else {
-    objectHas(o, f)
+    StdFn::max => {
+      let args = fns::max::new(pos, named, expr)?;
+      let a = args.a(cx, env)?;
+      let b = args.b(cx, env)?;
+      util::mk_num(a.max(b), expr)
+    }
+
+    StdFn::min => {
+      let args = fns::min::new(pos, named, expr)?;
+      let a = args.a(cx, env)?;
+      let b = args.b(cx, env)?;
+      util::mk_num(a.min(b), expr)
+    }
+
+    StdFn::pow => {
+      let args = fns::pow::new(pos, named, expr)?;
+      let x = args.x(cx, env)?;
+      let n = args.n(cx, env)?;
+      util::mk_num(x.powf(n), expr)
+    }
+
+    StdFn::exp => {
+      let x = fns::exp::new(pos, named, expr)?.x(cx, env)?;
+      util::mk_num(x.exp(), expr)
+    }
+
+    StdFn::log => {
+      let x = fns::log::new(pos, named, expr)?.x(cx, env)?;
+      util::mk_num(x.ln(), expr)
+    }
+
+    StdFn::abs => {
+      let n = fns::abs::new(pos, named, expr)?.n(cx, env)?;
+      util::mk_num(n.abs(), expr)
+    }
+
+    StdFn::floor => {
+      let x = fns::floor::new(pos, named, expr)?.x(cx, env)?;
+      util::mk_num(x.floor(), expr)
+    }
+
+    StdFn::ceil => {
+      let x = fns::ceil::new(pos, named, expr)?.x(cx, env)?;
+      util::mk_num(x.ceil(), expr)
+    }
+
+    StdFn::sqrt => {
+      let x = fns::sqrt::new(pos, named, expr)?.x(cx, env)?;
+      util::mk_num(x.sqrt(), expr)
+    }
+
+    StdFn::sin => {
+      let x = fns::sin::new(pos, named, expr)?.x(cx, env)?;
+      util::mk_num(x.sin(), expr)
+    }
+
+    StdFn::cos => {
+      let x = fns::cos::new(pos, named, expr)?.x(cx, env)?;
+      util::mk_num(x.cos(), expr)
+    }
+
+    StdFn::tan => {
+      let x = fns::tan::new(pos, named, expr)?.x(cx, env)?;
+      util::mk_num(x.tan(), expr)
+    }
+
+    StdFn::asin => {
+      let x = fns::asin::new(pos, named, expr)?.x(cx, env)?;
+      util::mk_num(x.asin(), expr)
+    }
+
+    StdFn::acos => {
+      let x = fns::acos::new(pos, named, expr)?.x(cx, env)?;
+      util::mk_num(x.acos(), expr)
+    }
+
+    StdFn::atan => {
+      let x = fns::atan::new(pos, named, expr)?.x(cx, env)?;
+      util::mk_num(x.atan(), expr)
+    }
+
+    StdFn::round => {
+      let x = fns::round::new(pos, named, expr)?.x(cx, env)?;
+      util::mk_num(x.round(), expr)
+    }
+
+    StdFn::equals => {
+      let args = fns::equals::new(pos, named, expr)?;
+      let x = args.x(cx, env)?;
+      let y = args.y(cx, env)?;
+      Ok(exec::eq_val(expr, cx, &x, &y)?.into())
+    }
+
+    StdFn::isEven => {
+      let x = fns::isEven::new(pos, named, expr)?.x(cx, env)?;
+      Ok((x.abs() % 2.0 == 0.0).into())
+    }
+
+    StdFn::isOdd => {
+      let x = fns::isOdd::new(pos, named, expr)?.x(cx, env)?;
+      #[expect(clippy::float_cmp)]
+      Ok((x.abs() % 2.0 == 1.0).into())
+    }
+
+    StdFn::isInteger => {
+      let x = fns::isInteger::new(pos, named, expr)?.x(cx, env)?;
+      #[expect(clippy::float_cmp)]
+      Ok((x.trunc() == x).into())
+    }
+
+    StdFn::isDecimal => {
+      let x = fns::isDecimal::new(pos, named, expr)?.x(cx, env)?;
+      #[expect(clippy::float_cmp)]
+      Ok((x.trunc() != x).into())
+    }
+
+    StdFn::clamp => {
+      let args = fns::clamp::new(pos, named, expr)?;
+      let x = args.x(cx, env)?;
+      let min = args.minVal(cx, env)?;
+      let max = args.maxVal(cx, env)?;
+      util::mk_num(x.clamp(min, max), expr)
+    }
+
+    StdFn::isEmpty => {
+      let s = fns::isEmpty::new(pos, named, expr)?.str(cx, env)?;
+      Ok(cx.str_ar.get(s).is_empty().into())
+    }
+
+    StdFn::asciiUpper => {
+      let s = fns::asciiUpper::new(pos, named, expr)?.str(cx, env)?;
+      let ret = cx.str_ar.get(s).to_ascii_uppercase();
+      Ok(util::mk_str(cx.str_ar, ret))
+    }
+
+    StdFn::asciiLower => {
+      let s = fns::asciiLower::new(pos, named, expr)?.str(cx, env)?;
+      let ret = cx.str_ar.get(s).to_ascii_lowercase();
+      Ok(util::mk_str(cx.str_ar, ret))
+    }
+
+    StdFn::strReplace => {
+      let args = fns::strReplace::new(pos, named, expr)?;
+      let str = args.str(cx, env)?;
+      let from = args.from(cx, env)?;
+      let to = args.to(cx, env)?;
+      let str = cx.str_ar.get(str);
+      let from = cx.str_ar.get(from);
+      let to = cx.str_ar.get(to);
+      let ret = str.replace(from, to);
+      Ok(util::mk_str(cx.str_ar, ret))
+    }
+
+    StdFn::substr => {
+      let args = fns::substr::new(pos, named, expr)?;
+      let str = args.str(cx, env)?;
+      let from = args.from(cx, env)?;
+      let len = args.len(cx, env)?;
+      let str = cx.str_ar.get(str);
+      if from >= str.len() {
+        return Err(error::Error::Exec { expr, kind: error::Kind::IdxOutOfRange(from) });
+      }
+      let Some(fst) = str.get(from..) else {
+        return Err(error::Error::Exec { expr, kind: error::Kind::IdxNotUtf8Boundary(from) });
+      };
+      let ret = if fst.len() < len {
+        fst.to_owned()
+      } else {
+        match fst.get(..len) {
+          Some(x) => x.to_owned(),
+          None => {
+            return Err(error::Error::Exec { expr, kind: error::Kind::IdxNotUtf8Boundary(len) })
+          }
+        }
+      };
+      Ok(util::mk_str(cx.str_ar, ret))
+    }
+
+    StdFn::startsWith => {
+      let args = fns::startsWith::new(pos, named, expr)?;
+      let a = args.a(cx, env)?;
+      let b = args.b(cx, env)?;
+      let a = cx.str_ar.get(a);
+      let b = cx.str_ar.get(b);
+      Ok(a.starts_with(b).into())
+    }
+
+    StdFn::endsWith => {
+      let args = fns::endsWith::new(pos, named, expr)?;
+      let a = args.a(cx, env)?;
+      let b = args.b(cx, env)?;
+      let a = cx.str_ar.get(a);
+      let b = cx.str_ar.get(b);
+      Ok(a.ends_with(b).into())
+    }
+
+    StdFn::stripChars => {
+      let args = fns::stripChars::new(pos, named, expr)?;
+      let cs = args.chars(cx, env)?;
+      let s = args.str(cx, env)?;
+      let cs = cx.str_ar.get(cs);
+      let s = cx.str_ar.get(s);
+      let cs: FxHashSet<_> = cs.chars().collect();
+      let ret = s.trim_matches(|c| cs.contains(&c)).to_owned();
+      Ok(util::mk_str(cx.str_ar, ret))
+    }
+
+    StdFn::lstripChars => {
+      let args = fns::lstripChars::new(pos, named, expr)?;
+      let cs = args.chars(cx, env)?;
+      let s = args.str(cx, env)?;
+      let cs = cx.str_ar.get(cs);
+      let s = cx.str_ar.get(s);
+      let cs: FxHashSet<_> = cs.chars().collect();
+      let ret = s.trim_start_matches(|c| cs.contains(&c)).to_owned();
+      Ok(util::mk_str(cx.str_ar, ret))
+    }
+
+    StdFn::rstripChars => {
+      let args = fns::rstripChars::new(pos, named, expr)?;
+      let cs = args.chars(cx, env)?;
+      let s = args.str(cx, env)?;
+      let cs = cx.str_ar.get(cs);
+      let s = cx.str_ar.get(s);
+      let cs: FxHashSet<_> = cs.chars().collect();
+      let ret = s.trim_end_matches(|c| cs.contains(&c)).to_owned();
+      Ok(util::mk_str(cx.str_ar, ret))
+    }
+
+    StdFn::xor => {
+      let args = fns::xor::new(pos, named, expr)?;
+      let x = args.x(cx, env)?;
+      let y = args.y(cx, env)?;
+      Ok((x != y).into())
+    }
+
+    StdFn::xnor => {
+      let args = fns::xnor::new(pos, named, expr)?;
+      let x = args.x(cx, env)?;
+      let y = args.y(cx, env)?;
+      Ok((x == y).into())
+    }
+
+    StdFn::objectHas => {
+      let args = fns::objectHas::new(pos, named, expr)?;
+      let o = args.o(cx, env)?;
+      let f = args.f(cx, env)?;
+      Ok(o.get_field(f).is_some_and(|f| !f.is_hidden()).into())
+    }
+
+    StdFn::objectHasAll => {
+      let args = fns::objectHasAll::new(pos, named, expr)?;
+      let o = args.o(cx, env)?;
+      let f = args.f(cx, env)?;
+      Ok(o.get_field(f).is_some().into())
+    }
+
+    StdFn::objectHasEx => {
+      let args = fns::objectHasEx::new(pos, named, expr)?;
+      let o = args.obj(cx, env)?;
+      let f = args.fname(cx, env)?;
+      let hidden = args.hidden(cx, env)?;
+      Ok(o.get_field(f).is_some_and(|f| hidden || !f.is_hidden()).into())
+    }
+
+    _ => Err(mk_todo(expr, func.as_static_str())),
   }
 }

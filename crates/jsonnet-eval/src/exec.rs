@@ -120,7 +120,7 @@ pub(crate) fn get(cx: &mut Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
       };
       match func {
         Fn::Regular(func) => get_call(cx, env, expr, func, &positional, &named),
-        Fn::Std(std_fn) => crate::generated::call_std(cx, env, &positional, &named, expr, std_fn),
+        Fn::Std(func) => crate::std_lib::get_call(cx, env, expr, func, &positional, &named),
       }
     }
     ExprData::Id(id) => match env.get(id) {
