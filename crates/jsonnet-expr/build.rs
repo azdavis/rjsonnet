@@ -1,6 +1,6 @@
 //! Generate some string/identifier names.
 
-#![expect(clippy::disallowed_methods, reason = "can panic in build script")]
+#![expect(clippy::disallowed_methods, reason = "ok to panic in build scripts")]
 
 use jsonnet_std_sig::S;
 use quote::quote as q;

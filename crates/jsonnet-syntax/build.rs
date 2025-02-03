@@ -1,6 +1,6 @@
 //! Generate AST and CST from an ungrammar.
 
-#![allow(clippy::disallowed_methods, reason = "can panic in build script")]
+#![expect(clippy::disallowed_methods, reason = "ok to panic in build scripts")]
 
 use rustc_hash::FxHashMap;
 

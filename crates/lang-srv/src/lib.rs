@@ -14,7 +14,7 @@ mod util;
 ///
 /// If things failed that it wouldn't make sense to try to recover from, like starting up the LSP or
 /// joining I/O threads.
-#[expect(clippy::disallowed_methods)]
+#[expect(clippy::disallowed_methods, reason = "ok to panic in initial setup")]
 pub fn run<S: lang_srv_state::State>() {
   better_panic::Settings::new()
     .message(S::BUG_REPORT_MSG)
