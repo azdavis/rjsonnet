@@ -267,7 +267,7 @@ pub(crate) fn get(cx: &mut Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
   }
 }
 
-fn get_call(
+pub(crate) fn get_call(
   cx: &mut Cx<'_>,
   env: &Env,
   expr: ExprMust,

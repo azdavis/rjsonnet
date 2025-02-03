@@ -3,7 +3,6 @@
 use crate::check::JsonnetInput;
 
 #[test]
-#[should_panic = "not yet implemented: makeArray"]
 fn smoke() {
   JsonnetInput::manifest(
     r#"
@@ -23,7 +22,6 @@ fn smoke() {
 }
 
 #[test]
-#[should_panic = "not yet implemented: makeArray"]
 fn plus() {
   JsonnetInput::manifest(
     r#"

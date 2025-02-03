@@ -98,7 +98,6 @@ fn no_field() {
 }
 
 #[test]
-#[should_panic = "not yet implemented: makeArray"]
 fn array_comp() {
   JsonnetInput::manifest(
     r#"
@@ -111,7 +110,6 @@ fn array_comp() {
 }
 
 #[test]
-#[should_panic = "not yet implemented: makeArray"]
 fn object_comp() {
   JsonnetInput::eval_error(
     r#"
@@ -126,7 +124,6 @@ fn object_comp() {
 }
 
 #[test]
-#[should_panic = "not yet implemented: makeArray"]
 fn object_comp_only_key() {
   JsonnetInput::manifest(
     r#"
@@ -145,7 +142,6 @@ fn object_comp_only_key() {
 }
 
 #[test]
-#[should_panic = "not yet implemented: makeArray"]
 fn object_comp_only_val() {
   JsonnetInput::manifest(
     r#"
@@ -163,7 +159,6 @@ fn object_comp_only_val() {
 }
 
 #[test]
-#[should_panic = "not yet implemented: makeArray"]
 fn object_comp_extra_local() {
   JsonnetInput::manifest(
     r#"

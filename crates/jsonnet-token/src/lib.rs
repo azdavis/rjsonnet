@@ -781,7 +781,7 @@ pub const ALL: [Token; 51] = [
         assert lengths(["foo", "hi"])
           == { foo: 3, hi: 2 };
       "#},
-      outcome: Err(Error::Eval("not yet implemented: makeArray")),
+      outcome: Err(Error::Eval("not yet implemented: object-object equality")),
     }],
   },
   Token {
@@ -816,7 +816,7 @@ pub const ALL: [Token; 51] = [
           assert [x + 1 for x in xs]
             == [2, 4];
         "#},
-        outcome: Err(Error::Eval("not yet implemented: makeArray")),
+        outcome: Ok(()),
       },
       TokenPurpose {
         doc: indoc! {"

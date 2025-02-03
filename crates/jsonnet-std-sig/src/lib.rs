@@ -1925,7 +1925,7 @@ pub const FNS: [Fn; 133] = [
   },
   Fn {
     name: S::new("makeArray"),
-    implemented: false,
+    implemented: true,
     sig: sig(&[req("sz", Ty::Uint), req("func", Ty::Fn1)], Ty::ArrAny),
     total: true,
     available_since: Some(10),

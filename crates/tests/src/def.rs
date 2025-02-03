@@ -259,7 +259,6 @@ fn obj_local() {
 }
 
 #[test]
-#[should_panic = "not yet implemented: makeArray"]
 fn obj_comp_local() {
   JsonnetInput::manifest(
     r#"
@@ -282,7 +281,6 @@ fn obj_comp_local() {
 }
 
 #[test]
-#[should_panic = "not yet implemented: makeArray"]
 fn array_comp() {
   JsonnetInput::manifest(
     r#"
@@ -299,7 +297,6 @@ fn array_comp() {
 }
 
 #[test]
-#[should_panic = "not yet implemented: makeArray"]
 fn obj_comp_key() {
   JsonnetInput::manifest(
     r#"

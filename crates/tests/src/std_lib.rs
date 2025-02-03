@@ -70,7 +70,6 @@ local sc2 = std.prune(null);
 }
 
 #[test]
-#[should_panic = "not yet implemented: makeArray"]
 fn make_array_calls() {
   JsonnetInput::eval_error(
     r#"

@@ -4,8 +4,9 @@
 use crate::error::{self, Error, Result};
 use crate::util;
 use crate::{exec, generated::fns, mk_todo, Cx};
+use always::always;
 use finite_float::Float;
-use jsonnet_expr::{Expr, ExprMust, Id, Prim, StdFn, Str};
+use jsonnet_expr::{Expr, ExprData, ExprMust, Id, Prim, StdFn, Str};
 use jsonnet_val::jsonnet::{Array, Env, Fn, Val};
 use rustc_hash::FxHashSet;
 
@@ -405,6 +406,27 @@ pub(crate) fn get_call(
       let f = args.fname(cx, env)?;
       let hidden = args.hidden(cx, env)?;
       Ok(o.get_field(f).is_some_and(|f| hidden || !f.is_hidden()).into())
+    }
+
+    StdFn::makeArray => {
+      let args = fns::makeArray::new(pos, named, expr)?;
+      let sz = args.sz(cx, env)?;
+      let func = args.func(cx, env)?;
+      let indices: Vec<_> = if let Some(exprs) = cx.exprs.get_mut(&env.path()) {
+        let iter = (0..sz).map(|idx| {
+          let idx = ExprData::Prim(Prim::Number(Float::from(idx)));
+          exprs.ar.alloc(idx)
+        });
+        iter.collect()
+      } else {
+        always!(false, "should have this path's expr arena");
+        return Err(Error::NoPath(env.path()));
+      };
+      let elems = indices
+        .into_iter()
+        .map(|idx| exec::get_call(cx, env, expr, func.clone(), &[Some(idx)], &[]));
+      let elems: Result<Vec<_>> = elems.collect();
+      Ok(Array::vals(elems?).into())
     }
 
     _ => Err(mk_todo(expr, func.as_static_str())),
