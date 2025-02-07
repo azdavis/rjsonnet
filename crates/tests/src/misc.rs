@@ -99,3 +99,19 @@ f(3) + 4
   )
   .check();
 }
+
+#[test]
+#[should_panic = "adding two sets will result in a non-set"]
+fn add_arrays_ifs() {
+  JsonnetInput::manifest(
+    r#"
+local f(x) =
+  assert std.isBoolean(x);
+  if x then [1, 2] else [];
+
+f(true) + f(false)
+"#,
+    r#"[1, 2]"#,
+  )
+  .check();
+}
