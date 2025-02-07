@@ -72,13 +72,24 @@ local sc2 = std.prune(null);
 /// TODO the calls should be lazy
 #[test]
 #[should_panic = "explicit `error`: zero"]
-fn make_array_lazy() {
+fn make_array_calls_lazy() {
   JsonnetInput::manifest(
     r#"
 local xs = std.makeArray(3, function(x) if x == 0 then error "zero" else x + 3);
 xs[1]
 "#,
     "4",
+  )
+  .check();
+}
+
+#[test]
+fn make_array_len_zero_func_eager() {
+  JsonnetInput::eval_error(
+    r#"
+std.makeArray(0, error "func")
+"#,
+    "func",
   )
   .check();
 }
