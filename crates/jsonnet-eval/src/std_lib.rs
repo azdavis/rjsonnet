@@ -422,6 +422,7 @@ pub(crate) fn get_call(
         always!(false, "should have this path's expr arena");
         return Err(Error::NoPath(env.path()));
       };
+      // TODO should not evaluate the calls now, need to be lazy
       let elems = indices
         .into_iter()
         .map(|idx| exec::get_call(cx, env, expr, func.clone(), &[Some(idx)], &[]));
