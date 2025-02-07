@@ -86,7 +86,7 @@ fn length_num() {
   JsonnetInput::eval_error(
     r#"
 std.length(3)
-##         ^ diagnostic: not a type which has length: `number`
+##         ^ diagnostic: invalid call to `std.length`; expected a type with length, e.g. `array[any]`, `object`, `string`, `function`; found `number`
 "#,
     "incompatible types",
   )

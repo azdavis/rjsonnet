@@ -191,19 +191,13 @@ impl fmt::Display for Display<'_> {
       }
       Kind::Unify(u) => match u {
         Unify::Incompatible(want, got) => {
-          let want = want.display(MultiLine::MustNot, self.store, None, self.str_ar);
-          let got = got.display(MultiLine::MustNot, self.store, None, self.str_ar);
           f.write_str("incompatible types")?;
-          match self.multi_line {
-            MultiLine::MustNot => f.write_str("; ")?,
-            MultiLine::May => f.write_str("\n  ")?,
-          }
-          write!(f, "expected `{want}`")?;
-          match self.multi_line {
-            MultiLine::MustNot => f.write_str("; ")?,
-            MultiLine::May => f.write_str("\n     ")?,
-          }
-          write!(f, "found `{got}`")
+          let ef = ExpectedFound {
+            expected: Backticks(want.display(MultiLine::MustNot, self.store, None, self.str_ar)),
+            found: Backticks(got.display(MultiLine::MustNot, self.store, None, self.str_ar)),
+            multi_line: self.multi_line,
+          };
+          ef.fmt(f)
         }
         Unify::NoSuchField(no_such, suggest) => {
           write!(f, "no such field: `{}`", self.str_ar.get(*no_such))?;
@@ -218,35 +212,31 @@ impl fmt::Display for Display<'_> {
         }
         Unify::NotEnoughParams(want, got) => {
           f.write_str("not enough parameters")?;
-          match self.multi_line {
-            MultiLine::MustNot => f.write_str("; ")?,
-            MultiLine::May => f.write_str("\n  ")?,
-          }
-          write!(f, "expected at least {want}")?;
-          match self.multi_line {
-            MultiLine::MustNot => f.write_str("; ")?,
-            MultiLine::May => f.write_str("\n      ")?,
-          }
-          write!(f, "found up to {got}")
+          let ef = ExpectedFound {
+            expected: AtLeast(*want),
+            found: UpTo(*got),
+            multi_line: self.multi_line,
+          };
+          ef.fmt(f)
         }
         Unify::MismatchedParamNames(want, got) => {
-          f.write_str("mismatched parameter names\n")?;
-          match self.multi_line {
-            MultiLine::MustNot => f.write_str("; ")?,
-            MultiLine::May => f.write_str("\n  ")?,
-          }
-          let want = want.display(self.str_ar);
-          write!(f, "  expected `{want}`")?;
-          match self.multi_line {
-            MultiLine::MustNot => f.write_str("; ")?,
-            MultiLine::May => f.write_str("\n     ")?,
-          }
-          let got = got.display(self.str_ar);
-          write!(f, "found `{got}`")
+          f.write_str("mismatched parameter names")?;
+          let ef = ExpectedFound {
+            expected: Backticks(want.display(self.str_ar)),
+            found: Backticks(got.display(self.str_ar)),
+            multi_line: self.multi_line,
+          };
+          ef.fmt(f)
         }
         Unify::WantOptionalParamGotRequired(id) => {
           let id = id.display(self.str_ar);
-          write!(f, "wanted an optional parameter, got a required one: `{id}`")
+          write!(f, "mismatched parameter optionality: `{id}`")?;
+          let ef = ExpectedFound {
+            expected: "an optional parameter",
+            found: "a required parameter",
+            multi_line: self.multi_line,
+          };
+          ef.fmt(f)
         }
         Unify::ExtraRequiredParam(id) => {
           let id = id.display(self.str_ar);
@@ -255,25 +245,45 @@ impl fmt::Display for Display<'_> {
       },
       Kind::Invalid(ty, inv) => match inv {
         Invalid::OrdCmp => {
-          let ty = ty.display(MultiLine::MustNot, self.store, None, self.str_ar);
-          write!(f, "not a type that can be compared with <, >=, etc: `{ty}`")
+          f.write_str("invalid comparison, i.e. use of `<`, `>=`, etc")?;
+          let ef = ExpectedFound {
+            expected: "a comparable type, e.g. `number`, `string`, `array[number]`, etc",
+            found: Backticks(ty.display(MultiLine::MustNot, self.store, None, self.str_ar)),
+            multi_line: self.multi_line,
+          };
+          ef.fmt(f)
         }
         Invalid::Call => {
-          let ty = ty.display(MultiLine::MustNot, self.store, None, self.str_ar);
-          write!(f, "not a type that can be called: `{ty}`")
+          f.write_str("invalid call`")?;
+          let ef = ExpectedFound {
+            expected: "a callable type, e.g. `function``",
+            found: Backticks(ty.display(MultiLine::MustNot, self.store, None, self.str_ar)),
+            multi_line: self.multi_line,
+          };
+          ef.fmt(f)
         }
         Invalid::Subscript => {
-          let ty = ty.display(MultiLine::MustNot, self.store, None, self.str_ar);
-          write!(f, "not a type which can be subscripted with `[]` or `.`: `{ty}`")
+          f.write_str("invalid subscript, i.e. use of `[]` or `.`")?;
+          let ef = ExpectedFound {
+            expected: "a type with fields or elements, e.g. `array[any]`, `object`",
+            found: Backticks(ty.display(MultiLine::MustNot, self.store, None, self.str_ar)),
+            multi_line: self.multi_line,
+          };
+          ef.fmt(f)
         }
         Invalid::Length => {
-          let ty = ty.display(MultiLine::MustNot, self.store, None, self.str_ar);
-          write!(f, "not a type which has length: `{ty}`")
+          f.write_str("invalid call to `std.length`")?;
+          let ef = ExpectedFound {
+            expected: "a type with length, e.g. `array[any]`, `object`, `string`, `function`",
+            found: Backticks(ty.display(MultiLine::MustNot, self.store, None, self.str_ar)),
+            multi_line: self.multi_line,
+          };
+          ef.fmt(f)
         }
         Invalid::Add(rhs) => {
+          f.write_str("invalid use of `+`")?;
           let ty = ty.display(MultiLine::MustNot, self.store, None, self.str_ar);
           let rhs = rhs.display(MultiLine::MustNot, self.store, None, self.str_ar);
-          f.write_str("not a pair of types that can be added with `+`")?;
           match self.multi_line {
             MultiLine::MustNot => f.write_str("; ")?,
             MultiLine::May => f.write_str("\n   ")?,
@@ -289,5 +299,57 @@ impl fmt::Display for Display<'_> {
       Kind::AddSets => f.write_str("adding two sets will result in a non-set"),
       Kind::Unreachable => f.write_str("unreachable code"),
     }
+  }
+}
+
+struct Backticks<B>(B);
+
+impl<B> fmt::Display for Backticks<B>
+where
+  B: fmt::Display,
+{
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    write!(f, "`{}`", self.0)
+  }
+}
+
+struct ExpectedFound<E, F> {
+  expected: E,
+  found: F,
+  multi_line: MultiLine,
+}
+
+impl<E, F> fmt::Display for ExpectedFound<E, F>
+where
+  E: fmt::Display,
+  F: fmt::Display,
+{
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    match self.multi_line {
+      MultiLine::MustNot => f.write_str("; ")?,
+      MultiLine::May => f.write_str("\n  ")?,
+    }
+    write!(f, "expected {}", self.expected)?;
+    match self.multi_line {
+      MultiLine::MustNot => f.write_str("; ")?,
+      MultiLine::May => f.write_str("\n     ")?,
+    }
+    write!(f, "found {}", self.found)
+  }
+}
+
+struct AtLeast(usize);
+
+impl fmt::Display for AtLeast {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    write!(f, "at least {}", self.0)
+  }
+}
+
+struct UpTo(usize);
+
+impl fmt::Display for UpTo {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    write!(f, "up to {}", self.0)
   }
 }

@@ -77,7 +77,7 @@ fn is_fn() {
   let thing = r#"
 local bad(f) =
   assert std.isFunction(f) : "not a fn";
-##vvvvv diagnostic: not a pair of types that can be added with `+`; left: `function`; right: `number`
+##vvvvv diagnostic: invalid use of `+`; left: `function`; right: `number`
   f + 1
 # ^ hover: function
 ;

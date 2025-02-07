@@ -54,7 +54,7 @@ fn add_union_err() {
 local f(x) =
   assert std.isNumber(x) || std.isObject(x);
   x + 3;
-##^^^^^ diagnostic: not a pair of types that can be added with `+`; left: `object`; right: `number`
+##^^^^^ diagnostic: invalid use of `+`; left: `object`; right: `number`
 
 f(4)
 "#,
