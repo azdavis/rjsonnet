@@ -94,7 +94,7 @@ pub const ALL: [Token; 51] = [
         Fields with this marker will not be included in the output JSON when materialized.
       "},
       example: indoc! {r#"
-        {a:: 3, b: 4}
+        { a:: 3, b: 4 }
       "#},
       outcome: Ok(()),
     }],
@@ -520,7 +520,7 @@ pub const ALL: [Token; 51] = [
         Begin an object or object comprehension.
       "},
       example: indoc! {r#"
-        {a: 1, b: 2}
+        { a: 1, b: 2 }
       "#},
       outcome: Ok(()),
     }],
