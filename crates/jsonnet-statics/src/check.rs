@@ -72,16 +72,15 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
         let ty = get(st, ar, arg);
         tys.insert(ty);
       }
-      // we say `[]` has type `set[never]`.
+      // we say `[]` has type `array[never]`.
       //
       // having `[]` have type `set[any]` would be "right" as well (since any is the top and bottom
       // type), but if we can avoid any, we should.
       //
-      // we could also have it be type `array[never]`, since all sets are arrays, and the empty
-      // array is the empty set. but we know it's a set since it's empty - a little bonus.
-      let is_set = tys.is_empty();
+      // we could also have it be type `set[never]`, since the empty array is sorted and thus a set.
+      // but this makes some errors more annoying.
       let elem = st.tys.get(ty::Data::Union(tys));
-      st.tys.get(ty::Data::Array(ty::Array { elem, is_set }))
+      st.tys.get(ty::Data::Array(ty::Array { elem, is_set: false }))
     }
     ExprData::Subscript { on, idx } => {
       let on_ty = get(st, ar, *on);

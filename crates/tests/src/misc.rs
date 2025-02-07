@@ -101,7 +101,6 @@ f(3) + 4
 }
 
 #[test]
-#[should_panic = "adding two sets will result in a non-set"]
 fn add_arrays_ifs() {
   JsonnetInput::manifest(
     r#"
