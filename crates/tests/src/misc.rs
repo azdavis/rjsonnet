@@ -114,3 +114,15 @@ f(true) + f(false)
   )
   .check();
 }
+
+#[test]
+fn add_any_to_non_addable() {
+  JsonnetInput::manifest_or_fn(
+    r#"
+function(y)
+  y + null
+##^^^^^^^^ diagnostic: invalid use of `+`; left: `any`; right: `null`
+"#,
+  )
+  .check();
+}

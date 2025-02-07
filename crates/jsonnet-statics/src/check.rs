@@ -264,6 +264,12 @@ fn must_reachable(st: &mut st::St<'_>, expr: ExprMust, ty: jsonnet_ty::Ty) {
 
 fn get_add(st: &mut st::St<'_>, expr: ExprMust, lhs_ty: ty::Ty, rhs_ty: ty::Ty) -> ty::Ty {
   match (st.tys.data(lhs_ty), st.tys.data(rhs_ty)) {
+    // put this before the any case - never is it valid to add these things to anything.
+    (ty::Data::Fn(_) | ty::Data::Prim(ty::Prim::Null | ty::Prim::True | ty::Prim::False), _)
+    | (_, ty::Data::Fn(_) | ty::Data::Prim(ty::Prim::Null | ty::Prim::True | ty::Prim::False)) => {
+      st.err(expr, error::Kind::Invalid(lhs_ty, error::Invalid::Add(rhs_ty)));
+      ty::Ty::ANY
+    }
     (ty::Data::Prim(ty::Prim::Any), _) | (_, ty::Data::Prim(ty::Prim::Any)) => ty::Ty::ANY,
     // add numbers.
     (ty::Data::Prim(ty::Prim::Number), ty::Data::Prim(ty::Prim::Number)) => ty::Ty::NUMBER,
