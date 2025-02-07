@@ -153,15 +153,13 @@ fn self_in_field_name_add_field() {
 }
 
 #[test]
-#[should_panic = "none of the lines were equal"]
 fn override_computed_field() {
-  // TODO fix typing for object + which is too optimistic
   JsonnetInput::manifest(
     r#"
 local mk(x) = { [x]: null };
 local res = { foo: 3 } + mk("foo");
 res.foo
-##  ^^^ type: any
+##^ type: { foo: any, ... }
 "#,
     r#"
 null

@@ -288,10 +288,16 @@ fn get_add(st: &mut st::St<'_>, expr: ExprMust, lhs_ty: ty::Ty, rhs_ty: ty::Ty) 
     // add object fields.
     (ty::Data::Object(lhs_obj), ty::Data::Object(rhs_obj)) => {
       let mut obj = lhs_obj.clone();
-      // right overrides left.
+      if rhs_obj.has_unknown {
+        obj.has_unknown = true;
+        // the unknown field(s) from rhs can override the types of the known field(s) from lhs to
+        // anything, but we still know the lhs fields will certainly exist.
+        for ty in obj.known.values_mut() {
+          *ty = ty::Ty::ANY;
+        }
+      }
+      // right known overrides left known.
       obj.known.extend(rhs_obj.known.iter());
-      // this has unknown if either has unknown.
-      obj.has_unknown = obj.has_unknown || rhs_obj.has_unknown;
       st.tys.get(ty::Data::Object(obj))
     }
     (ty::Data::Union(lhs_tys), _) => {
