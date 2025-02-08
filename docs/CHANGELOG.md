@@ -14,6 +14,11 @@ Things under "main" are not released yet.
   - `std.deg2rad`
   - `std.rad2deg`
   - `std.native`
+- Improve typing of:
+  - `[]` (give it array type, not set type)
+  - `==` for functions (not allowed)
+  - `+` for objects (lhs known field types are overridden when rhs has unknown)
+  - `+` for known non-addable types and `any`
 
 ## v0.9.0
 
