@@ -26,6 +26,7 @@ pub(crate) fn get(
     .arg(path.as_path())
     .stdin(Stdio::piped())
     .stdout(Stdio::piped())
+    .stderr(Stdio::piped())
     .spawn()
     .map_err(Error::Spawn)?;
   let Some(mut stdin) = prog.stdin.take() else {
