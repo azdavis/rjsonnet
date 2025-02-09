@@ -6,7 +6,7 @@ use always::always;
 use jsonnet_syntax::ast::AstNode as _;
 use jsonnet_syntax::kind::{SyntaxKind, SyntaxToken};
 use jsonnet_ty::display::MultiLine;
-use paths::{PathId, PathMap};
+use paths::{PathId, PathMap, PathSet};
 use rayon::iter::{IntoParallelIterator as _, ParallelIterator as _};
 use rustc_hash::FxHashSet;
 use std::collections::hash_map::Entry;
@@ -299,11 +299,12 @@ impl TopoSortAction {
 #[derive(Debug)]
 pub struct St {
   with_fs: WithFs,
-  open_files: PathMap<String>,
+  open_files: PathSet,
   file_artifacts: PathMap<util::FileArtifacts>,
   file_exprs: PathMap<jsonnet_eval::Exprs>,
   import_str: PathMap<String>,
   import_bin: PathMap<Vec<u8>>,
+  just_opened: Option<String>,
   manifest: bool,
   debug: bool,
   multi_line: MultiLine,
@@ -323,11 +324,12 @@ impl St {
         file_tys: paths::PathMap::default(),
         has_errors: paths::PathSet::default(),
       },
-      open_files: PathMap::default(),
+      open_files: PathSet::default(),
       file_artifacts: PathMap::default(),
       file_exprs: PathMap::default(),
       import_str: PathMap::default(),
       import_bin: PathMap::default(),
+      just_opened: None,
       manifest: init.manifest,
       debug: init.debug,
       multi_line: init.multi_line,
@@ -527,11 +529,16 @@ impl lang_srv_state::State for St {
   {
     log::info!("update one file: {}", self.with_fs.strip(path.as_path()).display());
     let path_id = self.path_id(path.clone());
-    let Some(contents) = self.open_files.get_mut(&path_id) else { return (path_id, Vec::new()) };
-    apply_changes::get(contents, changes);
-    self.with_fs.ensure_import_tys_cached(fs, path_id, Some(contents));
+    let Some(mut contents) = self.just_opened.take().or_else(|| {
+      self.file_artifacts.get(&path_id).map(|x| x.syntax.root.clone().syntax().to_string())
+    }) else {
+      return (path_id, Vec::new());
+    };
+    apply_changes::get(&mut contents, changes);
+    self.with_fs.ensure_import_tys_cached(fs, path_id, Some(contents.as_str()));
     let p = path.as_clean_path();
-    let res = util::SyntaxFileToCombine::from_str(p, contents, &self.with_fs.root_dirs, fs);
+    let res =
+      util::SyntaxFileToCombine::from_str(p, contents.as_str(), &self.with_fs.root_dirs, fs);
     let res = res.combine(&mut self.with_fs.artifacts);
     let res = util::StaticsFileToCombine::new(res, &self.with_fs.artifacts, &self.with_fs.file_tys);
     let res = res.combine(&mut self.with_fs.artifacts);
@@ -564,7 +571,8 @@ impl lang_srv_state::State for St {
     F: Sync + paths::FileSystem,
   {
     let path_id = self.path_id(path.clone());
-    self.open_files.insert(path_id, contents);
+    self.open_files.insert(path_id);
+    self.just_opened = Some(contents);
     self.update_one(fs, path, Vec::new())
   }
 
@@ -576,7 +584,7 @@ impl lang_srv_state::State for St {
 
   fn is_open(&mut self, path: &paths::CleanPath) -> bool {
     let path_id = self.path_id(path.to_owned());
-    self.open_files.contains_key(&path_id)
+    self.open_files.contains(&path_id)
   }
 
   fn hover<F>(
