@@ -62,9 +62,14 @@ impl fmt::Display for Error {
       Error::WriteAll(e) => write!(f, "couldn't write stdin: {e}"),
       Error::Wait(e) => write!(f, "couldn't wait: {e}"),
       Error::Unsuccessful(stderr) => {
+        f.write_str("didn't get successful exit; ")?;
         let stderr = String::from_utf8_lossy(stderr.as_slice());
         let len = stderr.len();
-        write!(f, "didn't get successful exit; stderr (len {len}): {stderr}")
+        if len == 0 {
+          f.write_str("nor any stderr")
+        } else {
+          write!(f, "stderr ({len} bytes):\n{stderr}")
+        }
       }
       Error::StdoutUtf8(e) => write!(f, "couldn't convert stdout to UTF-8: {e}"),
     }
