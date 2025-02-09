@@ -85,16 +85,13 @@ impl StrArena {
     }
   }
 
-  fn mk_str_repr(&mut self, contents: Box<str>) -> StrRepr {
-    match contents.as_ref().parse::<BuiltinStr>() {
-      Ok(bs) => StrRepr::Builtin(bs),
-      Err(nbs) => StrRepr::Idx(self.dangerous_mk_idx(contents, nbs)),
-    }
-  }
-
   /// inserts the contents if it was not in the arena already
   pub fn str(&mut self, contents: Box<str>) -> Str {
-    Str(self.mk_str_repr(contents))
+    let repr = match contents.as_ref().parse::<BuiltinStr>() {
+      Ok(bs) => StrRepr::Builtin(bs),
+      Err(nbs) => StrRepr::Idx(self.dangerous_mk_idx(contents, nbs)),
+    };
+    Str(repr)
   }
 
   pub fn id(&mut self, contents: Box<str>) -> Id {
