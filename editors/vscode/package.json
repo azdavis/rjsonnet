@@ -57,7 +57,7 @@
           ],
           "markdownEnumDescriptions": [
             "No formatting.",
-            "Formatting provided by an executable that:\n- Is named `bin/jsonnetfmt` relative to the workspace root\n- Accepts a `-stdio` flag\n- Accepts a positional argument, the name of the file being formatted\n- Takes in the contents of the file being formatted as stdin\n- Outputs the formatted file to stdout"
+            "Formatting provided by an executable that:\n- Is named `bin/jsonnetfmt` relative to the workspace root\n- Accepts a `-stdio` flag\n- Accepts a positional argument, the name of the file being formatted\n- Takes in from stdin the unformatted file contents\n- Outputs to stdout the formatted file contents"
           ]
         },
         "rjsonnet.server.enable": {

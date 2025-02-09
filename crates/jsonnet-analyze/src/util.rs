@@ -30,11 +30,12 @@ pub struct Init {
 #[derive(Debug, Clone, Copy)]
 pub enum FormatEngine {
   /// Formatting provided by an executable that:
+  ///
   /// - Is named `bin/jsonnetfmt` relative to the workspace root
   /// - Accepts a `-stdio` flag
   /// - Accepts a positional argument, the name of the file being formatted
-  /// - Takes in the contents of the file being formatted as stdin
-  /// - Outputs the formatted file to stdout
+  /// - Takes in from stdin the unformatted file contents
+  /// - Outputs to stdout the formatted file contents
   BinJsonnetFmtStdio,
 }
 
