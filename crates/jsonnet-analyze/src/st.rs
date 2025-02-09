@@ -231,7 +231,7 @@ impl WithFs {
     ret
   }
 
-  /// ensures `orig_path_id` and its transitive dependencies have their type info loaded into the
+  /// ensures the transitive dependencies of `orig_path_id` have their type info loaded into the
   /// cache.
   fn ensure_import_tys_cached<F>(&mut self, fs: &F, orig_path_id: PathId, contents: Option<&str>)
   where
