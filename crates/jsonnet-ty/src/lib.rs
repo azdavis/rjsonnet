@@ -30,10 +30,10 @@ pub enum Data {
   Fn(Fn),
   /// A union type.
   ///
-  /// A value whose type is the empty union can never exist. This type is sometimes called "never"
-  /// or "void".
+  /// A value whose type is the empty union can never exist. This type is called `never` and
+  /// sometimes also called `void`.
   ///
-  /// The union of `true` and `false` is called "bool".
+  /// The union of `true` and `false` is called `boolean`.
   Union(Union),
 }
 
