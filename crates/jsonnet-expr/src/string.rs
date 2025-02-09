@@ -9,6 +9,7 @@ use std::fmt;
 
 /// A string, which may be interned.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[repr(transparent)]
 pub struct Str(StrRepr);
 
 impl Str {
@@ -97,7 +98,7 @@ impl StrArena {
   }
 
   pub fn id(&mut self, contents: Box<str>) -> Id {
-    Id(IdRepr::Str(self.mk_str_repr(contents)))
+    Id(IdRepr::Str(self.str(contents)))
   }
 
   pub fn id_fresh_unutterable(&mut self) -> Id {
@@ -121,7 +122,7 @@ impl StrArena {
   #[must_use]
   pub fn get_id(&self, id: Id) -> Option<&str> {
     match id.0 {
-      IdRepr::Str(s) => Some(self.get(Str(s))),
+      IdRepr::Str(s) => Some(self.get(s)),
       IdRepr::Unutterable(_) => None,
     }
   }
@@ -129,6 +130,7 @@ impl StrArena {
 
 /// An identifier.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[repr(transparent)]
 pub struct Id(IdRepr);
 
 impl Id {
@@ -139,7 +141,7 @@ impl Id {
   #[must_use]
   pub fn is_unutterable(&self) -> bool {
     match self.0 {
-      IdRepr::Str(s) => match s {
+      IdRepr::Str(s) => match s.0 {
         StrRepr::Builtin(builtin) => builtin.is_unutterable(),
         StrRepr::Idx(_) => false,
       },
@@ -148,7 +150,7 @@ impl Id {
   }
 
   pub(crate) const fn builtin(bs: BuiltinStr) -> Self {
-    Self(IdRepr::Str(StrRepr::Builtin(bs)))
+    Self(IdRepr::Str(Str(StrRepr::Builtin(bs))))
   }
 
   #[must_use]
@@ -159,14 +161,14 @@ impl Id {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 enum IdRepr {
-  Str(StrRepr),
+  Str(Str),
   Unutterable(u32),
 }
 
 impl IdRepr {
   pub fn apply(&mut self, subst: &Subst) {
     match self {
-      IdRepr::Str(s) => Str(*s).apply(subst),
+      IdRepr::Str(s) => s.apply(subst),
       IdRepr::Unutterable(_) => {}
     }
   }
@@ -180,7 +182,7 @@ struct IdReprDisplay<'a> {
 impl fmt::Display for IdReprDisplay<'_> {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     match self.id {
-      IdRepr::Str(s) => Str(s).display(self.ar).fmt(f),
+      IdRepr::Str(s) => s.display(self.ar).fmt(f),
       IdRepr::Unutterable(idx) => write!(f, "${idx}"),
     }
   }
