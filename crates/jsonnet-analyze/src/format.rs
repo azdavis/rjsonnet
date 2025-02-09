@@ -6,6 +6,7 @@ use std::fmt;
 use std::io::{self, Write as _};
 use std::process::{Command, Stdio};
 
+const DIR: &str = "bin";
 const PROG: &str = "jsonnetfmt";
 
 pub(crate) fn get(
@@ -17,7 +18,7 @@ pub(crate) fn get(
   match engine {
     FormatEngine::BinJsonnetFmtStdio => {}
   }
-  root.push("bin");
+  root.push(DIR);
   root.push(PROG);
   let mut prog = Command::new(root.as_path())
     .arg("-stdio")
@@ -50,16 +51,16 @@ pub(crate) enum Error {
 impl fmt::Display for Error {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     match self {
-      Error::Spawn(e) => write!(f, "couldn't spawn {PROG}: {e}"),
-      Error::TakeStdin => write!(f, "couldn't take stdin of {PROG}"),
-      Error::WriteAll(e) => write!(f, "couldn't write stdin of {PROG}: {e}"),
-      Error::Wait(e) => write!(f, "couldn't wait for {PROG}: {e}"),
+      Error::Spawn(e) => write!(f, "couldn't spawn `{DIR}/{PROG}`: {e}"),
+      Error::TakeStdin => write!(f, "couldn't take stdin of `{DIR}/{PROG}`"),
+      Error::WriteAll(e) => write!(f, "couldn't write stdin of `{DIR}/{PROG}`: {e}"),
+      Error::Wait(e) => write!(f, "couldn't wait for `{DIR}/{PROG}`: {e}"),
       Error::Unsuccessful(stderr) => {
         let stderr = String::from_utf8_lossy(stderr.as_slice());
         let len = stderr.len();
-        write!(f, "didn't get successful exit from {PROG}; stderr (len {len}): {stderr}")
+        write!(f, "didn't get successful exit from `{DIR}/{PROG}`; stderr (len {len}): {stderr}")
       }
-      Error::StdoutUtf8(e) => write!(f, "couldn't convert stdout of {PROG} to UTF-8: {e}"),
+      Error::StdoutUtf8(e) => write!(f, "couldn't convert stdout of `{DIR}/{PROG}` to UTF-8: {e}"),
     }
   }
 }
