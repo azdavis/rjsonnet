@@ -18,7 +18,7 @@ Things under "main" are not released yet.
   - `[]` (give it array type, not set type)
   - `==` for functions (not allowed)
   - `+` for objects (lhs known field types are overridden when rhs has unknown)
-  - `+` for known non-addable types and `any`
+  - `+` for known non-addable types and `any` (not allowed)
 - Allow formatting jsonnet files via a local `bin/jsonnetfmt` executable in the workspace root; the full interface of such a formatter is described in the [manual](/docs/manual.md#rjsonnetformatengine).
 
 ## v0.9.0
