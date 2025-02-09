@@ -1,6 +1,7 @@
 //! Formatting with jsonnetfmt.
 
 use crate::util::FormatEngine;
+use always::always;
 use paths::{CleanPath, CleanPathBuf};
 use std::fmt;
 use std::io::{self, Write as _};
@@ -27,7 +28,10 @@ pub(crate) fn get(
     .stdout(Stdio::piped())
     .spawn()
     .map_err(Error::Spawn)?;
-  let mut stdin = prog.stdin.take().ok_or(Error::TakeStdin)?;
+  let Some(mut stdin) = prog.stdin.take() else {
+    always!(false, "should take stdin after passing piped");
+    return Err(Error::TakeStdin);
+  };
   stdin.write_all(contents.as_bytes()).map_err(Error::WriteAll)?;
   // explicitly drop to close
   drop(stdin);
