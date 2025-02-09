@@ -1,7 +1,7 @@
 //! The state of analysis.
 
-use crate::util::{GlobalArtifacts, PathIoError, Result};
-use crate::{const_eval, util};
+use crate::const_eval;
+use crate::util::{self, PathIoError, Result};
 use always::always;
 use jsonnet_syntax::ast::AstNode as _;
 use jsonnet_syntax::kind::{SyntaxKind, SyntaxToken};
@@ -23,7 +23,7 @@ use token::Triviable as _;
 struct WithFs {
   relative_to: Option<paths::CleanPathBuf>,
   root_dirs: Vec<paths::CleanPathBuf>,
-  artifacts: GlobalArtifacts,
+  artifacts: util::GlobalArtifacts,
   file_tys: paths::PathMap<jsonnet_ty::Ty>,
   /// INVARIANT: this is exactly the set of files that do have errors that have been loaded into
   /// either `file_artifacts` or `file_exprs` on the [`St`] that contains this.
@@ -318,7 +318,7 @@ impl St {
       with_fs: WithFs {
         relative_to: init.relative_to,
         root_dirs: init.root_dirs,
-        artifacts: GlobalArtifacts::default(),
+        artifacts: util::GlobalArtifacts::default(),
         file_tys: paths::PathMap::default(),
         has_errors: paths::PathSet::default(),
       },
