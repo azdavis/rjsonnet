@@ -12,6 +12,21 @@ Edit `.vscode/settings.json` or use the built-in settings editor for the followi
 
 <!-- @begin vscode-config -->
 
+#### `rjsonnet.format.engine`
+
+- Type: `string`
+- Default: `"none"`
+- Valid values:
+  - `"none"`: No formatting.
+  - `"bin-jsonnetfmt-stdio"`: Formatting provided by an executable that:
+    - Is named `bin/jsonnetfmt` relative to the workspace root
+    - Accepts a `-stdio` flag
+    - Accepts a positional argument, the name of the file being formatted
+    - Takes in the contents of the file being formatted as stdin
+    - Outputs the formatted file to stdout
+
+How to format files.
+
 #### `rjsonnet.server.enable`
 
 - Type: `boolean`

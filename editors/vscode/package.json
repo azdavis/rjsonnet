@@ -47,6 +47,19 @@
       "type": "object",
       "title": "Jsonnet",
       "properties": {
+        "rjsonnet.format.engine": {
+          "type": "string",
+          "default": "none",
+          "markdownDescription": "How to format files.",
+          "enum": [
+            "none",
+            "bin-jsonnetfmt-stdio"
+          ],
+          "markdownEnumDescriptions": [
+            "No formatting.",
+            "Formatting provided by an executable that:\n- Is named `bin/jsonnetfmt` relative to the workspace root\n- Accepts a `-stdio` flag\n- Accepts a positional argument, the name of the file being formatted\n- Takes in the contents of the file being formatted as stdin\n- Outputs the formatted file to stdout"
+          ]
+        },
         "rjsonnet.server.enable": {
           "type": "boolean",
           "default": true,

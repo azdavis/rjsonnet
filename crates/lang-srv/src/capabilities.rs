@@ -1,8 +1,5 @@
 //! The capabilities of the server, which we advertise to the client.
 
-/// TODO make true and inline once implemented
-const DOC_FORMATTING: bool = false;
-
 pub(crate) fn get() -> lsp_types::ServerCapabilities {
   lsp_types::ServerCapabilities {
     text_document_sync: Some(lsp_types::TextDocumentSyncCapability::Options(
@@ -22,7 +19,7 @@ pub(crate) fn get() -> lsp_types::ServerCapabilities {
       trigger_characters: Some(vec![".".to_owned()]),
       ..lsp_types::CompletionOptions::default()
     }),
-    document_formatting_provider: Some(lsp_types::OneOf::Left(DOC_FORMATTING)),
+    document_formatting_provider: Some(lsp_types::OneOf::Left(true)),
     signature_help_provider: Some(lsp_types::SignatureHelpOptions {
       trigger_characters: Some(vec!["(".to_owned()]),
       retrigger_characters: Some(vec![",".to_owned()]),

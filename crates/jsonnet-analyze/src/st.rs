@@ -1,7 +1,7 @@
 //! The state of analysis.
 
-use crate::const_eval;
 use crate::util::{self, PathIoError, Result};
+use crate::{const_eval, format};
 use always::always;
 use jsonnet_syntax::ast::AstNode as _;
 use jsonnet_syntax::kind::{SyntaxKind, SyntaxToken};
@@ -307,6 +307,7 @@ pub struct St {
   manifest: bool,
   debug: bool,
   multi_line: MultiLine,
+  format_engine: Option<util::FormatEngine>,
 }
 
 impl St {
@@ -330,6 +331,7 @@ impl St {
       manifest: init.manifest,
       debug: init.debug,
       multi_line: init.multi_line,
+      format_engine: init.format_engine,
     }
   }
 
@@ -478,6 +480,14 @@ impl lang_srv_state::State for St {
         .unwrap_or_default();
 
       init.manifest = obj.get("manifest").and_then(serde_json::Value::as_bool).unwrap_or_default();
+
+      init.format_engine = obj.get("format_engine").and_then(|x| {
+        let s = x.as_str()?;
+        if s == "none" {
+          return None;
+        }
+        s.parse().ok()
+      });
     }
 
     if let Err(e) = env_logger::try_init_from_env(logger_env) {
@@ -815,15 +825,25 @@ impl lang_srv_state::State for St {
 
   fn format<F>(
     &mut self,
-    _: &F,
-    _: paths::CleanPathBuf,
+    fs: &F,
+    path: paths::CleanPathBuf,
     _: u32,
   ) -> Option<(String, text_pos::PositionUtf16)>
   where
     F: Sync + paths::FileSystem,
   {
-    // TODO call the external formatter process
-    None
+    let engine = self.format_engine?;
+    let root = self.with_fs.relative_to.clone()?;
+    let path_id = self.with_fs.artifacts.syntax.paths.get_id(path.as_clean_path());
+    let arts = self.get_file_artifacts(fs, path_id).ok()?;
+    let contents = arts.syntax.root.clone().syntax().to_string();
+    match format::get(engine, root, path.as_clean_path(), contents.as_str()) {
+      Ok(x) => Some((x, arts.syntax.pos_db.end_position_utf16())),
+      Err(e) => {
+        log::error!("format failed: {e}");
+        None
+      }
+    }
   }
 
   fn signature_help<F>(

@@ -1,6 +1,7 @@
 //! Analyze jsonnet files.
 
 mod const_eval;
+mod format;
 mod st;
 mod util;
 

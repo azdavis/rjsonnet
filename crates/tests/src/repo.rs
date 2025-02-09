@@ -160,7 +160,7 @@ fn licenses() {
 #[derive(Debug)]
 struct EnumVariant<'a> {
   name: &'a str,
-  desc: &'a str,
+  desc: String,
 }
 
 impl fmt::Display for EnumVariant<'_> {
@@ -284,7 +284,8 @@ fn vs_code_config() {
       .zip(enum_descs.into_iter().flatten())
       .map(|(name, desc)| EnumVariant {
         name: name.as_str().unwrap(),
-        desc: desc.as_str().unwrap(),
+        // HACK: indent unordered list items
+        desc: desc.as_str().unwrap().replace("\n- ", "\n    - "),
       })
       .collect();
     let type_and_default = match typ {

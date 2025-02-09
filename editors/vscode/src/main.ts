@@ -30,6 +30,7 @@ export async function activate(cx: vscode.ExtensionContext) {
       root_dirs: config.get("server.importDirs.extra"),
       log_filter: config.get("unstable.server.logFilter"),
       manifest: config.get("server.manifest.enabled"),
+      format_engine: config.get("format.engine"),
     },
   };
   client = new LanguageClient("rjsonnet", serverOpts, clientOpts);

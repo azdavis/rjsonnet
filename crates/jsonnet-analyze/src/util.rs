@@ -22,6 +22,31 @@ pub struct Init {
   pub debug: bool,
   /// Whether to display types on multiple lines.
   pub multi_line: jsonnet_ty::display::MultiLine,
+  /// How to format files, if at all.
+  pub format_engine: Option<FormatEngine>,
+}
+
+/// How to format files, if at all.
+#[derive(Debug, Clone, Copy)]
+pub enum FormatEngine {
+  /// Formatting provided by an executable that:
+  /// - Is named `bin/jsonnetfmt` relative to the workspace root
+  /// - Accepts a `-stdio` flag
+  /// - Accepts a positional argument, the name of the file being formatted
+  /// - Takes in the contents of the file being formatted as stdin
+  /// - Outputs the formatted file to stdout
+  BinJsonnetFmtStdio,
+}
+
+impl std::str::FromStr for FormatEngine {
+  type Err = ();
+
+  fn from_str(s: &str) -> Result<Self, Self::Err> {
+    match s {
+      "bin-jsonnetfmt-stdio" => Ok(Self::BinJsonnetFmtStdio),
+      _ => Err(()),
+    }
+  }
 }
 
 /// An adaptor between file system traits.
