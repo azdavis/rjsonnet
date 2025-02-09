@@ -1,4 +1,4 @@
-//! Formatting with jsonnetfmt.
+//! Formatting with a local `jsonnetfmt` executable in the workspace's `bin`.
 
 use crate::util::FormatEngine;
 use always::always;
@@ -54,17 +54,18 @@ pub(crate) enum Error {
 
 impl fmt::Display for Error {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    write!(f, "`{DIR}/{PROG}`: ")?;
     match self {
-      Error::Spawn(e) => write!(f, "couldn't spawn `{DIR}/{PROG}`: {e}"),
-      Error::TakeStdin => write!(f, "couldn't take stdin of `{DIR}/{PROG}`"),
-      Error::WriteAll(e) => write!(f, "couldn't write stdin of `{DIR}/{PROG}`: {e}"),
-      Error::Wait(e) => write!(f, "couldn't wait for `{DIR}/{PROG}`: {e}"),
+      Error::Spawn(e) => write!(f, "couldn't spawn: {e}"),
+      Error::TakeStdin => write!(f, "couldn't take stdin"),
+      Error::WriteAll(e) => write!(f, "couldn't write stdin: {e}"),
+      Error::Wait(e) => write!(f, "couldn't wait: {e}"),
       Error::Unsuccessful(stderr) => {
         let stderr = String::from_utf8_lossy(stderr.as_slice());
         let len = stderr.len();
-        write!(f, "didn't get successful exit from `{DIR}/{PROG}`; stderr (len {len}): {stderr}")
+        write!(f, "didn't get successful exit; stderr (len {len}): {stderr}")
       }
-      Error::StdoutUtf8(e) => write!(f, "couldn't convert stdout of `{DIR}/{PROG}` to UTF-8: {e}"),
+      Error::StdoutUtf8(e) => write!(f, "couldn't convert stdout to UTF-8: {e}"),
     }
   }
 }
