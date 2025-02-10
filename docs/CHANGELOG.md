@@ -2,7 +2,7 @@
 
 Things under "main" are not released yet.
 
-## main
+## v0.9.1
 
 - Allow hidden and plus fields in object comprehensions.
 - Add new std fields:
