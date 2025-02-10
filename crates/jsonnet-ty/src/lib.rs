@@ -602,16 +602,16 @@ impl Subst {
       .map(|idx| {
         let mut t = Ty::from_idx(idx);
         t.make_local();
-        TopoSortAction::start(t)
+        topo_sort::Action::start(t)
       })
       .collect();
     let mut cur = FxHashSet::<Ty>::default();
     let mut done = FxHashSet::<Ty>::default();
     let mut order = Vec::<Ty>::default();
     let mut saw_cycle = false;
-    while let Some(TopoSortAction(ty, kind)) = work.pop() {
+    while let Some(topo_sort::Action(ty, kind)) = work.pop() {
       match kind {
-        TopoSortActionKind::Start => {
+        topo_sort::ActionKind::Start => {
           if done.contains(&ty) {
             continue;
           }
@@ -621,27 +621,27 @@ impl Subst {
             saw_cycle = true;
             continue;
           }
-          work.push(TopoSortAction::end(ty));
+          work.push(topo_sort::Action::end(ty));
           match data {
             // known to all already exist in the global store.
             Data::Prim(_) | Data::Fn(Fn::Std(_) | Fn::StdParam(_) | Fn::Unknown) => {}
-            Data::Array(arr) => work.push(TopoSortAction::start(arr.elem)),
+            Data::Array(arr) => work.push(topo_sort::Action::start(arr.elem)),
             Data::Object(object) => {
-              let iter = object.known.values().map(|&t| TopoSortAction::start(t));
+              let iter = object.known.values().map(|&t| topo_sort::Action::start(t));
               work.extend(iter);
             }
             Data::Fn(Fn::Regular(func)) => {
               let params = func.params.iter().map(|x| x.ty);
-              let iter = params.chain(std::iter::once(func.ret)).map(TopoSortAction::start);
+              let iter = params.chain(std::iter::once(func.ret)).map(topo_sort::Action::start);
               work.extend(iter);
             }
             Data::Union(tys) => {
-              let iter = tys.iter().map(|&t| TopoSortAction::start(t));
+              let iter = tys.iter().map(|&t| topo_sort::Action::start(t));
               work.extend(iter);
             }
           }
         }
-        TopoSortActionKind::End => {
+        topo_sort::ActionKind::End => {
           always!(ty.is_local());
           always!(cur.remove(&ty));
           always!(done.insert(ty));
@@ -709,25 +709,6 @@ impl Subst {
 
   fn is_empty(&self) -> bool {
     self.old_to_new.is_empty()
-  }
-}
-
-#[derive(Debug)]
-enum TopoSortActionKind {
-  Start,
-  End,
-}
-
-#[derive(Debug)]
-struct TopoSortAction(Ty, TopoSortActionKind);
-
-impl TopoSortAction {
-  const fn start(t: Ty) -> Self {
-    Self(t, TopoSortActionKind::Start)
-  }
-
-  const fn end(t: Ty) -> Self {
-    Self(t, TopoSortActionKind::End)
   }
 }
 

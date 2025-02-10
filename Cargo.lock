@@ -568,6 +568,7 @@ dependencies = [
  "text-pos",
  "text-size",
  "token",
+ "topo-sort",
 ]
 
 [[package]]
@@ -748,6 +749,7 @@ dependencies = [
  "proc-macro2",
  "quote",
  "rustc-hash 2.1.0",
+ "topo-sort",
  "write-rs-tokens",
 ]
 
@@ -1237,6 +1239,10 @@ dependencies = [
 name = "token"
 version = "0.1.0"
 source = "git+https://github.com/azdavis/language-util.git#95daf215cfde399ac269559df33cca914f3c5727"
+
+[[package]]
+name = "topo-sort"
+version = "0.9.0"
 
 [[package]]
 name = "ungrammar"

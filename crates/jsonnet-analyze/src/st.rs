@@ -130,16 +130,16 @@ impl WithFs {
     F: Sync + paths::FileSystem,
   {
     self.file_tys.remove(&root_path_id);
-    let mut work = vec![TopoSortAction::start(root_path_id)];
+    let mut work = vec![topo_sort::Action::start(root_path_id)];
     let mut cur = paths::PathSet::default();
     let mut done = paths::PathSet::default();
     // INVARIANT: `level_idx` == how many `End`s are in `work`.
     let mut level_idx = 0usize;
     let mut ret = Vec::<paths::PathSet>::new();
-    while let Some(TopoSortAction(path_id, kind)) = work.pop() {
+    while let Some(topo_sort::Action(path_id, kind)) = work.pop() {
       log::debug!("{kind:?} {path_id:?} {}", self.display_path_id(path_id));
       match kind {
-        TopoSortActionKind::Start => {
+        topo_sort::ActionKind::Start => {
           if done.contains(&path_id) {
             log::debug!("already done");
             continue;
@@ -152,7 +152,7 @@ impl WithFs {
             log::debug!("cycle");
             continue;
           }
-          work.push(TopoSortAction::end(path_id));
+          work.push(topo_sort::Action::end(path_id));
           level_idx += 1;
           let path = self.artifacts.syntax.paths.get_path(path_id);
           let parent = util::path_parent_must(path);
@@ -190,10 +190,10 @@ impl WithFs {
             let import = self.artifacts.syntax.paths.get_id_owned(import);
             // this mutation also makes it too annoying to write this for-push as a
             // iter-filter-map-extend.
-            work.push(TopoSortAction::start(import));
+            work.push(topo_sort::Action::start(import));
           }
         }
-        TopoSortActionKind::End => {
+        topo_sort::ActionKind::End => {
           level_idx = match level_idx.checked_sub(1) {
             None => {
               always!(false, "`End` should have a matching `Start`");
@@ -273,25 +273,6 @@ impl WithFs {
       });
       self.file_tys.extend(new_file_tys);
     }
-  }
-}
-
-#[derive(Debug)]
-enum TopoSortActionKind {
-  Start,
-  End,
-}
-
-#[derive(Debug)]
-struct TopoSortAction(PathId, TopoSortActionKind);
-
-impl TopoSortAction {
-  const fn start(p: PathId) -> Self {
-    Self(p, TopoSortActionKind::Start)
-  }
-
-  const fn end(p: PathId) -> Self {
-    Self(p, TopoSortActionKind::End)
   }
 }
 

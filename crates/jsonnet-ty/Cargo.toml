@@ -19,6 +19,7 @@ always.path = "../always"
 jsonnet-escape.path = "../jsonnet-escape"
 jsonnet-expr.path = "../jsonnet-expr"
 jsonnet-ident.path = "../jsonnet-ident"
+topo-sort.path = "../topo-sort"
 
 [build-dependencies]
 proc-macro2.workspace = true
