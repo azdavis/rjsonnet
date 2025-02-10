@@ -486,7 +486,8 @@ impl lang_srv_state::State for St {
     Self::init(init)
   }
 
-  const BUG_REPORT_MSG: &'static str = always::BUG_REPORT_MSG;
+  const BUG_REPORT_MSG: &'static str =
+    "please file a bug report: https://github.com/azdavis/rjsonnet/issues";
 
   const GLOB: &'static str = "**/*.{jsonnet,libsonnet,TEMPLATE}";
 

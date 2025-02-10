@@ -13,9 +13,9 @@ test = false
 doctest = false
 
 [dependencies]
+always.workspace = true
 rustc-hash.workspace = true
 
-always.path = "../always"
 jsonnet-escape.path = "../jsonnet-escape"
 jsonnet-expr.path = "../jsonnet-expr"
 jsonnet-ident.path = "../jsonnet-ident"

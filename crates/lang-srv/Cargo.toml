@@ -13,6 +13,7 @@ test = false
 doctest = false
 
 [dependencies]
+always.workspace = true
 anyhow.workspace = true
 apply-changes.workspace = true
 better-panic.workspace = true
@@ -24,5 +25,4 @@ paths.workspace = true
 serde_json.workspace = true
 text-pos.workspace = true
 
-always.path = "../always"
 lang-srv-state.path = "../lang-srv-state"

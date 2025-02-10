@@ -13,11 +13,11 @@ test = true
 doctest = false
 
 [dependencies]
+always.workspace = true
 la-arena.workspace = true
 paths.workspace = true
 rustc-hash.workspace = true
 
-always.path = "../always"
 finite-float.path = "../finite-float"
 jsonnet-escape.path = "../jsonnet-escape"
 

@@ -13,12 +13,12 @@ test = false
 doctest = false
 
 [dependencies]
+always.workspace = true
 paths.workspace = true
 rustc-hash.workspace = true
 str-process.workspace = true
 text-size.workspace = true
 
-always.path = "../always"
 finite-float.path = "../finite-float"
 jsonnet-ast-escape.path = "../jsonnet-ast-escape"
 jsonnet-escape.path = "../jsonnet-escape"

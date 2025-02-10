@@ -108,23 +108,6 @@ The end-to-end tests. Lexing, parsing, desugaring, static analysis, evaluation, 
 
 These crates could possibly be pulled out from this repo and be reused more widely.
 
-### `crates/always`
-
-Like `assert!()` except it only panics in debug mode. Evaluates to the asserted condition otherwise.
-
-This is handy if you don't want to hard fail in production:
-
-```rs
-if always!(internal_invariant_satisfied()) {
-    // normal, good
-} else {
-    // oops, something that should "never happen" happened.
-    // the internal invariant was NOT satisfied.
-    // in this branch we can do something like return a fake value,
-    // or `continue` in a loop, or return `None`, etc.
-}
-```
-
 ### `crates/finite-float`
 
 A finite float type (not nan or infinite).

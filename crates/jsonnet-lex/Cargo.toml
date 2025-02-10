@@ -13,11 +13,11 @@ test = false
 doctest = false
 
 [dependencies]
+always.workspace = true
 str-process.workspace = true
 text-size.workspace = true
 token.workspace = true
 
-always.path = "../always"
 jsonnet-escape.path = "../jsonnet-escape"
 jsonnet-ident.path = "../jsonnet-ident"
 jsonnet-syntax.path = "../jsonnet-syntax"

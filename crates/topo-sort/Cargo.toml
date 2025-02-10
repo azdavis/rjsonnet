@@ -13,6 +13,5 @@ doctest = false
 workspace = true
 
 [dependencies]
+always.workspace = true
 rustc-hash.workspace = true
-
-always.path = "../always"
