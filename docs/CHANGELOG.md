@@ -2,6 +2,10 @@
 
 Things under "main" are not released yet.
 
+## v0.9.2
+
+- Improve correctness of editing open files.
+
 ## v0.9.1
 
 - Allow hidden and plus fields in object comprehensions.
