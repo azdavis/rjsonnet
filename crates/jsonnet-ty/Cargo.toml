@@ -15,11 +15,11 @@ doctest = false
 [dependencies]
 always.workspace = true
 rustc-hash.workspace = true
+topo-sort.workspace = true
 
 jsonnet-escape.path = "../jsonnet-escape"
 jsonnet-expr.path = "../jsonnet-expr"
 jsonnet-ident.path = "../jsonnet-ident"
-topo-sort.path = "../topo-sort"
 
 [build-dependencies]
 proc-macro2.workspace = true

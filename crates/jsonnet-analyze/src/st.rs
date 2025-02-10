@@ -134,7 +134,7 @@ impl WithFs {
     work.push(root_path_id);
     let mut visitor =
       TopoSortVisitor { with_fs: self, fs, root_path_id, root_contents, ret: Vec::new() };
-    let got = topo_sort::run(&mut visitor, work);
+    let got = work.run(&mut visitor);
     let mut ret = visitor.finish();
     let done = got.done;
     if cfg!(debug_assertions) {

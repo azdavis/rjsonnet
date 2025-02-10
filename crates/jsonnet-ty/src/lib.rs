@@ -606,7 +606,7 @@ impl Subst {
       })
       .collect();
     let mut visitor = TopoSortVisitor { local, order: Vec::new() };
-    let got = topo_sort::run(&mut visitor, work);
+    let got = work.run(&mut visitor);
     let TopoSortVisitor { mut local, order } = visitor;
     // make a few checks, then proceed to build the subst in the topologically sorted order.
     //

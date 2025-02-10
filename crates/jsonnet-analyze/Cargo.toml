@@ -25,6 +25,7 @@ serde_json.workspace = true
 text-pos.workspace = true
 text-size.workspace = true
 token.workspace = true
+topo-sort.workspace = true
 
 jsonnet-ast-escape.path = "../jsonnet-ast-escape"
 jsonnet-desugar.path = "../jsonnet-desugar"
@@ -40,4 +41,3 @@ jsonnet-syntax.path = "../jsonnet-syntax"
 jsonnet-ty.path = "../jsonnet-ty"
 jsonnet-val.path = "../jsonnet-val"
 lang-srv-state.path = "../lang-srv-state"
-topo-sort.path = "../topo-sort"
