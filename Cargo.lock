@@ -708,7 +708,6 @@ dependencies = [
  "paths",
  "rustc-hash 2.1.0",
  "strsim",
- "uniq",
 ]
 
 [[package]]
@@ -1273,11 +1272,6 @@ name = "unicode-width"
 version = "0.1.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7dd6e30e90baa6f72411720665d41d89b9a3d039dc45b8faea1ddd07f617f6af"
-
-[[package]]
-name = "uniq"
-version = "0.1.0"
-source = "git+https://github.com/azdavis/language-util.git#97ee09abfed8167f6652cb6b9950eaba0b32d853"
 
 [[package]]
 name = "url"
