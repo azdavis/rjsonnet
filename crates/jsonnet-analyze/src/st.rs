@@ -813,7 +813,7 @@ impl lang_srv_state::State for St {
 
   fn format<F>(
     &mut self,
-    fs: &F,
+    _: &F,
     path: paths::CleanPathBuf,
     _: u32,
   ) -> Option<(String, text_pos::PositionUtf16)>
@@ -823,10 +823,12 @@ impl lang_srv_state::State for St {
     let engine = self.format_engine?;
     let root = self.with_fs.relative_to.clone()?;
     let path_id = self.with_fs.artifacts.syntax.paths.get_id(path.as_clean_path());
-    let arts = self.get_file_artifacts(fs, path_id).ok()?;
-    let contents = arts.syntax.root.clone().syntax().to_string();
+    let contents = self.open_files.get(&path_id)?;
     match format::get(engine, root, path.as_clean_path(), contents.as_str()) {
-      Ok(x) => Some((x, arts.syntax.pos_db.end_position_utf16())),
+      Ok(x) => {
+        let pos = text_pos::PositionDb::new(contents.as_str()).end_position_utf16();
+        Some((x, pos))
+      }
       Err(e) => {
         log::error!("format failed: {e}");
         None
