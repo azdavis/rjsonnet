@@ -27,7 +27,7 @@ struct WithFs {
   file_tys: paths::PathMap<jsonnet_ty::Ty>,
   /// INVARIANT: this is exactly the set of files that do have errors that have been loaded into
   /// either `file_artifacts` or `file_exprs` on the [`St`] that contains this.
-  has_errors: paths::PathSet,
+  has_errors: PathSet,
 }
 
 impl WithFs {
@@ -124,102 +124,23 @@ impl WithFs {
     &mut self,
     fs: &F,
     root_path_id: PathId,
-    mut root_contents: Option<&str>,
-  ) -> Vec<paths::PathSet>
+    root_contents: Option<&str>,
+  ) -> Vec<PathSet>
   where
     F: Sync + paths::FileSystem,
   {
     self.file_tys.remove(&root_path_id);
-    let mut work = vec![topo_sort::Action::start(root_path_id)];
-    let mut cur = paths::PathSet::default();
-    let mut done = paths::PathSet::default();
-    // INVARIANT: `level_idx` == how many `End`s are in `work`.
-    let mut level_idx = 0usize;
-    let mut ret = Vec::<paths::PathSet>::new();
-    while let Some(topo_sort::Action(path_id, kind)) = work.pop() {
-      log::debug!("{kind:?} {path_id:?} {}", self.display_path_id(path_id));
-      match kind {
-        topo_sort::ActionKind::Start => {
-          if done.contains(&path_id) {
-            log::debug!("already done");
-            continue;
-          }
-          if self.file_tys.contains_key(&path_id) {
-            log::debug!("already cached");
-            continue;
-          }
-          if !cur.insert(path_id) {
-            log::debug!("cycle");
-            continue;
-          }
-          work.push(topo_sort::Action::end(path_id));
-          level_idx += 1;
-          let path = self.artifacts.syntax.paths.get_path(path_id);
-          let parent = util::path_parent_must(path);
-          let fs_contents: String;
-          let contents = match root_contents.take() {
-            Some(x) => {
-              always!(path_id == root_path_id);
-              x
-            }
-            None => match fs.read_to_string(path.as_path()) {
-              Ok(x) => {
-                fs_contents = x;
-                fs_contents.as_str()
-              }
-              Err(e) => {
-                log::warn!("io error: {e}");
-                continue;
-              }
-            },
-          };
-          // need to make this `parent` owned...
-          let parent = parent.to_owned();
-          // ...and then shadow it with the borrowed form...
-          let parent = parent.as_clean_path();
-          let imports = util::approximate_code_imports(contents);
-          log::debug!("imports: {imports:?}");
-          for import in imports {
-            let import = std::path::Path::new(import.as_str());
-            // ...and re-make this `dirs` every time...
-            let dirs = jsonnet_resolve_import::NonEmptyDirs::new(parent, &self.root_dirs);
-            let import = jsonnet_resolve_import::get(import, dirs.iter(), &util::FsAdapter(fs));
-            let Some(import) = import else { continue };
-            log::debug!("new import: {}", import.as_clean_path().as_path().display());
-            // ...because we mutate `paths` here.
-            let import = self.artifacts.syntax.paths.get_id_owned(import);
-            // this mutation also makes it too annoying to write this for-push as a
-            // iter-filter-map-extend.
-            work.push(topo_sort::Action::start(import));
-          }
-        }
-        topo_sort::ActionKind::End => {
-          level_idx = match level_idx.checked_sub(1) {
-            None => {
-              always!(false, "`End` should have a matching `Start`");
-              continue;
-            }
-            Some(x) => x,
-          };
-          if level_idx >= ret.len() {
-            ret.resize_with(level_idx + 1, paths::PathSet::default);
-          }
-          let Some(level) = ret.get_mut(level_idx) else {
-            always!(false, "`ret` should have been resized to at least `{}`", level_idx + 1);
-            continue;
-          };
-          level.insert(path_id);
-          always!(cur.remove(&path_id), "should only `End` when in `cur`");
-          always!(done.insert(path_id), "should not `End` if already done");
-        }
-      }
-    }
-    always!(level_idx == 0, "should return to starting level");
-    always!(cur.is_empty(), "should not have any in progress");
+    let mut work = topo_sort::Work::<PathId>::default();
+    work.push(root_path_id);
+    let mut visitor =
+      TopoSortVisitor { with_fs: self, fs, root_path_id, root_contents, ret: Vec::new() };
+    let got = topo_sort::run(&mut visitor, work);
+    let mut ret = visitor.finish();
+    let done = got.done;
     if cfg!(debug_assertions) {
-      let all_levels: paths::PathSet = ret.iter().flatten().copied().collect();
+      let all_levels: PathSet = ret.iter().flatten().copied().collect();
       assert_eq!(all_levels, done, "everything done should be in the levels");
-      let all_levels_count: usize = ret.iter().map(paths::PathSet::len).sum();
+      let all_levels_count: usize = ret.iter().map(PathSet::len).sum();
       assert_eq!(all_levels_count, done.len(), "should have no duplicates across levels");
     }
     if let Some(fst) = ret.first_mut() {
@@ -276,6 +197,91 @@ impl WithFs {
   }
 }
 
+struct TopoSortVisitor<'a, F> {
+  with_fs: &'a mut WithFs,
+  fs: &'a F,
+  root_path_id: PathId,
+  root_contents: Option<&'a str>,
+  ret: Vec<PathSet>,
+}
+
+impl<F> TopoSortVisitor<'_, F> {
+  fn finish(self) -> Vec<PathSet> {
+    self.ret
+  }
+}
+
+impl<F> topo_sort::Visitor for TopoSortVisitor<'_, F>
+where
+  F: Sync + paths::FileSystem,
+{
+  type Elem = PathId;
+
+  type Data = ();
+
+  type Set = PathSet;
+
+  fn enter(&mut self, elem: PathId) -> Option<Self::Data> {
+    if self.with_fs.file_tys.contains_key(&elem) {
+      None
+    } else {
+      Some(())
+    }
+  }
+
+  fn process(&mut self, path_id: PathId, (): Self::Data, work: &mut topo_sort::Work<PathId>) {
+    let path = self.with_fs.artifacts.syntax.paths.get_path(path_id);
+    let parent = util::path_parent_must(path);
+    let fs_contents: String;
+    let contents = match self.root_contents.take() {
+      Some(x) => {
+        always!(path_id == self.root_path_id);
+        x
+      }
+      None => match self.fs.read_to_string(path.as_path()) {
+        Ok(x) => {
+          fs_contents = x;
+          fs_contents.as_str()
+        }
+        Err(e) => {
+          log::warn!("io error: {e}");
+          return;
+        }
+      },
+    };
+    // need to make this `parent` owned...
+    let parent = parent.to_owned();
+    // ...and then shadow it with the borrowed form...
+    let parent = parent.as_clean_path();
+    let imports = util::approximate_code_imports(contents);
+    log::debug!("imports: {imports:?}");
+    for import in imports {
+      let import = std::path::Path::new(import.as_str());
+      // ...and re-make this `dirs` every time...
+      let dirs = jsonnet_resolve_import::NonEmptyDirs::new(parent, &self.with_fs.root_dirs);
+      let import = jsonnet_resolve_import::get(import, dirs.iter(), &util::FsAdapter(self.fs));
+      let Some(import) = import else { continue };
+      log::debug!("new import: {}", import.as_clean_path().as_path().display());
+      // ...because we mutate `paths` here.
+      let import = self.with_fs.artifacts.syntax.paths.get_id_owned(import);
+      // this mutation also makes it too annoying to write this for-push as a
+      // iter-filter-map-extend.
+      work.push(import);
+    }
+  }
+
+  fn exit(&mut self, path_id: PathId, level_idx: usize) {
+    if level_idx >= self.ret.len() {
+      self.ret.resize_with(level_idx + 1, PathSet::default);
+    }
+    let Some(level) = self.ret.get_mut(level_idx) else {
+      always!(false, "`ret` should have been resized to at least `{}`", level_idx + 1);
+      return;
+    };
+    level.insert(path_id);
+  }
+}
+
 /// The state of analysis.
 #[derive(Debug)]
 pub struct St {
@@ -303,7 +309,7 @@ impl St {
         root_dirs: init.root_dirs,
         artifacts: util::GlobalArtifacts::default(),
         file_tys: paths::PathMap::default(),
-        has_errors: paths::PathSet::default(),
+        has_errors: PathSet::default(),
       },
       open_files: PathSet::default(),
       file_artifacts: PathMap::default(),
@@ -504,7 +510,7 @@ impl lang_srv_state::State for St {
     fs: &F,
     path: paths::CleanPathBuf,
     changes: Vec<apply_changes::Change>,
-  ) -> (paths::PathId, Vec<diagnostic::Diagnostic>)
+  ) -> (PathId, Vec<diagnostic::Diagnostic>)
   where
     F: Sync + paths::FileSystem,
   {
@@ -547,7 +553,7 @@ impl lang_srv_state::State for St {
     fs: &F,
     path: paths::CleanPathBuf,
     contents: String,
-  ) -> (paths::PathId, Vec<diagnostic::Diagnostic>)
+  ) -> (PathId, Vec<diagnostic::Diagnostic>)
   where
     F: Sync + paths::FileSystem,
   {

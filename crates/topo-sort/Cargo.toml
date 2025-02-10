@@ -11,3 +11,8 @@ doctest = false
 
 [lints]
 workspace = true
+
+[dependencies]
+rustc-hash.workspace = true
+
+always.path = "../always"

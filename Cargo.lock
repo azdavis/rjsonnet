@@ -1243,6 +1243,10 @@ source = "git+https://github.com/azdavis/language-util.git#95daf215cfde399ac2695
 [[package]]
 name = "topo-sort"
 version = "0.9.0"
+dependencies = [
+ "always",
+ "rustc-hash 2.1.0",
+]
 
 [[package]]
 name = "ungrammar"
