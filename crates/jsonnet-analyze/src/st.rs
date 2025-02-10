@@ -221,7 +221,7 @@ where
 
   type Set = PathSet;
 
-  fn enter(&mut self, elem: PathId) -> Option<Self::Data> {
+  fn enter(&self, elem: PathId) -> Option<Self::Data> {
     if self.with_fs.file_tys.contains_key(&elem) {
       None
     } else {

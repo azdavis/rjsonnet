@@ -28,15 +28,31 @@ impl<T> Action<T> {
 #[derive(Debug)]
 pub struct Work<T>(Vec<Action<T>>);
 
+impl<T> Work<T> {
+  pub fn push(&mut self, value: T) {
+    self.0.push(Action::start(value));
+  }
+}
+
 impl<T> Default for Work<T> {
   fn default() -> Self {
     Self(Vec::new())
   }
 }
 
-impl<T> Work<T> {
-  pub fn push(&mut self, value: T) {
-    self.0.push(Action::start(value));
+impl<T> Extend<T> for Work<T> {
+  fn extend<I: IntoIterator<Item = T>>(&mut self, iter: I) {
+    for x in iter {
+      self.push(x);
+    }
+  }
+}
+
+impl<T> FromIterator<T> for Work<T> {
+  fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
+    let mut ret = Work::default();
+    ret.extend(iter);
+    ret
   }
 }
 
@@ -44,7 +60,7 @@ pub trait Visitor {
   type Elem: Copy;
   type Data;
   type Set: Set<Self::Elem>;
-  fn enter(&mut self, value: Self::Elem) -> Option<Self::Data>;
+  fn enter(&self, value: Self::Elem) -> Option<Self::Data>;
   fn process(&mut self, value: Self::Elem, data: Self::Data, work: &mut Work<Self::Elem>);
   fn exit(&mut self, value: Self::Elem, level_idx: usize);
 }
@@ -108,6 +124,31 @@ where
   }
 }
 
+impl<T> Set<T> for HashSet<T, rustc_hash::FxBuildHasher>
+where
+  T: Hash + Eq,
+{
+  fn new() -> Self {
+    HashSet::default()
+  }
+
+  fn contains(&self, value: T) -> bool {
+    self.contains(&value)
+  }
+
+  fn insert(&mut self, value: T) -> bool {
+    self.insert(value)
+  }
+
+  fn remove(&mut self, value: T) -> bool {
+    self.remove(&value)
+  }
+
+  fn is_empty(&self) -> bool {
+    self.is_empty()
+  }
+}
+
 pub fn run<V>(visitor: &mut V, mut work: Work<V::Elem>) -> TopoSort<V::Set, V::Elem>
 where
   V: Visitor,
@@ -149,7 +190,7 @@ where
     }
   }
   always!(level_idx == 0, "should return to starting level");
-  always!(cur.is_empty(), "should not have any in progress");
+  always!(cur.is_empty(), "should have no progress when done");
   TopoSort { done, cycle }
 }
 

@@ -595,70 +595,24 @@ impl Subst {
   ///
   /// On internal error in debug mode only.
   #[must_use]
-  pub fn get(global: &mut GlobalStore, mut local: LocalStore) -> Option<Self> {
+  pub fn get(global: &mut GlobalStore, local: LocalStore) -> Option<Self> {
     // topological sort to determine what order to add the data from the local store to the global
     // store.
-    let mut work: Vec<_> = (0..local.0.idx_to_data.len())
+    let work: topo_sort::Work<_> = (0..local.0.idx_to_data.len())
       .map(|idx| {
         let mut t = Ty::from_idx(idx);
         t.make_local();
-        topo_sort::Action::start(t)
+        t
       })
       .collect();
-    let mut cur = FxHashSet::<Ty>::default();
-    let mut done = FxHashSet::<Ty>::default();
-    let mut order = Vec::<Ty>::default();
-    let mut saw_cycle = false;
-    while let Some(topo_sort::Action(ty, kind)) = work.pop() {
-      match kind {
-        topo_sort::ActionKind::Start => {
-          if done.contains(&ty) {
-            continue;
-          }
-          let Some(data) = local.0.data(ty, true) else { continue };
-          if !cur.insert(ty) {
-            always!(false, "cycle with {ty:?}");
-            saw_cycle = true;
-            continue;
-          }
-          work.push(topo_sort::Action::end(ty));
-          match data {
-            // known to all already exist in the global store.
-            Data::Prim(_) | Data::Fn(Fn::Std(_) | Fn::StdParam(_) | Fn::Unknown) => {}
-            Data::Array(arr) => work.push(topo_sort::Action::start(arr.elem)),
-            Data::Object(object) => {
-              let iter = object.known.values().map(|&t| topo_sort::Action::start(t));
-              work.extend(iter);
-            }
-            Data::Fn(Fn::Regular(func)) => {
-              let params = func.params.iter().map(|x| x.ty);
-              let iter = params.chain(std::iter::once(func.ret)).map(topo_sort::Action::start);
-              work.extend(iter);
-            }
-            Data::Union(tys) => {
-              let iter = tys.iter().map(|&t| topo_sort::Action::start(t));
-              work.extend(iter);
-            }
-          }
-        }
-        topo_sort::ActionKind::End => {
-          always!(ty.is_local());
-          always!(cur.remove(&ty));
-          always!(done.insert(ty));
-          order.push(ty);
-        }
-      }
-    }
-    // make a few checks, drop some intermediate values, then proceed to build the subst in the
-    // topologically sorted order.
+    let mut visitor = TopoSortVisitor { local, order: Vec::new() };
+    let got = topo_sort::run(&mut visitor, work);
+    let TopoSortVisitor { mut local, order } = visitor;
+    // make a few checks, then proceed to build the subst in the topologically sorted order.
     //
     // the important thing is that for a type T in the order, for all types U in data(T), U precedes
-    // T in the order.
-    always!(cur.is_empty() != saw_cycle);
-    always!(done.len() == order.len());
-    drop(work);
-    drop(cur);
-    drop(done);
+    // T in the order. always!(cur.is_empty() != saw_cycle);
+    always!(got.done.len() == order.len());
     let mut ret = Subst::default();
     for old in order {
       let (idx, is_local) = old.to_data();
@@ -709,6 +663,49 @@ impl Subst {
 
   fn is_empty(&self) -> bool {
     self.old_to_new.is_empty()
+  }
+}
+
+struct TopoSortVisitor {
+  local: LocalStore,
+  order: Vec<Ty>,
+}
+
+impl topo_sort::Visitor for TopoSortVisitor {
+  type Elem = Ty;
+
+  type Data = Data;
+
+  type Set = FxHashSet<Ty>;
+
+  fn enter(&self, value: Self::Elem) -> Option<Self::Data> {
+    self.local.0.data(value, true).cloned()
+  }
+
+  fn process(&mut self, _: Self::Elem, data: Self::Data, work: &mut topo_sort::Work<Self::Elem>) {
+    match data {
+      // known to all already exist in the global store.
+      Data::Prim(_) | Data::Fn(Fn::Std(_) | Fn::StdParam(_) | Fn::Unknown) => {}
+      Data::Array(arr) => work.push(arr.elem),
+      Data::Object(object) => {
+        let iter = object.known.values().copied();
+        work.extend(iter);
+      }
+      Data::Fn(Fn::Regular(func)) => {
+        let params = func.params.iter().map(|x| x.ty);
+        let iter = params.chain(std::iter::once(func.ret));
+        work.extend(iter);
+      }
+      Data::Union(tys) => {
+        let iter = tys.iter().copied();
+        work.extend(iter);
+      }
+    }
+  }
+
+  fn exit(&mut self, value: Self::Elem, _: usize) {
+    always!(value.is_local());
+    self.order.push(value);
   }
 }
 
