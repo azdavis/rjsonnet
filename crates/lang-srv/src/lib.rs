@@ -26,9 +26,6 @@ pub fn run<S: lang_srv_state::State>() {
   let server_capabilities = serde_json::to_value(capabilities::get()).expect("get capabilities");
   let init = conn.initialize(server_capabilities).expect("init conn");
   let init: lsp_types::InitializeParams = serde_json::from_value(init).expect("get init");
-  let fs = paths::RealFileSystem::default();
-  let st = S::new(&fs, init.initialization_options);
-  let mut srv = server::Server::new(fs, st);
 
   let last_workspace_folder = init
     .workspace_folders
@@ -42,6 +39,12 @@ pub fn run<S: lang_srv_state::State>() {
     .map(|x| x.uri.clone());
   #[expect(deprecated)]
   let root_url = last_workspace_folder.or(init.root_uri).expect("root uri");
+
+  let root_dir = convert::clean_path_buf(&root_url).expect("root url should be a clean path buf");
+  let st = S::new(root_dir, init.initialization_options);
+
+  let fs = paths::RealFileSystem::default();
+  let mut srv = server::Server::new(fs, st);
 
   srv.file_watch = init
     .capabilities

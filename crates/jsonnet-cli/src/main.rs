@@ -19,7 +19,6 @@ fn main() -> ExitCode {
 
 fn run() -> usize {
   env_logger::init();
-  let mut st = St::init(Init::default());
   let fs = paths::RealFileSystem::default();
   let pwd = match fs.current_dir() {
     Ok(x) => x,
@@ -28,6 +27,7 @@ fn run() -> usize {
       return 1;
     }
   };
+  let mut st = St::init(pwd.clone(), Init::default());
   let mut ret = 0usize;
   for arg in std::env::args().skip(1) {
     let mut p = pwd.clone();

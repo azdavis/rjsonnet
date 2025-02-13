@@ -10,8 +10,6 @@ use token::Triviable as _;
 /// Options for initialization.
 #[derive(Debug, Default)]
 pub struct Init {
-  /// Path to which other paths may be displayed relative.
-  pub relative_to: Option<paths::CleanPathBuf>,
   /// Extra directories in which to search for import paths.
   pub root_dirs: Vec<paths::CleanPathBuf>,
   /// Whether to manifest into JSON.

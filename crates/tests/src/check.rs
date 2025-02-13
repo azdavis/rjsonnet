@@ -28,11 +28,10 @@ impl<'a> MultiInput<'a> {
     let mut fs = paths::MemoryFileSystem::default();
     let pwd = fs.current_dir().expect("no current dir for in-mem fs");
     let init = jsonnet_analyze::Init {
-      relative_to: Some(pwd.clone()),
       multi_line: jsonnet_ty::display::MultiLine::MustNot,
       ..Default::default()
     };
-    let mut st = jsonnet_analyze::St::init(init);
+    let mut st = jsonnet_analyze::St::init(pwd.clone(), init);
     assert!(!self.inputs.is_empty(), "must have an Input to check");
     for input in self.inputs {
       input.check_with(&mut st, &mut fs, pwd.as_clean_path());

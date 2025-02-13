@@ -5,9 +5,7 @@
 /// The state of a language server.
 pub trait State {
   /// Make a new state with init options.
-  fn new<F>(fs: &F, val: Option<serde_json::Value>) -> Self
-  where
-    F: paths::FileSystem;
+  fn new(root_dir: paths::CleanPathBuf, val: Option<serde_json::Value>) -> Self;
 
   /// What to say to ask for a bug report.
   const BUG_REPORT_MSG: &'static str;

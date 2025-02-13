@@ -21,7 +21,7 @@ use token::Triviable as _;
 /// borrow checker knows that only those fields may be affected.
 #[derive(Debug)]
 struct WithFs {
-  relative_to: Option<paths::CleanPathBuf>,
+  root_dir: paths::CleanPathBuf,
   root_dirs: Vec<paths::CleanPathBuf>,
   artifacts: util::GlobalArtifacts,
   file_tys: paths::PathMap<jsonnet_ty::Ty>,
@@ -32,10 +32,7 @@ struct WithFs {
 
 impl WithFs {
   fn strip<'a>(&self, p: &'a std::path::Path) -> &'a std::path::Path {
-    match &self.relative_to {
-      None => p,
-      Some(r) => p.strip_prefix(r.as_path()).unwrap_or(p),
-    }
+    p.strip_prefix(self.root_dir.as_path()).unwrap_or(p)
   }
 
   fn display_path_id(&self, p: PathId) -> impl std::fmt::Display + use<'_> {
@@ -300,11 +297,11 @@ pub struct St {
 impl St {
   /// Returns a new `St` with the given init options.
   #[must_use]
-  pub fn init(init: util::Init) -> Self {
+  pub fn init(root_dir: paths::CleanPathBuf, init: util::Init) -> Self {
     log::info!("make new St with {init:?}");
     Self {
       with_fs: WithFs {
-        relative_to: init.relative_to,
+        root_dir,
         root_dirs: init.root_dirs,
         artifacts: util::GlobalArtifacts::default(),
         file_tys: paths::PathMap::default(),
@@ -436,16 +433,9 @@ impl St {
 }
 
 impl lang_srv_state::State for St {
-  fn new<F>(fs: &F, val: Option<serde_json::Value>) -> Self
-  where
-    F: paths::FileSystem,
-  {
+  fn new(root_dir: paths::CleanPathBuf, val: Option<serde_json::Value>) -> Self {
     let mut init = util::Init::default();
-    let pwd = fs.current_dir();
     let mut logger_env = env_logger::Env::default();
-    if let Ok(pwd) = &pwd {
-      init.relative_to = Some(pwd.to_owned());
-    }
     if let Some(serde_json::Value::Object(obj)) = val {
       if let Some(filter) = obj.get("log_filter").and_then(serde_json::Value::as_str) {
         if !filter.is_empty() {
@@ -458,10 +448,9 @@ impl lang_srv_state::State for St {
         .get("root_dirs")
         .and_then(|x| {
           let ary = x.as_array()?;
-          let pwd = pwd.ok()?;
           ary
             .iter()
-            .map(|x| x.as_str().map(|x| pwd.as_clean_path().join(x)))
+            .map(|x| x.as_str().map(|x| root_dir.as_clean_path().join(x)))
             .collect::<Option<Vec<_>>>()
         })
         .unwrap_or_default();
@@ -481,7 +470,7 @@ impl lang_srv_state::State for St {
       always!(false, "couldn't init logger: {e}");
     }
 
-    Self::init(init)
+    Self::init(root_dir, init)
   }
 
   const BUG_REPORT_MSG: &'static str =
@@ -650,9 +639,9 @@ impl lang_srv_state::State for St {
           format!("json:\n```json\n{json}\n```")
         }
         Err(e) => {
-          let rel_to = self.with_fs.relative_to.as_ref().map(paths::CleanPathBuf::as_clean_path);
+          let rel = self.with_fs.root_dir.as_clean_path();
           let a = &self.with_fs.artifacts.syntax;
-          let e = e.display(&a.strings, &a.paths, rel_to);
+          let e = e.display(&a.strings, &a.paths, Some(rel));
           format!("couldn't get json: {e}")
         }
       },
@@ -660,7 +649,7 @@ impl lang_srv_state::State for St {
     });
     let debug = if self.debug {
       self.with_fs.get_file_expr(&mut self.file_exprs, fs, path_id).ok().map(|file| {
-        let rel = self.with_fs.relative_to.as_ref().map(paths::CleanPathBuf::as_clean_path);
+        let rel = Some(self.with_fs.root_dir.as_clean_path());
         let a = &self.with_fs.artifacts.syntax;
         let e = jsonnet_expr::display::expr(expr, &a.strings, &file.ar, &a.paths, rel);
         format!("debug:\n```jsonnet\n{e}\n```")
@@ -821,7 +810,7 @@ impl lang_srv_state::State for St {
     F: Sync + paths::FileSystem,
   {
     let engine = self.format_engine?;
-    let root = self.with_fs.relative_to.clone()?;
+    let root = self.with_fs.root_dir.clone();
     let path_id = self.with_fs.artifacts.syntax.paths.get_id(path.as_clean_path());
     let contents = self.open_files.get(&path_id)?;
     match format::get(engine, root, path.as_clean_path(), contents.as_str()) {
