@@ -22,6 +22,7 @@ Edit `.vscode/settings.json` or use the built-in settings editor for the followi
     - Is named `bin/jsonnetfmt` relative to the workspace root
     - Accepts a `-stdio` flag
     - Accepts a positional argument, the name of the file being formatted
+    - Has its working directory set to the workspace root
     - Takes in from stdin the unformatted file contents
     - Outputs to stdout the formatted file contents
 

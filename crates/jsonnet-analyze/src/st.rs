@@ -810,10 +810,11 @@ impl lang_srv_state::State for St {
     F: Sync + paths::FileSystem,
   {
     let engine = self.format_engine?;
-    let root = self.with_fs.root_dir.clone();
     let path_id = self.with_fs.artifacts.syntax.paths.get_id(path.as_clean_path());
     let contents = self.open_files.get(&path_id)?;
-    match format::get(engine, root, path.as_clean_path(), contents.as_str()) {
+    let fmt_res =
+      format::get(engine, self.with_fs.root_dir.as_clean_path(), path.as_clean_path(), contents);
+    match fmt_res {
       Ok(x) => {
         let pos = text_pos::PositionDb::new(contents.as_str()).end_position_utf16();
         Some((x, pos))

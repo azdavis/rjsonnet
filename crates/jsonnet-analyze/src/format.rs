@@ -2,7 +2,6 @@
 
 use crate::util::FormatEngine;
 use always::always;
-use paths::{CleanPath, CleanPathBuf};
 use std::fmt;
 use std::io::{self, Write as _};
 use std::process::{Command, Stdio};
@@ -12,18 +11,23 @@ const PROG: &str = "jsonnetfmt";
 
 pub(crate) fn get(
   engine: FormatEngine,
-  mut root: CleanPathBuf,
-  path: &CleanPath,
+  root: &paths::CleanPath,
+  path: &paths::CleanPath,
   contents: &str,
 ) -> Result<String, Error> {
   match engine {
     FormatEngine::BinJsonnetFmtStdio => {}
   }
-  root.push(DIR);
-  root.push(PROG);
-  let mut prog = Command::new(root.as_path())
+  let cmd = {
+    let mut tmp = root.to_owned();
+    tmp.push(DIR);
+    tmp.push(PROG);
+    tmp
+  };
+  let mut prog = Command::new(cmd.as_path())
     .arg("-stdio")
     .arg(path.as_path())
+    .current_dir(root.as_path())
     .stdin(Stdio::piped())
     .stdout(Stdio::piped())
     .stderr(Stdio::piped())

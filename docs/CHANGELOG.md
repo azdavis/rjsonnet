@@ -2,6 +2,10 @@
 
 Things under "main" are not released yet.
 
+## main
+
+- Set the current dir of `bin/jsonnetfmt` to the workspace root.
+
 ## v0.9.3
 
 - Set the root dir to the workspace root, not the current directory of the language server process.
