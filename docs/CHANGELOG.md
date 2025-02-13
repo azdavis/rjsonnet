@@ -2,6 +2,10 @@
 
 Things under "main" are not released yet.
 
+## v0.9.3
+
+- Set the root dir to the workspace root, not the current directory of the language server process.
+
 ## v0.9.2
 
 - Improve correctness of editing open files.
