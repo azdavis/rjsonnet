@@ -105,3 +105,17 @@ std.length(3)
   )
   .check();
 }
+
+#[test]
+fn eq_fn() {
+  JsonnetInput::eval_error(
+    r#"
+local f(x) = assert std.isNumber(x); x + 1;
+local g(x) = assert std.isNumber(x); x + 2;
+  f == g
+##^^^^^^ diagnostic: invalid use of `==`; left: `(x: number) => number`; right: `(x: number) => number`
+"#,
+    "cannot test equality of functions",
+  )
+  .check();
+}

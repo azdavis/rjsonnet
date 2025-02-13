@@ -205,6 +205,10 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
         BinOp::Eq => {
           must_reachable(st, expr, lhs_ty);
           must_reachable(st, expr, rhs_ty);
+          // only err if BOTH are NOT equatable
+          if !is_equatable(st, lhs_ty) && !is_equatable(st, rhs_ty) {
+            st.err(expr, error::Kind::Invalid(lhs_ty, error::Invalid::Eq(rhs_ty)));
+          }
           ty::Ty::BOOLEAN
         }
         BinOp::Lt | BinOp::LtEq | BinOp::Gt | BinOp::GtEq => {
@@ -212,6 +216,7 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
           // numbers or both strings, etc)
           must_reachable(st, expr, lhs_ty);
           must_reachable(st, expr, rhs_ty);
+          // err if EITHER are NOT orderable
           if !is_orderable(st, lhs_ty) {
             st.err(lhs.unwrap_or(expr), error::Kind::Invalid(lhs_ty, error::Invalid::OrdCmp));
           }
@@ -454,5 +459,14 @@ fn is_orderable(st: &st::St<'_>, ty: ty::Ty) -> bool {
     | ty::Data::Fn(_) => false,
     ty::Data::Array(arr) => is_orderable(st, arr.elem),
     ty::Data::Union(tys) => tys.iter().all(|&ty| is_orderable(st, ty)),
+  }
+}
+
+fn is_equatable(st: &st::St<'_>, ty: ty::Ty) -> bool {
+  match st.tys.data(ty) {
+    ty::Data::Prim(_) | ty::Data::Object(_) => true,
+    ty::Data::Fn(_) => false,
+    ty::Data::Array(arr) => is_equatable(st, arr.elem),
+    ty::Data::Union(tys) => tys.iter().all(|&ty| is_equatable(st, ty)),
   }
 }

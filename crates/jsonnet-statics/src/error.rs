@@ -71,7 +71,8 @@ impl Error {
       {
         ty.apply(ty_subst);
       }
-      Kind::Unify(Unify::Incompatible(a, b)) | Kind::Invalid(a, Invalid::Add(b)) => {
+      Kind::Unify(Unify::Incompatible(a, b))
+      | Kind::Invalid(a, Invalid::Add(b) | Invalid::Eq(b)) => {
         a.apply(ty_subst);
         b.apply(ty_subst);
       }
@@ -139,6 +140,7 @@ pub(crate) enum Kind {
 #[derive(Debug)]
 pub(crate) enum Invalid {
   OrdCmp,
+  Eq(ty::Ty),
   Call,
   Subscript,
   Length,
@@ -252,6 +254,21 @@ impl fmt::Display for Display<'_> {
             multi_line: self.multi_line,
           };
           ef.fmt(f)
+        }
+        Invalid::Eq(rhs) => {
+          f.write_str("invalid use of `==`")?;
+          let ty = ty.display(MultiLine::MustNot, self.store, None, self.str_ar);
+          let rhs = rhs.display(MultiLine::MustNot, self.store, None, self.str_ar);
+          match self.multi_line {
+            MultiLine::MustNot => f.write_str("; ")?,
+            MultiLine::May => f.write_str("\n   ")?,
+          }
+          write!(f, "left: `{ty}`")?;
+          match self.multi_line {
+            MultiLine::MustNot => f.write_str("; ")?,
+            MultiLine::May => f.write_str("\n  ")?,
+          }
+          write!(f, "right: `{rhs}`")
         }
         Invalid::Call => {
           f.write_str("invalid call`")?;
