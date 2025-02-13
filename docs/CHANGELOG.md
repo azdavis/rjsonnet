@@ -2,7 +2,7 @@
 
 Things under "main" are not released yet.
 
-## main
+## v0.9.4
 
 - Set the current dir of `bin/jsonnetfmt` to the workspace root.
 
