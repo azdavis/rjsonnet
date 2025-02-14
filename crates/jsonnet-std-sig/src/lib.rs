@@ -384,10 +384,10 @@ pub const FNS: [Fn; 133] = [
       controls whether to include hidden fields.
     "},
     examples: Examples::new(&[
-      r#" std.get({hi: 4}, "hi", 3) == 4 "#,
+      r#" std.get({ hi: 4 }, "hi", 3) == 4 "#,
       r#" std.get({}, "hi", 3) == 3 "#,
-      r#" std.get({hi:: 5}, "hi", 3) == 5 "#,
-      r#" std.get({hi:: 5}, "hi", 3, false) == 3 "#,
+      r#" std.get({ hi:: 5 }, "hi", 3) == 5 "#,
+      r#" std.get({ hi:: 5 }, "hi", 3, false) == 3 "#,
     ]),
   },
   Fn {
@@ -403,8 +403,8 @@ pub const FNS: [Fn; 133] = [
     "},
     examples: Examples::new(&[
       r#" !std.objectHas({}, "hi") "#,
-      r#" std.objectHas({hi: 3}, "hi") "#,
-      r#" !std.objectHas({hi:: 3}, "hi") "#,
+      r#" std.objectHas({ hi: 3 }, "hi") "#,
+      r#" !std.objectHas({ hi:: 3 }, "hi") "#,
     ]),
   },
   Fn {
@@ -420,8 +420,8 @@ pub const FNS: [Fn; 133] = [
     "},
     examples: Examples::new(&[
       r#" std.objectFields({}) == [] "#,
-      r#" std.objectFields({a: 1, b: 2}) == ["a", "b"] "#,
-      r#" std.objectFields({a:: 1, b: 2}) == ["b"] "#,
+      r#" std.objectFields({ a: 1, b: 2 }) == ["a", "b"] "#,
+      r#" std.objectFields({ a:: 1, b: 2 }) == ["b"] "#,
     ]),
   },
   Fn {
@@ -437,8 +437,8 @@ pub const FNS: [Fn; 133] = [
     "},
     examples: Examples::new(&[
       r#" std.objectValues({}) == [] "#,
-      r#" std.objectValues({a: 1, b: 2}) == [1, 2] "#,
-      r#" std.objectValues({a:: 1, b: 2}) == [2] "#,
+      r#" std.objectValues({ a: 1, b: 2 }) == [1, 2] "#,
+      r#" std.objectValues({ a:: 1, b: 2 }) == [2] "#,
     ]),
   },
   Fn {
@@ -455,8 +455,8 @@ pub const FNS: [Fn; 133] = [
     "},
     examples: Examples::new(&[
       r#" std.objectKeysValues({}) == [] "#,
-      r#" std.objectKeysValues({a: 1, b: 2}) == [{key: "a", value: 1 }, { key: "b", value: 2 }] "#,
-      r#" std.objectKeysValues({a:: 1, b: 2}) == [{ key: "b", value: 2 }] "#,
+      r#" std.objectKeysValues({ a: 1, b: 2 }) == [{ key: "a", value: 1 }, { key: "b", value: 2 }] "#,
+      r#" std.objectKeysValues({ a:: 1, b: 2 }) == [{ key: "b", value: 2 }] "#,
     ]),
   },
   Fn {
@@ -470,8 +470,8 @@ pub const FNS: [Fn; 133] = [
     "},
     examples: Examples::new(&[
       r#" !std.objectHasAll({}, "hi") "#,
-      r#" std.objectHasAll({hi: 3}, "hi") "#,
-      r#" std.objectHasAll({hi:: 3}, "hi") "#,
+      r#" std.objectHasAll({ hi: 3 }, "hi") "#,
+      r#" std.objectHasAll({ hi:: 3 }, "hi") "#,
     ]),
   },
   Fn {
@@ -485,8 +485,8 @@ pub const FNS: [Fn; 133] = [
     "},
     examples: Examples::new(&[
       r#" std.objectFieldsAll({}) == [] "#,
-      r#" std.objectFieldsAll({a: 1, b: 2}) == ["a", "b"] "#,
-      r#" std.objectFieldsAll({a:: 1, b: 2}) == ["a", "b"] "#,
+      r#" std.objectFieldsAll({ a: 1, b: 2 }) == ["a", "b"] "#,
+      r#" std.objectFieldsAll({ a:: 1, b: 2 }) == ["a", "b"] "#,
     ]),
   },
   Fn {
@@ -500,8 +500,8 @@ pub const FNS: [Fn; 133] = [
     "},
     examples: Examples::new(&[
       r#" std.objectValuesAll({}) == [] "#,
-      r#" std.objectValuesAll({a: 1, b: 2}) == [1, 2] "#,
-      r#" std.objectValuesAll({a:: 1, b: 2}) == [1, 2] "#,
+      r#" std.objectValuesAll({ a: 1, b: 2 }) == [1, 2] "#,
+      r#" std.objectValuesAll({ a:: 1, b: 2 }) == [1, 2] "#,
     ]),
   },
   Fn {
@@ -515,8 +515,8 @@ pub const FNS: [Fn; 133] = [
     "},
     examples: Examples::new(&[
       r#" std.objectKeysValuesAll({}) == [] "#,
-      r#" std.objectKeysValuesAll({a: 1, b: 2}) == [{key: "a", value: 1 }, { key: "b", value: 2 }] "#,
-      r#" std.objectKeysValuesAll({a:: 1, b: 2}) == [{key: "a", value: 1 }, { key: "b", value: 2 }] "#,
+      r#" std.objectKeysValuesAll({ a: 1, b: 2 }) == [{ key: "a", value: 1 }, { key: "b", value: 2 }] "#,
+      r#" std.objectKeysValuesAll({ a:: 1, b: 2 }) == [{ key: "a", value: 1 }, { key: "b", value: 2 }] "#,
     ]),
   },
   Fn {
@@ -536,8 +536,8 @@ pub const FNS: [Fn; 133] = [
     "#},
     examples: Examples::new(&[
       r#" std.prune([1, [], 2, {}, 3, null]) == [1, 2, 3] "#,
-      r#" std.prune({a: 3}) == {a: 3} "#,
-      r#" std.prune({w: 0, x: "", y: [], z: null}) == {w: 0, x: ""} "#,
+      r#" std.prune({ a: 3 }) == {a: 3} "#,
+      r#" std.prune({ w: 0, x: "", y: [], z: null }) == {w: 0, x: ""} "#,
       r#" std.prune(null) == null "#,
     ]),
   },
@@ -555,12 +555,12 @@ pub const FNS: [Fn; 133] = [
     "},
     examples: Examples::new(&[
       indoc! {r#"
-        std.mapWithKey(function(a, b) a + b, {a: 1, b: 2}) == {
+        std.mapWithKey(function(a, b) a + b, { a: 1, b: 2 }) == {
           a: "a1",
           b: "b2",
         }
       "#},
-      r#" std.mapWithKey(function(a, b) a + b, {a:: 1, b: 2}) == {b: "b2"} "#,
+      r#" std.mapWithKey(function(a, b) a + b, { a:: 1, b: 2 }) == { b: "b2" } "#,
     ]),
   },
   Fn {
