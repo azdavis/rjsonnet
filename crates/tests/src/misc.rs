@@ -121,7 +121,7 @@ fn add_any_to_non_addable() {
     r#"
 function(y)
   y + null
-##^^^^^^^^ diagnostic: invalid use of `+`; left: `any`; right: `null`
+##^^^^^^^^ diagnostic: invalid use of `+`; expected addable types, e.g. `number`, `string`, `object`, `array[any]`; left: `any`; right: `null`
 "#,
   )
   .check();

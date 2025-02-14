@@ -257,18 +257,13 @@ impl fmt::Display for Display<'_> {
         }
         Invalid::Eq(rhs) => {
           f.write_str("invalid use of `==`")?;
-          let ty = ty.display(MultiLine::MustNot, self.store, None, self.str_ar);
-          let rhs = rhs.display(MultiLine::MustNot, self.store, None, self.str_ar);
-          match self.multi_line {
-            MultiLine::MustNot => f.write_str("; ")?,
-            MultiLine::May => f.write_str("\n   ")?,
-          }
-          write!(f, "left: `{ty}`")?;
-          match self.multi_line {
-            MultiLine::MustNot => f.write_str("; ")?,
-            MultiLine::May => f.write_str("\n  ")?,
-          }
-          write!(f, "right: `{rhs}`")
+          let elr = ExpectedLeftRight {
+            expected: "equatable types, i.e. anything exception `function`",
+            left: Backticks(ty.display(MultiLine::MustNot, self.store, None, self.str_ar)),
+            right: Backticks(rhs.display(MultiLine::MustNot, self.store, None, self.str_ar)),
+            multi_line: self.multi_line,
+          };
+          elr.fmt(f)
         }
         Invalid::Call => {
           f.write_str("invalid call`")?;
@@ -299,18 +294,13 @@ impl fmt::Display for Display<'_> {
         }
         Invalid::Add(rhs) => {
           f.write_str("invalid use of `+`")?;
-          let ty = ty.display(MultiLine::MustNot, self.store, None, self.str_ar);
-          let rhs = rhs.display(MultiLine::MustNot, self.store, None, self.str_ar);
-          match self.multi_line {
-            MultiLine::MustNot => f.write_str("; ")?,
-            MultiLine::May => f.write_str("\n   ")?,
-          }
-          write!(f, "left: `{ty}`")?;
-          match self.multi_line {
-            MultiLine::MustNot => f.write_str("; ")?,
-            MultiLine::May => f.write_str("\n  ")?,
-          }
-          write!(f, "right: `{rhs}`")
+          let elr = ExpectedLeftRight {
+            expected: "addable types, e.g. `number`, `string`, `object`, `array[any]`",
+            left: Backticks(ty.display(MultiLine::MustNot, self.store, None, self.str_ar)),
+            right: Backticks(rhs.display(MultiLine::MustNot, self.store, None, self.str_ar)),
+            multi_line: self.multi_line,
+          };
+          elr.fmt(f)
         }
       },
       Kind::AddSets => f.write_str("adding two sets will result in a non-set"),
@@ -352,6 +342,37 @@ where
       MultiLine::May => f.write_str("\n     ")?,
     }
     write!(f, "found {}", self.found)
+  }
+}
+
+struct ExpectedLeftRight<L, R> {
+  expected: &'static str,
+  left: L,
+  right: R,
+  multi_line: MultiLine,
+}
+
+impl<L, R> fmt::Display for ExpectedLeftRight<L, R>
+where
+  L: fmt::Display,
+  R: fmt::Display,
+{
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    match self.multi_line {
+      MultiLine::MustNot => f.write_str("; ")?,
+      MultiLine::May => f.write_str("\n  ")?,
+    }
+    write!(f, "expected {}", self.expected)?;
+    match self.multi_line {
+      MultiLine::MustNot => f.write_str("; ")?,
+      MultiLine::May => f.write_str("\n   ")?,
+    }
+    write!(f, "left: {}", self.left)?;
+    match self.multi_line {
+      MultiLine::MustNot => f.write_str("; ")?,
+      MultiLine::May => f.write_str("\n  ")?,
+    }
+    write!(f, "right: {}", self.right)
   }
 }
 
