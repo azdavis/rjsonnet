@@ -5,6 +5,7 @@ Things under "main" are not released yet.
 ## main
 
 - Error on `==` where both sides are functions.
+- Error on comparison (`<`, `>`, etc) where both sides are not comparable.
 
 ## v0.9.4
 

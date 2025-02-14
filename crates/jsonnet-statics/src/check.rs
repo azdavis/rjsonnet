@@ -206,22 +206,16 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
           must_reachable(st, expr, lhs_ty);
           must_reachable(st, expr, rhs_ty);
           // only err if BOTH are NOT equatable
-          if !is_equatable(st, lhs_ty) && !is_equatable(st, rhs_ty) {
+          if !can_eq(st, lhs_ty) && !can_eq(st, rhs_ty) {
             st.err(expr, error::Kind::Invalid(lhs_ty, error::Invalid::Eq(rhs_ty)));
           }
           ty::Ty::BOOLEAN
         }
         BinOp::Lt | BinOp::LtEq | BinOp::Gt | BinOp::GtEq => {
-          // TODO something about how the lhs_ty and rhs_ty need to be "similar" somehow (both
-          // numbers or both strings, etc)
           must_reachable(st, expr, lhs_ty);
           must_reachable(st, expr, rhs_ty);
-          // err if EITHER are NOT orderable
-          if !is_orderable(st, lhs_ty) {
-            st.err(lhs.unwrap_or(expr), error::Kind::Invalid(lhs_ty, error::Invalid::OrdCmp));
-          }
-          if !is_orderable(st, rhs_ty) {
-            st.err(rhs.unwrap_or(expr), error::Kind::Invalid(rhs_ty, error::Invalid::OrdCmp));
+          if !can_ord_cmp(st, lhs_ty, rhs_ty) {
+            st.err(expr, error::Kind::Invalid(lhs_ty, error::Invalid::OrdCmp(rhs_ty)));
           }
           ty::Ty::BOOLEAN
         }
@@ -319,6 +313,28 @@ fn get_add(st: &mut st::St<'_>, expr: ExprMust, lhs_ty: ty::Ty, rhs_ty: ty::Ty) 
       st.err(expr, error::Kind::Invalid(lhs_ty, error::Invalid::Add(rhs_ty)));
       ty::Ty::ANY
     }
+  }
+}
+
+fn can_ord_cmp(st: &st::St<'_>, lhs: ty::Ty, rhs: ty::Ty) -> bool {
+  match (st.tys.data(lhs), st.tys.data(rhs)) {
+    (ty::Data::Array(lhs), ty::Data::Array(rhs)) => can_ord_cmp(st, lhs.elem, rhs.elem),
+    (ty::Data::Prim(lhs), ty::Data::Prim(rhs)) => match (lhs, rhs) {
+      (ty::Prim::Number, ty::Prim::Number)
+      | (ty::Prim::String, ty::Prim::String)
+      | (ty::Prim::Any, ty::Prim::Any | ty::Prim::String | ty::Prim::Number)
+      | (ty::Prim::String | ty::Prim::Number, ty::Prim::Any) => true,
+      (ty::Prim::True | ty::Prim::False | ty::Prim::Null, _)
+      | (_, ty::Prim::True | ty::Prim::False | ty::Prim::Null)
+      | (ty::Prim::String, ty::Prim::Number)
+      | (ty::Prim::Number, ty::Prim::String) => false,
+    },
+    (ty::Data::Union(parts), _) => parts.iter().all(|&lhs| can_ord_cmp(st, lhs, rhs)),
+    (_, ty::Data::Union(parts)) => parts.iter().all(|&rhs| can_ord_cmp(st, lhs, rhs)),
+    (ty::Data::Prim(_), ty::Data::Array(_))
+    | (ty::Data::Array(_), ty::Data::Prim(_))
+    | (ty::Data::Object(_) | ty::Data::Fn(_), _)
+    | (_, ty::Data::Object(_) | ty::Data::Fn(_)) => false,
   }
 }
 
@@ -451,22 +467,11 @@ fn canonical_expr(expr: &jsonnet_expr::ExprData, expr_def: def::ExprDef) -> Expr
   }
 }
 
-fn is_orderable(st: &st::St<'_>, ty: ty::Ty) -> bool {
-  match st.tys.data(ty) {
-    ty::Data::Prim(ty::Prim::Any | ty::Prim::Number | ty::Prim::String) => true,
-    ty::Data::Prim(ty::Prim::True | ty::Prim::False | ty::Prim::Null)
-    | ty::Data::Object(_)
-    | ty::Data::Fn(_) => false,
-    ty::Data::Array(arr) => is_orderable(st, arr.elem),
-    ty::Data::Union(tys) => tys.iter().all(|&ty| is_orderable(st, ty)),
-  }
-}
-
-fn is_equatable(st: &st::St<'_>, ty: ty::Ty) -> bool {
+fn can_eq(st: &st::St<'_>, ty: ty::Ty) -> bool {
   match st.tys.data(ty) {
     ty::Data::Prim(_) | ty::Data::Object(_) => true,
     ty::Data::Fn(_) => false,
-    ty::Data::Array(arr) => is_equatable(st, arr.elem),
-    ty::Data::Union(tys) => tys.iter().all(|&ty| is_equatable(st, ty)),
+    ty::Data::Array(arr) => can_eq(st, arr.elem),
+    ty::Data::Union(tys) => tys.iter().all(|&ty| can_eq(st, ty)),
   }
 }

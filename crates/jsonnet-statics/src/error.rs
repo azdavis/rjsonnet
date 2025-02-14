@@ -67,12 +67,11 @@ impl Error {
   pub fn apply(&mut self, ty_subst: &ty::Subst) {
     match &mut self.kind {
       Kind::MissingArg(_, ty)
-      | Kind::Invalid(ty, Invalid::Call | Invalid::Length | Invalid::OrdCmp | Invalid::Subscript) =>
-      {
+      | Kind::Invalid(ty, Invalid::Call | Invalid::Length | Invalid::Subscript) => {
         ty.apply(ty_subst);
       }
       Kind::Unify(Unify::Incompatible(a, b))
-      | Kind::Invalid(a, Invalid::Add(b) | Invalid::Eq(b)) => {
+      | Kind::Invalid(a, Invalid::Add(b) | Invalid::Eq(b) | Invalid::OrdCmp(b)) => {
         a.apply(ty_subst);
         b.apply(ty_subst);
       }
@@ -139,7 +138,7 @@ pub(crate) enum Kind {
 
 #[derive(Debug)]
 pub(crate) enum Invalid {
-  OrdCmp,
+  OrdCmp(ty::Ty),
   Eq(ty::Ty),
   Call,
   Subscript,
@@ -246,14 +245,15 @@ impl fmt::Display for Display<'_> {
         }
       },
       Kind::Invalid(ty, inv) => match inv {
-        Invalid::OrdCmp => {
+        Invalid::OrdCmp(rhs) => {
           f.write_str("invalid comparison, i.e. use of `<`, `>=`, etc")?;
-          let ef = ExpectedFound {
-            expected: "a comparable type, e.g. `number`, `string`, `array[number]`, etc",
-            found: Backticks(ty.display(MultiLine::MustNot, self.store, None, self.str_ar)),
+          let elr = ExpectedLeftRight {
+            expected: "comparable pair of types, i.e. both `number`, both `string`, etc",
+            left: Backticks(ty.display(MultiLine::MustNot, self.store, None, self.str_ar)),
+            right: Backticks(rhs.display(MultiLine::MustNot, self.store, None, self.str_ar)),
             multi_line: self.multi_line,
           };
-          ef.fmt(f)
+          elr.fmt(f)
         }
         Invalid::Eq(rhs) => {
           f.write_str("invalid use of `==`")?;
