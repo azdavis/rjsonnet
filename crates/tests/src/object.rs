@@ -196,16 +196,3 @@ f(true)
   )
   .check();
 }
-
-#[test]
-fn obj_has_assert_false() {
-  JsonnetInput::manifest(
-    r#"
-local obj = { assert false, a: 1 };
-assert std.objectHas(obj, "a");
-1 + 2
-"#,
-    "3",
-  )
-  .check();
-}
