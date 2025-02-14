@@ -76,3 +76,25 @@ local g(x) = assert std.isNumber(x); x + 2;
   )
   .check();
 }
+
+#[test]
+fn cmp() {
+  JsonnetInput::eval_error(
+    r#"
+[
+  1 < 2,
+  "a" > "b",
+  [1, 2] <= [2, 3],
+  ["hi"] >= ["bye"],
+  1 < "no",
+##^^^^^^^^ diagnostic: invalid comparison, i.e. use of `<`, `>=`, etc; expected comparable pair of types, i.e. both `number`, both `string`, etc; left: `number`; right: `string`
+  false > 3,
+##^^^^^^^^^ diagnostic: invalid comparison, i.e. use of `<`, `>=`, etc; expected comparable pair of types, i.e. both `number`, both `string`, etc; left: `false`; right: `number`
+  null <= 4,
+##^^^^^^^^^ diagnostic: invalid comparison, i.e. use of `<`, `>=`, etc; expected comparable pair of types, i.e. both `number`, both `string`, etc; left: `null`; right: `number`
+]
+"#,
+    "incompatible types",
+  )
+  .check();
+}
