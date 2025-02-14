@@ -141,8 +141,8 @@ fn maybe_extra_checks(
       let &(rhs_expr, rhs_ty) = params.get(&Id::b)?;
       match st.tys.data(lhs_ty) {
         ty::Data::Prim(ty::Prim::String) => {
-          // NOTE: do NOT unify rhs_ty against `any[]`, because it is permitted to format just one
-          // argument without the wrapping array.
+          // NOTE: do NOT unify rhs_ty against `array[any]`, because it is permitted to format just
+          // one argument without the wrapping array.
           Some(ty::Ty::STRING)
         }
         ty::Data::Prim(ty::Prim::Number) => {
