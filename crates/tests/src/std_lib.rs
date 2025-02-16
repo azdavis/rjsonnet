@@ -131,3 +131,25 @@ std.get(obj, "a")
   )
   .check();
 }
+
+#[test]
+#[should_panic = "not yet implemented: flatMap"]
+fn flat_map() {
+  JsonnetInput::manifest(
+    r#"
+local xs = std.flatMap(function(c) c + c, "a1");
+##    ^^ type: string
+local ys = std.flatMap(function(x) if x == 3 then [] else [x, x - 1], [1, 3, 7, 5]);
+##    ^^ type: array[number]
+
+{ xs: xs, ys: ys }
+"#,
+    r#"
+{
+  "xs": "aa11",
+  "ys": [1, 0, 7, 6, 5, 4],
+}
+"#,
+  )
+  .check();
+}

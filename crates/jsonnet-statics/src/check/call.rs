@@ -136,6 +136,23 @@ fn maybe_extra_checks(
       let arr_ty = check_filter(st, ar, filter_func, arr_ty).unwrap_or(arr_ty);
       check_map(st, map_func_ty, arr_expr, arr_ty)
     }
+    StdFn::flatMap => {
+      let &(func_expr, func_ty) = params.get(&Id::func)?;
+      let &(_, arr_ty) = params.get(&Id::arr)?;
+      let (want_param, want_ret) = if arr_ty == ty::Ty::STRING {
+        // no char type
+        (ty::Ty::STRING, ty::Ty::STRING)
+      } else {
+        let arr = array_ty(&mut st.tys, arr_ty)?;
+        (arr.elem, st.tys.get(ty::Data::Array(arr)))
+      };
+      let ty::Data::Fn(func) = st.tys.data(func_ty) else { return None };
+      if let Some((&[param], ret_ty)) = func.parts() {
+        st.unify(func_expr, want_param, param.ty);
+        st.unify(func_expr, want_ret, ret_ty);
+      }
+      Some(want_ret)
+    }
     StdFn::mod_ => {
       let &(_, lhs_ty) = params.get(&Id::a)?;
       let &(rhs_expr, rhs_ty) = params.get(&Id::b)?;
