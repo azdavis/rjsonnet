@@ -5,7 +5,7 @@ Things under "main" are not released yet.
 ## main
 
 - Error on `==` where both sides are functions.
-- Error on comparison (`<`, `>`, etc) where both sides are not comparable.
+- Error on comparison (`<`, `>`, etc) where the types cannot be compared.
 - Improve typing of `std.flatMap`.
 
 ## v0.9.4
