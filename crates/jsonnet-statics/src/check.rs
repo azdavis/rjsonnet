@@ -214,7 +214,7 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
         BinOp::Lt | BinOp::LtEq | BinOp::Gt | BinOp::GtEq => {
           must_reachable(st, expr, lhs_ty);
           must_reachable(st, expr, rhs_ty);
-          if !can_ord_cmp(st, lhs_ty, rhs_ty) {
+          if !can_ord_cmp(&st.tys, lhs_ty, rhs_ty) {
             st.err(expr, error::Kind::Invalid(lhs_ty, error::Invalid::OrdCmp(rhs_ty)));
           }
           ty::Ty::BOOLEAN
@@ -316,8 +316,8 @@ fn get_add(st: &mut st::St<'_>, expr: ExprMust, lhs_ty: ty::Ty, rhs_ty: ty::Ty) 
   }
 }
 
-fn can_ord_cmp(st: &st::St<'_>, lhs: ty::Ty, rhs: ty::Ty) -> bool {
-  match (st.tys.data(lhs), st.tys.data(rhs)) {
+fn can_ord_cmp(tys: &ty::MutStore<'_>, lhs: ty::Ty, rhs: ty::Ty) -> bool {
+  match (tys.data(lhs), tys.data(rhs)) {
     (ty::Data::Prim(_), ty::Data::Array(_))
     | (ty::Data::Array(_), ty::Data::Prim(_))
     | (ty::Data::Object(_) | ty::Data::Fn(_), _)
@@ -332,9 +332,9 @@ fn can_ord_cmp(st: &st::St<'_>, lhs: ty::Ty, rhs: ty::Ty) -> bool {
       | (ty::Prim::Any, ty::Prim::Any | ty::Prim::String | ty::Prim::Number)
       | (ty::Prim::String | ty::Prim::Number, ty::Prim::Any) => true,
     },
-    (ty::Data::Array(lhs), ty::Data::Array(rhs)) => can_ord_cmp(st, lhs.elem, rhs.elem),
-    (ty::Data::Union(parts), _) => parts.iter().all(|&lhs| can_ord_cmp(st, lhs, rhs)),
-    (_, ty::Data::Union(parts)) => parts.iter().all(|&rhs| can_ord_cmp(st, lhs, rhs)),
+    (ty::Data::Array(lhs), ty::Data::Array(rhs)) => can_ord_cmp(tys, lhs.elem, rhs.elem),
+    (ty::Data::Union(parts), _) => parts.iter().all(|&lhs| can_ord_cmp(tys, lhs, rhs)),
+    (_, ty::Data::Union(parts)) => parts.iter().all(|&rhs| can_ord_cmp(tys, lhs, rhs)),
   }
 }
 
