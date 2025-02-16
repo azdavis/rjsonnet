@@ -318,23 +318,23 @@ fn get_add(st: &mut st::St<'_>, expr: ExprMust, lhs_ty: ty::Ty, rhs_ty: ty::Ty) 
 
 fn can_ord_cmp(st: &st::St<'_>, lhs: ty::Ty, rhs: ty::Ty) -> bool {
   match (st.tys.data(lhs), st.tys.data(rhs)) {
-    (ty::Data::Array(lhs), ty::Data::Array(rhs)) => can_ord_cmp(st, lhs.elem, rhs.elem),
-    (ty::Data::Prim(lhs), ty::Data::Prim(rhs)) => match (lhs, rhs) {
-      (ty::Prim::Number, ty::Prim::Number)
-      | (ty::Prim::String, ty::Prim::String)
-      | (ty::Prim::Any, ty::Prim::Any | ty::Prim::String | ty::Prim::Number)
-      | (ty::Prim::String | ty::Prim::Number, ty::Prim::Any) => true,
-      (ty::Prim::True | ty::Prim::False | ty::Prim::Null, _)
-      | (_, ty::Prim::True | ty::Prim::False | ty::Prim::Null)
-      | (ty::Prim::String, ty::Prim::Number)
-      | (ty::Prim::Number, ty::Prim::String) => false,
-    },
-    (ty::Data::Union(parts), _) => parts.iter().all(|&lhs| can_ord_cmp(st, lhs, rhs)),
-    (_, ty::Data::Union(parts)) => parts.iter().all(|&rhs| can_ord_cmp(st, lhs, rhs)),
     (ty::Data::Prim(_), ty::Data::Array(_))
     | (ty::Data::Array(_), ty::Data::Prim(_))
     | (ty::Data::Object(_) | ty::Data::Fn(_), _)
     | (_, ty::Data::Object(_) | ty::Data::Fn(_)) => false,
+    (ty::Data::Prim(lhs), ty::Data::Prim(rhs)) => match (lhs, rhs) {
+      (ty::Prim::True | ty::Prim::False | ty::Prim::Null, _)
+      | (_, ty::Prim::True | ty::Prim::False | ty::Prim::Null)
+      | (ty::Prim::String, ty::Prim::Number)
+      | (ty::Prim::Number, ty::Prim::String) => false,
+      (ty::Prim::Number, ty::Prim::Number)
+      | (ty::Prim::String, ty::Prim::String)
+      | (ty::Prim::Any, ty::Prim::Any | ty::Prim::String | ty::Prim::Number)
+      | (ty::Prim::String | ty::Prim::Number, ty::Prim::Any) => true,
+    },
+    (ty::Data::Array(lhs), ty::Data::Array(rhs)) => can_ord_cmp(st, lhs.elem, rhs.elem),
+    (ty::Data::Union(parts), _) => parts.iter().all(|&lhs| can_ord_cmp(st, lhs, rhs)),
+    (_, ty::Data::Union(parts)) => parts.iter().all(|&rhs| can_ord_cmp(st, lhs, rhs)),
   }
 }
 
