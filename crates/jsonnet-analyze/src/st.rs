@@ -486,19 +486,24 @@ impl St {
     let mut tok = root_syntax.first_token()?;
     let mut ret = String::new();
     let mut prev_trivia = true;
-    let mut prev_hidden = false;
+    let mut gap = None::<Gap>;
     loop {
       let tok_range = tok.text_range();
-      let this_hidden = ranges.iter().any(|r| r.contains_range(tok_range));
-      if !this_hidden {
-        let this_trivia = tok.kind().is_trivia();
-        if !prev_trivia && prev_hidden && !this_trivia {
-          ret.push(' ');
+      let this_trivia = tok.kind().is_trivia();
+      if ranges.iter().any(|r| r.contains_range(tok_range)) {
+        let has_nl = this_trivia && tok.text().contains('\n');
+        let g = if has_nl { Gap::Newline } else { Gap::Space };
+        gap = Some(gap.map_or(g, |x| x.and(g)));
+      } else {
+        if !prev_trivia && !this_trivia {
+          if let Some(gap) = gap {
+            ret.push(gap.as_char());
+          }
         }
         ret.push_str(tok.text());
+        gap = None;
         prev_trivia = this_trivia;
       }
-      prev_hidden = this_hidden;
       tok = match tok.next_token() {
         Some(x) => x,
         None => break,
@@ -1030,5 +1035,27 @@ fn can_absorb_trivia(tok: &jsonnet_syntax::kind::SyntaxToken) -> bool {
     SyntaxKind::Whitespace => !tok.text().contains("\n\n"),
     SyntaxKind::SlashSlashComment | SyntaxKind::HashComment | SyntaxKind::BlockComment => true,
     _ => false,
+  }
+}
+
+#[derive(Debug, Clone, Copy)]
+enum Gap {
+  Space,
+  Newline,
+}
+
+impl Gap {
+  fn as_char(self) -> char {
+    match self {
+      Gap::Space => ' ',
+      Gap::Newline => '\n',
+    }
+  }
+
+  fn and(self, other: Self) -> Self {
+    match (self, other) {
+      (Gap::Newline, _) | (_, Gap::Newline) => Gap::Newline,
+      (Gap::Space, Gap::Space) => Gap::Space,
+    }
   }
 }

@@ -44,6 +44,26 @@ local x = 1, y = 2;
 }
 
 #[test]
+fn surrounded() {
+  JsonnetInput::rm_unused(
+    r#"
+local a = 1;
+local b = 2;
+local c = 3;
+
+a + c
+"#,
+    r#"
+local a = 1;
+local c = 3;
+
+a + c
+"#,
+  )
+  .check();
+}
+
+#[test]
 #[should_panic = "should remove unused"]
 fn obj() {
   JsonnetInput::rm_unused(
