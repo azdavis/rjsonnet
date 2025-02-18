@@ -116,7 +116,7 @@ impl Env {
         }
         EnvElem::Single(subst) => {
           if subst.id == id {
-            return Some(subst.v_or_e.clone());
+            return Some(subst.val.clone());
           }
         }
       }
@@ -362,7 +362,7 @@ pub struct Subst {
   /// The id to subst.
   pub id: Id,
   /// The val or expr to subst for the id.
-  pub v_or_e: ValOrExpr,
+  pub val: ValOrExpr,
 }
 
 /// An object field.

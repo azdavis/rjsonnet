@@ -418,7 +418,7 @@ pub(crate) fn get_call(
       };
       let mut env = env.clone();
       let func_id = cx.str_ar.id_fresh_unutterable();
-      env.insert(Subst { id: func_id, v_or_e: ValOrExpr::Val(Val::Fn(func)) });
+      env.insert(Subst { id: func_id, val: ValOrExpr::Val(Val::Fn(func)) });
       let func = Some(exprs.ar.alloc(ExprData::Id(func_id)));
       let elems = (0..sz).map(|idx| {
         let idx = ExprData::Prim(Prim::Number(Float::from(idx)));

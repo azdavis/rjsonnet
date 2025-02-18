@@ -40,14 +40,14 @@ pub(crate) fn get(cx: &mut Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
       let mut fields = ExprFields::default();
       for (elem_env, elem_expr) in array.elems() {
         let mut env = env.clone();
-        let subst = Subst { id, v_or_e: ValOrExpr::Expr(elem_env.clone(), elem_expr) };
+        let subst = Subst { id, val: ValOrExpr::Expr(elem_env.clone(), elem_expr) };
         env.insert(subst);
         match get(cx, &env, name)? {
           Val::Prim(Prim::String(s)) => {
             let Some(body) = body else { continue };
             // the spec says to do `[e/x]body` here. we don't substitute eagerly, so instead we put
             // the e (elem) and x (id) on the object and update the env when we evaluate the field.
-            let subst = Subst { id, v_or_e: ValOrExpr::Expr(elem_env.clone(), elem_expr) };
+            let subst = Subst { id, val: ValOrExpr::Expr(elem_env.clone(), elem_expr) };
             let f = ExprField { vis, expr: Some(body), comp_subst: Some(subst) };
             if fields.insert(s, f).is_some() {
               return Err(error::Error::Exec { expr, kind: error::Kind::DuplicateField(s) });
