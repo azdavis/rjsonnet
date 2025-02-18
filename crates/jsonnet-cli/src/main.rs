@@ -6,18 +6,6 @@ use paths::FileSystem as _;
 use std::process::ExitCode;
 
 fn main() -> ExitCode {
-  let n = run();
-  if n == 0 {
-    println!("no errors!");
-    ExitCode::SUCCESS
-  } else {
-    let s = if n == 1 { "" } else { "s" };
-    println!("{n} error{s}");
-    ExitCode::FAILURE
-  }
-}
-
-fn run() -> usize {
   env_logger::init();
   let mut args = pico_args::Arguments::from_env();
   if args.contains(["-h", "--help"]) {
@@ -32,8 +20,23 @@ fn run() -> usize {
     println!("  --rm-unused");
     println!("    remove unused locals");
     println!();
-    return 0;
+    return ExitCode::SUCCESS;
   }
+  let rm_unused = args.contains("--rm-unused");
+  let quiet = args.contains(["-q", "--quiet"]);
+  let args = args.finish();
+  let n = run(rm_unused, quiet, args);
+  if n == 0 {
+    println!("no errors!");
+    ExitCode::SUCCESS
+  } else {
+    let s = if n == 1 { "" } else { "s" };
+    println!("{n} error{s}");
+    ExitCode::FAILURE
+  }
+}
+
+fn run(rm_unused: bool, quiet: bool, args: Vec<std::ffi::OsString>) -> usize {
   let fs = paths::RealFileSystem::default();
   let pwd = match fs.current_dir() {
     Ok(x) => x,
@@ -44,9 +47,7 @@ fn run() -> usize {
   };
   let mut st = St::init(pwd.clone(), Init::default());
   let mut ret = 0usize;
-  let remove_unused = args.contains("--rm-unused");
-  let quiet = args.contains(["-q", "--quiet"]);
-  for arg in args.finish() {
+  for arg in args {
     let Some(arg) = arg.to_str() else {
       if !quiet {
         println!("{}: not valid UTF-8", arg.to_string_lossy());
@@ -67,7 +68,7 @@ fn run() -> usize {
       }
     };
     let (_, ds) = st.open(&fs, p.clone(), contents);
-    if remove_unused {
+    if rm_unused {
       if let Some(contents) = st.remove_unused(&fs, p.as_clean_path()) {
         if let Err(e) = std::fs::write(p.as_path(), contents.as_bytes()) {
           if !quiet {
