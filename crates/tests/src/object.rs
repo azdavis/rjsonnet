@@ -3,7 +3,6 @@
 use crate::check::JsonnetInput;
 
 mod comprehension;
-mod plus;
 
 #[test]
 fn empty() {
@@ -193,6 +192,27 @@ local f(x) =
 f(true)
 "#,
     "3",
+  )
+  .check();
+}
+
+#[test]
+fn array_self() {
+  JsonnetInput::manifest(
+    r#"
+{
+  foo: [
+    { kind: 'Soda', qty: 2 },
+  ],
+  quz: self.foo,
+}
+"#,
+    r#"
+{
+  "foo": [{ "kind": "Soda", "qty": 2 }],
+  "quz": [{ "kind": "Soda", "qty": 2 }]
+}
+"#,
   )
   .check();
 }

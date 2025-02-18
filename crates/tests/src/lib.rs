@@ -20,6 +20,7 @@ mod misc;
 mod number;
 mod object;
 mod op;
+mod plus;
 mod repo;
 mod smoke;
 mod std_lib;

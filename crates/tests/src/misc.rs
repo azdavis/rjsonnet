@@ -17,27 +17,6 @@ func(obj.field, 4)
   .check();
 }
 
-#[test]
-fn obj_array_self() {
-  JsonnetInput::manifest(
-    r#"
-{
-  foo: [
-    { kind: 'Soda', qty: 2 },
-  ],
-  quz: self.foo,
-}
-"#,
-    r#"
-{
-  "foo": [{ "kind": "Soda", "qty": 2 }],
-  "quz": [{ "kind": "Soda", "qty": 2 }]
-}
-"#,
-  )
-  .check();
-}
-
 // this is a reduced case of a weird bug a while ago.
 #[test]
 fn same_fn_ty() {
@@ -95,33 +74,6 @@ fn hole() {
 local f(x) = ... - x;
 ##           ^^^ diagnostic: found placeholder hole
 f(3) + 4
-"#,
-  )
-  .check();
-}
-
-#[test]
-fn add_arrays_ifs() {
-  JsonnetInput::manifest(
-    r#"
-local f(x) =
-  assert std.isBoolean(x);
-  if x then [1, 2] else [];
-
-f(true) + f(false)
-"#,
-    r#"[1, 2]"#,
-  )
-  .check();
-}
-
-#[test]
-fn add_any_to_non_addable() {
-  JsonnetInput::manifest_or_fn(
-    r#"
-function(y)
-  y + null
-##^^^^^^^^ diagnostic: invalid use of `+`; expected addable types; left: `any`; right: `null`
 "#,
   )
   .check();
