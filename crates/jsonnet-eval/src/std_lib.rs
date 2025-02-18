@@ -7,7 +7,7 @@ use crate::{exec, generated::fns, mk_todo, Cx};
 use always::always;
 use finite_float::Float;
 use jsonnet_expr::{Expr, ExprData, ExprMust, Id, Prim, StdFn, Str};
-use jsonnet_val::jsonnet::{Array, Env, Fn, Val};
+use jsonnet_val::jsonnet::{Array, Env, Fn, Subst, Val, ValOrExpr};
 use rustc_hash::FxHashSet;
 
 pub(crate) fn get_call(
@@ -90,15 +90,15 @@ pub(crate) fn get_call(
           let mut ret = String::new();
           let sep = cx.str_ar.get(sep).to_owned();
           let mut first = true;
-          for elem in arr.elems() {
+          for (elem_env, elem_expr) in arr.elems() {
             if !first {
               ret.push_str(sep.as_str());
             };
             first = false;
-            let (val, elem_e) = exec::get_v_or_e(cx, elem)?;
+            let val = exec::get(cx, elem_env, elem_expr)?;
             let Val::Prim(Prim::String(elem)) = val else {
               return Err(error::Error::Exec {
-                expr: elem_e.unwrap_or(expr),
+                expr: elem_expr.unwrap_or(expr),
                 kind: error::Kind::IncompatibleTypes,
               });
             };
@@ -109,15 +109,15 @@ pub(crate) fn get_call(
         Val::Array(sep) => {
           let mut ret = Array::default();
           let mut first = true;
-          for elem in arr.elems() {
+          for (elem_env, elem_expr) in arr.elems() {
             if !first {
               ret.append(&mut sep.clone());
             };
             first = false;
-            let (val, elem_e) = exec::get_v_or_e(cx, elem)?;
+            let val = exec::get(cx, elem_env, elem_expr)?;
             let Val::Array(mut elem) = val else {
               return Err(error::Error::Exec {
-                expr: elem_e.unwrap_or(expr),
+                expr: elem_expr.unwrap_or(expr),
                 kind: error::Kind::IncompatibleTypes,
               });
             };
@@ -412,22 +412,21 @@ pub(crate) fn get_call(
       let args = fns::makeArray::new(pos, named, expr)?;
       let sz = args.sz(cx, env)?;
       let func = args.func(cx, env)?;
-      let indices: Vec<_> = if let Some(exprs) = cx.exprs.get_mut(&env.path()) {
-        let iter = (0..sz).map(|idx| {
-          let idx = ExprData::Prim(Prim::Number(Float::from(idx)));
-          exprs.ar.alloc(idx)
-        });
-        iter.collect()
-      } else {
-        always!(false, "should have this path's expr arena");
+      let Some(exprs) = cx.exprs.get_mut(&env.path()) else {
+        always!(false, "should have this paths's exprs");
         return Err(Error::NoPath(env.path()));
       };
-      // TODO should not evaluate the calls now, need to be lazy
-      let elems = indices
-        .into_iter()
-        .map(|idx| exec::get_call(cx, env, expr, func.clone(), &[Some(idx)], &[]));
-      let elems: Result<Vec<_>> = elems.collect();
-      Ok(Array::vals(elems?).into())
+      let mut env = env.clone();
+      let func_id = cx.str_ar.id_fresh_unutterable();
+      env.insert(Subst { id: func_id, v_or_e: ValOrExpr::Val(Val::Fn(func)) });
+      let func = Some(exprs.ar.alloc(ExprData::Id(func_id)));
+      let elems = (0..sz).map(|idx| {
+        let idx = ExprData::Prim(Prim::Number(Float::from(idx)));
+        let idx = Some(exprs.ar.alloc(idx));
+        let call = ExprData::Call { func, positional: vec![idx], named: Vec::new() };
+        Some(exprs.ar.alloc(call))
+      });
+      Ok(Array::new(env, elems.collect()).into())
     }
 
     _ => Err(mk_todo(expr, func.as_static_str())),

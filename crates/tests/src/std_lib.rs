@@ -69,9 +69,7 @@ local sc2 = std.prune(null);
   .check();
 }
 
-/// TODO the calls should be lazy
 #[test]
-#[should_panic = "explicit `error`: zero"]
 fn make_array_calls_lazy() {
   JsonnetInput::manifest(
     r#"

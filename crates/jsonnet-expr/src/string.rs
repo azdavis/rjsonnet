@@ -166,7 +166,7 @@ impl IdRepr {
   pub fn apply(&mut self, subst: &Subst) {
     match self {
       IdRepr::Str(s) => s.apply(subst),
-      IdRepr::Unutterable(_) => {}
+      IdRepr::Unutterable(idx) => *idx += subst.unutterable_idx_shift,
     }
   }
 }
@@ -190,6 +190,7 @@ impl fmt::Display for IdReprDisplay<'_> {
 pub struct Subst {
   strings: FxHashMap<StrIdx, StrIdx>,
   paths: paths::PathMap<paths::PathId>,
+  unutterable_idx_shift: u32,
 }
 
 impl Subst {
@@ -205,6 +206,15 @@ impl Subst {
         always!(ret.strings.insert(old, new).is_none());
       }
     }
+    // if we shift all of the indices in other up by this's current idx they will NOT clash with:
+    //
+    // - each other since they'll all shift up by the same amount
+    // - unutterables in this because there is no unutterable above the current idx.
+    //
+    // we also need to shift up this's index by the other's idx since other's idx is the number of
+    // unutterables we created in other.
+    ret.unutterable_idx_shift = this.strings.unutterable_idx;
+    this.strings.unutterable_idx += other.strings.unutterable_idx;
     this.paths.combine(other.paths, &mut |old, new| {
       if old != new {
         always!(ret.paths.insert(old, new).is_none());
