@@ -60,20 +60,20 @@ pub(crate) fn get_cond(scope: &Scope, ar: &ExprArena, ac: &mut Facts, cond: Expr
       let Some(func_name) = std_field(scope, ar, *func) else { return };
       if let Some(fact) = unary_std_fn_fact(func_name) {
         let (&[Some(param)], []) = (&pos[..], &named[..]) else { return };
-        add_fact(ar, ac, param, fact);
+        add_expr_fact(ar, ac, param, fact);
       } else {
         match func_name {
           Str::objectHas | Str::objectHasAll => {
             let (&[Some(obj), Some(field)], []) = (&pos[..], &named[..]) else { return };
             let ExprData::Prim(Prim::String(field)) = ar[field] else { return };
             let fact = Fact::has_field(field);
-            add_fact(ar, ac, obj, fact);
+            add_expr_fact(ar, ac, obj, fact);
           }
           Str::objectHasEx => {
             let (&[Some(obj), Some(field), Some(_)], []) = (&pos[..], &named[..]) else { return };
             let ExprData::Prim(Prim::String(field)) = ar[field] else { return };
             let fact = Fact::has_field(field);
-            add_fact(ar, ac, obj, fact);
+            add_expr_fact(ar, ac, obj, fact);
           }
           Str::all => {
             let (&[Some(arg)], []) = (&pos[..], &named[..]) else { return };
@@ -176,14 +176,14 @@ fn get_ty_eq(scope: &Scope, ar: &ExprArena, ac: &mut Facts, call: ExprMust, type
     Str::null => Fact::null(),
     _ => return,
   };
-  add_fact(ar, ac, param, fact);
+  add_expr_fact(ar, ac, param, fact);
 }
 
 fn get_len_eq(scope: &Scope, ar: &ExprArena, ac: &mut Facts, call: ExprMust, n: ExprMust) {
   let Some(param) = get_unary_std_fn_param(scope, ar, call, Str::length) else { return };
   let ExprData::Prim(Prim::Number(n)) = &ar[n] else { return };
   let Some(n) = get_uint(n.value()) else { return };
-  add_fact(ar, ac, param, Fact::has_len(n));
+  add_expr_fact(ar, ac, param, Fact::has_len(n));
 }
 
 #[expect(clippy::float_cmp, clippy::cast_possible_truncation, clippy::cast_sign_loss)]
@@ -213,7 +213,7 @@ fn get_eq_lit(ar: &ExprArena, ac: &mut Facts, var: ExprMust, lit: ExprMust) {
     ExprData::Object { .. } | ExprData::ObjectComp { .. } => Fact::object(Totality::Partial),
     _ => return,
   };
-  add_fact(ar, ac, var, fact);
+  add_expr_fact(ar, ac, var, fact);
 }
 
 fn get_all(scope: &Scope, ar: &ExprArena, ac: &mut Facts, arg: ExprMust) {
@@ -223,7 +223,7 @@ fn get_all(scope: &Scope, ar: &ExprArena, ac: &mut Facts, arg: ExprMust) {
   }
   let (&[Some(map_fn), Some(array)], []) = (&pos[..], &named[..]) else { return };
   let Some(elem_fact) = get_predicate(scope, ar, map_fn) else { return };
-  add_fact(ar, ac, array, elem_fact.into_array());
+  add_expr_fact(ar, ac, array, elem_fact.into_array());
 }
 
 pub(crate) fn get_predicate(scope: &Scope, ar: &ExprArena, func: ExprMust) -> Option<Fact> {
@@ -239,7 +239,7 @@ pub(crate) fn get_predicate(scope: &Scope, ar: &ExprArena, func: ExprMust) -> Op
   }
 }
 
-fn add_fact(ar: &ExprArena, ac: &mut Facts, mut expr: ExprMust, fact: Fact) {
+fn add_expr_fact(ar: &ExprArena, ac: &mut Facts, mut expr: ExprMust, fact: Fact) {
   let mut path = Vec::<Str>::new();
   let id = loop {
     match ar[expr] {
