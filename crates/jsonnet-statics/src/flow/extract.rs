@@ -126,6 +126,7 @@ pub(crate) fn get_cond(scope: &Scope, ar: &ExprArena, ac: &mut Facts, cond: Expr
         ac.add(id, fact.not());
       }
     }
+    &ExprData::Id(id) => ac.add(id, Fact::true_()),
     _ => {}
   }
 }

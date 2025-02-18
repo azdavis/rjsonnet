@@ -434,8 +434,8 @@ function(xs)
 ##      vv type: array[number]
   local ys = std.filterMap(std.isNumber, inc, xs);
 ##                                            ^^ type: array[number | string]
-  std.filterMap(function(x) x, inc, xs) + ys
-##                                  ^^ err: incompatible types; expected `number`; found `string`
+  std.filterMap(function(x) x != 1, inc, xs) + ys
+##                                       ^^ err: incompatible types; expected `number`; found `string`
 "#,
   )
   .check();
