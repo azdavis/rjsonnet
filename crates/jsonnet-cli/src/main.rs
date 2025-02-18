@@ -19,6 +19,19 @@ fn main() -> ExitCode {
 
 fn run() -> usize {
   env_logger::init();
+  let mut args = pico_args::Arguments::from_env();
+  if args.contains(["-h", "--help"]) {
+    println!("usage:");
+    println!("  jsonnet-cli [<option>...] <file>...");
+    println!();
+    println!("options:");
+    println!("  -h, --help");
+    println!("    show this help");
+    println!("  --rm-unused");
+    println!("    remove unused locals");
+    println!();
+    return 0;
+  }
   let fs = paths::RealFileSystem::default();
   let pwd = match fs.current_dir() {
     Ok(x) => x,
@@ -29,7 +42,6 @@ fn run() -> usize {
   };
   let mut st = St::init(pwd.clone(), Init::default());
   let mut ret = 0usize;
-  let mut args = pico_args::Arguments::from_env();
   let remove_unused = args.contains("--rm-unused");
   for arg in args.finish() {
     let Some(arg) = arg.to_str() else {
