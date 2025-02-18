@@ -1,5 +1,7 @@
 //! Unused bindings.
 
+mod remove;
+
 use crate::check::JsonnetInput;
 
 #[test]

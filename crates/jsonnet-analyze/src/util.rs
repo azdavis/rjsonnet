@@ -84,7 +84,7 @@ pub(crate) struct SyntaxFileErrors {
 }
 
 impl SyntaxFileErrors {
-  fn is_empty(&self) -> bool {
+  pub(crate) fn is_empty(&self) -> bool {
     self.lex.is_empty() && self.parse.is_empty() && self.desugar.is_empty()
   }
 }

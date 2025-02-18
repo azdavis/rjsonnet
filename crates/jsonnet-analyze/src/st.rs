@@ -8,7 +8,7 @@ use jsonnet_syntax::kind::{SyntaxKind, SyntaxToken};
 use jsonnet_ty::display::MultiLine;
 use paths::{PathId, PathMap, PathSet};
 use rayon::iter::{IntoParallelIterator as _, ParallelIterator as _};
-use rustc_hash::FxHashSet;
+use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::hash_map::Entry;
 use token::Triviable as _;
 
@@ -429,6 +429,82 @@ impl St {
     F: Sync + paths::FileSystem,
   {
     self.with_fs.get_file_artifacts(&mut self.file_artifacts, fs, path_id)
+  }
+
+  /// Removes unused vars.
+  pub fn remove_unused<F>(&mut self, fs: &F, path: &paths::CleanPath) -> Option<String>
+  where
+    F: Sync + paths::FileSystem,
+  {
+    let path_id = self.with_fs.artifacts.syntax.paths.get_id(path);
+    let contents = self.open_files.get(&path_id)?;
+    let f = util::SyntaxFileToCombine::from_str(path, contents, &self.with_fs.root_dirs, fs);
+    let f = f.combine(&mut self.with_fs.artifacts);
+    if !f.errors.is_empty() {
+      return None;
+    }
+    // NOTE: no need to check for import deps, as unused var errors are not affected by imports
+    let f = util::StaticsFileToCombine::new(f, &self.with_fs.artifacts, &self.with_fs.file_tys);
+    let f = f.combine(&mut self.with_fs.artifacts);
+    let root_syntax = f.syntax.artifacts.root.clone().syntax();
+    let local_to_binds = {
+      let mut tmp = FxHashMap::<jsonnet_syntax::ast::SyntaxNodePtr, FxHashSet<usize>>::default();
+      for err in f.statics.errors {
+        let Some((expr, _, idx)) = err.into_unused_local() else { continue };
+        let Some(ptr) = f.syntax.artifacts.pointers.get_ptr(expr) else { continue };
+        tmp.entry(ptr).or_default().insert(idx);
+      }
+      tmp
+    };
+    let ranges = {
+      let mut tmp = FxHashSet::<text_size::TextRange>::default();
+      for (ptr, binds) in &local_to_binds {
+        let Some(node) = ptr.try_to_node(&root_syntax) else { continue };
+        // TODO for object locals, this is an Object, not an ExprLocal
+        let Some(local) = jsonnet_syntax::ast::ExprLocal::cast(node) else { continue };
+        let bind = local.bind_commas().count();
+        if binds.len() == bind && (0..bind).all(|x| binds.contains(&x)) {
+          let start = local.local_kw();
+          let end = local.semicolon();
+          let Some(range) = expand_trivia_around(start, end) else { continue };
+          tmp.insert(range);
+        } else {
+          for &idx in binds {
+            let Some(bind) = local.bind_commas().nth(idx) else { continue };
+            let start = bind.syntax().first_token();
+            let end = bind.syntax().last_token();
+            let Some(range) = expand_trivia_around(start, end) else { continue };
+            tmp.insert(range);
+          }
+        }
+      }
+      tmp
+    };
+    if ranges.is_empty() {
+      return None;
+    }
+    let mut tok = root_syntax.first_token()?;
+    let mut ret = String::new();
+    let mut prev_trivia = true;
+    let mut prev_hidden = false;
+    loop {
+      let tok_range = tok.text_range();
+      let this_hidden = ranges.iter().any(|r| r.contains_range(tok_range));
+      if !this_hidden {
+        let this_trivia = tok.kind().is_trivia();
+        if !prev_trivia && prev_hidden && !this_trivia {
+          ret.push(' ');
+        }
+        ret.push_str(tok.text());
+        prev_trivia = this_trivia;
+      }
+      prev_hidden = this_hidden;
+      tok = match tok.next_token() {
+        Some(x) => x,
+        None => break,
+      };
+    }
+    Some(ret)
   }
 }
 
@@ -930,4 +1006,29 @@ fn non_trivia(mut ret: SyntaxToken) -> Option<SyntaxToken> {
     ret = ret.prev_token()?;
   }
   Some(ret)
+}
+
+fn expand_trivia_around(
+  start: Option<SyntaxToken>,
+  end: Option<SyntaxToken>,
+) -> Option<text_size::TextRange> {
+  let start = std::iter::successors(start, |tok| {
+    let tok = tok.prev_token()?;
+    can_absorb_trivia(&tok).then_some(tok)
+  });
+  let start = start.last()?;
+  let end = std::iter::successors(end, |tok| {
+    let tok = tok.next_token()?;
+    can_absorb_trivia(&tok).then_some(tok)
+  });
+  let end = end.last()?;
+  Some(text_size::TextRange::new(start.text_range().start(), end.text_range().end()))
+}
+
+fn can_absorb_trivia(tok: &jsonnet_syntax::kind::SyntaxToken) -> bool {
+  match tok.kind() {
+    SyntaxKind::Whitespace => !tok.text().contains("\n\n"),
+    SyntaxKind::SlashSlashComment | SyntaxKind::HashComment | SyntaxKind::BlockComment => true,
+    _ => false,
+  }
 }

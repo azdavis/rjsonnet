@@ -16,6 +16,7 @@ doctest = false
 [dependencies]
 env_logger.workspace = true
 paths.workspace = true
+pico-args.workspace = true
 
 jsonnet-analyze.path = "../jsonnet-analyze"
 lang-srv-state.path = "../lang-srv-state"

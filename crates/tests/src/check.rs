@@ -133,12 +133,17 @@ impl<'a> Input<'a> {
         let n = ds.len();
         let m = ds.iter().next().expect("didn't clear out empty sets");
         // "cannot import a text block" also causes a import path not found error
-        let is_ok = matches!(jsonnet.kind, OutcomeKind::PreEvalError)
-          && !jsonnet.outcome.is_empty()
-          && n == 1
-          && (ds_map.len() == 1
-            || (ds_map.len() == 2 && jsonnet.outcome == "cannot import a text block"))
-          && m.contains(jsonnet.outcome);
+        let is_ok = match jsonnet.kind {
+          OutcomeKind::PreEvalError => {
+            !jsonnet.outcome.is_empty()
+              && n == 1
+              && (ds_map.len() == 1
+                || (ds_map.len() == 2 && jsonnet.outcome == "cannot import a text block"))
+              && m.contains(jsonnet.outcome)
+          }
+          OutcomeKind::RmUnused => ds.iter().all(|x| x.contains("unused variable")),
+          _ => false,
+        };
         if is_ok {
           ds_map.clear();
         } else {
@@ -146,7 +151,12 @@ impl<'a> Input<'a> {
         }
       }
 
-      jsonnet.check_one(st, path_str, path_id, pwd);
+      if let OutcomeKind::RmUnused = jsonnet.kind {
+        let got = st.remove_unused(fs, path.as_clean_path()).expect("should remove unused");
+        assert_eq!(jsonnet.outcome, got);
+      } else {
+        jsonnet.check_one(st, path_str, path_id, pwd);
+      }
     }
   }
 }
@@ -185,6 +195,10 @@ impl<'a> JsonnetInput<'a> {
   pub(crate) fn pre_eval_error(text: &'a str) -> Self {
     assert!(!text.is_empty());
     Self { text, outcome: "", kind: OutcomeKind::PreEvalError }
+  }
+
+  pub(crate) fn rm_unused(before: &'a str, after: &'a str) -> Self {
+    Self { text: before, outcome: after, kind: OutcomeKind::RmUnused }
   }
 
   /// only do this if we expect one pre eval error and don't want to specify the range. useful in
@@ -250,10 +264,12 @@ impl<'a> JsonnetInput<'a> {
       (OutcomeKind::EvalError | OutcomeKind::PreEvalError, Ok(got)) => {
         panic!("{path_str}: unexpected lack of error, got json: {got:?}")
       }
+
       (OutcomeKind::String, Err(err)) => {
         let got = err.display(st.strings(), st.paths(), Some(pwd));
         panic!("{path_str}: failed to get json: {got}");
       }
+
       (OutcomeKind::Manifest { fn_ok }, Err(err)) => {
         let ok = fn_ok && matches!(err, jsonnet_eval::error::Error::ManifestFn);
         if !ok {
@@ -261,6 +277,8 @@ impl<'a> JsonnetInput<'a> {
           panic!("{path_str}: failed to get json: {got}");
         }
       }
+
+      (OutcomeKind::RmUnused, _) => unreachable!("should have been handled already"),
     }
   }
 }
@@ -271,4 +289,5 @@ enum OutcomeKind {
   String,
   EvalError,
   PreEvalError,
+  RmUnused,
 }

@@ -37,6 +37,18 @@ impl Error {
     (self.expr, with_expr)
   }
 
+  /// Returns the unused local error in this, if any.
+  #[must_use]
+  pub fn into_unused_local(self) -> Option<(ExprMust, Id, usize)> {
+    if let Kind::UnusedVar(id, def::ExprDefKind::Multi(n, def::ExprDefKindMulti::LocalBind)) =
+      self.kind
+    {
+      Some((self.expr, id, n))
+    } else {
+      None
+    }
+  }
+
   /// Returns the severity of this.
   #[must_use]
   pub fn severity(&self) -> diagnostic::Severity {

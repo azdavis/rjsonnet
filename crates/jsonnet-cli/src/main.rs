@@ -29,9 +29,15 @@ fn run() -> usize {
   };
   let mut st = St::init(pwd.clone(), Init::default());
   let mut ret = 0usize;
-  for arg in std::env::args().skip(1) {
+  let mut args = pico_args::Arguments::from_env();
+  let remove_unused = args.contains("--rm-unused");
+  for arg in args.finish() {
+    let Some(arg) = arg.to_str() else {
+      println!("{}: not valid UTF-8", arg.to_string_lossy());
+      continue;
+    };
     let mut p = pwd.clone();
-    p.push(arg.as_str());
+    p.push(arg);
     let contents = match fs.read_to_string(p.as_path()) {
       Ok(x) => x,
       Err(e) => {
@@ -41,6 +47,14 @@ fn run() -> usize {
       }
     };
     let (_, ds) = st.open(&fs, p.clone(), contents);
+    if remove_unused {
+      if let Some(contents) = st.remove_unused(&fs, p.as_clean_path()) {
+        if let Err(e) = std::fs::write(p.as_path(), contents.as_bytes()) {
+          println!("{arg}: couldn't write path: {e}");
+          ret += 1;
+        }
+      }
+    }
     st.close(p);
     ret += ds.len();
     for d in ds {

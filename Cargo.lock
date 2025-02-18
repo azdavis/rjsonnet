@@ -590,6 +590,7 @@ dependencies = [
  "jsonnet-analyze",
  "lang-srv-state",
  "paths",
+ "pico-args",
 ]
 
 [[package]]
