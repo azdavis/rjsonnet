@@ -27,6 +27,8 @@ fn run() -> usize {
     println!("options:");
     println!("  -h, --help");
     println!("    show this help");
+    println!("  -q, --quiet");
+    println!("    emit no output");
     println!("  --rm-unused");
     println!("    remove unused locals");
     println!();
@@ -43,9 +45,13 @@ fn run() -> usize {
   let mut st = St::init(pwd.clone(), Init::default());
   let mut ret = 0usize;
   let remove_unused = args.contains("--rm-unused");
+  let quiet = args.contains(["-q", "--quiet"]);
   for arg in args.finish() {
     let Some(arg) = arg.to_str() else {
-      println!("{}: not valid UTF-8", arg.to_string_lossy());
+      if !quiet {
+        println!("{}: not valid UTF-8", arg.to_string_lossy());
+      }
+      ret += 1;
       continue;
     };
     let mut p = pwd.clone();
@@ -53,7 +59,9 @@ fn run() -> usize {
     let contents = match fs.read_to_string(p.as_path()) {
       Ok(x) => x,
       Err(e) => {
-        println!("{arg}: couldn't read path: {e}");
+        if !quiet {
+          println!("{arg}: couldn't read path: {e}");
+        }
         ret += 1;
         continue;
       }
@@ -62,7 +70,9 @@ fn run() -> usize {
     if remove_unused {
       if let Some(contents) = st.remove_unused(&fs, p.as_clean_path()) {
         if let Err(e) = std::fs::write(p.as_path(), contents.as_bytes()) {
-          println!("{arg}: couldn't write path: {e}");
+          if !quiet {
+            println!("{arg}: couldn't write path: {e}");
+          }
           ret += 1;
         }
       }
@@ -70,7 +80,9 @@ fn run() -> usize {
     st.close(p);
     ret += ds.len();
     for d in ds {
-      println!("{arg}:{d}");
+      if !quiet {
+        println!("{arg}:{d}");
+      }
     }
   }
   ret
