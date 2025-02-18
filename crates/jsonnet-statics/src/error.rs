@@ -7,6 +7,8 @@ use jsonnet_expr::{def, ExprMust, Id, Str};
 use jsonnet_ty::{self as ty, display::Style};
 use std::fmt;
 
+const NONE: Option<std::convert::Infallible> = None;
+
 /// An error.
 #[derive(Debug)]
 pub struct Error {
@@ -207,6 +209,7 @@ impl fmt::Display for Display<'_> {
           f.write_str("incompatible types")?;
           let ef = ExpectedFound {
             expected: Backticks(want.display(Style::Short, self.store, None, self.str_ar)),
+            extra: NONE,
             found: Backticks(got.display(Style::Short, self.store, None, self.str_ar)),
             style: self.style,
           };
@@ -225,13 +228,19 @@ impl fmt::Display for Display<'_> {
         }
         Unify::NotEnoughParams(want, got) => {
           f.write_str("not enough parameters")?;
-          let ef = ExpectedFound { expected: AtLeast(*want), found: UpTo(*got), style: self.style };
+          let ef = ExpectedFound {
+            expected: AtLeast(*want),
+            extra: NONE,
+            found: UpTo(*got),
+            style: self.style,
+          };
           ef.fmt(f)
         }
         Unify::MismatchedParamNames(want, got) => {
           f.write_str("mismatched parameter names")?;
           let ef = ExpectedFound {
             expected: Backticks(want.display(self.str_ar)),
+            extra: NONE,
             found: Backticks(got.display(self.str_ar)),
             style: self.style,
           };
@@ -242,6 +251,7 @@ impl fmt::Display for Display<'_> {
           write!(f, "mismatched parameter optionality: `{id}`")?;
           let ef = ExpectedFound {
             expected: "an optional parameter",
+            extra: NONE,
             found: "a required parameter",
             style: self.style,
           };
@@ -254,9 +264,14 @@ impl fmt::Display for Display<'_> {
       },
       Kind::Invalid(ty, inv) => match inv {
         Invalid::OrdCmp(rhs) => {
-          f.write_str("invalid comparison, i.e. use of `<`, `>=`, etc")?;
+          f.write_str("invalid comparison")?;
+          match self.style {
+            Style::Short => {}
+            Style::Long => f.write_str(", i.e. use of `<`, `>=`, etc")?,
+          }
           let elr = ExpectedLeftRight {
-            expected: "comparable pair of types, i.e. both `number`, both `string`, etc",
+            expected: "comparable types",
+            extra: "i.e. both `number`, both `string`, etc",
             left: Backticks(ty.display(Style::Short, self.store, None, self.str_ar)),
             right: Backticks(rhs.display(Style::Short, self.store, None, self.str_ar)),
             style: self.style,
@@ -266,7 +281,8 @@ impl fmt::Display for Display<'_> {
         Invalid::Eq(rhs) => {
           f.write_str("invalid use of `==`")?;
           let elr = ExpectedLeftRight {
-            expected: "equatable types, i.e. anything exception `function`",
+            expected: "equatable types",
+            extra: "i.e. anything exception `function`",
             left: Backticks(ty.display(Style::Short, self.store, None, self.str_ar)),
             right: Backticks(rhs.display(Style::Short, self.store, None, self.str_ar)),
             style: self.style,
@@ -276,16 +292,22 @@ impl fmt::Display for Display<'_> {
         Invalid::Call => {
           f.write_str("invalid call`")?;
           let ef = ExpectedFound {
-            expected: "a callable type, e.g. `function``",
+            expected: "a callable type",
+            extra: Some("e.g. `function``"),
             found: Backticks(ty.display(Style::Short, self.store, None, self.str_ar)),
             style: self.style,
           };
           ef.fmt(f)
         }
         Invalid::Subscript => {
-          f.write_str("invalid subscript, i.e. use of `[]` or `.`")?;
+          f.write_str("invalid subscript")?;
+          match self.style {
+            Style::Short => {}
+            Style::Long => f.write_str(", i.e. use of `[]` or `.`")?,
+          }
           let ef = ExpectedFound {
-            expected: "a type with fields or elements, e.g. `array[any]`, `object`",
+            expected: "a type with fields or elements",
+            extra: Some("e.g. `array[any]`, `object`"),
             found: Backticks(ty.display(Style::Short, self.store, None, self.str_ar)),
             style: self.style,
           };
@@ -294,7 +316,8 @@ impl fmt::Display for Display<'_> {
         Invalid::Length => {
           f.write_str("invalid call to `std.length`")?;
           let ef = ExpectedFound {
-            expected: "a type with length, e.g. `array[any]`, `object`, `string`, `function`",
+            expected: "a type with length",
+            extra: Some("e.g. `array[any]`, `object`, `string`, `function`"),
             found: Backticks(ty.display(Style::Short, self.store, None, self.str_ar)),
             style: self.style,
           };
@@ -303,7 +326,8 @@ impl fmt::Display for Display<'_> {
         Invalid::Add(rhs) => {
           f.write_str("invalid use of `+`")?;
           let elr = ExpectedLeftRight {
-            expected: "addable types, e.g. `number`, `string`, `object`, `array[any]`",
+            expected: "addable types",
+            extra: "e.g. `number`, `string`, `object`, `array[any]`",
             left: Backticks(ty.display(Style::Short, self.store, None, self.str_ar)),
             right: Backticks(rhs.display(Style::Short, self.store, None, self.str_ar)),
             style: self.style,
@@ -328,15 +352,17 @@ where
   }
 }
 
-struct ExpectedFound<E, F> {
-  expected: E,
+struct ExpectedFound<E1, E2, F> {
+  expected: E1,
+  extra: Option<E2>,
   found: F,
   style: Style,
 }
 
-impl<E, F> fmt::Display for ExpectedFound<E, F>
+impl<E1, E2, F> fmt::Display for ExpectedFound<E1, E2, F>
 where
-  E: fmt::Display,
+  E1: fmt::Display,
+  E2: fmt::Display,
   F: fmt::Display,
 {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -347,7 +373,12 @@ where
     write!(f, "expected {}", self.expected)?;
     match self.style {
       Style::Short => f.write_str("; ")?,
-      Style::Long => f.write_str("\n     ")?,
+      Style::Long => {
+        if let Some(el) = &self.extra {
+          write!(f, ", {el}")?;
+        }
+        f.write_str("\n     ")?;
+      }
     }
     write!(f, "found {}", self.found)
   }
@@ -355,6 +386,7 @@ where
 
 struct ExpectedLeftRight<L, R> {
   expected: &'static str,
+  extra: &'static str,
   left: L,
   right: R,
   style: Style,
@@ -373,7 +405,7 @@ where
     write!(f, "expected {}", self.expected)?;
     match self.style {
       Style::Short => f.write_str("; ")?,
-      Style::Long => f.write_str("\n   ")?,
+      Style::Long => write!(f, ", {}\n   ", self.extra)?,
     }
     write!(f, "left: {}", self.left)?;
     match self.style {

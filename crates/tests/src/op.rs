@@ -54,7 +54,7 @@ fn add_union_err() {
 local f(x) =
   assert std.isNumber(x) || std.isObject(x);
   x + 3;
-##^^^^^ diagnostic: invalid use of `+`; expected addable types, e.g. `number`, `string`, `object`, `array[any]`; left: `object`; right: `number`
+##^^^^^ diagnostic: invalid use of `+`; expected addable types; left: `object`; right: `number`
 
 f(4)
 "#,
@@ -70,7 +70,7 @@ fn eq_fn() {
 local f(x) = assert std.isNumber(x); x + 1;
 local g(x) = assert std.isNumber(x); x + 2;
   f == g
-##^^^^^^ diagnostic: invalid use of `==`; expected equatable types, i.e. anything exception `function`; left: `(x: number) => number`; right: `(x: number) => number`
+##^^^^^^ diagnostic: invalid use of `==`; expected equatable types; left: `(x: number) => number`; right: `(x: number) => number`
 "#,
     "cannot test equality of functions",
   )
@@ -87,11 +87,11 @@ fn cmp() {
   [1, 2] <= [2, 3],
   ["hi"] >= ["bye"],
   1 < "no",
-##^^^^^^^^ diagnostic: invalid comparison, i.e. use of `<`, `>=`, etc; expected comparable pair of types, i.e. both `number`, both `string`, etc; left: `number`; right: `string`
+##^^^^^^^^ diagnostic: invalid comparison; expected comparable types; left: `number`; right: `string`
   false > 3,
-##^^^^^^^^^ diagnostic: invalid comparison, i.e. use of `<`, `>=`, etc; expected comparable pair of types, i.e. both `number`, both `string`, etc; left: `false`; right: `number`
+##^^^^^^^^^ diagnostic: invalid comparison; expected comparable types; left: `false`; right: `number`
   null <= 4,
-##^^^^^^^^^ diagnostic: invalid comparison, i.e. use of `<`, `>=`, etc; expected comparable pair of types, i.e. both `number`, both `string`, etc; left: `null`; right: `number`
+##^^^^^^^^^ diagnostic: invalid comparison; expected comparable types; left: `null`; right: `number`
 ]
 "#,
     "incompatible types",

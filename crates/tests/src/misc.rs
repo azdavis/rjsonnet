@@ -61,7 +61,7 @@ fn invalid_subscript() {
   JsonnetInput::eval_error(
     r#"
   null[1]
-##^^^^ diagnostic: invalid subscript, i.e. use of `[]` or `.`; expected a type with fields or elements, e.g. `array[any]`, `object`; found `null`
+##^^^^ diagnostic: invalid subscript; expected a type with fields or elements; found `null`
 "#,
     "incompatible types",
   )
@@ -121,7 +121,7 @@ fn add_any_to_non_addable() {
     r#"
 function(y)
   y + null
-##^^^^^^^^ diagnostic: invalid use of `+`; expected addable types, e.g. `number`, `string`, `object`, `array[any]`; left: `any`; right: `null`
+##^^^^^^^^ diagnostic: invalid use of `+`; expected addable types; left: `any`; right: `null`
 "#,
   )
   .check();
