@@ -187,7 +187,7 @@ local f(x) =
     else
       {};
   obj.foo;
-##^^^^^^^ diagnostic: no such field: `foo`
+##^^^^^^^ err: no such field: `foo`
 
 f(true)
 "#,

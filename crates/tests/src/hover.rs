@@ -197,7 +197,7 @@ func(1)
 fn object_assert_3() {
   JsonnetInput::manifest(
     r#"
-##         v diagnostic: unused variable: `x`
+##         v err: unused variable: `x`
 local func(x) = {
 ##    ^ hover: (x: any) => { thing: number }
   local x = 123,

@@ -76,7 +76,7 @@ fn double_verbatim_escape() {
 fn unclosed() {
   JsonnetInput::pre_eval_error(
     r"
-## V diagnostic: unclosed string
+## V err: unclosed string
   '",
   )
   .check();

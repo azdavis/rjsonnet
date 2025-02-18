@@ -80,11 +80,11 @@ fn args_named_then_positional() {
     r"
 local sub(x, y) = x - y;
   sub(
-##^^^ diagnostic: missing argument: `y` with type: `any`
+##^^^ err: missing argument: `y` with type: `any`
     x=9,
-##    ^ diagnostic: extra named argument: `x`
+##    ^ err: extra named argument: `x`
     3,
-##  ^^ diagnostic: positional arguments must not appear after named arguments
+##  ^^ err: positional arguments must not appear after named arguments
   )
 ",
   )
@@ -97,7 +97,7 @@ fn args_positional_extra() {
     r"
 local sub(x, y) = x - y;
   sub(3, 4, 5)
-##          ^ diagnostic: extra positional argument: 3
+##          ^ err: extra positional argument: 3
 ",
     "too many arguments",
   )
@@ -110,7 +110,7 @@ fn args_named_extra() {
     r"
 local sub(x, y) = x - y;
   sub(x=1, y=2, z=3)
-##                ^ diagnostic: extra named argument: `z`
+##                ^ err: extra named argument: `z`
 ",
     "too many arguments",
   )
@@ -123,7 +123,7 @@ fn args_positional_missing() {
     r"
 local sub(x, y) = x - y;
   sub(1)
-##^^^ diagnostic: missing argument: `y` with type: `any`
+##^^^ err: missing argument: `y` with type: `any`
 ",
     "`y` was not defined",
   )
@@ -140,7 +140,7 @@ local sub(x, y) =
   x - y;
 
   sub(x=1)
-##^^^ diagnostic: missing argument: `y` with type: `number`
+##^^^ err: missing argument: `y` with type: `number`
 ",
     "`y` was not defined",
   )
@@ -157,7 +157,7 @@ local sub(x, y) =
   x - y;
 
   sub(y=1)
-##^^^ diagnostic: missing argument: `x` with type: `number`
+##^^^ err: missing argument: `x` with type: `number`
 ",
     "`x` was not defined",
   )
@@ -170,7 +170,7 @@ fn args_named_duplicate() {
     r"
 local sub(x, y) = x - y;
   sub(x=1, x=2, y=3)
-##           ^ diagnostic: duplicate named argument: `x`
+##           ^ err: duplicate named argument: `x`
 ",
   )
   .check();
@@ -182,7 +182,7 @@ fn args_named_positional_duplicate() {
     r"
 local sub(x, y) = x - y;
   sub(1, y=2, x=3)
-##              ^ diagnostic: extra named argument: `x`
+##              ^ err: extra named argument: `x`
 ",
     "too many arguments",
   )
@@ -264,7 +264,7 @@ fn ty_check_default() {
   JsonnetInput::manifest(
     r#"
 local f(x=null) =
-##        ^^^^ diagnostic: incompatible types; expected `number`; found `null`
+##        ^^^^ err: incompatible types; expected `number`; found `null`
   assert std.isNumber(x);
   x;
 

@@ -31,7 +31,7 @@ local f(x) =
 
 function(y)
   assert y == null || std.isNumber(y) || std.isString(y);
-##  v diagnostic: incompatible types; expected `null | string`; found `number`
+##  v err: incompatible types; expected `null | string`; found `number`
   f(y)
 ##  ^ type: null | number | string
 "#,
@@ -87,7 +87,7 @@ local f(x) =
 
 function(y)
   assert y == null || (std.isObject(y) && (std.isString(y.foo) || std.isNumber(y.foo)));
-##  v diagnostic: incompatible types; expected `null | { foo: string, ... }`; found `{ foo: number, ... }`
+##  v err: incompatible types; expected `null | { foo: string, ... }`; found `{ foo: number, ... }`
   f(y)
 ##  ^ type: null | { foo: string, ... } | { foo: number, ... } | { foo: never, ... }
 "#,

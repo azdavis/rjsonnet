@@ -46,7 +46,7 @@ fn no_params() {
     r#"
 {
   [x](y): "hi"
-##   ^^^ diagnostic: object comprehension field must not have parameters
+##   ^^^ err: object comprehension field must not have parameters
   for x in ["a", "b"]
 }
 "#,

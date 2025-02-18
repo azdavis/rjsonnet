@@ -8,7 +8,7 @@ fn subscript() {
   JsonnetInput::eval_error(
     r#"
   (error "no").foo
-##^^^^^^^^^^^^^^^^ diagnostic: unreachable code
+##^^^^^^^^^^^^^^^^ err: unreachable code
 "#,
     "no",
   )
@@ -20,7 +20,7 @@ fn if_cond() {
   JsonnetInput::eval_error(
     r#"
   if error "no" then 3
-##^^^^^^^^^^^^^^^^^^^^ diagnostic: unreachable code
+##^^^^^^^^^^^^^^^^^^^^ err: unreachable code
 "#,
     "no",
   )
@@ -34,7 +34,7 @@ fn through_local() {
 local a = error "a";
 local b = 1 + 2;
   a - b
-##^^^^^ diagnostic: unreachable code
+##^^^^^ err: unreachable code
 "#,
     "a",
   )
@@ -46,7 +46,7 @@ fn error() {
   JsonnetInput::eval_error(
     r#"
   error error "no"
-##^^^^^^^^^^^^^^^^ diagnostic: unreachable code
+##^^^^^^^^^^^^^^^^ err: unreachable code
 "#,
     "no",
   )

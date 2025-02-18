@@ -77,14 +77,14 @@ fn is_fn() {
   let thing = r#"
 local bad(f) =
   assert std.isFunction(f) : "not a fn";
-##vvvvv diagnostic: invalid use of `+`; expected addable types; left: `function`; right: `number`
+##vvvvv err: invalid use of `+`; expected addable types; left: `function`; right: `number`
   f + 1
 # ^ hover: function
 ;
 
 [
   bad(3),
-##    ^ diagnostic: incompatible types; expected `function`; found `number`
+##    ^ err: incompatible types; expected `function`; found `number`
   bad(function() 3),
   bad(function(x) x + 3),
   bad(function(x, y) x + y),
@@ -435,7 +435,7 @@ function(xs)
   local ys = std.filterMap(std.isNumber, inc, xs);
 ##                                            ^^ type: array[number | string]
   std.filterMap(function(x) x, inc, xs) + ys
-##                                  ^^ diagnostic: incompatible types; expected `number`; found `string`
+##                                  ^^ err: incompatible types; expected `number`; found `string`
 "#,
   )
   .check();

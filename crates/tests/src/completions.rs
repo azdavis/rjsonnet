@@ -21,7 +21,7 @@ fn with_syntax_error() {
 local obj = { a: 1, b: null, c: "hi" };
 ##              v completions: a: number; b: null; c: string
 local res = obj.   ;
-##                 ^ diagnostic: expected an identifier
+##                 ^ err: expected an identifier
 res
 "#,
   )

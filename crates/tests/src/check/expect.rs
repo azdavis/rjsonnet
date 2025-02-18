@@ -186,9 +186,9 @@ pub(crate) enum Kind {
   Def,
   /// A usage site.
   Use,
-  /// A diagnostic.
+  /// A diagnostic. Aliased as "err", even when the diagnostic is NOT an error.
   Diagnostic,
-  /// A hover. (aliased as "type")
+  /// A hover. Aliased as "type".
   Hover,
   /// Completions that should be available.
   Completions,
@@ -213,7 +213,7 @@ impl std::str::FromStr for Kind {
     let ret = match s {
       "def" => Kind::Def,
       "use" => Kind::Use,
-      "diagnostic" => Kind::Diagnostic,
+      "diagnostic" | "err" => Kind::Diagnostic,
       "hover" | "type" => Kind::Hover,
       "completions" => Kind::Completions,
       _ => return Err(s.to_owned()),

@@ -6,9 +6,9 @@ use crate::check::JsonnetInput;
 fn local() {
   JsonnetInput::pre_eval_error(
     r"
-##    v diagnostic: unused variable: `x`
+##    v err: unused variable: `x`
 local x = 3, x = 3;
-##           ^ diagnostic: duplicate variable: `x`
+##           ^ err: duplicate variable: `x`
 x
 ",
   )
@@ -19,9 +19,9 @@ x
 fn local_diff_ty() {
   JsonnetInput::pre_eval_error(
     r#"
-##    v diagnostic: unused variable: `x`
+##    v err: unused variable: `x`
 local x = 3, x = "hi";
-##           ^ diagnostic: duplicate variable: `x`
+##           ^ err: duplicate variable: `x`
 x
 "#,
   )
@@ -34,9 +34,9 @@ fn object_local() {
     r"
 {
   local x = 3,
-##      ^ diagnostic: unused variable: `x`
+##      ^ err: unused variable: `x`
   local x = 3,
-##      ^ diagnostic: duplicate variable: `x`
+##      ^ err: duplicate variable: `x`
   a: x,
 }
 ",
@@ -51,7 +51,7 @@ fn field_pre_eval() {
 {
   a: 1,
   a: 2,
-##^ diagnostic: duplicate field: `a`
+##^ err: duplicate field: `a`
 }
 ",
   )
@@ -77,11 +77,11 @@ local a = "a";
 fn param() {
   JsonnetInput::pre_eval_error(
     r"
-##           v diagnostic: duplicate variable: `x`
+##           v err: duplicate variable: `x`
 local bad(x, x) = x;
-##        ^ diagnostic: unused variable: `x`
+##        ^ err: unused variable: `x`
   bad(1)
-##^^^ diagnostic: missing argument: `x` with type: `any`
+##^^^ err: missing argument: `x` with type: `any`
 ",
   )
   .check();

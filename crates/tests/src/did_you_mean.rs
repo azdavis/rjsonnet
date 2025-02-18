@@ -7,7 +7,7 @@ fn std_field() {
   JsonnetInput::eval_error(
     r"
   std.assertEq(1 + 1, 2)
-##^^^^^^^^^^^^ diagnostic: no such field: `assertEq`; did you mean: `assertEqual`?
+##^^^^^^^^^^^^ err: no such field: `assertEq`; did you mean: `assertEqual`?
 ",
     "no such field: `assertEq`",
   )
@@ -25,7 +25,7 @@ local obj = {
 };
 
   obj.bab
-##^^^^^^^ diagnostic: no such field: `bab`; did you mean: `bar`?
+##^^^^^^^ err: no such field: `bab`; did you mean: `bar`?
 ",
     "no such field: `bab`",
   )
@@ -37,7 +37,7 @@ fn exact_id() {
   JsonnetInput::pre_eval_error(
     r"
 local f(x) = if x then nil else 4;
-##                     ^^^ diagnostic: undefined variable: `nil`; did you mean: `null`?
+##                     ^^^ err: undefined variable: `nil`; did you mean: `null`?
 f(false)
 ",
   )
@@ -50,7 +50,7 @@ fn approx_id() {
     r"
 local thingy = 4;
 3 + thing + thingy
-##  ^^^^^ diagnostic: undefined variable: `thing`; did you mean: `thingy`?
+##  ^^^^^ err: undefined variable: `thing`; did you mean: `thingy`?
 ",
   )
   .check();

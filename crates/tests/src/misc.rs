@@ -23,9 +23,9 @@ fn same_fn_ty() {
   JsonnetInput::manifest(
     r#"
 local foo() = null;
-##    ^^^ diagnostic: unused variable: `foo`
+##    ^^^ err: unused variable: `foo`
 local bar() = 1;
-##    ^^^ diagnostic: unused variable: `bar`
+##    ^^^ err: unused variable: `bar`
 local quz() = 2;
 
 quz()
@@ -40,7 +40,7 @@ fn invalid_subscript() {
   JsonnetInput::eval_error(
     r#"
   null[1]
-##^^^^ diagnostic: invalid subscript; expected a type with fields or elements; found `null`
+##^^^^ err: invalid subscript; expected a type with fields or elements; found `null`
 "#,
     "incompatible types",
   )
@@ -57,7 +57,7 @@ fn invalid_super() {
     local guy =
       if std.extVar("x") == "1" then
         super
-##      ^^^^^ diagnostic: `super` must be used with `.`, `[]`, or `in`
+##      ^^^^^ err: `super` must be used with `.`, `[]`, or `in`
       else
         {};
     "c" in guy
@@ -72,7 +72,7 @@ fn hole() {
   JsonnetInput::pre_eval_error(
     r#"
 local f(x) = ... - x;
-##           ^^^ diagnostic: found placeholder hole
+##           ^^^ err: found placeholder hole
 f(3) + 4
 "#,
   )

@@ -6,9 +6,9 @@ use crate::check::{Input, JsonnetInput};
 fn parse_fail() {
   JsonnetInput::pre_eval_error(
     r"
-## vvvv diagnostic: expected `then`
+## vvvv err: expected `then`
 if else 4
-## ^^^^ diagnostic: expected expression
+## ^^^^ err: expected expression
 ",
   )
   .check();

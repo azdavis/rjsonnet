@@ -21,9 +21,9 @@ fn null() {
 fn redefine() {
   JsonnetInput::pre_eval_error(
     r"
-##         v diagnostic: trailing token
+##         v err: trailing token
 local true = 1;
-##    ^^^^ diagnostic: expected `;`
+##    ^^^^ err: expected `;`
 2
 ",
   )

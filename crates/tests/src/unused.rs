@@ -9,7 +9,7 @@ fn fn_param() {
   JsonnetInput::manifest(
     r"
 local uh = function(x) 3;
-##                  ^ diagnostic: unused variable: `x`
+##                  ^ err: unused variable: `x`
 uh(4)
 ",
     "3",
@@ -22,7 +22,7 @@ fn local() {
   JsonnetInput::manifest(
     r"
 local y = 3;
-##    ^ diagnostic: unused variable: `y`
+##    ^ err: unused variable: `y`
 {}
 ",
     "{}",
@@ -35,7 +35,7 @@ fn local_param() {
   JsonnetInput::manifest(
     r"
 local f(x) = 3;
-##      ^ diagnostic: unused variable: `x`
+##      ^ err: unused variable: `x`
 f(0)
 ",
     "3",
@@ -49,7 +49,7 @@ fn in_all_fields() {
     r#"
 {
   local a = 1,
-##      ^ diagnostic: unused variable: `a`
+##      ^ err: unused variable: `a`
   b: "hi",
   c: 3,
 }
@@ -91,7 +91,7 @@ fn no_field() {
     r#"
 {
   local a = 1,
-##      ^ diagnostic: unused variable: `a`
+##      ^ err: unused variable: `a`
 }
 "#,
     "{}",
@@ -104,7 +104,7 @@ fn array_comp() {
   JsonnetInput::manifest(
     r#"
 [3 for x in []]
-##     ^ diagnostic: unused variable: `x`
+##     ^ err: unused variable: `x`
 "#,
     "[]",
   )
@@ -117,7 +117,7 @@ fn object_comp() {
     r#"
 {
   ["foo"]: 0 for x in ["a", "b"]
-##^^^^^^^^^^ diagnostic: unused variable: `x`
+##^^^^^^^^^^ err: unused variable: `x`
 }
 "#,
     "duplicate field: `foo`",
@@ -167,7 +167,7 @@ fn object_comp_extra_local() {
 {
   local no = k,
   [k]: false,
-##^^^^^^^^^^ diagnostic: unused variable: `no`
+##^^^^^^^^^^ err: unused variable: `no`
   for k in ["a", "b"]
 }
 "#,
