@@ -27,11 +27,15 @@ fn main() -> ExitCode {
   let args = args.finish();
   let n = run(rm_unused, quiet, args);
   if n == 0 {
-    println!("no errors!");
+    if !quiet {
+      println!("no errors!");
+    }
     ExitCode::SUCCESS
   } else {
-    let s = if n == 1 { "" } else { "s" };
-    println!("{n} error{s}");
+    if !quiet {
+      let s = if n == 1 { "" } else { "s" };
+      println!("{n} error{s}");
+    }
     ExitCode::FAILURE
   }
 }
@@ -41,7 +45,9 @@ fn run(rm_unused: bool, quiet: bool, args: Vec<std::ffi::OsString>) -> usize {
   let pwd = match fs.current_dir() {
     Ok(x) => x,
     Err(e) => {
-      println!("couldn't get current dir: {e}");
+      if !quiet {
+        println!("couldn't get current dir: {e}");
+      }
       return 1;
     }
   };
