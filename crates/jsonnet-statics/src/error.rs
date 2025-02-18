@@ -4,7 +4,7 @@
 
 use crate::suggestion;
 use jsonnet_expr::{def, ExprMust, Id, Str};
-use jsonnet_ty::{self as ty, display::MultiLine};
+use jsonnet_ty::{self as ty, display::Style};
 use std::fmt;
 
 /// An error.
@@ -19,11 +19,11 @@ impl Error {
   #[must_use]
   pub fn display<'a>(
     &'a self,
-    multi_line: MultiLine,
+    style: Style,
     store: &'a ty::GlobalStore,
     str_ar: &'a jsonnet_expr::StrArena,
   ) -> impl fmt::Display + use<'a> {
-    Display { multi_line, kind: &self.kind, store, str_ar }
+    Display { style, kind: &self.kind, store, str_ar }
   }
 
   /// Returns the expr this error is for.
@@ -159,7 +159,7 @@ pub(crate) enum Invalid {
 }
 
 struct Display<'a> {
-  multi_line: ty::display::MultiLine,
+  style: ty::display::Style,
   kind: &'a Kind,
   store: &'a ty::GlobalStore,
   str_ar: &'a jsonnet_expr::StrArena,
@@ -171,9 +171,9 @@ impl fmt::Display for Display<'_> {
       Kind::UndefinedVar(id, suggest) => {
         write!(f, "undefined variable: `{}`", id.display(self.str_ar))?;
         if let Some(suggest) = suggest {
-          match self.multi_line {
-            MultiLine::MustNot => f.write_str("; ")?,
-            MultiLine::May => f.write_str("\n      ")?,
+          match self.style {
+            Style::Short => f.write_str("; ")?,
+            Style::Long => f.write_str("\n      ")?,
           }
           write!(f, "did you mean: `{suggest}`?")?;
         }
@@ -189,11 +189,11 @@ impl fmt::Display for Display<'_> {
       Kind::UnusedVar(id, _) => write!(f, "unused variable: `{}`", id.display(self.str_ar)),
       Kind::MissingArg(id, ty) => {
         let id = id.display(self.str_ar);
-        let ty = ty.display(MultiLine::MustNot, self.store, None, self.str_ar);
+        let ty = ty.display(Style::Short, self.store, None, self.str_ar);
         write!(f, "missing argument: `{id}`")?;
-        match self.multi_line {
-          MultiLine::MustNot => f.write_str(" ")?,
-          MultiLine::May => f.write_str("\n       ")?,
+        match self.style {
+          Style::Short => f.write_str(" ")?,
+          Style::Long => f.write_str("\n       ")?,
         }
         write!(f, "with type: `{ty}`")
       }
@@ -206,18 +206,18 @@ impl fmt::Display for Display<'_> {
         Unify::Incompatible(want, got) => {
           f.write_str("incompatible types")?;
           let ef = ExpectedFound {
-            expected: Backticks(want.display(MultiLine::MustNot, self.store, None, self.str_ar)),
-            found: Backticks(got.display(MultiLine::MustNot, self.store, None, self.str_ar)),
-            multi_line: self.multi_line,
+            expected: Backticks(want.display(Style::Short, self.store, None, self.str_ar)),
+            found: Backticks(got.display(Style::Short, self.store, None, self.str_ar)),
+            style: self.style,
           };
           ef.fmt(f)
         }
         Unify::NoSuchField(no_such, suggest) => {
           write!(f, "no such field: `{}`", self.str_ar.get(*no_such))?;
           if let Some(suggest) = suggest {
-            match self.multi_line {
-              MultiLine::MustNot => f.write_str("; ")?,
-              MultiLine::May => f.write_str("\n ")?,
+            match self.style {
+              Style::Short => f.write_str("; ")?,
+              Style::Long => f.write_str("\n ")?,
             }
             write!(f, "did you mean: `{suggest}`?")?;
           }
@@ -225,11 +225,7 @@ impl fmt::Display for Display<'_> {
         }
         Unify::NotEnoughParams(want, got) => {
           f.write_str("not enough parameters")?;
-          let ef = ExpectedFound {
-            expected: AtLeast(*want),
-            found: UpTo(*got),
-            multi_line: self.multi_line,
-          };
+          let ef = ExpectedFound { expected: AtLeast(*want), found: UpTo(*got), style: self.style };
           ef.fmt(f)
         }
         Unify::MismatchedParamNames(want, got) => {
@@ -237,7 +233,7 @@ impl fmt::Display for Display<'_> {
           let ef = ExpectedFound {
             expected: Backticks(want.display(self.str_ar)),
             found: Backticks(got.display(self.str_ar)),
-            multi_line: self.multi_line,
+            style: self.style,
           };
           ef.fmt(f)
         }
@@ -247,7 +243,7 @@ impl fmt::Display for Display<'_> {
           let ef = ExpectedFound {
             expected: "an optional parameter",
             found: "a required parameter",
-            multi_line: self.multi_line,
+            style: self.style,
           };
           ef.fmt(f)
         }
@@ -261,9 +257,9 @@ impl fmt::Display for Display<'_> {
           f.write_str("invalid comparison, i.e. use of `<`, `>=`, etc")?;
           let elr = ExpectedLeftRight {
             expected: "comparable pair of types, i.e. both `number`, both `string`, etc",
-            left: Backticks(ty.display(MultiLine::MustNot, self.store, None, self.str_ar)),
-            right: Backticks(rhs.display(MultiLine::MustNot, self.store, None, self.str_ar)),
-            multi_line: self.multi_line,
+            left: Backticks(ty.display(Style::Short, self.store, None, self.str_ar)),
+            right: Backticks(rhs.display(Style::Short, self.store, None, self.str_ar)),
+            style: self.style,
           };
           elr.fmt(f)
         }
@@ -271,9 +267,9 @@ impl fmt::Display for Display<'_> {
           f.write_str("invalid use of `==`")?;
           let elr = ExpectedLeftRight {
             expected: "equatable types, i.e. anything exception `function`",
-            left: Backticks(ty.display(MultiLine::MustNot, self.store, None, self.str_ar)),
-            right: Backticks(rhs.display(MultiLine::MustNot, self.store, None, self.str_ar)),
-            multi_line: self.multi_line,
+            left: Backticks(ty.display(Style::Short, self.store, None, self.str_ar)),
+            right: Backticks(rhs.display(Style::Short, self.store, None, self.str_ar)),
+            style: self.style,
           };
           elr.fmt(f)
         }
@@ -281,8 +277,8 @@ impl fmt::Display for Display<'_> {
           f.write_str("invalid call`")?;
           let ef = ExpectedFound {
             expected: "a callable type, e.g. `function``",
-            found: Backticks(ty.display(MultiLine::MustNot, self.store, None, self.str_ar)),
-            multi_line: self.multi_line,
+            found: Backticks(ty.display(Style::Short, self.store, None, self.str_ar)),
+            style: self.style,
           };
           ef.fmt(f)
         }
@@ -290,8 +286,8 @@ impl fmt::Display for Display<'_> {
           f.write_str("invalid subscript, i.e. use of `[]` or `.`")?;
           let ef = ExpectedFound {
             expected: "a type with fields or elements, e.g. `array[any]`, `object`",
-            found: Backticks(ty.display(MultiLine::MustNot, self.store, None, self.str_ar)),
-            multi_line: self.multi_line,
+            found: Backticks(ty.display(Style::Short, self.store, None, self.str_ar)),
+            style: self.style,
           };
           ef.fmt(f)
         }
@@ -299,8 +295,8 @@ impl fmt::Display for Display<'_> {
           f.write_str("invalid call to `std.length`")?;
           let ef = ExpectedFound {
             expected: "a type with length, e.g. `array[any]`, `object`, `string`, `function`",
-            found: Backticks(ty.display(MultiLine::MustNot, self.store, None, self.str_ar)),
-            multi_line: self.multi_line,
+            found: Backticks(ty.display(Style::Short, self.store, None, self.str_ar)),
+            style: self.style,
           };
           ef.fmt(f)
         }
@@ -308,9 +304,9 @@ impl fmt::Display for Display<'_> {
           f.write_str("invalid use of `+`")?;
           let elr = ExpectedLeftRight {
             expected: "addable types, e.g. `number`, `string`, `object`, `array[any]`",
-            left: Backticks(ty.display(MultiLine::MustNot, self.store, None, self.str_ar)),
-            right: Backticks(rhs.display(MultiLine::MustNot, self.store, None, self.str_ar)),
-            multi_line: self.multi_line,
+            left: Backticks(ty.display(Style::Short, self.store, None, self.str_ar)),
+            right: Backticks(rhs.display(Style::Short, self.store, None, self.str_ar)),
+            style: self.style,
           };
           elr.fmt(f)
         }
@@ -335,7 +331,7 @@ where
 struct ExpectedFound<E, F> {
   expected: E,
   found: F,
-  multi_line: MultiLine,
+  style: Style,
 }
 
 impl<E, F> fmt::Display for ExpectedFound<E, F>
@@ -344,14 +340,14 @@ where
   F: fmt::Display,
 {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    match self.multi_line {
-      MultiLine::MustNot => f.write_str("; ")?,
-      MultiLine::May => f.write_str("\n  ")?,
+    match self.style {
+      Style::Short => f.write_str("; ")?,
+      Style::Long => f.write_str("\n  ")?,
     }
     write!(f, "expected {}", self.expected)?;
-    match self.multi_line {
-      MultiLine::MustNot => f.write_str("; ")?,
-      MultiLine::May => f.write_str("\n     ")?,
+    match self.style {
+      Style::Short => f.write_str("; ")?,
+      Style::Long => f.write_str("\n     ")?,
     }
     write!(f, "found {}", self.found)
   }
@@ -361,7 +357,7 @@ struct ExpectedLeftRight<L, R> {
   expected: &'static str,
   left: L,
   right: R,
-  multi_line: MultiLine,
+  style: Style,
 }
 
 impl<L, R> fmt::Display for ExpectedLeftRight<L, R>
@@ -370,19 +366,19 @@ where
   R: fmt::Display,
 {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    match self.multi_line {
-      MultiLine::MustNot => f.write_str("; ")?,
-      MultiLine::May => f.write_str("\n  ")?,
+    match self.style {
+      Style::Short => f.write_str("; ")?,
+      Style::Long => f.write_str("\n  ")?,
     }
     write!(f, "expected {}", self.expected)?;
-    match self.multi_line {
-      MultiLine::MustNot => f.write_str("; ")?,
-      MultiLine::May => f.write_str("\n   ")?,
+    match self.style {
+      Style::Short => f.write_str("; ")?,
+      Style::Long => f.write_str("\n   ")?,
     }
     write!(f, "left: {}", self.left)?;
-    match self.multi_line {
-      MultiLine::MustNot => f.write_str("; ")?,
-      MultiLine::May => f.write_str("\n  ")?,
+    match self.style {
+      Style::Short => f.write_str("; ")?,
+      Style::Long => f.write_str("\n  ")?,
     }
     write!(f, "right: {}", self.right)
   }

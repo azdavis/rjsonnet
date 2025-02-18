@@ -16,14 +16,14 @@ impl Ty {
   #[must_use]
   pub fn display<'a>(
     self,
-    multi_line: MultiLine,
+    style: Style,
     global: &'a GlobalStore,
     local: Option<&'a LocalStore>,
     str_ar: &'a StrArena,
   ) -> impl fmt::Display + use<'a> {
-    let level = match multi_line {
-      MultiLine::MustNot => None,
-      MultiLine::May => Some(0),
+    let level = match style {
+      Style::Short => None,
+      Style::Long => Some(0),
     };
     TyDisplay { ty: self, prec: Prec::Min, stuff: Stuff { global, local, str_ar, level } }
   }
@@ -60,23 +60,23 @@ impl Fn {
     }
     always!(params.len() == param_ranges.len());
     buf.push_str(") => ");
-    let ret = ret.display(MultiLine::MustNot, global, local, str_ar);
+    let ret = ret.display(Style::Short, global, local, str_ar);
     write!(&mut buf, "{ret}")?;
     Ok((buf, param_ranges))
   }
 }
 
-/// Whether the type can be displayed multi-line.
+/// The style for display.
 #[derive(Debug, Clone, Copy, Default)]
-pub enum MultiLine {
-  /// It may never be.
-  MustNot,
-  /// It may sometimes be.
+pub enum Style {
+  /// Short, compact style.
+  Short,
+  /// Long, verbose style.
   #[default]
-  May,
+  Long,
 }
 
-impl MultiLine {
+impl Style {
   const THRESHOLD: usize = 3;
 }
 
@@ -84,7 +84,7 @@ fn increase_level(n: usize, lv: Option<usize>) -> [Option<usize>; 3] {
   match lv {
     None => [None; 3],
     Some(x) => {
-      if n > MultiLine::THRESHOLD {
+      if n > Style::THRESHOLD {
         [Some(x), Some(x + 1), Some(x + 1)]
       } else {
         [None, None, Some(x)]

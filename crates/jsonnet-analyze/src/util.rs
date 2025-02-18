@@ -18,8 +18,8 @@ pub struct Init {
   pub manifest: bool,
   /// Whether to output extra debug info.
   pub debug: bool,
-  /// Whether to display types on multiple lines.
-  pub multi_line: jsonnet_ty::display::MultiLine,
+  /// The style for display.
+  pub style: jsonnet_ty::display::Style,
   /// How to format files, if at all.
   pub format_engine: Option<FormatEngine>,
 }
@@ -193,7 +193,7 @@ impl StaticsFile {
 
   pub(crate) fn diagnostics<'a>(
     &'a self,
-    multi_line: jsonnet_ty::display::MultiLine,
+    style: jsonnet_ty::display::Style,
     store: &'a jsonnet_ty::GlobalStore,
     str_ar: &'a jsonnet_expr::StrArena,
   ) -> impl Iterator<Item = Diagnostic> + use<'a> {
@@ -208,7 +208,7 @@ impl StaticsFile {
       .chain(self.statics.errors.iter().map(move |err| {
         let (expr, kind) = err.expr_and_def();
         let range = expr_range(&self.syntax.artifacts.pointers, &root, expr, kind);
-        let msg = err.display(multi_line, store, str_ar);
+        let msg = err.display(style, store, str_ar);
         (range, msg.to_string(), err.severity())
       }))
       .filter_map(|(range, message, severity)| {

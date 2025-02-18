@@ -5,7 +5,7 @@ use crate::{const_eval, format};
 use always::always;
 use jsonnet_syntax::ast::AstNode as _;
 use jsonnet_syntax::kind::{SyntaxKind, SyntaxToken};
-use jsonnet_ty::display::MultiLine;
+use jsonnet_ty::display::Style;
 use paths::{PathId, PathMap, PathSet};
 use rayon::iter::{IntoParallelIterator as _, ParallelIterator as _};
 use rustc_hash::{FxHashMap, FxHashSet};
@@ -290,7 +290,7 @@ pub struct St {
   import_bin: PathMap<Vec<u8>>,
   manifest: bool,
   debug: bool,
-  multi_line: MultiLine,
+  style: Style,
   format_engine: Option<util::FormatEngine>,
 }
 
@@ -314,7 +314,7 @@ impl St {
       import_bin: PathMap::default(),
       manifest: init.manifest,
       debug: init.debug,
-      multi_line: init.multi_line,
+      style: init.style,
       format_engine: init.format_engine,
     }
   }
@@ -594,7 +594,7 @@ impl lang_srv_state::State for St {
     let res = util::StaticsFileToCombine::new(res, &self.with_fs.artifacts, &self.with_fs.file_tys);
     let res = res.combine(&mut self.with_fs.artifacts);
     let wa = &self.with_fs.artifacts;
-    let diagnostics = res.diagnostics(self.multi_line, &wa.statics, &wa.syntax.strings);
+    let diagnostics = res.diagnostics(self.style, &wa.statics, &wa.syntax.strings);
     let ds: Vec<_> = diagnostics.collect();
     let clean = res.is_clean();
     self.file_exprs.insert(path_id, res.syntax.exprs);
@@ -705,7 +705,7 @@ impl lang_srv_state::State for St {
           Some(param.ty)
         })
         .unwrap_or(ty);
-      let ty = ty.display(self.multi_line, &wa.statics, None, &wa.syntax.strings);
+      let ty = ty.display(self.style, &wa.statics, None, &wa.syntax.strings);
       Some(format!("type:\n```jsonnet-ty\n{ty}\n```"))
     });
     let from_std_field = match const_eval::get(self, fs, path_id, expr) {
@@ -805,7 +805,7 @@ impl lang_srv_state::State for St {
         None
       };
       let name = wa.syntax.strings.get(name);
-      let ty = ty.display(self.multi_line, &wa.statics, None, &wa.syntax.strings);
+      let ty = ty.display(self.style, &wa.statics, None, &wa.syntax.strings);
       let (text_edit, additional_text_edits) = if jsonnet_ident::is(name.as_bytes()) {
         (None, None)
       } else {
