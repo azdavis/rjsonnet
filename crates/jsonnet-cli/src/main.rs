@@ -19,13 +19,22 @@ fn main() -> ExitCode {
     println!("    emit no output");
     println!("  --rm-unused");
     println!("    remove unused locals");
+    println!("  --root-dirs <dirs>");
+    println!("    comma-separated extra root directories");
     println!();
     return ExitCode::SUCCESS;
   }
   let rm_unused = args.contains("--rm-unused");
   let quiet = args.contains(["-q", "--quiet"]);
+  let root_dirs: Option<String> = match args.opt_value_from_str("--root-dirs") {
+    Ok(x) => x,
+    Err(e) => {
+      println!("failed to parse option: {e}");
+      return ExitCode::FAILURE;
+    }
+  };
   let args = args.finish();
-  let n = run(rm_unused, quiet, args);
+  let n = run(rm_unused, quiet, root_dirs.as_deref(), args);
   if n == 0 {
     if !quiet {
       println!("no errors!");
@@ -40,7 +49,12 @@ fn main() -> ExitCode {
   }
 }
 
-fn run(rm_unused: bool, quiet: bool, args: Vec<std::ffi::OsString>) -> usize {
+fn run(
+  rm_unused: bool,
+  quiet: bool,
+  root_dirs: Option<&str>,
+  args: Vec<std::ffi::OsString>,
+) -> usize {
   let fs = paths::RealFileSystem::default();
   let pwd = match fs.current_dir() {
     Ok(x) => x,
@@ -51,7 +65,13 @@ fn run(rm_unused: bool, quiet: bool, args: Vec<std::ffi::OsString>) -> usize {
       return 1;
     }
   };
-  let mut st = St::init(pwd.clone(), Init::default());
+  let root_dirs = root_dirs.iter().flat_map(|x| x.split(',')).map(|x| {
+    let mut p = pwd.clone();
+    p.push(x);
+    p
+  });
+  let root_dirs: Vec<_> = root_dirs.collect();
+  let mut st = St::init(pwd.clone(), Init { root_dirs, ..Default::default() });
   let mut ret = 0usize;
   for arg in args {
     let Some(arg) = arg.to_str() else {
