@@ -471,7 +471,17 @@ impl St {
         } else {
           for &idx in binds {
             let Some(bind) = local.bind_commas().nth(idx) else { continue };
-            let start = bind.syntax().first_token();
+            let prev_comma = if bind.comma().is_some() {
+              None
+            } else {
+              idx.checked_sub(1).and_then(|idx| {
+                if binds.contains(&idx) {
+                  return None;
+                }
+                local.bind_commas().nth(idx)?.comma()
+              })
+            };
+            let start = prev_comma.or_else(|| bind.syntax().first_token());
             let end = bind.syntax().last_token();
             let Some(range) = expand_trivia_around(start, end) else { continue };
             tmp.insert(range);
@@ -485,24 +495,24 @@ impl St {
     }
     let mut tok = root_syntax.first_token()?;
     let mut ret = String::new();
-    let mut prev_trivia = true;
+    let mut prev_alpha_numeric = false;
     let mut gap = None::<Gap>;
     loop {
       let tok_range = tok.text_range();
-      let this_trivia = tok.kind().is_trivia();
+      let this_alpha_numeric = is_alpha_numeric(tok.kind());
       if ranges.iter().any(|r| r.contains_range(tok_range)) {
-        let has_nl = this_trivia && tok.text().contains('\n');
+        let has_nl = tok.kind().is_trivia() && tok.text().contains('\n');
         let g = if has_nl { Gap::Newline } else { Gap::Space };
         gap = Some(gap.map_or(g, |x| x.and(g)));
       } else {
-        if !prev_trivia && !this_trivia {
+        if (prev_alpha_numeric && this_alpha_numeric) || gap.is_some_and(Gap::is_newline) {
           if let Some(gap) = gap {
             ret.push(gap.as_char());
           }
         }
         ret.push_str(tok.text());
         gap = None;
-        prev_trivia = this_trivia;
+        prev_alpha_numeric = this_alpha_numeric;
       }
       tok = match tok.next_token() {
         Some(x) => x,
@@ -1058,4 +1068,33 @@ impl Gap {
       (Gap::Space, Gap::Space) => Gap::Space,
     }
   }
+
+  fn is_newline(self) -> bool {
+    matches!(self, Gap::Newline)
+  }
+}
+
+fn is_alpha_numeric(kind: SyntaxKind) -> bool {
+  matches!(
+    kind,
+    SyntaxKind::Id
+      | SyntaxKind::Number
+      | SyntaxKind::ImportbinKw
+      | SyntaxKind::ImportstrKw
+      | SyntaxKind::FunctionKw
+      | SyntaxKind::AssertKw
+      | SyntaxKind::ImportKw
+      | SyntaxKind::ErrorKw
+      | SyntaxKind::FalseKw
+      | SyntaxKind::LocalKw
+      | SyntaxKind::SuperKw
+      | SyntaxKind::ElseKw
+      | SyntaxKind::NullKw
+      | SyntaxKind::SelfKw
+      | SyntaxKind::ThenKw
+      | SyntaxKind::TrueKw
+      | SyntaxKind::ForKw
+      | SyntaxKind::IfKw
+      | SyntaxKind::InKw
+  )
 }

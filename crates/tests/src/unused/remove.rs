@@ -9,14 +9,15 @@ fn smoke() {
 local x = 1;
 2
 "#,
-    r#"2
+    r#"
+2
 "#,
   )
   .check();
 }
 
 #[test]
-fn multi_binding_not_all() {
+fn multi_binding_fst() {
   JsonnetInput::rm_unused(
     r#"
 local x = 1, y = 2;
@@ -31,13 +32,29 @@ y
 }
 
 #[test]
+fn multi_binding_snd() {
+  JsonnetInput::rm_unused(
+    r#"
+local x = 1, y = 2;
+x
+"#,
+    r#"
+local x = 1;
+x
+"#,
+  )
+  .check();
+}
+
+#[test]
 fn multi_binding_all() {
   JsonnetInput::rm_unused(
     r#"
 local x = 1, y = 2;
 3
 "#,
-    r#"3
+    r#"
+3
 "#,
   )
   .check();
