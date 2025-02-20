@@ -49,7 +49,7 @@ fn self_ok() {
 #[test]
 #[ignore = "stack overflow"]
 fn self_err() {
-  JsonnetInput::manifest(
+  JsonnetInput::eval_error(
     r#"
 { assert self.a > 9 : "bad", a: 3 }
 "#,
