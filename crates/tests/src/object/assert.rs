@@ -245,3 +245,15 @@ id(obj).b
   )
   .check();
 }
+
+#[test]
+fn does_not_force_all_fields() {
+  JsonnetInput::manifest(
+    r#"
+local obj = { assert 1 + 1 == 2 : "object assert", a: error "a", b: 2 };
+obj.b
+"#,
+    "2",
+  )
+  .check();
+}
