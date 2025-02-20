@@ -74,7 +74,7 @@ pub(crate) fn get_call(
           // we want "number of codepoints", NOT byte length.
           Prim::String(s) => cx.str_ar.get(s).chars().count(),
         },
-        Val::Object(obj) => obj.fields().iter().filter(|(_, f)| !f.is_hidden()).count(),
+        Val::Object(obj) => obj.fields().iter().filter(|(_, f)| f.is_visible()).count(),
         Val::Array(arr) => arr.len(),
         Val::Fn(Fn::Regular(func)) => func.params.iter().filter(|(_, d)| d.is_none()).count(),
         Val::Fn(Fn::Std(func)) => func.required_params_count(),
@@ -390,7 +390,7 @@ pub(crate) fn get_call(
       let args = fns::objectHas::new(pos, named, expr)?;
       let o = args.o(cx, env)?;
       let f = args.f(cx, env)?;
-      Ok(o.get_field(f).is_some_and(|f| !f.is_hidden()).into())
+      Ok(o.get_field(f).is_some_and(|f| f.is_visible()).into())
     }
 
     StdFn::objectHasAll => {
@@ -405,7 +405,7 @@ pub(crate) fn get_call(
       let o = args.obj(cx, env)?;
       let f = args.fname(cx, env)?;
       let hidden = args.hidden(cx, env)?;
-      Ok(o.get_field(f).is_some_and(|f| hidden || !f.is_hidden()).into())
+      Ok(o.get_field(f).is_some_and(|f| hidden || f.is_visible()).into())
     }
 
     StdFn::makeArray => {

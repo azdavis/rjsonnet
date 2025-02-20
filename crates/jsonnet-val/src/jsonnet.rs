@@ -409,10 +409,13 @@ pub enum Field {
 }
 
 impl Field {
-  /// Returns whether this is hidden.
+  /// Returns whether this is visible.
   #[must_use]
-  pub fn is_hidden(&self) -> bool {
-    matches!(*self, Self::Std(_) | Self::Expr(Vis::Hidden, _, _))
+  pub fn is_visible(&self) -> bool {
+    match self {
+      Field::Std(_) => false,
+      Field::Expr(vis, _, _) => vis.is_visible(),
+    }
   }
 }
 

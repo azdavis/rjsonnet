@@ -183,7 +183,17 @@ pub enum ImportKind {
 pub enum Vis {
   Default,
   Hidden,
+  /// I don't really get the point of this. Is it the same as Default? I'm probably missing
+  /// something.
   Visible,
+}
+
+impl Vis {
+  /// Returns whether this is visible.
+  #[must_use]
+  pub fn is_visible(self) -> bool {
+    matches!(self, Self::Default | Self::Visible)
+  }
 }
 
 #[derive(Debug, Clone, Copy)]
