@@ -398,9 +398,10 @@ impl Array {
   }
 
   /// Returns the elements in order.
+  ///
+  /// TODO this should be a generator
   #[must_use]
   pub fn elems(&self) -> Vec<(&Env, Expr)> {
-    // TODO this should be a generator
     let mut ret = Vec::<(&Env, Expr)>::new();
     for part in &self.parts {
       ret.extend(part.elems.iter().map(|&x| (&part.env, x)));
