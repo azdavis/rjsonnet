@@ -69,23 +69,7 @@ pub(crate) fn get(cx: &mut Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
         let Some(field) = object.get_field(name) else {
           return Err(error::Error::Exec { expr, kind: error::Kind::NoSuchField(name) });
         };
-        match field {
-          Field::Std(field) => match field {
-            StdField::thisFile => {
-              let s = cx
-                .paths
-                .get_path(env.path())
-                .as_path()
-                .to_string_lossy()
-                .into_owned()
-                .into_boxed_str();
-              Ok(Val::Prim(Prim::String(cx.str_ar.str(s))))
-            }
-            StdField::pi => Ok(Val::Prim(Prim::Number(Float::PI))),
-            StdField::Fn(f) => Ok(Val::Fn(Fn::Std(f))),
-          },
-          Field::Expr(_, env, expr) => get(cx, &env, expr),
-        }
+        get_field(cx, env, field)
       }
       Val::Array(array) => {
         let Val::Prim(Prim::Number(idx)) = get(cx, env, idx)? else {
@@ -268,6 +252,21 @@ pub(crate) fn get(cx: &mut Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
       env.use_outer_self_super();
       get(cx, &env, expr)
     }
+  }
+}
+
+fn get_field(cx: &mut Cx<'_>, env: &Env, field: Field) -> Result<Val> {
+  match field {
+    Field::Std(field) => match field {
+      StdField::thisFile => {
+        let path = cx.paths.get_path(env.path());
+        let s = path.as_path().to_string_lossy().into_owned().into_boxed_str();
+        Ok(Val::Prim(Prim::String(cx.str_ar.str(s))))
+      }
+      StdField::pi => Ok(Val::Prim(Prim::Number(Float::PI))),
+      StdField::Fn(f) => Ok(Val::Fn(Fn::Std(f))),
+    },
+    Field::Expr(_, env, expr) => get(cx, &env, expr),
   }
 }
 
