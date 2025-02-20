@@ -58,6 +58,23 @@ fn self_err() {
   .check();
 }
 
+/// TODO fix
+#[test]
+#[ignore = "stack overflow"]
+fn super_ok() {
+  JsonnetInput::manifest(
+    r#"
+{ a: 10 } + { assert super.a > 5, assert self.a < 5, a: 2 }
+"#,
+    r#"
+{
+  "a": 2
+}
+"#,
+  )
+  .check();
+}
+
 #[test]
 fn lazy_manifest() {
   JsonnetInput::manifest(
