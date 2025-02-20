@@ -266,32 +266,27 @@ impl Object {
 
   /// TODO this should be a generator
   #[must_use]
-  pub fn fields(&self) -> Vec<(Str, Field)> {
-    let mut ret = Vec::<(Str, Field)>::new();
+  pub fn visible_fields(&self) -> Vec<(Str, Env, Expr)> {
+    let mut ret = Vec::<(Str, Env, Expr)>::new();
     let mut seen = FxHashSet::<Str>::default();
     for this in self.ancestry_considering_superness() {
-      match &this.kind {
-        ObjectKind::Regular(this) => {
-          for (&name, field) in &this.fields {
-            if !seen.insert(name) {
-              continue;
-            }
-            let mut env = self.set_this(&this.env);
-            if let Some(subst) = &field.comp_subst {
-              env.insert(subst.clone());
-            }
-            let f = Field::Expr(field.vis, env, field.expr);
-            ret.push((name, f));
-          }
+      let this = match &this.kind {
+        ObjectKind::Regular(x) => x,
+        // always hidden
+        ObjectKind::Std => continue,
+      };
+      for (&name, field) in &this.fields {
+        if !seen.insert(name) {
+          continue;
         }
-        ObjectKind::Std => {
-          for (name, field) in StdField::ALL {
-            if !seen.insert(name) {
-              continue;
-            }
-            ret.push((name, Field::Std(field)));
-          }
+        let mut env = self.set_this(&this.env);
+        if let Some(subst) = &field.comp_subst {
+          env.insert(subst.clone());
         }
+        if !field.vis.is_visible() {
+          continue;
+        }
+        ret.push((name, env, field.expr));
       }
     }
     ret

@@ -16,17 +16,7 @@ pub fn get(cx: &mut Cx<'_>, val: jsonnet::Val) -> error::Result<json::Val> {
     jsonnet::Val::Object(object) => {
       exec::ck_object_asserts(cx, &object)?;
       let mut val_fields = BTreeMap::<jsonnet_expr::Str, json::Val>::default();
-      for (name, field) in object.fields() {
-        let (env, expr) = match field {
-          jsonnet::Field::Expr(vis, env, expr) => {
-            if matches!(vis, jsonnet_expr::Vis::Hidden) {
-              continue;
-            }
-            (env, expr)
-          }
-          // always hidden
-          jsonnet::Field::Std(_) => continue,
-        };
+      for (name, env, expr) in object.visible_fields() {
         let val = get_(cx, &env, expr)?;
         always!(val_fields.insert(name, val).is_none());
       }
