@@ -14,9 +14,7 @@ pub fn get(cx: &mut Cx<'_>, val: jsonnet::Val) -> error::Result<json::Val> {
   match val {
     jsonnet::Val::Prim(prim) => Ok(json::Val::Prim(prim)),
     jsonnet::Val::Object(object) => {
-      for (env, expr) in object.asserts() {
-        get_(cx, &env, expr)?;
-      }
+      exec::ck_object_asserts(cx, &object)?;
       let mut val_fields = BTreeMap::<jsonnet_expr::Str, json::Val>::default();
       for (name, field) in object.fields() {
         let (env, expr) = match field {

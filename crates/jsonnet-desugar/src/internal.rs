@@ -391,8 +391,8 @@ fn get_object_literal(st: &mut St, cx: Cx<'_>, obj: ast::Object, in_obj: bool) -
         st.set_id_count(e, count);
       }
     } else if count == 0 {
-      // invent a fake `assert true` so the binds appear
-      asserts.push(Some(st.expr(ptr, ExprData::Prim(Prim::Bool(true)))));
+      // invent a fake assert expression so the binds appear
+      asserts.push(Some(st.expr(ptr, ExprData::Prim(Prim::Null))));
     }
     let to_modify = asserts.iter_mut().chain(fields.iter_mut().map(|f| &mut f.val));
     for e in to_modify {

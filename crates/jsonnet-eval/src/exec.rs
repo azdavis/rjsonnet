@@ -65,9 +65,7 @@ pub(crate) fn get(cx: &mut Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
         let Val::Prim(Prim::String(name)) = get(cx, env, idx)? else {
           return Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes });
         };
-        for (env, assert) in object.asserts() {
-          get(cx, &env, assert)?;
-        }
+        ck_object_asserts(cx, &object)?;
         let Some(field) = object.get_field(name) else {
           return Err(error::Error::Exec { expr, kind: error::Kind::NoSuchField(name) });
         };
@@ -532,4 +530,12 @@ fn str_concat(ar: &mut StrArena, lhs: Str, rhs: Str) -> Str {
   let rhs = ar.get(rhs);
   let both = format!("{lhs}{rhs}").into_boxed_str();
   ar.str(both)
+}
+
+pub(crate) fn ck_object_asserts(cx: &mut Cx<'_>, object: &Object) -> Result<()> {
+  for (env, assert) in object.asserts() {
+    let v = get(cx, &env, assert)?;
+    always!(matches!(v, Val::Prim(Prim::Null)), "bad desugar for assert, got non-Null");
+  }
+  Ok(())
 }
