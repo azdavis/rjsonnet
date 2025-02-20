@@ -105,32 +105,6 @@ std.length(3)
 }
 
 #[test]
-fn obj_has_no_assert() {
-  JsonnetInput::manifest(
-    r#"
-local obj = { assert false, a: 1 };
-assert std.objectHas(obj, "a");
-1 + 2
-"#,
-    "3",
-  )
-  .check();
-}
-
-#[test]
-#[should_panic = "not yet implemented: get"]
-fn obj_get_yes_assert() {
-  JsonnetInput::eval_error(
-    r#"
-local obj = { assert false : "fail", a: 1 };
-std.get(obj, "a")
-"#,
-    "fail",
-  )
-  .check();
-}
-
-#[test]
 #[should_panic = "not yet implemented: flatMap"]
 fn flat_map() {
   JsonnetInput::manifest(

@@ -2,6 +2,7 @@
 
 use crate::check::JsonnetInput;
 
+mod assert;
 mod comprehension;
 
 #[test]
@@ -213,6 +214,18 @@ fn array_self() {
   "quz": [{ "kind": "Soda", "qty": 2 }]
 }
 "#,
+  )
+  .check();
+}
+
+#[test]
+#[should_panic = "not yet implemented: object-object equality"]
+fn eq_hidden() {
+  JsonnetInput::manifest(
+    r#"
+{ a: 1, b:: 2 } == { a: 1 }
+"#,
+    "true",
   )
   .check();
 }
