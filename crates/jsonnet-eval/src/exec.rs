@@ -65,12 +65,12 @@ pub(crate) fn get(cx: &mut Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
         let Val::Prim(Prim::String(name)) = get(cx, env, idx)? else {
           return Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes });
         };
-        let Some(field) = object.get_field(name) else {
-          return Err(error::Error::Exec { expr, kind: error::Kind::NoSuchField(name) });
-        };
         for (env, assert) in object.asserts() {
           get(cx, &env, assert)?;
         }
+        let Some(field) = object.get_field(name) else {
+          return Err(error::Error::Exec { expr, kind: error::Kind::NoSuchField(name) });
+        };
         match field {
           Field::Std(field) => match field {
             StdField::thisFile => {

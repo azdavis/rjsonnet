@@ -177,3 +177,54 @@ obj.a
   )
   .check();
 }
+
+#[test]
+fn field_get_idx_err() {
+  JsonnetInput::eval_error(
+    r#"
+local obj = { assert false : "object assert", a: error "value" };
+  obj[error "field"]
+##^^^^^^^^^^^^^^^^^^ err: unreachable code
+"#,
+    "field",
+  )
+  .check();
+}
+
+#[test]
+fn field_get_object_assert_err() {
+  JsonnetInput::eval_error(
+    r#"
+local obj = { assert false : "object assert", a: error "value" };
+obj.a
+"#,
+    "object assert",
+  )
+  .check();
+}
+
+#[test]
+fn field_get_value_err() {
+  JsonnetInput::eval_error(
+    r#"
+local obj = { a: error "value" };
+obj.a
+"#,
+    "value",
+  )
+  .check();
+}
+
+#[test]
+fn field_get_no_such_field() {
+  JsonnetInput::eval_error(
+    r#"
+local obj = { assert false : "object assert", a: error "value" };
+// prevent statically knowing the fields
+local id(x) = x;
+id(obj).b
+"#,
+    "object assert",
+  )
+  .check();
+}
