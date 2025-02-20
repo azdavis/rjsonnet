@@ -103,7 +103,6 @@ obj.a
 }
 
 #[test]
-#[should_panic = "not yet implemented: object-object equality"]
 fn eq_checks() {
   JsonnetInput::eval_error(
     r#"

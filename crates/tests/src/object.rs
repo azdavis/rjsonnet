@@ -220,7 +220,6 @@ fn array_self() {
 }
 
 #[test]
-#[should_panic = "not yet implemented: object-object equality"]
 fn eq_hidden() {
   JsonnetInput::manifest(
     r#"

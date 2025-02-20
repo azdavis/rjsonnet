@@ -321,7 +321,7 @@ fn t4() {
 }
 
 #[test]
-#[should_panic = "not yet implemented: object-object equality"]
+#[should_panic = "not yet implemented: mod"]
 fn t5() {
   JsonnetInput::eval_error(
     r"

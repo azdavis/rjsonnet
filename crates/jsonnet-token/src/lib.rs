@@ -308,7 +308,7 @@ pub const ALL: [Token; 51] = [
         assert { a: -321, b: str } + { a: num, c: ary }
           == { a: 3, b: "hello, world", c: [1, 2, 8, 9] };
       "#},
-      outcome: Err(Error::Eval("not yet implemented: object-object equality")),
+      outcome: Ok(()),
     }],
   },
   Token {
@@ -479,7 +479,7 @@ pub const ALL: [Token; 51] = [
             bar: 2,
           };
         "#},
-        outcome: Err(Error::Eval("not yet implemented: object-object equality")),
+        outcome: Ok(()),
       },
     ],
   },
@@ -698,7 +698,7 @@ pub const ALL: [Token; 51] = [
         assert { a: 3 } + { b: super.a + 1 }
           == { a: 3, b: 4 };
       "#},
-      outcome: Err(Error::Eval("not yet implemented: object-object equality")),
+      outcome: Ok(()),
     }],
   },
   Token {
@@ -778,7 +778,7 @@ pub const ALL: [Token; 51] = [
         assert lengths(["foo", "hi"])
           == { foo: 3, hi: 2 };
       "#},
-      outcome: Err(Error::Eval("not yet implemented: object-object equality")),
+      outcome: Ok(()),
     }],
   },
   Token {

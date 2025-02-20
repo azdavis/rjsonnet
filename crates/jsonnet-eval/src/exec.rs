@@ -507,8 +507,28 @@ pub(crate) fn eq_val(expr: ExprMust, cx: &mut Cx<'_>, lhs: &Val, rhs: &Val) -> R
       }
       Ok(true)
     }
-    (Val::Object(_), Val::Object(_)) => {
-      Err(error::Error::Exec { expr, kind: error::Kind::Todo("object-object equality") })
+    (Val::Object(lhs), Val::Object(rhs)) => {
+      ck_object_asserts(cx, lhs)?;
+      ck_object_asserts(cx, rhs)?;
+      let lhs_fields = lhs.sorted_visible_fields();
+      let rhs_fields = rhs.sorted_visible_fields();
+      if lhs_fields.len() != rhs_fields.len() {
+        return Ok(false);
+      }
+      for (lhs_field, rhs_field) in lhs_fields.into_iter().zip(rhs_fields) {
+        let (lhs_name, lhs_env, lhs_expr) = lhs_field;
+        let (rhs_name, rhs_env, rhs_expr) = rhs_field;
+        if lhs_name != rhs_name {
+          return Ok(false);
+        }
+        let lhs = get(cx, &lhs_env, lhs_expr)?;
+        let rhs = get(cx, &rhs_env, rhs_expr)?;
+        let eq = eq_val(expr, cx, &lhs, &rhs)?;
+        if !eq {
+          return Ok(false);
+        }
+      }
+      Ok(true)
     }
     (Val::Fn(_), Val::Fn(_)) => Err(error::Error::Exec { expr, kind: error::Kind::EqFn }),
     _ => Ok(false),
