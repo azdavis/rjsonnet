@@ -46,16 +46,13 @@ pub const ALL: [Token; 51] = [
     text: ":::",
     purposes: &[TokenPurpose {
       doc: indoc! {"
-        The non-hidden field marker. Fields marked with this will be included in the output JSON.
+        A field marker that overrides the hidden status of the object on the left-hand side of `+`.
       "},
       example: indoc! {r#"
-        {
-          regular: 4,
-          hidden:: 3,
-          shown::: 7,
-        }
+        assert std.manifestJsonMinified({ a:: 1 } + { a: 2 }) == '{}';
+        assert std.manifestJsonMinified({ a:: 1 } + { a::: 2 }) == '{"a":2}';
       "#},
-      outcome: Ok(()),
+      outcome: Err(Error::Eval("not yet implemented: manifestJsonMinified")),
     }],
   },
   Token {
@@ -91,7 +88,7 @@ pub const ALL: [Token; 51] = [
       doc: indoc! {"
         The hidden field marker.
 
-        Fields with this marker will not be included in the output JSON when materialized.
+        Fields with this marker will not be included in the output JSON.
       "},
       example: indoc! {r#"
         { a:: 3, b: 4 }
