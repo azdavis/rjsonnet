@@ -183,8 +183,7 @@ pub enum ImportKind {
 pub enum Vis {
   Default,
   Hidden,
-  /// I don't really get the point of this. Is it the same as Default? I'm probably missing
-  /// something.
+  /// overrides Hidden when on rhs of `+`
   Visible,
 }
 
