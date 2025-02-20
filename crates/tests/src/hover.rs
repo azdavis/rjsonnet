@@ -104,7 +104,7 @@ mkNull()
 #[test]
 #[should_panic = "not yet implemented: foldl"]
 fn foldl() {
-  JsonnetInput::eval_error(
+  JsonnetInput::manifest(
     r"
 local objAdd(a, b) =
   assert std.isObject(a);
