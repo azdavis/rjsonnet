@@ -230,13 +230,6 @@ impl Object {
     self.ancestry().skip(self.is_super.into())
   }
 
-  /// Returns a new regular (non-std) object.
-  #[must_use]
-  pub fn new(env: Env, asserts: Vec<Expr>, fields: ExprFields) -> Self {
-    let kind = ObjectKind::Regular(RegularObjectKind { env, asserts, fields });
-    Self { parent: None, kind, is_super: false }
-  }
-
   /// Returns the standard library object.
   #[must_use]
   pub fn std_lib() -> Self {
@@ -337,9 +330,50 @@ enum ObjectKind {
 
 #[derive(Debug, Clone)]
 struct RegularObjectKind {
+  id: uniq::Uniq,
   env: Env,
   asserts: Vec<Expr>,
   fields: ExprFields,
+}
+
+/// A maker of objects.
+#[derive(Debug, Default)]
+pub struct ObjectMk {
+  id_mk: uniq::UniqMk,
+  /// needed to avoid cyclically checking object asserts. we must check object asserts when getting
+  /// a field from on an object, but we may get a field from an object in an assert in the object
+  /// itself with `self`.
+  checking_asserts: FxHashSet<uniq::Uniq>,
+}
+
+impl ObjectMk {
+  /// Returns a new regular (non-std) object.
+  #[must_use]
+  pub fn mk(&mut self, env: Env, asserts: Vec<Expr>, fields: ExprFields) -> Object {
+    let id = self.id_mk.mk();
+    let kind = ObjectKind::Regular(RegularObjectKind { id, env, asserts, fields });
+    Object { parent: None, kind, is_super: false }
+  }
+
+  /// Returns whether we should actually start checking the asserts on the object.
+  ///
+  /// That is, if this returns `false`, we are already checking the asserts, or there are no asserts
+  /// to check.
+  pub fn start_checking_asserts(&mut self, object: &Object) -> bool {
+    match &object.kind {
+      ObjectKind::Std => false,
+      ObjectKind::Regular(obj) => self.checking_asserts.insert(obj.id),
+    }
+  }
+
+  /// Finishes checking asserts on the object.
+  pub fn finish_checking_asserts(&mut self, object: &Object) {
+    let ret = match &object.kind {
+      ObjectKind::Std => false,
+      ObjectKind::Regular(obj) => self.checking_asserts.remove(&obj.id),
+    };
+    always!(ret, "should only finish checking asserts once started");
+  }
 }
 
 /// Expr fields, in a deterministic order.

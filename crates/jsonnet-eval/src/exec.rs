@@ -31,7 +31,7 @@ pub(crate) fn get(cx: &mut Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
           _ => return Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes }),
         }
       }
-      Ok(Val::Object(Object::new(env.clone(), asserts.clone(), named_fields)))
+      Ok(Val::Object(cx.obj_mk.mk(env.clone(), asserts.clone(), named_fields)))
     }
     ExprData::ObjectComp { name, vis, body, id, ary } => {
       let Val::Array(array) = get(cx, env, ary)? else {
@@ -57,7 +57,7 @@ pub(crate) fn get(cx: &mut Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
           _ => return Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes }),
         }
       }
-      Ok(Val::Object(Object::new(env.clone(), Vec::new(), fields)))
+      Ok(Val::Object(cx.obj_mk.mk(env.clone(), Vec::new(), fields)))
     }
     ExprData::Array(elems) => Ok(Val::Array(Array::new(env.clone(), elems.clone()))),
     ExprData::Subscript { on, idx } => match get(cx, env, on)? {
@@ -533,9 +533,13 @@ fn str_concat(ar: &mut StrArena, lhs: Str, rhs: Str) -> Str {
 }
 
 pub(crate) fn ck_object_asserts(cx: &mut Cx<'_>, object: &Object) -> Result<()> {
+  if !cx.obj_mk.start_checking_asserts(object) {
+    return Ok(());
+  }
   for (env, assert) in object.asserts() {
     let v = get(cx, &env, assert)?;
     always!(matches!(v, Val::Prim(Prim::Null)), "bad desugar for assert, got non-Null");
   }
+  cx.obj_mk.finish_checking_asserts(object);
   Ok(())
 }

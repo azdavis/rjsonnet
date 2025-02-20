@@ -31,6 +31,7 @@ pub struct Cx<'a> {
   pub exprs: &'a mut paths::PathMap<Exprs>,
   pub import_str: &'a paths::PathMap<String>,
   pub import_bin: &'a paths::PathMap<Vec<u8>>,
+  pub obj_mk: jsonnet_val::jsonnet::ObjectMk,
 }
 
 #[derive(Debug)]

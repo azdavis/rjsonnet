@@ -337,6 +337,7 @@ impl St {
       exprs: &mut self.file_exprs,
       import_str: &self.import_str,
       import_bin: &self.import_bin,
+      obj_mk: jsonnet_val::jsonnet::ObjectMk::default(),
     };
     let val = jsonnet_eval::get_exec(&mut cx, path_id)?;
     jsonnet_eval::get_manifest(&mut cx, val)

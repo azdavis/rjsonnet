@@ -28,9 +28,7 @@ fn smoke_err() {
   .check();
 }
 
-/// TODO fix
 #[test]
-#[ignore = "stack overflow"]
 fn self_ok() {
   JsonnetInput::manifest(
     r#"
@@ -45,9 +43,7 @@ fn self_ok() {
   .check();
 }
 
-/// TODO fix
 #[test]
-#[ignore = "stack overflow"]
 fn self_err() {
   JsonnetInput::eval_error(
     r#"
@@ -58,9 +54,7 @@ fn self_err() {
   .check();
 }
 
-/// TODO fix
 #[test]
-#[ignore = "stack overflow"]
 fn super_ok() {
   JsonnetInput::manifest(
     r#"

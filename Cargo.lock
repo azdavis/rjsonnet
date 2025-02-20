@@ -766,6 +766,7 @@ dependencies = [
  "paths",
  "rustc-hash 2.1.1",
  "serde_json",
+ "uniq",
 ]
 
 [[package]]
@@ -1273,6 +1274,11 @@ name = "unicode-width"
 version = "0.1.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7dd6e30e90baa6f72411720665d41d89b9a3d039dc45b8faea1ddd07f617f6af"
+
+[[package]]
+name = "uniq"
+version = "0.1.0"
+source = "git+https://github.com/azdavis/language-util.git#08ef17a1f91e82b50c18ede0a7c4208e5ae32106"
 
 [[package]]
 name = "url"

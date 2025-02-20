@@ -17,6 +17,7 @@ always.workspace = true
 paths.workspace = true
 rustc-hash.workspace = true
 serde_json.workspace = true
+uniq.workspace = true
 
 cycle.path = "../cycle"
 finite-float.path = "../finite-float"
