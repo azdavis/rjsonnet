@@ -229,3 +229,24 @@ fn eq_hidden() {
   )
   .check();
 }
+
+#[test]
+fn self_local() {
+  JsonnetInput::manifest(
+    r#"
+{
+  a:
+    local x = self;
+    x.b + 1,
+  b: 3,
+}
+"#,
+    r#"
+{
+  "a": 4,
+  "b": 3
+}
+"#,
+  )
+  .check();
+}
