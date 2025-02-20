@@ -177,6 +177,32 @@ std.get(obj, "b", 2)
 }
 
 #[test]
+#[should_panic = "not yet implemented: get"]
+fn std_get_yes_default_yes_contains_yes_hidden_no_inc_hidden_no_check() {
+  JsonnetInput::manifest(
+    r#"
+local obj = { assert false : "bad", a:: 1 };
+std.get(obj, "a", 2, inc_hidden=false)
+"#,
+    "2",
+  )
+  .check();
+}
+
+#[test]
+#[should_panic = "not yet implemented: get"]
+fn std_get_yes_default_yes_contains_yes_hidden_yes_inc_hidden_no_check() {
+  JsonnetInput::eval_error(
+    r#"
+local obj = { assert false : "bad", a:: 1 };
+std.get(obj, "a", 2, inc_hidden=true)
+"#,
+    "bad",
+  )
+  .check();
+}
+
+#[test]
 fn field_get_yes() {
   JsonnetInput::eval_error(
     r#"
