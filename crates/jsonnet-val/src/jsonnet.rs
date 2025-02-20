@@ -268,7 +268,7 @@ impl Object {
   ///
   /// TODO should this be a generator?
   #[must_use]
-  pub fn visible_fields(&self) -> Vec<(Str, Env, Expr)> {
+  pub fn sorted_visible_fields(&self) -> Vec<(Str, Env, Expr)> {
     let mut vis_visible = FxHashMap::<Str, (&RegularObjectKind, &ExprField)>::default();
     let mut vis_hidden = FxHashSet::<Str>::default();
     let mut vis_default = FxHashMap::<Str, (&RegularObjectKind, &ExprField)>::default();

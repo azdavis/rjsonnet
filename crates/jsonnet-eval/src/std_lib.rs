@@ -74,7 +74,7 @@ pub(crate) fn get_call(
           // we want "number of codepoints", NOT byte length.
           Prim::String(s) => cx.str_ar.get(s).chars().count(),
         },
-        Val::Object(obj) => obj.visible_fields().len(),
+        Val::Object(obj) => obj.sorted_visible_fields().len(),
         Val::Array(arr) => arr.len(),
         Val::Fn(Fn::Regular(func)) => func.params.iter().filter(|(_, d)| d.is_none()).count(),
         Val::Fn(Fn::Std(func)) => func.required_params_count(),
