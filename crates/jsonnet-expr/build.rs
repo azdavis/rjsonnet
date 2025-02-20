@@ -70,6 +70,9 @@ fn main() {
     S::new("string"),
     // needed for { key: string, value: T } for std.objectKeysValues
     S::new("key"),
+    // needed for std fn param defaults
+    S::named("\n", "newline_char"),
+    S::named(": ", "colon_space"),
   ];
   let strings = || {
     std::iter::empty()

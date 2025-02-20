@@ -2,7 +2,7 @@
 
 #![expect(clippy::disallowed_methods, reason = "ok to panic in build scripts")]
 
-use jsonnet_std_sig::{Param, Ty};
+use jsonnet_std_sig::{Param, ParamDefault, Ty};
 use quote::quote as q;
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -28,8 +28,9 @@ fn main() {
     #[expect(non_snake_case)]
     pub(crate) mod raw {
       use crate::{exec, util, Cx};
+      use always::always;
       use jsonnet_expr::arg::{TooMany, Error, ErrorKind};
-      use jsonnet_expr::{Id, Expr, ExprMust, Str};
+      use jsonnet_expr::{Id, Expr, ExprData, ExprMust, Prim, Str};
       use jsonnet_val::jsonnet::{Array, Env, Fn, Object, Val};
 
       #(#get_params)*
@@ -53,8 +54,13 @@ fn mk_get_params(index: usize, params: &[Param]) -> proc_macro2::TokenStream {
     q! { Id::#param, }
   });
   let fields = params.iter().map(|param| {
-    let param = ident(param.name);
-    q! { #param: Expr, }
+    let param_name = ident(param.name);
+    let ty = if param.default.is_some() {
+      q! { Option<Expr> }
+    } else {
+      q! { Expr }
+    };
+    q! { #param_name: #ty, }
   });
   let opt_fields = params.iter().map(|param| {
     let param = ident(param.name);
@@ -79,16 +85,25 @@ fn mk_get_params(index: usize, params: &[Param]) -> proc_macro2::TokenStream {
     }
   });
   let require_vars_set = params.iter().map(|param| {
-    let param = ident(param.name);
-    q! {
-      if in_progress.#param.is_none() {
-        return Err(Error { expr, kind: ErrorKind::NotDefined(Id::#param) }.into());
+    let param_name = ident(param.name);
+    if param.default.is_some() {
+      q! {}
+    } else {
+      q! {
+        if in_progress.#param_name.is_none() {
+          return Err(Error { expr, kind: ErrorKind::NotDefined(Id::#param_name) }.into());
+        }
       }
     }
   });
-  let unwraps_unchecked = params.iter().map(|param| {
-    let param = ident(param.name);
-    q! { #param: unsafe { in_progress.#param.unwrap_unchecked() }, }
+  let field_sets = params.iter().map(|param| {
+    let param_name = ident(param.name);
+    let set = if param.default.is_some() {
+      q! { in_progress.#param_name }
+    } else {
+      q! { unsafe { in_progress.#param_name.unwrap_unchecked() } }
+    };
+    q! { #param_name: #set, }
   });
   let getters = params.iter().map(|param| {
     let name = ident(param.name);
@@ -120,10 +135,28 @@ fn mk_get_params(index: usize, params: &[Param]) -> proc_macro2::TokenStream {
         (q! {Fn}, q! { util::get_fn(ret, expr) })
       }
     };
+    let to_eval = if let Some(x) = param.default {
+      let ts = get_param_default(x);
+      q! {
+        if let Some(x) = self.#name {
+          x
+        } else {
+          let Some(exprs) = cx.exprs.get_mut(&env.path()) else {
+            always!(false, "should have this paths's exprs");
+            return Err(crate::error::Error::NoPath(env.path()));
+          };
+          let ar = &mut exprs.ar;
+          #ts
+        }
+      }
+    } else {
+      q! { self.#name }
+    };
     q! {
       pub(crate) fn #name(&self, cx: &mut Cx<'_>, env: &Env) -> crate::error::Result<#ret_ty> {
-        let expr = self.#name.unwrap_or(self.expr);
-        let ret = exec::get(cx, env, self.#name)?;
+        let to_eval = #to_eval;
+        let expr = #to_eval.unwrap_or(self.expr);
+        let ret = exec::get(cx, env, to_eval)?;
         #conv
       }
     }
@@ -172,7 +205,7 @@ fn mk_get_params(index: usize, params: &[Param]) -> proc_macro2::TokenStream {
         }
         #(#require_vars_set)*
         #[expect(unsafe_code)]
-        Ok(Self { expr, #(#unwraps_unchecked)* })
+        Ok(Self { expr, #(#field_sets)* })
       }
 
       #(#getters)*
@@ -186,4 +219,28 @@ fn ident(s: &str) -> proc_macro2::Ident {
 
 fn param_struct(idx: usize) -> proc_macro2::Ident {
   quote::format_ident!("P{idx}")
+}
+
+fn get_param_default(pd: ParamDefault) -> proc_macro2::TokenStream {
+  match pd {
+    ParamDefault::IdentityFn => q! {
+      let body = Some(ar.alloc(ExprData::Id(Id::a_unutterable)));
+      Some(ar.alloc(ExprData::Fn { params: vec![(Id::a_unutterable, None)], body }))
+    },
+    ParamDefault::Null => q! {
+      Some(ar.alloc(ExprData::Prim(Prim::Null)))
+    },
+    ParamDefault::True => q! {
+      Some(ar.alloc(ExprData::Prim(Prim::Bool(true))))
+    },
+    ParamDefault::False => q! {
+      Some(ar.alloc(ExprData::Prim(Prim::Bool(false))))
+    },
+    ParamDefault::NewlineChar => q! {
+      Some(ar.alloc(ExprData::Prim(Prim::String(Str::newline_char))))
+    },
+    ParamDefault::ColonSpace => q! {
+      Some(ar.alloc(ExprData::Prim(Prim::String(Str::colon_space))))
+    },
+  }
 }
