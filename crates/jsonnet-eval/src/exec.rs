@@ -255,7 +255,7 @@ pub(crate) fn get(cx: &mut Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
   }
 }
 
-fn get_field(cx: &mut Cx<'_>, env: &Env, field: Field) -> Result<Val> {
+pub(crate) fn get_field(cx: &mut Cx<'_>, env: &Env, field: Field) -> Result<Val> {
   match field {
     Field::Std(field) => match field {
       StdField::thisFile => {

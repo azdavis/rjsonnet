@@ -429,6 +429,20 @@ pub(crate) fn get_call(
       Ok(Array::new(env, elems.collect()).into())
     }
 
+    StdFn::get => {
+      let args = fns::get::new(pos, named, expr)?;
+      let obj = args.o(cx, env)?;
+      let field = args.f(cx, env)?;
+      let inc_hidden = args.inc_hidden(cx, env)?;
+      let Some(field) = obj.get_field(field) else { return args.default(cx, env) };
+      if field.is_visible() || inc_hidden {
+        exec::ck_object_asserts(cx, &obj)?;
+        exec::get_field(cx, env, field)
+      } else {
+        args.default(cx, env)
+      }
+    }
+
     _ => Err(mk_todo(expr, func.as_static_str())),
   }
 }

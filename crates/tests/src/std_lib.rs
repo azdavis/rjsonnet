@@ -38,7 +38,6 @@ std.round(std.pi)
 }
 
 #[test]
-#[should_panic = "not yet implemented: get"]
 fn get() {
   JsonnetInput::manifest(
     r#"

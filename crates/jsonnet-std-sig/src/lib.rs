@@ -406,7 +406,7 @@ pub const FNS: [Fn; 133] = [
   },
   Fn {
     name: S::new("get"),
-    implemented: false,
+    implemented: true,
     sig: sig(
       &[
         req("o", Ty::Obj),
