@@ -1,5 +1,8 @@
 //! Tests for object asserts, which appear in field position.
 
+mod field_get;
+mod std_get;
+
 use crate::check::JsonnetInput;
 
 #[test]
@@ -133,129 +136,6 @@ local obj = { assert false, a: 1 };
 std.objectHas(obj, "b")
 "#,
     "false",
-  )
-  .check();
-}
-
-#[test]
-fn std_get_no_default_yes_contains_yes_check() {
-  JsonnetInput::eval_error(
-    r#"
-local obj = { assert false : "bad", a: 1 };
-std.get(obj, "a")
-"#,
-    "bad",
-  )
-  .check();
-}
-
-#[test]
-fn std_get_yes_default_yes_contains_yes_check() {
-  JsonnetInput::eval_error(
-    r#"
-local obj = { assert false : "bad", a: 1 };
-std.get(obj, "a", 2)
-"#,
-    "bad",
-  )
-  .check();
-}
-
-#[test]
-fn std_get_yes_default_no_contains_no_check() {
-  JsonnetInput::manifest(
-    r#"
-local obj = { assert false : "bad", a: 1 };
-std.get(obj, "b", 2)
-"#,
-    "2",
-  )
-  .check();
-}
-
-#[test]
-fn std_get_yes_default_yes_contains_yes_hidden_no_inc_hidden_no_check() {
-  JsonnetInput::manifest(
-    r#"
-local obj = { assert false : "bad", a:: 1 };
-std.get(obj, "a", 2, inc_hidden=false)
-"#,
-    "2",
-  )
-  .check();
-}
-
-#[test]
-fn std_get_yes_default_yes_contains_yes_hidden_yes_inc_hidden_no_check() {
-  JsonnetInput::eval_error(
-    r#"
-local obj = { assert false : "bad", a:: 1 };
-std.get(obj, "a", 2, inc_hidden=true)
-"#,
-    "bad",
-  )
-  .check();
-}
-
-#[test]
-fn field_get_yes() {
-  JsonnetInput::eval_error(
-    r#"
-local obj = { assert false : "bad", a: 1 };
-obj.a
-"#,
-    "bad",
-  )
-  .check();
-}
-
-#[test]
-fn field_get_idx_err() {
-  JsonnetInput::eval_error(
-    r#"
-local obj = { assert false : "object assert", a: error "value" };
-  obj[error "field"]
-##^^^^^^^^^^^^^^^^^^ err: unreachable code
-"#,
-    "field",
-  )
-  .check();
-}
-
-#[test]
-fn field_get_object_assert_err() {
-  JsonnetInput::eval_error(
-    r#"
-local obj = { assert false : "object assert", a: error "value" };
-obj.a
-"#,
-    "object assert",
-  )
-  .check();
-}
-
-#[test]
-fn field_get_value_err() {
-  JsonnetInput::eval_error(
-    r#"
-local obj = { a: error "value" };
-obj.a
-"#,
-    "value",
-  )
-  .check();
-}
-
-#[test]
-fn field_get_no_such_field() {
-  JsonnetInput::eval_error(
-    r#"
-local obj = { assert false : "object assert", a: error "value" };
-// prevent statically knowing the fields
-local id(x) = x;
-id(obj).b
-"#,
-    "object assert",
   )
   .check();
 }
