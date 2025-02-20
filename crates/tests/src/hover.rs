@@ -333,7 +333,7 @@ local f(x) =
 }
 
 #[test]
-fn param_obj() {
+fn param_obj_field() {
   JsonnetInput::manifest_or_fn(
     r#"
 {
@@ -342,6 +342,39 @@ fn param_obj() {
     assert std.isNumber(x);
     x + 1
 }
+"#,
+  )
+  .check();
+}
+
+#[test]
+fn return_obj() {
+  JsonnetInput::manifest_or_fn(
+    r#"
+local f(x) = {
+  assert std.isNumber(x),
+  y: x + 1,
+};
+  f
+##^ type: (x: number) => { y: number }
+"#,
+  )
+  .check();
+}
+
+#[test]
+#[should_panic = "none of the lines were equal"]
+fn return_obj_as_obj_field() {
+  JsonnetInput::manifest_or_fn(
+    r#"
+local obj = {
+  f(x): {
+    assert std.isNumber(x),
+    y: x + 1,
+  }
+};
+  obj
+##^^^ type: { f: (x: number) => { y: number } }
 "#,
   )
   .check();
