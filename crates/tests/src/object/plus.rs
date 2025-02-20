@@ -16,7 +16,6 @@ fn both_default() {
 }
 
 #[test]
-#[should_panic = "mismatched manifest"]
 fn lhs_hidden() {
   JsonnetInput::manifest(
     r"

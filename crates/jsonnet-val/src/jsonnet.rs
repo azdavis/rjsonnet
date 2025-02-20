@@ -3,7 +3,7 @@
 use always::always;
 use cycle::Cycle;
 use jsonnet_expr::{Expr, Id, Prim, StdField, StdFn, Str, Vis};
-use rustc_hash::FxHashSet;
+use rustc_hash::{FxHashMap, FxHashSet};
 
 /// An environment, which stores a mapping of identifiers to unevaluated expressions.
 #[derive(Debug, Clone)]
@@ -264,31 +264,56 @@ impl Object {
     iter.map(|(this, expr)| (self.set_this(&this.env), expr))
   }
 
-  /// TODO this should be a generator
+  /// Returns the visible fields, sorted in some stable order.
+  ///
+  /// TODO should this be a generator?
   #[must_use]
   pub fn visible_fields(&self) -> Vec<(Str, Env, Expr)> {
-    let mut ret = Vec::<(Str, Env, Expr)>::new();
-    let mut seen = FxHashSet::<Str>::default();
+    let mut vis_visible = FxHashMap::<Str, (&RegularObjectKind, &ExprField)>::default();
+    let mut vis_hidden = FxHashSet::<Str>::default();
+    let mut vis_default = FxHashMap::<Str, (&RegularObjectKind, &ExprField)>::default();
     for this in self.ancestry_considering_superness() {
       let this = match &this.kind {
         ObjectKind::Regular(x) => x,
-        // always hidden
-        ObjectKind::Std => continue,
+        ObjectKind::Std => {
+          for (name, _) in StdField::ALL {
+            if !vis_visible.contains_key(&name) {
+              vis_hidden.insert(name);
+            }
+          }
+          continue;
+        }
       };
       for (&name, field) in &this.fields {
-        if !seen.insert(name) {
+        if vis_visible.contains_key(&name) || vis_hidden.contains(&name) {
           continue;
         }
-        let mut env = self.set_this(&this.env);
-        if let Some(subst) = &field.comp_subst {
-          env.insert(subst.clone());
+        match field.vis {
+          Vis::Default => {
+            vis_default.entry(name).or_insert((this, field));
+          }
+          Vis::Hidden => {
+            vis_hidden.insert(name);
+          }
+          Vis::Visible => {
+            vis_visible.insert(name, (this, field));
+          }
         }
-        if !field.vis.is_visible() {
-          continue;
-        }
-        ret.push((name, env, field.expr));
       }
     }
+    for name in vis_hidden {
+      vis_default.remove(&name);
+    }
+    vis_visible.extend(vis_default);
+    let iter = vis_visible.into_iter().map(|(name, (this, field))| {
+      let mut env = self.set_this(&this.env);
+      if let Some(subst) = &field.comp_subst {
+        env.insert(subst.clone());
+      }
+      (name, env, field.expr)
+    });
+    let mut ret: Vec<_> = iter.collect();
+    ret.sort_unstable_by_key(|&(name, _, _)| name);
     ret
   }
 
