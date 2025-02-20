@@ -3,6 +3,72 @@
 use crate::check::JsonnetInput;
 
 #[test]
+fn both_default() {
+  JsonnetInput::manifest(
+    r"
+{ a: 1 } + { a: 2 }
+",
+    r#"
+{ "a": 2 }
+"#,
+  )
+  .check();
+}
+
+#[test]
+#[should_panic = "mismatched manifest"]
+fn lhs_hidden() {
+  JsonnetInput::manifest(
+    r"
+{ a:: 1 } + { a: 2 }
+",
+    r#"
+{}
+"#,
+  )
+  .check();
+}
+
+#[test]
+fn rhs_hidden() {
+  JsonnetInput::manifest(
+    r"
+{ a: 1 } + { a:: 2 }
+",
+    r#"
+{}
+"#,
+  )
+  .check();
+}
+
+#[test]
+fn lhs_hidden_rhs_visible() {
+  JsonnetInput::manifest(
+    r"
+{ a:: 1 } + { a::: 2 }
+",
+    r#"
+{ "a": 2 }
+"#,
+  )
+  .check();
+}
+
+#[test]
+fn lhs_visible_rhs_hidden() {
+  JsonnetInput::manifest(
+    r"
+{ a::: 1 } + { a:: 2 }
+",
+    r#"
+{}
+"#,
+  )
+  .check();
+}
+
+#[test]
 fn explicit() {
   JsonnetInput::manifest(
     r"
