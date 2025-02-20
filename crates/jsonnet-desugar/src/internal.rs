@@ -191,6 +191,11 @@ pub(crate) fn get_expr(
       let inner = get_expr(st, cx, expr.expr(), in_obj, false);
       ExprData::Error(inner)
     }
+    ast::Expr::ExprTailstrict(expr) => {
+      let kw = expr.tailstrict_kw()?;
+      st.err_token(&kw, error::Kind::Tailstrict);
+      return get_expr(st, cx, expr.expr(), in_obj, false);
+    }
   };
   Some(st.expr(ptr, data))
 }

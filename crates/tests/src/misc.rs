@@ -78,3 +78,17 @@ f(3) + 4
   )
   .check();
 }
+
+#[test]
+fn tailstrict() {
+  JsonnetInput::pre_eval_error(
+    r#"
+local z(n) =
+  if n == 0 then 0
+  else z(n - 1) tailstrict;
+##              ^^^^^^^^^^ err: `tailstrict` is unstable
+z(4)
+"#,
+  )
+  .check();
+}

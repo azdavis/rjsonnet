@@ -32,6 +32,7 @@ pub(crate) enum Kind {
   PositionalArgAfterNamedArg,
   ImportTextBlock,
   InvalidSuper,
+  Tailstrict,
 }
 
 impl fmt::Display for Error {
@@ -58,6 +59,7 @@ impl fmt::Display for Error {
       }
       Kind::ImportTextBlock => f.write_str("cannot import a text block"),
       Kind::InvalidSuper => f.write_str("`super` must be used with `.`, `[]`, or `in`"),
+      Kind::Tailstrict => f.write_str("`tailstrict` is unstable"),
     }
   }
 }

@@ -27,6 +27,7 @@ Expr =
 | ExprAssert
 | ExprImport
 | ExprError
+| ExprTailstrict
 
 // not real exprs
 ExprHole = '...'
@@ -63,6 +64,7 @@ ExprFunction = 'function' ParenParams Expr
 ExprAssert = Assert ';' Expr
 ExprImport = Import String
 ExprError = 'error' Expr
+ExprTailstrict = Expr 'tailstrict'
 
 Member = MemberKind ','?
 MemberKind = ObjectLocal | Assert | Field

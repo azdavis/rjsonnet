@@ -82,7 +82,7 @@
     },
     "controlKeyword": {
       "name": "keyword.control.jsonnet",
-      "match": "\\b(if|then|else|for|in|assert|error)\\b"
+      "match": "\\b(if|then|else|for|in|assert|error|tailstrict)\\b"
     },
     "otherKeyword": {
       "name": "keyword.other.jsonnet",
