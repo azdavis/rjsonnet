@@ -11,6 +11,7 @@ pub mod examples;
 
 use examples::Examples;
 use indoc::indoc;
+use std::fmt;
 
 /// A name-content string pair.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -85,7 +86,7 @@ pub struct Param {
   /// Its type.
   pub ty: Ty,
   /// The default value for this param. If `None`, the param is required.
-  pub default: Option<&'static str>,
+  pub default: Option<ParamDefault>,
 }
 
 impl Param {
@@ -93,6 +94,44 @@ impl Param {
   #[must_use]
   pub fn is_required(&self) -> bool {
     self.default.is_none()
+  }
+}
+
+/// A parameter default.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum ParamDefault {
+  /// The identity function.
+  IdentityFn,
+  /// `null`
+  Null,
+  /// `true`
+  True,
+  /// `false`
+  False,
+  /// The string of length 1 whose single char is the newline char.
+  NewlineChar,
+  /// A string composed of a colon and a space.
+  ColonSpace,
+}
+
+impl ParamDefault {
+  /// Returns this as a static str.
+  #[must_use]
+  pub fn as_static_str(self) -> &'static str {
+    match self {
+      ParamDefault::IdentityFn => "function(x) x",
+      ParamDefault::Null => "null",
+      ParamDefault::True => "true",
+      ParamDefault::False => "false",
+      ParamDefault::NewlineChar => "\"\\n\"",
+      ParamDefault::ColonSpace => "\": \"",
+    }
+  }
+}
+
+impl fmt::Display for ParamDefault {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    f.write_str(self.as_static_str())
   }
 }
 
@@ -151,7 +190,7 @@ const fn req(name: &'static str, ty: Ty) -> Param {
 }
 
 /// Short for "optional".
-const fn opt(name: &'static str, ty: Ty, default: &'static str) -> Param {
+const fn opt(name: &'static str, ty: Ty, default: ParamDefault) -> Param {
   Param { name, ty, default: Some(default) }
 }
 
@@ -171,7 +210,7 @@ macro_rules! epsilon_eq {
   };
 }
 
-const KEY_F: Param = opt("keyF", Ty::Fn1, "function(x) x");
+const KEY_F: Param = opt("keyF", Ty::Fn1, ParamDefault::IdentityFn);
 const V_ANY_RET_BOOL: Sig = sig(&[req("v", Ty::Any)], Ty::Bool);
 const X_NUM_RET_NUM: Sig = sig(&[req("x", Ty::Num)], Ty::Num);
 const N_NUM_RET_NUM: Sig = sig(&[req("n", Ty::Num)], Ty::Num);
@@ -372,8 +411,8 @@ pub const FNS: [Fn; 133] = [
       &[
         req("o", Ty::Obj),
         req("f", Ty::StrInterned),
-        opt("default", Ty::Any, "null"),
-        opt("inc_hidden", Ty::Bool, "true"),
+        opt("default", Ty::Any, ParamDefault::Null),
+        opt("inc_hidden", Ty::Bool, ParamDefault::True),
       ],
       Ty::Any,
     ),
@@ -1690,8 +1729,8 @@ pub const FNS: [Fn; 133] = [
       &[
         req("value", Ty::Any),
         req("indent", Ty::Str),
-        opt("newline", Ty::Str, "\"\\n\""),
-        opt("key_val_sep", Ty::Str, ": "),
+        opt("newline", Ty::Str, ParamDefault::NewlineChar),
+        opt("key_val_sep", Ty::Str, ParamDefault::ColonSpace),
       ],
       Ty::Str,
     ),
@@ -1741,8 +1780,8 @@ pub const FNS: [Fn; 133] = [
     sig: sig(
       &[
         req("value", Ty::Any),
-        opt("indent_array_in_object", Ty::Bool, "false"),
-        opt("quote_keys", Ty::Bool, "true"),
+        opt("indent_array_in_object", Ty::Bool, ParamDefault::False),
+        opt("quote_keys", Ty::Bool, ParamDefault::True),
       ],
       Ty::Str,
     ),
@@ -1801,9 +1840,9 @@ pub const FNS: [Fn; 133] = [
     sig: sig(
       &[
         req("value", Ty::ArrAny),
-        opt("indent_array_in_object", Ty::Bool, "false"),
-        opt("c_document_end", Ty::Bool, "false"),
-        opt("quote_keys", Ty::Bool, "true"),
+        opt("indent_array_in_object", Ty::Bool, ParamDefault::False),
+        opt("c_document_end", Ty::Bool, ParamDefault::False),
+        opt("quote_keys", Ty::Bool, ParamDefault::True),
       ],
       Ty::Str,
     ),
