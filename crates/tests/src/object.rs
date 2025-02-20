@@ -4,6 +4,7 @@ use crate::check::JsonnetInput;
 
 mod assert;
 mod comprehension;
+mod plus;
 
 #[test]
 fn empty() {
