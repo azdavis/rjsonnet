@@ -196,7 +196,7 @@ impl StaticsFile {
     style: jsonnet_ty::display::Style,
     store: &'a jsonnet_ty::GlobalStore,
     str_ar: &'a jsonnet_expr::StrArena,
-  ) -> impl Iterator<Item = Diagnostic> + use<'a> {
+  ) -> impl Iterator<Item = Diagnostic> {
     let root = self.syntax.artifacts.root.clone();
     let root = root.syntax();
     let all_errors = std::iter::empty()

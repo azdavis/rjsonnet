@@ -26,7 +26,7 @@ impl File {
     self.inner.get(&r)
   }
 
-  pub(crate) fn iter(&self) -> impl Iterator<Item = (&Region, &Expect)> + use<'_> {
+  pub(crate) fn iter(&self) -> impl Iterator<Item = (&Region, &Expect)> {
     self.inner.iter().flat_map(|(r, es)| es.iter().map(move |e| (r, e)))
   }
 }

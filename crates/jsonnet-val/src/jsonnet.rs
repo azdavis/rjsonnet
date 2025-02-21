@@ -253,7 +253,7 @@ impl Object {
   }
 
   /// Returns the asserts in this.
-  pub fn asserts(&self) -> impl Iterator<Item = (Env, Expr)> + use<'_> {
+  pub fn asserts(&self) -> impl Iterator<Item = (Env, Expr)> {
     let iter = self
       .ancestry()
       .filter_map(|this| match &this.kind {
@@ -507,11 +507,7 @@ struct ArrayPart {
 
 impl ArrayPart {
   fn new(env: Env, elems: Vec<Expr>) -> Option<Self> {
-    if elems.is_empty() {
-      None
-    } else {
-      Some(Self { env, elems })
-    }
+    if elems.is_empty() { None } else { Some(Self { env, elems }) }
   }
 
   fn len(&self) -> usize {

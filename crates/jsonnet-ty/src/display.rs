@@ -20,7 +20,7 @@ impl Ty {
     global: &'a GlobalStore,
     local: Option<&'a LocalStore>,
     str_ar: &'a StrArena,
-  ) -> impl fmt::Display + use<'a> {
+  ) -> impl fmt::Display {
     let level = match style {
       Style::Short => None,
       Style::Long => Some(0),

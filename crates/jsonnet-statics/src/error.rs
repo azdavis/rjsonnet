@@ -3,7 +3,7 @@
 #![allow(clippy::too_many_lines)]
 
 use crate::suggestion;
-use jsonnet_expr::{def, ExprMust, Id, Str};
+use jsonnet_expr::{ExprMust, Id, Str, def};
 use jsonnet_ty::{self as ty, display::Style};
 use std::fmt;
 
@@ -24,7 +24,7 @@ impl Error {
     style: Style,
     store: &'a ty::GlobalStore,
     str_ar: &'a jsonnet_expr::StrArena,
-  ) -> impl fmt::Display + use<'a> {
+  ) -> impl fmt::Display {
     Display { style, kind: &self.kind, store, str_ar }
   }
 

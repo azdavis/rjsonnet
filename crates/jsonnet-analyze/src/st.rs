@@ -35,7 +35,7 @@ impl WithFs {
     p.strip_prefix(self.root_dir.as_path()).unwrap_or(p)
   }
 
-  fn display_path_id(&self, p: PathId) -> impl std::fmt::Display + use<'_> {
+  fn display_path_id(&self, p: PathId) -> impl std::fmt::Display  {
     self.strip(self.artifacts.syntax.paths.get_path(p).as_path()).display()
   }
 

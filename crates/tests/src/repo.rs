@@ -1,8 +1,8 @@
 //! Tests about the repository itself.
 
 use rustc_hash::{FxHashMap, FxHashSet};
-use std::collections::hash_map::Entry;
 use std::collections::BTreeSet;
+use std::collections::hash_map::Entry;
 use std::fmt::{self, Write as _};
 use std::sync::LazyLock;
 use std::{env, fs, path::Path, process::Command};
@@ -73,11 +73,7 @@ fn architecture() {
     }))
     .chain(output(root_cmd("git").args(["ls-tree", "--name-only", "HEAD"])).lines().filter_map(
       |x| {
-        if no_doc.remove(x) {
-          None
-        } else {
-          Some(x.to_owned())
-        }
+        if no_doc.remove(x) { None } else { Some(x.to_owned()) }
       },
     ))
     .collect();
@@ -245,7 +241,7 @@ fn is_section_comment(s: &str, comment_open: &str, section: &str) -> bool {
   s.trim().strip_prefix(comment_open).and_then(|s| s.strip_suffix(COMMENT_CLOSE)) == Some(section)
 }
 
-fn get_manual_section(section: &str) -> impl Iterator<Item = &'static str> + use<'_> {
+fn get_manual_section(section: &str) -> impl Iterator<Item = &'static str> {
   let mut iter = MANUAL.lines();
   iter.find(|s| is_section_comment(s, "<!-- @begin ", section));
   iter.take_while(|s| !is_section_comment(s, "<!-- @end ", section))

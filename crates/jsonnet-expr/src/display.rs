@@ -13,7 +13,7 @@ pub fn expr<'a>(
   expr_ar: &'a ExprArena,
   ps: &'a paths::Store,
   relative_to: Option<&'a paths::CleanPath>,
-) -> impl fmt::Display + use<'a> {
+) -> impl fmt::Display {
   ExprDisplay { e, str_ar, expr_ar, ps, relative_to }
 }
 
@@ -182,7 +182,7 @@ impl fmt::Display for UnOp {
 
 impl Prim {
   #[must_use]
-  pub fn display<'a>(&'a self, ar: &'a StrArena) -> impl fmt::Display + use<'a> {
+  pub fn display<'a>(&'a self, ar: &'a StrArena) -> impl fmt::Display {
     PrimDisplay { prim: self, ar }
   }
 }

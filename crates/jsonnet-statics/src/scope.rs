@@ -2,7 +2,7 @@
 
 use crate::flow::data::Facts;
 use always::always;
-use jsonnet_expr::{def, Id};
+use jsonnet_expr::{Id, def};
 use jsonnet_ty as ty;
 use rustc_hash::FxHashMap;
 
@@ -100,7 +100,7 @@ impl Scope {
   pub(crate) fn all_str<'ar>(
     &self,
     str_ar: &'ar jsonnet_expr::StrArena,
-  ) -> impl Iterator<Item = &'ar str> + use<'_, 'ar> {
+  ) -> impl Iterator<Item = &'ar str> {
     self.store.iter().filter_map(|(&id, _)| str_ar.get_id(id))
   }
 }

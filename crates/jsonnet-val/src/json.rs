@@ -54,7 +54,7 @@ impl Val {
 
   /// Display the value.
   #[must_use]
-  pub fn display<'a>(&'a self, ar: &'a jsonnet_expr::StrArena) -> impl fmt::Display + use<'a> {
+  pub fn display<'a>(&'a self, ar: &'a jsonnet_expr::StrArena) -> impl fmt::Display {
     ValDisplay { val: self, ar, indent: 0 }
   }
 }

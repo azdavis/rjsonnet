@@ -1,7 +1,7 @@
 //! Strings.
 
-use crate::generated::{BuiltinStr, NotBuiltinStr};
 use crate::Artifacts;
+use crate::generated::{BuiltinStr, NotBuiltinStr};
 use always::always;
 use rustc_hash::FxHashMap;
 use std::collections::hash_map::Entry;
@@ -24,7 +24,7 @@ impl Str {
     Self(StrRepr::Builtin(bs))
   }
 
-  fn display(self, ar: &StrArena) -> impl fmt::Display + use<'_> {
+  fn display(self, ar: &StrArena) -> impl fmt::Display {
     StrReprDisplay { repr: self.0, ar }
   }
 }
@@ -151,7 +151,7 @@ impl Id {
   }
 
   #[must_use]
-  pub fn display(self, ar: &StrArena) -> impl fmt::Display + use<'_> {
+  pub fn display(self, ar: &StrArena) -> impl fmt::Display {
     IdReprDisplay { id: self.0, ar }
   }
 }

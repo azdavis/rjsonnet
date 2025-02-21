@@ -1,6 +1,6 @@
 //! Errors.
 
-use jsonnet_expr::{arg, Id, Str};
+use jsonnet_expr::{Id, Str, arg};
 use std::fmt::{self, Debug};
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;
@@ -21,7 +21,7 @@ impl Error {
     ar: &'a jsonnet_expr::StrArena,
     paths: &'a paths::Store,
     relative_to: Option<&'a paths::CleanPath>,
-  ) -> impl fmt::Display + use<'a> {
+  ) -> impl fmt::Display {
     ErrorDisplay { error: self, ar, paths, relative_to }
   }
 }
@@ -64,8 +64,8 @@ struct ErrorDisplay<'a> {
   relative_to: Option<&'a paths::CleanPath>,
 }
 
-impl<'a> ErrorDisplay<'a> {
-  fn display_path(&self, path_id: paths::PathId) -> impl fmt::Display + use<'a> {
+impl ErrorDisplay<'_> {
+  fn display_path(&self, path_id: paths::PathId) -> impl fmt::Display {
     let mut p = self.paths.get_path(path_id).as_path();
     if let Some(r) = self.relative_to {
       p = p.strip_prefix(r.as_path()).unwrap_or(p);

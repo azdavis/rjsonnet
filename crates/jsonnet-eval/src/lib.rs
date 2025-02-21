@@ -48,7 +48,7 @@ pub struct Import {
 }
 
 impl Exprs {
-  pub fn imports(&self) -> impl Iterator<Item = Import> + use<'_> {
+  pub fn imports(&self) -> impl Iterator<Item = Import> {
     self.ar.iter().filter_map(|(expr, ed)| {
       if let jsonnet_expr::ExprData::Import { kind, path } = *ed {
         Some(Import { expr, kind, path })
