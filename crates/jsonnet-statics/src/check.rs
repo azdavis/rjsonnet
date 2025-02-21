@@ -366,7 +366,6 @@ fn get_subscript(
     }
     // object field get
     ty::Data::Object(obj) => {
-      st.unify(idx_expr, ty::Ty::STRING, idx_ty);
       let idx = idx.and_then(|x| match ar[x] {
         ExprData::Prim(Prim::String(s)) => Some(s),
         _ => None,
@@ -389,6 +388,8 @@ fn get_subscript(
         }
         // we don't know what field we're asking for.
         None => {
+          // no need to do this unify in the Some(s) case, since string literals are strings.
+          st.unify(idx_expr, ty::Ty::STRING, idx_ty);
           if obj.has_unknown {
             // all bets are off.
             ty::Ty::ANY
