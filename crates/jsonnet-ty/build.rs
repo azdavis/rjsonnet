@@ -36,7 +36,6 @@ fn main() {
     (ident("ARRAY_STRING"), q!(Data::Array(super::Array::new(Ty::STRING)))),
     (ident("ARRAY_KEY_VALUE"), q!(Data::Array(super::Array::new(Ty::KEY_VALUE)))),
     (ident("SET"), q!(Data::Array(super::Array::set(Ty::ANY)))),
-    (ident("ARRAY_OR_OBJECT"), q!(Data::mk_union([Ty::ARRAY, Ty::OBJECT]))),
     (ident("STRING_OR_ARRAY_NUMBER"), q!(Data::mk_union([Ty::STRING, Ty::ARRAY_NUMBER]))),
     (ident("STRING_OR_ARRAY"), q!(Data::mk_union([Ty::STRING, Ty::ARRAY]))),
     (ident("NUMBER_OR_NULL"), q!(Data::mk_union([Ty::NUMBER, Ty::NULL]))),
