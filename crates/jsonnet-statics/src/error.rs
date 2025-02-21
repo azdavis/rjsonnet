@@ -307,7 +307,7 @@ impl fmt::Display for Display<'_> {
           }
           let ef = ExpectedFound {
             expected: "a type with fields or elements",
-            extra: Some("e.g. `array[any]`, `object`"),
+            extra: Some("i.e. `array[any]`, `object`, `string`"),
             found: Backticks(ty.display(Style::Short, self.store, None, self.str_ar)),
             style: self.style,
           };

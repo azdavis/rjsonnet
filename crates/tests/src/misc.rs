@@ -92,3 +92,26 @@ z(4)
   )
   .check();
 }
+
+#[test]
+fn subscript_str() {
+  JsonnetInput::manifest(
+    r#"
+{
+  local a = "hello"[3],
+##      ^ type: string
+  local k = "新幹線"[1],
+##      ^ type: string
+  "ascii": a,
+  "kanji": k,
+}
+"#,
+    r#"
+{
+  "ascii": "l",
+  "kanji": "幹"
+}
+"#,
+  )
+  .check();
+}

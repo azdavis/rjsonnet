@@ -352,6 +352,8 @@ fn get_subscript(
   match st.tys.data(on_ty).clone() {
     // degenerate case
     ty::Data::Prim(ty::Prim::Any) => ty::Ty::ANY,
+    // string chars (but no char type)
+    ty::Data::Prim(ty::Prim::String) => ty::Ty::STRING,
     // invalid
     ty::Data::Prim(_) | ty::Data::Fn(_) => {
       st.err(on.unwrap_or(expr), error::Kind::Invalid(on_ty, error::Invalid::Subscript));

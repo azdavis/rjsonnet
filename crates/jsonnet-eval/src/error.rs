@@ -35,8 +35,6 @@ impl From<arg::Error> for Error {
 #[derive(Debug, Clone)]
 pub enum Kind {
   Todo(&'static str),
-  ArrayIdxNotInteger,
-  ArrayIdxOutOfRange,
   DuplicateField(Str),
   IncompatibleTypes,
   NoSuchField(Str),
@@ -46,6 +44,8 @@ pub enum Kind {
   /// should be caught in statics
   UndefinedVar(Id),
   Cycle(cycle::Cycle<paths::PathId>),
+  IdxNotInteger(finite_float::Float),
+  IdxOutOfRangeF(finite_float::Float),
   IdxOutOfRange(usize),
   IdxNotUtf8Boundary(usize),
   EqFn,
@@ -79,8 +79,6 @@ impl fmt::Display for ErrorDisplay<'_> {
     match self.error {
       Error::Exec { kind, .. } => match kind {
         Kind::Todo(s) => write!(f, "not yet implemented: {s}"),
-        Kind::ArrayIdxNotInteger => f.write_str("array index not an integer"),
-        Kind::ArrayIdxOutOfRange => f.write_str("array index out of range"),
         Kind::DuplicateField(x) => write!(f, "duplicate field: `{}`", self.ar.get(*x)),
         Kind::IncompatibleTypes => f.write_str("incompatible types"),
         Kind::NoSuchField(name) => {
@@ -99,6 +97,8 @@ impl fmt::Display for ErrorDisplay<'_> {
           }
           write!(f, "{first_and_last}")
         }
+        Kind::IdxNotInteger(n) => write!(f, "index not an integer: `{n}`"),
+        Kind::IdxOutOfRangeF(n) => write!(f, "index out of range: {n}"),
         Kind::IdxOutOfRange(n) => write!(f, "index out of range: {n}"),
         Kind::IdxNotUtf8Boundary(n) => write!(f, "index not on UTF-8 boundary: {n}"),
         Kind::EqFn => f.write_str("cannot test equality of functions"),

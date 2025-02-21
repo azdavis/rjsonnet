@@ -11,8 +11,6 @@ use jsonnet_val::jsonnet::{
 use rustc_hash::FxHashSet;
 use std::cmp::Ordering;
 
-const EPSILON: f64 = 0.0001;
-
 pub(crate) fn get(cx: &mut Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
   let Some(expr) = expr else { return Err(error::Error::NoExpr) };
   match cx.exprs[&env.path()].ar[expr].clone() {
@@ -72,26 +70,19 @@ pub(crate) fn get(cx: &mut Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
         get_field(cx, env, field)
       }
       Val::Array(array) => {
-        let Val::Prim(Prim::Number(idx)) = get(cx, env, idx)? else {
-          return Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes });
-        };
-        let idx = idx.value();
-        let idx_floor = idx.floor();
-        let diff = idx - idx_floor;
-        if diff.abs() > EPSILON {
-          return Err(error::Error::Exec { expr, kind: error::Kind::ArrayIdxNotInteger });
-        }
-        if idx_floor < 0.0 || idx_floor > f64::from(u32::MAX) {
-          return Err(error::Error::Exec { expr, kind: error::Kind::ArrayIdxOutOfRange });
-        }
-        #[expect(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-        let idx = idx_floor as u32;
-        let Ok(idx) = usize::try_from(idx) else {
-          return Err(error::Error::Exec { expr, kind: error::Kind::ArrayIdxOutOfRange });
-        };
+        let idx = get(cx, env, idx)?;
+        let idx = get_idx(&idx, expr)?;
         match array.get(idx) {
           Some((env, expr)) => get(cx, env, expr),
-          None => Err(error::Error::Exec { expr, kind: error::Kind::ArrayIdxOutOfRange }),
+          None => Err(error::Error::Exec { expr, kind: error::Kind::IdxOutOfRange(idx) }),
+        }
+      }
+      Val::Prim(Prim::String(s)) => {
+        let idx = get(cx, env, idx)?;
+        let idx = get_idx(&idx, expr)?;
+        match cx.str_ar.get(s).chars().nth(idx) {
+          Some(c) => Ok(cx.str_ar.str(String::from(c).into_boxed_str()).into()),
+          None => Err(error::Error::Exec { expr, kind: error::Kind::IdxOutOfRange(idx) }),
         }
       }
       _ => Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes }),
@@ -252,6 +243,29 @@ pub(crate) fn get(cx: &mut Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
       env.use_outer_self_super();
       get(cx, &env, expr)
     }
+  }
+}
+
+const EPSILON: f64 = 0.0001;
+
+fn get_idx(val: &Val, expr: ExprMust) -> Result<usize> {
+  let Val::Prim(Prim::Number(idx)) = *val else {
+    return Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes });
+  };
+  let val = idx.value();
+  let idx_floor = val.floor();
+  let diff = val - idx_floor;
+  if diff.abs() > EPSILON {
+    return Err(error::Error::Exec { expr, kind: error::Kind::IdxNotInteger(idx) });
+  }
+  if idx_floor < 0.0 || idx_floor > f64::from(u32::MAX) {
+    return Err(error::Error::Exec { expr, kind: error::Kind::IdxOutOfRangeF(idx) });
+  }
+  #[expect(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+  let val = idx_floor as u32;
+  match usize::try_from(val) {
+    Ok(val) => Ok(val),
+    Err(_) => Err(error::Error::Exec { expr, kind: error::Kind::IdxOutOfRangeF(idx) }),
   }
 }
 
