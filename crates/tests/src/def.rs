@@ -476,3 +476,17 @@ foo.quz
   )
   .check();
 }
+
+#[test]
+fn subscript_unknown() {
+  JsonnetInput::manifest_or_fn(
+    r#"
+function(foo)
+  local quz = foo.bar;
+##            ^^^^^^^ def: quz
+  quz
+##^^^ use: quz
+"#,
+  )
+  .check();
+}

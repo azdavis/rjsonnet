@@ -165,7 +165,7 @@ where
     ConstEval::Real(on) => on,
   };
   if on.kind.is_some() {
-    return Some(on.into());
+    return None;
   }
   let fields = {
     let file = st.get_file_expr(fs, on.path_id).ok()?;
