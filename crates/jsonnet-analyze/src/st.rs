@@ -35,7 +35,7 @@ impl WithFs {
     p.strip_prefix(self.root_dir.as_path()).unwrap_or(p)
   }
 
-  fn display_path_id(&self, p: PathId) -> impl std::fmt::Display  {
+  fn display_path_id(&self, p: PathId) -> impl std::fmt::Display {
     self.strip(self.artifacts.syntax.paths.get_path(p).as_path()).display()
   }
 
@@ -219,11 +219,7 @@ where
   type Set = PathSet;
 
   fn enter(&self, elem: PathId) -> Option<Self::Data> {
-    if self.with_fs.file_tys.contains_key(&elem) {
-      None
-    } else {
-      Some(())
-    }
+    if self.with_fs.file_tys.contains_key(&elem) { None } else { Some(()) }
   }
 
   fn process(&mut self, path_id: PathId, (): Self::Data, work: &mut topo_sort::Work<PathId>) {
@@ -695,11 +691,7 @@ impl lang_srv_state::State for St {
     // functions, but we do NOT do that for functions that were actually functions in the concrete
     // syntax.
     let paren_params_parent = node.as_ref().and_then(|x| {
-      if jsonnet_syntax::ast::ParenParams::can_cast(x.kind()) {
-        x.parent()
-      } else {
-        None
-      }
+      if jsonnet_syntax::ast::ParenParams::can_cast(x.kind()) { x.parent() } else { None }
     });
     let expr = [node, paren_params_parent].into_iter().flatten().find_map(|node| {
       let ptr = jsonnet_syntax::ast::SyntaxNodePtr::new(&node);
@@ -752,11 +744,7 @@ impl lang_srv_state::State for St {
     let parts =
       [debug.as_deref(), json.as_deref(), ty.as_deref(), from_std_field, tok.kind().token_doc()];
     let parts: Vec<_> = parts.into_iter().flatten().collect();
-    if parts.is_empty() {
-      None
-    } else {
-      Some(parts.join("\n\n---\n\n"))
-    }
+    if parts.is_empty() { None } else { Some(parts.join("\n\n---\n\n")) }
   }
 
   fn completions<F>(

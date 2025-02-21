@@ -153,11 +153,7 @@ pub fn with_len(tys: &mut MutStore<'_>, ty: Ty, n: usize) -> Ty {
     Data::Fn(func) => {
       if let Some((params, _)) = func.parts() {
         let required = params.iter().filter(|x| x.required).count();
-        if required == n {
-          ty
-        } else {
-          Ty::NEVER
-        }
+        if required == n { ty } else { Ty::NEVER }
       } else if n > Param::UNUTTERABLE.len() {
         // we don't have infinite of these
         return ty;

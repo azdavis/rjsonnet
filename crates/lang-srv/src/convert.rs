@@ -1,7 +1,7 @@
 //! Conversions between common types.
 
 use always::always;
-use anyhow::{bail, Result};
+use anyhow::{Result, bail};
 use lsp_types::Url;
 
 pub(crate) fn path_buf(url: &Url) -> Result<std::path::PathBuf> {

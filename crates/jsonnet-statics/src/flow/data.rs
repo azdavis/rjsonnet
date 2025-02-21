@@ -2,7 +2,7 @@
 
 use jsonnet_expr::{Id, Str};
 use jsonnet_ty as ty;
-use std::collections::{hash_map::Entry, BTreeMap};
+use std::collections::{BTreeMap, hash_map::Entry};
 
 /// A collection of facts about identifiers.
 #[derive(Debug, Default)]

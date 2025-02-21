@@ -1,6 +1,6 @@
 //! Helper utilities.
 
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 use std::ops::ControlFlow;
 
 /// Continue iff this was a recoverable error.

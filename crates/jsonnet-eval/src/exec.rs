@@ -1,10 +1,10 @@
 //! Executing Jsonnet expression to produce Jsonnet values.
 
 use crate::error::{self, Result};
-use crate::{manifest, Cx};
+use crate::{Cx, manifest};
 use always::always;
 use finite_float::Float;
-use jsonnet_expr::{arg, BinOp, Expr, ExprData, ExprMust, Id, Prim, StdField, Str, StrArena};
+use jsonnet_expr::{BinOp, Expr, ExprData, ExprMust, Id, Prim, StdField, Str, StrArena, arg};
 use jsonnet_val::jsonnet::{
   Array, Env, ExprField, ExprFields, Field, Fn, Object, RegularFn, SelfRefer, Subst, Val, ValOrExpr,
 };

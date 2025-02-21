@@ -3,7 +3,7 @@
 #![allow(non_snake_case)]
 use crate::error::{self, Error, Result};
 use crate::util;
-use crate::{exec, generated::fns, mk_todo, Cx};
+use crate::{Cx, exec, generated::fns, mk_todo};
 use always::always;
 use finite_float::Float;
 use jsonnet_expr::{Expr, ExprData, ExprMust, Id, Prim, StdFn, Str};
@@ -69,7 +69,7 @@ pub(crate) fn get_call(
       let ret = match fns::length::new(pos, named, expr)?.x(cx, env)? {
         Val::Prim(prim) => match prim {
           Prim::Null | Prim::Bool(_) | Prim::Number(_) => {
-            return Err(Error::Exec { expr, kind: error::Kind::IncompatibleTypes })
+            return Err(Error::Exec { expr, kind: error::Kind::IncompatibleTypes });
           }
           // we want "number of codepoints", NOT byte length.
           Prim::String(s) => cx.str_ar.get(s).chars().count(),
@@ -314,7 +314,7 @@ pub(crate) fn get_call(
         match fst.get(..len) {
           Some(x) => x.to_owned(),
           None => {
-            return Err(error::Error::Exec { expr, kind: error::Kind::IdxNotUtf8Boundary(len) })
+            return Err(error::Error::Exec { expr, kind: error::Kind::IdxNotUtf8Boundary(len) });
           }
         }
       };

@@ -2,7 +2,7 @@
 
 use crate::{convert, server::Server, util};
 use always::always;
-use anyhow::{bail, Result};
+use anyhow::{Result, bail};
 use std::ops::ControlFlow;
 
 pub(crate) fn handle<S: lang_srv_state::State>(

@@ -1,7 +1,7 @@
 //! The state of statics.
 
 use crate::{error, scope::Scope, unify};
-use jsonnet_expr::{def, ExprMust, Id};
+use jsonnet_expr::{ExprMust, Id, def};
 use jsonnet_ty as ty;
 use paths::PathMap;
 

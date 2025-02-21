@@ -2,7 +2,7 @@
 
 use crate::convert;
 use always::always;
-use anyhow::{bail, Result};
+use anyhow::{Result, bail};
 
 #[derive(Debug, Default)]
 pub(crate) struct Server<S> {

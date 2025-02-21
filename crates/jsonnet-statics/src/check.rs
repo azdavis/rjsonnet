@@ -4,7 +4,7 @@ mod call;
 
 use crate::{error, flow, st, suggestion};
 use always::always;
-use jsonnet_expr::{def, BinOp, Expr, ExprArena, ExprData, ExprMust, Id, Prim, UnOp};
+use jsonnet_expr::{BinOp, Expr, ExprArena, ExprData, ExprMust, Id, Prim, UnOp, def};
 use jsonnet_ty as ty;
 use rustc_hash::{FxHashMap, FxHashSet};
 

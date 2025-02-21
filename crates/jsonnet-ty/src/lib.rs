@@ -562,11 +562,7 @@ impl GlobalStore {
   /// Returns Some(f) iff this is a function type f.
   #[must_use]
   pub fn as_fn(&self, ty: Ty) -> Option<&Fn> {
-    if let Data::Fn(f) = self.0.data(ty, false)? {
-      Some(f)
-    } else {
-      None
-    }
+    if let Data::Fn(f) = self.0.data(ty, false)? { Some(f) } else { None }
   }
 }
 

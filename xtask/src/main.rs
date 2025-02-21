@@ -2,7 +2,7 @@
 
 #![expect(clippy::disallowed_methods, reason = "ok to panic ad-hoc task runner")]
 
-use flate2::{write::GzEncoder, Compression};
+use flate2::{Compression, write::GzEncoder};
 use pico_args::Arguments;
 use std::path::{Path, PathBuf};
 use std::{env, fs, io, process::Command};
