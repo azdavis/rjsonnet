@@ -160,6 +160,8 @@ pub enum Ty {
   ArrNum,
   /// An array of strings, like `["hi", "bye"]`.
   ArrStr,
+  /// An set (sorted duplicate-free array) of strings, like `["a", "b"]`.
+  SetStr,
   /// An array of `{ key: string, value: any }`.
   ArrKv,
   /// A set with any contents.
@@ -225,7 +227,7 @@ const STR_RET_ANY: Sig = sig(&[req("str", Ty::Str)], Ty::Any);
 const SPLIT_LIMIT: Sig =
   sig(&[req("str", Ty::Str), req("c", Ty::Str), req("maxsplits", Ty::Num)], Ty::ArrStr);
 const OBJ_HAS: Sig = sig(&[req("o", Ty::Obj), req("f", Ty::StrInterned)], Ty::Bool);
-const OBJ_FIELDS: Sig = sig(&[req("o", Ty::Obj)], Ty::ArrStr);
+const OBJ_FIELDS: Sig = sig(&[req("o", Ty::Obj)], Ty::SetStr);
 const OBJ_VALUES: Sig = sig(&[req("o", Ty::Obj)], Ty::ArrAny);
 const OBJ_KEYS_VALUES: Sig = sig(&[req("o", Ty::Obj)], Ty::ArrKv);
 const MANIFEST_JSON: Sig = sig(&[req("value", Ty::Any)], Ty::Str);

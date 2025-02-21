@@ -6,7 +6,10 @@ Things under "main" are not released yet.
 
 - Error on `==` where both sides are functions.
 - Error on comparison (`<`, `>`, etc) where the types cannot be compared.
-- Improve typing of `std.flatMap`.
+- Improve typing of:
+  - `std.flatMap`
+  - `std.objectFields`
+  - `std.objectFieldsAll`
 
 ## v0.9.4
 

@@ -133,7 +133,7 @@ impl Array {
     Self { elem, is_set: false }
   }
 
-  /// Returns a new "set" array type.
+  /// Returns a new "set" array type, i.e. a sorted duplicate-free array.
   #[must_use]
   pub fn set(elem: Ty) -> Self {
     Self { elem, is_set: true }

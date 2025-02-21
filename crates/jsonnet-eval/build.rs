@@ -128,7 +128,7 @@ fn mk_get_params(index: usize, params: &[Param]) -> proc_macro2::TokenStream {
       Ty::ArrAny | Ty::SetAny => (q!(Array), q! { util::get_arr(ret, expr) }),
       Ty::ArrBool => todo!("conv param ArrBool"),
       Ty::ArrNum => todo!("conv param ArrNum"),
-      Ty::ArrStr => todo!("conv param ArrStr"),
+      Ty::ArrStr | Ty::SetStr => todo!("conv param ArrStr/SetStr"),
       Ty::ArrKv => todo!("conv param ArrKv"),
       Ty::Obj => (q! {Object}, q! { util::get_obj(ret, expr) }),
       Ty::Fn1 | Ty::FnAccElem | Ty::FnKv | Ty::FnIdxElem => {
