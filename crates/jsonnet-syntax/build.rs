@@ -48,5 +48,5 @@ fn main() {
     ]),
     file: file!(),
   };
-  syntax_gen::gen(&options);
+  syntax_gen::get(&options);
 }
