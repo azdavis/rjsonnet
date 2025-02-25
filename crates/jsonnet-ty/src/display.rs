@@ -78,23 +78,6 @@ pub enum Style {
   Long,
 }
 
-impl Style {
-  const THRESHOLD: usize = 3;
-}
-
-fn increase_level(n: usize, lv: Option<usize>) -> [Option<usize>; 3] {
-  match lv {
-    None => [None; 3],
-    Some(x) => {
-      if n > Style::THRESHOLD {
-        [Some(x), Some(x + 1), Some(x + 1)]
-      } else {
-        [None, None, Some(x)]
-      }
-    }
-  }
-}
-
 #[derive(Clone, Copy)]
 struct TyDisplay<'a> {
   ty: Ty,
@@ -109,6 +92,7 @@ impl TyDisplay<'_> {
 }
 
 impl fmt::Display for TyDisplay<'_> {
+  #[expect(clippy::too_many_lines)]
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     let data = self.stuff.stores.get(self.ty);
     let Some(data) = data else {
@@ -131,11 +115,16 @@ impl fmt::Display for TyDisplay<'_> {
         f.write_str("]")
       }
       Data::Object(obj) => {
-        let [cur_level, new_level, rec_level] = increase_level(obj.known.len(), self.stuff.level);
+        let [cur_level, new_level] =
+          if let (Some(x), true) = (self.stuff.level, self.stuff.stores.is_complex(self.ty)) {
+            [Some(x), Some(x + 1)]
+          } else {
+            [None; 2]
+          };
         let mut iter = obj.known.iter().map(|(&key, ty)| FieldDisplay {
           key,
           ty: *ty,
-          stuff: Stuff { level: rec_level, ..self.stuff },
+          stuff: Stuff { level: new_level, ..self.stuff },
         });
         if let Some(field) = iter.next() {
           f.write_str("{")?;
@@ -164,7 +153,16 @@ impl fmt::Display for TyDisplay<'_> {
         }
       }
       Data::Fn(func) => match func.parts() {
-        Some((params, ret)) => FnDisplay { params, ret, prec: self.prec, stuff: self.stuff }.fmt(f),
+        Some((params, ret)) => FnDisplay {
+          params,
+          ret,
+          prec: self.prec,
+          stuff: Stuff {
+            level: if self.stuff.stores.is_complex(self.ty) { self.stuff.level } else { None },
+            ..self.stuff
+          },
+        }
+        .fmt(f),
         None => f.write_str("function"),
       },
       Data::Union(tys) => {
@@ -218,11 +216,11 @@ impl fmt::Display for FnDisplay<'_> {
       f.write_str("(")?;
     }
     f.write_str("(")?;
-    let [cur_level, new_level, rec_level] = increase_level(self.params.len(), self.stuff.level);
+    let new_level = self.stuff.level.map(|x| x + 1);
     let mut iter = self
       .params
       .iter()
-      .map(|&param| ParamDisplay { param, stuff: Stuff { level: rec_level, ..self.stuff } });
+      .map(|&param| ParamDisplay { param, stuff: Stuff { level: new_level, ..self.stuff } });
     if let Some(new_level) = new_level {
       nl_indent(f, new_level)?;
     }
@@ -234,7 +232,7 @@ impl fmt::Display for FnDisplay<'_> {
       field_sep(f, new_level)?;
       p.fmt(f)?;
     }
-    if let Some(cur_level) = cur_level {
+    if let Some(cur_level) = self.stuff.level {
       f.write_str(",")?;
       nl_indent(f, cur_level)?;
     }
@@ -303,6 +301,39 @@ struct Stores<'a> {
 impl Stores<'_> {
   fn get(&self, ty: Ty) -> Option<&Data> {
     self.global.0.data(ty, false).or_else(|| self.local?.0.data(ty, true))
+  }
+
+  fn complexity(self, ty: Ty) -> u32 {
+    let Some(data) = self.get(ty) else { return 0 };
+    let inner: u32 = match data {
+      Data::Prim(_) => 0,
+      Data::Array(arr) => self.complexity(arr.elem),
+      Data::Object(object) => {
+        u32::from(object.has_unknown)
+          + object.known.values().map(|&ty| self.complexity(ty)).sum::<u32>()
+      }
+      Data::Fn(func) => match func.parts() {
+        None => 0,
+        Some((params, ret)) => params
+          .iter()
+          .map(|p| p.ty)
+          .chain(std::iter::once(ret))
+          .map(|ty| self.complexity(ty))
+          .sum(),
+      },
+      Data::Union(parts) => {
+        if ty == Ty::BOOLEAN || ty == Ty::TOP {
+          0
+        } else {
+          parts.iter().map(|&ty| self.complexity(ty)).sum()
+        }
+      }
+    };
+    1 + inner
+  }
+
+  fn is_complex(self, ty: Ty) -> bool {
+    self.complexity(ty) >= 6
   }
 }
 
