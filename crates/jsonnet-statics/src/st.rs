@@ -80,6 +80,7 @@ impl<'a> St<'a> {
   pub(crate) fn unify(&mut self, expr: ExprMust, want: ty::Ty, got: ty::Ty) {
     let mut st = unify::St::new(self.str_ar);
     unify::get(&mut st, &self.tys, want, got);
+    // TODO report errors as one big error, e.g. for unions
     for u in st.finish() {
       self.err(expr, error::Kind::Unify(u));
     }
