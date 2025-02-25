@@ -21,11 +21,12 @@ impl Ty {
     local: Option<&'a LocalStore>,
     str_ar: &'a StrArena,
   ) -> impl fmt::Display {
+    let stores = Stores { global, local };
     let level = match style {
       Style::Short => None,
       Style::Long => Some(0),
     };
-    TyDisplay { ty: self, prec: Prec::Min, stuff: Stuff { global, local, str_ar, level } }
+    TyDisplay { ty: self, prec: Prec::Min, stuff: Stuff { stores, str_ar, level } }
   }
 }
 
@@ -41,6 +42,7 @@ impl Fn {
     local: Option<&'a LocalStore>,
     str_ar: &'a StrArena,
   ) -> Result<(String, Vec<std::ops::Range<u32>>), fmt::Error> {
+    let stores = Stores { global, local };
     // NOTE: some duplication with `FnDisplay`.
     let Some((params, ret)) = self.parts() else { return Ok(("function".to_owned(), Vec::new())) };
     let mut param_ranges = Vec::<std::ops::Range<u32>>::new();
@@ -53,7 +55,7 @@ impl Fn {
         buf.push_str(", ");
       }
       let start = always::convert::usize_to_u32(buf.len());
-      let param_d = ParamDisplay { param, stuff: Stuff { global, local, str_ar, level: None } };
+      let param_d = ParamDisplay { param, stuff: Stuff { stores, str_ar, level: None } };
       write!(&mut buf, "{param_d}")?;
       let end = always::convert::usize_to_u32(buf.len());
       param_ranges.push(start..end);
@@ -108,8 +110,7 @@ impl TyDisplay<'_> {
 
 impl fmt::Display for TyDisplay<'_> {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    let data =
-      self.stuff.global.0.data(self.ty, false).or_else(|| self.stuff.local?.0.data(self.ty, true));
+    let data = self.stuff.stores.get(self.ty);
     let Some(data) = data else {
       always!(false, "not in store: {:?}", self.ty);
       return f.write_str("_");
@@ -288,10 +289,21 @@ impl fmt::Display for ParamDisplay<'_> {
 /// Just a bunch of common stuff we need in a few places. Naming is hard.
 #[derive(Clone, Copy)]
 struct Stuff<'a> {
-  global: &'a GlobalStore,
-  local: Option<&'a LocalStore>,
+  stores: Stores<'a>,
   str_ar: &'a StrArena,
   level: Option<usize>,
+}
+
+#[derive(Clone, Copy)]
+struct Stores<'a> {
+  global: &'a GlobalStore,
+  local: Option<&'a LocalStore>,
+}
+
+impl Stores<'_> {
+  fn get(&self, ty: Ty) -> Option<&Data> {
+    self.global.0.data(ty, false).or_else(|| self.local?.0.data(ty, true))
+  }
 }
 
 fn field_sep(f: &mut fmt::Formatter<'_>, level: Option<usize>) -> fmt::Result {
