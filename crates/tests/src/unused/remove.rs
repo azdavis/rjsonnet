@@ -81,6 +81,208 @@ a + c
 }
 
 #[test]
+fn slash_comment_directly_above() {
+  JsonnetInput::rm_unused(
+    r#"
+// foo
+local used = 1;
+
+// bar
+local unused = 2;
+
+used + 1
+"#,
+    r#"
+// foo
+local used = 1;
+
+
+
+
+used + 1
+"#,
+  )
+  .check();
+}
+
+#[test]
+fn slash_comment_directly_below() {
+  JsonnetInput::rm_unused(
+    r#"
+local used = 1;
+// foo
+
+local unused = 2;
+// bar
+
+used + 1
+"#,
+    r#"
+local used = 1;
+// foo
+
+
+
+
+used + 1
+"#,
+  )
+  .check();
+}
+
+#[test]
+fn block_comment_directly_above() {
+  JsonnetInput::rm_unused(
+    r#"
+/*
+ * foo bar
+ * quz
+ */
+local used = 1;
+
+/*
+ * beep bop
+ * blip
+ */
+local unused = 2;
+
+used + 1
+"#,
+    r#"
+/*
+ * foo bar
+ * quz
+ */
+local used = 1;
+
+
+
+
+used + 1
+"#,
+  )
+  .check();
+}
+
+#[test]
+fn block_comment_directly_below() {
+  JsonnetInput::rm_unused(
+    r#"
+local used = 1;
+/*
+ * foo bar
+ * quz
+ */
+
+local unused = 2;
+/*
+ * beep bop
+ * blip
+ */
+
+used + 1
+"#,
+    r#"
+local used = 1;
+/*
+ * foo bar
+ * quz
+ */
+
+
+
+
+used + 1
+"#,
+  )
+  .check();
+}
+
+#[test]
+fn slash_comment_not_directly_above() {
+  JsonnetInput::rm_unused(
+    r#"
+// foo
+
+local bar = 2;
+
+4
+"#,
+    r#"
+// foo
+
+
+
+4
+"#,
+  )
+  .check();
+}
+
+#[test]
+fn slash_comment_not_directly_below() {
+  JsonnetInput::rm_unused(
+    r#"
+local bar = 2;
+
+// foo
+
+4
+"#,
+    r#"
+
+
+// foo
+
+4
+"#,
+  )
+  .check();
+}
+
+#[test]
+fn block_comment_not_directly_above() {
+  JsonnetInput::rm_unused(
+    r#"
+/* foo */
+
+local bar = 2;
+
+4
+"#,
+    r#"
+/* foo */
+
+
+
+4
+"#,
+  )
+  .check();
+}
+
+#[test]
+fn block_comment_not_directly_below() {
+  JsonnetInput::rm_unused(
+    r#"
+local bar = 2;
+
+/* foo */
+
+4
+"#,
+    r#"
+
+
+/* foo */
+
+4
+"#,
+  )
+  .check();
+}
+
+#[test]
 #[should_panic = "should remove unused"]
 fn obj() {
   JsonnetInput::rm_unused(
