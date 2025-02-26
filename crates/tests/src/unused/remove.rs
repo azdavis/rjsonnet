@@ -282,6 +282,25 @@ local bar = 2;
   .check();
 }
 
+/// NOTE may not be great, since the comment quz may be related to local blob
+#[test]
+fn slash_comment_directly_above_and_below() {
+  JsonnetInput::rm_unused(
+    r#"
+// foo
+local bar = 1;
+// quz
+local blob = 2;
+blob + 1
+"#,
+    r#"
+local blob = 2;
+blob + 1
+"#,
+  )
+  .check();
+}
+
 #[test]
 #[should_panic = "should remove unused"]
 fn obj() {
