@@ -459,3 +459,20 @@ function(x)
   )
   .check();
 }
+
+#[test]
+#[should_panic = "none of the lines were equal"]
+fn conditional_object_field() {
+  JsonnetInput::manifest_or_fn(
+    r#"
+function(x)
+  assert x == null || std.isString(x);
+  {
+    hi: "there",
+    [if x != null then "x_len"]: std.length(x),
+##                                          ^ type: string
+  }
+"#,
+  )
+  .check();
+}
