@@ -476,3 +476,24 @@ function(x)
   )
   .check();
 }
+
+/// NOTE array[never] is not great
+#[test]
+fn conditional_comprehension() {
+  JsonnetInput::manifest_or_fn(
+    r#"
+function(xs)
+  assert std.isArray(xs);
+  assert std.all(std.map(function(x) x == null || std.isNumber(x), xs));
+  local zs = [x + 1 for x in xs if x != null];
+##            ^ type: number
+##                                         v type: number
+  local ys = [(if x == null then "no" else x - 1) for x in xs];
+##                ^ type: null | number
+##      vv type: array[number] | array[never]
+  { zs: zs, ys: ys }
+##              ^^ type: array[number | string]
+"#,
+  )
+  .check();
+}
