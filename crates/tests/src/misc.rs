@@ -115,3 +115,15 @@ fn subscript_str() {
   )
   .check();
 }
+
+#[test]
+fn call_non_fn() {
+  JsonnetInput::eval_error(
+    r#"
+  null()
+##^^^^^^ err: invalid call; expected a callable type; found `null`
+"#,
+    "incompatible types",
+  )
+  .check();
+}
