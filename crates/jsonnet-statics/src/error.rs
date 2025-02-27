@@ -290,10 +290,10 @@ impl fmt::Display for Display<'_> {
           elr.fmt(f)
         }
         Invalid::Call => {
-          f.write_str("invalid call`")?;
+          f.write_str("invalid call")?;
           let ef = ExpectedFound {
             expected: "a callable type",
-            extra: Some("e.g. `function``"),
+            extra: Some("e.g. `function`"),
             found: Backticks(ty.display(Style::Short, self.store, None, self.str_ar)),
             style: self.style,
           };
