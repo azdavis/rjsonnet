@@ -4,6 +4,7 @@ mod expect;
 
 pub(crate) mod markdown;
 
+use jsonnet_analyze::remove;
 use lang_srv_state::State as _;
 use paths::FileSystem as _;
 use rustc_hash::{FxHashMap, FxHashSet};
@@ -151,7 +152,7 @@ impl<'a> Input<'a> {
 
       if let OutcomeKind::RmUnused(opts) = jsonnet.kind {
         let got = st.remove_unused(fs, path.as_clean_path(), opts).expect("should remove unused");
-        assert_eq!(jsonnet.outcome, got);
+        assert_eq!(jsonnet.outcome, got, "expected left, got right");
       } else {
         jsonnet.check_one(st, path_str, path_id, pwd);
       }
@@ -196,10 +197,14 @@ impl<'a> JsonnetInput<'a> {
   }
 
   pub(crate) fn rm_unused(before: &'a str, after: &'a str) -> Self {
-    let opts = jsonnet_analyze::remove::Options {
-      flavor: jsonnet_analyze::remove::Flavor::All,
-      comments: jsonnet_analyze::remove::Comments { above: true, below: true },
+    let opts = remove::Options {
+      flavor: remove::Flavor::All,
+      comments: remove::Comments { above: true, below: true },
     };
+    Self::rm_unused_with(opts, before, after)
+  }
+
+  pub(crate) fn rm_unused_with(opts: remove::Options, before: &'a str, after: &'a str) -> Self {
     Self { text: before, outcome: after, kind: OutcomeKind::RmUnused(opts) }
   }
 
@@ -291,5 +296,5 @@ enum OutcomeKind {
   String,
   EvalError,
   PreEvalError,
-  RmUnused(jsonnet_analyze::remove::Options),
+  RmUnused(remove::Options),
 }

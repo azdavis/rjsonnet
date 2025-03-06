@@ -1,6 +1,7 @@
 //! Removing unused locals.
 
 use crate::check::JsonnetInput;
+use jsonnet_analyze::remove;
 
 #[test]
 fn smoke() {
@@ -291,10 +292,64 @@ fn slash_comment_directly_above_and_below() {
 local bar = 1;
 // quz
 local blob = 2;
+// hi
 blob + 1
 "#,
     r#"
 local blob = 2;
+// hi
+blob + 1
+"#,
+  )
+  .check();
+}
+
+#[test]
+fn only_above() {
+  let opts = remove::Options {
+    flavor: remove::Flavor::All,
+    comments: remove::Comments { above: true, below: false },
+  };
+  JsonnetInput::rm_unused_with(
+    opts,
+    r#"
+// foo
+local bar = 1;
+// quz
+local blob = 2;
+// hi
+blob + 1
+"#,
+    r#"
+// quz
+local blob = 2;
+// hi
+blob + 1
+"#,
+  )
+  .check();
+}
+
+#[test]
+fn only_below() {
+  let opts = remove::Options {
+    flavor: remove::Flavor::All,
+    comments: remove::Comments { above: false, below: true },
+  };
+  JsonnetInput::rm_unused_with(
+    opts,
+    r#"
+// foo
+local bar = 1;
+// quz
+local blob = 2;
+// hi
+blob + 1
+"#,
+    r#"
+// foo
+local blob = 2;
+// hi
 blob + 1
 "#,
   )
