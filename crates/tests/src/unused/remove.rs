@@ -1,6 +1,6 @@
 //! Removing unused locals.
 
-use crate::check::JsonnetInput;
+use crate::check::{Input, JsonnetInput};
 use jsonnet_analyze::remove;
 
 #[test]
@@ -356,6 +356,29 @@ blob + 1
   .check();
 }
 
+#[test]
+fn only_imports() {
+  let opts =
+    remove::Options { flavor: remove::Flavor::Imports, comments: remove::Comments::default() };
+  let importer = JsonnetInput::rm_unused_with(
+    opts,
+    r#"
+local foo = import "a.libsonnet";
+local bar = "oops";
+1 + 2
+"#,
+    r#"
+local bar = "oops";
+1 + 2
+"#,
+  );
+  let import = JsonnetInput::manifest_self("3");
+  Input::default()
+    .with_jsonnet("a.libsonnet", import)
+    .with_jsonnet("f.jsonnet", importer)
+    .add("f.jsonnet")
+    .check();
+}
 #[test]
 #[should_panic = "should remove unused"]
 fn obj() {
