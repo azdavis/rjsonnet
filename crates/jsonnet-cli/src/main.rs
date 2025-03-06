@@ -56,6 +56,7 @@ fn get_args() -> Result<Option<Args>, pico_args::Error> {
     println!("    remove comments near unused items");
     println!("    only has effect with --rm-unused");
     println!("    <flavor> may be 'none', 'all', 'above', 'below'");
+    println!("    defaults to 'none' if not specified");
     println!("  --root-dirs <dirs>");
     println!("    comma-separated extra root directories");
     println!();
@@ -65,7 +66,7 @@ fn get_args() -> Result<Option<Args>, pico_args::Error> {
   let rm_comments = args.opt_value_from_str::<_, RmComments>("--rm-unused-comments")?;
   let rm_unused = rm_unused.map(|flavor| remove::Options {
     flavor,
-    comments: rm_comments.map_or_else(Default::default, RmComments::into_analysis),
+    comments: rm_comments.unwrap_or_default().into_analysis(),
   });
   let quiet = args.contains(["-q", "--quiet"]);
   let root_dirs: Option<String> = args.opt_value_from_str("--root-dirs")?;
@@ -73,8 +74,9 @@ fn get_args() -> Result<Option<Args>, pico_args::Error> {
   Ok(Some(Args { rm_unused, quiet, root_dirs, files }))
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Default, Clone, Copy)]
 enum RmComments {
+  #[default]
   None,
   All,
   Above,

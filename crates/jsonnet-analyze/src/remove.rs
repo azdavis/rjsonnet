@@ -4,9 +4,8 @@ use jsonnet_syntax::kind::{SyntaxKind, SyntaxToken};
 use std::fmt;
 
 /// What unused items to remove.
-#[derive(Debug, Default, Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub enum Flavor {
-  #[default]
   /// All locals.
   All,
   /// Just imports.
@@ -39,7 +38,7 @@ impl fmt::Display for ParseFlavorError {
 impl std::error::Error for ParseFlavorError {}
 
 /// What comments to remove.
-#[derive(Debug, Default, Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub struct Comments {
   /// Comments directly above an item.
   pub above: bool,
@@ -48,7 +47,7 @@ pub struct Comments {
 }
 
 /// Options for removal.
-#[derive(Debug, Default, Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub struct Options {
   /// What items to remove.
   pub flavor: Flavor,

@@ -358,8 +358,10 @@ blob + 1
 
 #[test]
 fn only_imports() {
-  let opts =
-    remove::Options { flavor: remove::Flavor::Imports, comments: remove::Comments::default() };
+  let opts = remove::Options {
+    flavor: remove::Flavor::Imports,
+    comments: remove::Comments { above: false, below: false },
+  };
   let importer = JsonnetInput::rm_unused_with(
     opts,
     r#"
