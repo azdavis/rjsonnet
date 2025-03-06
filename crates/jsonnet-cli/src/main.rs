@@ -49,8 +49,6 @@ fn get_args() -> Result<Option<Args>, pico_args::Error> {
     println!("    show this help");
     println!("  -q, --quiet");
     println!("    emit no output");
-    println!("  --rm-unused");
-    println!("    remove unused locals");
     println!("  --rm-unused <flavor>");
     println!("    remove unused locals");
     println!("    <flavor> may be 'all' or 'imports'");
