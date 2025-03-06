@@ -1,7 +1,7 @@
 //! The state of analysis.
 
 use crate::util::{self, PathIoError, Result};
-use crate::{const_eval, format};
+use crate::{const_eval, format, remove};
 use always::always;
 use jsonnet_syntax::ast::AstNode as _;
 use jsonnet_syntax::kind::{SyntaxKind, SyntaxToken};
@@ -429,7 +429,12 @@ impl St {
   }
 
   /// Removes unused vars.
-  pub fn remove_unused<F>(&mut self, fs: &F, path: &paths::CleanPath) -> Option<String>
+  pub fn remove_unused<F>(
+    &mut self,
+    fs: &F,
+    path: &paths::CleanPath,
+    options: remove::Options,
+  ) -> Option<String>
   where
     F: Sync + paths::FileSystem,
   {
@@ -445,9 +450,17 @@ impl St {
     let f = f.combine(&mut self.with_fs.artifacts);
     let root_syntax = f.syntax.artifacts.root.clone().syntax();
     let local_to_binds = {
+      let ar = &f.syntax.exprs.ar;
       let mut tmp = FxHashMap::<jsonnet_syntax::ast::SyntaxNodePtr, FxHashSet<usize>>::default();
       for err in f.statics.errors {
         let Some((expr, _, idx)) = err.into_unused_local() else { continue };
+        let jsonnet_expr::ExprData::Local { binds, .. } = &ar[expr] else { continue };
+        let Some(&(_, Some(rhs))) = binds.get(idx) else { continue };
+        match (options.flavor, &ar[rhs]) {
+          (remove::Flavor::Imports, jsonnet_expr::ExprData::Import { .. })
+          | (remove::Flavor::All, _) => {}
+          (remove::Flavor::Imports, _) => continue,
+        }
         let Some(ptr) = f.syntax.artifacts.pointers.get_ptr(expr) else { continue };
         tmp.entry(ptr).or_default().insert(idx);
       }
@@ -459,11 +472,11 @@ impl St {
         let Some(node) = ptr.try_to_node(&root_syntax) else { continue };
         // TODO for object locals, this is an Object, not an ExprLocal
         let Some(local) = jsonnet_syntax::ast::ExprLocal::cast(node) else { continue };
-        let bind = local.bind_commas().count();
-        if binds.len() == bind && (0..bind).all(|x| binds.contains(&x)) {
+        let total_binds = local.bind_commas().count();
+        if binds.len() == total_binds && (0..total_binds).all(|x| binds.contains(&x)) {
           let start = local.local_kw();
           let end = local.semicolon();
-          let Some(range) = expand_trivia_around(start, end) else { continue };
+          let Some(range) = remove::trivia_around(start, end, options.comments) else { continue };
           tmp.insert(range);
         } else {
           for &idx in binds {
@@ -480,7 +493,7 @@ impl St {
             };
             let start = prev_comma.or_else(|| bind.syntax().first_token());
             let end = bind.syntax().last_token();
-            let Some(range) = expand_trivia_around(start, end) else { continue };
+            let Some(range) = remove::trivia_around(start, end, options.comments) else { continue };
             tmp.insert(range);
           }
         }
@@ -1010,31 +1023,6 @@ fn non_trivia(mut ret: SyntaxToken) -> Option<SyntaxToken> {
     ret = ret.prev_token()?;
   }
   Some(ret)
-}
-
-fn expand_trivia_around(
-  start: Option<SyntaxToken>,
-  end: Option<SyntaxToken>,
-) -> Option<text_size::TextRange> {
-  let start = std::iter::successors(start, |tok| {
-    let tok = tok.prev_token()?;
-    can_absorb_trivia(&tok).then_some(tok)
-  });
-  let start = start.last()?;
-  let end = std::iter::successors(end, |tok| {
-    let tok = tok.next_token()?;
-    can_absorb_trivia(&tok).then_some(tok)
-  });
-  let end = end.last()?;
-  Some(text_size::TextRange::new(start.text_range().start(), end.text_range().end()))
-}
-
-fn can_absorb_trivia(tok: &jsonnet_syntax::kind::SyntaxToken) -> bool {
-  match tok.kind() {
-    SyntaxKind::Whitespace => !tok.text().contains("\n\n"),
-    SyntaxKind::SlashSlashComment | SyntaxKind::HashComment | SyntaxKind::BlockComment => true,
-    _ => false,
-  }
 }
 
 #[derive(Debug, Clone, Copy)]

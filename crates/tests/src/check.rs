@@ -139,7 +139,7 @@ impl<'a> Input<'a> {
                 || (ds_map.len() == 2 && jsonnet.outcome == "cannot import a text block"))
               && m.contains(jsonnet.outcome)
           }
-          OutcomeKind::RmUnused => ds.iter().all(|x| x.contains("unused variable")),
+          OutcomeKind::RmUnused(_) => ds.iter().all(|x| x.contains("unused variable")),
           _ => false,
         };
         if is_ok {
@@ -149,8 +149,8 @@ impl<'a> Input<'a> {
         }
       }
 
-      if let OutcomeKind::RmUnused = jsonnet.kind {
-        let got = st.remove_unused(fs, path.as_clean_path()).expect("should remove unused");
+      if let OutcomeKind::RmUnused(opts) = jsonnet.kind {
+        let got = st.remove_unused(fs, path.as_clean_path(), opts).expect("should remove unused");
         assert_eq!(jsonnet.outcome, got);
       } else {
         jsonnet.check_one(st, path_str, path_id, pwd);
@@ -196,7 +196,11 @@ impl<'a> JsonnetInput<'a> {
   }
 
   pub(crate) fn rm_unused(before: &'a str, after: &'a str) -> Self {
-    Self { text: before, outcome: after, kind: OutcomeKind::RmUnused }
+    let opts = jsonnet_analyze::remove::Options {
+      flavor: jsonnet_analyze::remove::Flavor::All,
+      comments: jsonnet_analyze::remove::Comments { above: true, below: true },
+    };
+    Self { text: before, outcome: after, kind: OutcomeKind::RmUnused(opts) }
   }
 
   /// only do this if we expect one pre eval error and don't want to specify the range. useful in
@@ -276,16 +280,16 @@ impl<'a> JsonnetInput<'a> {
         }
       }
 
-      (OutcomeKind::RmUnused, _) => unreachable!("should have been handled already"),
+      (OutcomeKind::RmUnused(_), _) => unreachable!("should have been handled already"),
     }
   }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy)]
 enum OutcomeKind {
   Manifest { fn_ok: bool },
   String,
   EvalError,
   PreEvalError,
-  RmUnused,
+  RmUnused(jsonnet_analyze::remove::Options),
 }
