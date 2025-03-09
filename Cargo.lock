@@ -626,6 +626,7 @@ dependencies = [
  "cycle",
  "finite-float",
  "jsonnet-expr",
+ "jsonnet-format-string",
  "jsonnet-std-sig",
  "jsonnet-val",
  "paths",
@@ -650,6 +651,13 @@ dependencies = [
  "quote",
  "rustc-hash 2.1.1",
  "write-rs-tokens",
+]
+
+[[package]]
+name = "jsonnet-format-string"
+version = "0.9.4"
+dependencies = [
+ "always",
 ]
 
 [[package]]

@@ -84,6 +84,10 @@ Rust code describing the standard library functions.
 
 Rust code describing the tokens.
 
+### `crates/jsonnet-format-string`
+
+Format strings used in `%` formatting, like in Python.
+
 ## Overall crates
 
 These tie everything else together.
