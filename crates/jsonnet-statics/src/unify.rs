@@ -79,11 +79,13 @@ pub(crate) fn get(st: &mut St<'_>, store: &ty::MutStore<'_>, want: ty::Ty, got: 
       }
     }
     // all tuples are arrays, but not all arrays are tuples. leave the want tuple, got array case
-    // unhandled; it'll fall through to _ at the end.
-    (ty::Data::Array(want), ty::Data::Tuple(got)) => {
+    // unhandled; it'll fall through to _ at the end. also note not all tuples are sets, so we
+    // conservatively require the array to be not a set. we might be able to unify sets with known
+    // sorted and dupe-free tuples but let's not.
+    (&ty::Data::Array(ty::Array { elem: want, is_set: false }), ty::Data::Tuple(got)) => {
       // wanted array elem must be ALL of the got tuple elems. (like a union)
       for &g in &got.elems {
-        get(st, store, want.elem, g);
+        get(st, store, want, g);
       }
     }
     (ty::Data::Object(want), ty::Data::Object(got)) => {
