@@ -71,7 +71,8 @@ impl Error {
       | Kind::Invalid(_, _)
       | Kind::AddSets
       | Kind::Unreachable
-      | Kind::NoSuchTupleIdx(_, _) => diagnostic::Severity::Warning,
+      | Kind::NoSuchTupleIdx(_, _)
+      | Kind::FormatParseFail(_) => diagnostic::Severity::Warning,
     }
   }
 
@@ -107,7 +108,8 @@ impl Error {
       )
       | Kind::AddSets
       | Kind::Unreachable
-      | Kind::NoSuchTupleIdx(_, _) => {}
+      | Kind::NoSuchTupleIdx(_, _)
+      | Kind::FormatParseFail(_) => {}
     }
   }
 }
@@ -153,6 +155,7 @@ pub(crate) enum Kind {
   AddSets,
   Unreachable,
   NoSuchTupleIdx(usize, usize),
+  FormatParseFail(jsonnet_format_string::ParseError),
 }
 
 #[derive(Debug)]
@@ -357,6 +360,9 @@ impl fmt::Display for Display<'_> {
           style: self.style,
         };
         ef.fmt(f)
+      }
+      Kind::FormatParseFail(e) => {
+        write!(f, "invalid format string: {e}")
       }
     }
   }

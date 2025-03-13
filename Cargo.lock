@@ -731,6 +731,7 @@ dependencies = [
  "drop_bomb",
  "finite-float",
  "jsonnet-expr",
+ "jsonnet-format-string",
  "jsonnet-ty",
  "log",
  "paths",

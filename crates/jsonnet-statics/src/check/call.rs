@@ -2,7 +2,7 @@
 
 use crate::{error, flow, st};
 use always::always;
-use jsonnet_expr::{Expr, ExprArena, ExprMust, Id, StdFn, Str};
+use jsonnet_expr::{Expr, ExprArena, ExprData, ExprMust, Id, Prim, StdFn, Str};
 use jsonnet_ty as ty;
 use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
@@ -154,12 +154,14 @@ fn maybe_extra_checks(
       Some(want_ret)
     }
     StdFn::mod_ => {
-      let &(_, lhs_ty) = params.get(&Id::a)?;
+      let &(lhs_expr, lhs_ty) = params.get(&Id::a)?;
       let &(rhs_expr, rhs_ty) = params.get(&Id::b)?;
       match st.tys.data(lhs_ty) {
         ty::Data::Prim(ty::Prim::String) => {
-          // NOTE: do NOT unify rhs_ty against `array[any]`, because it is permitted to format just
-          // one argument without the wrapping array.
+          if let ExprData::Prim(Prim::String(s)) = ar[lhs_expr] {
+            let s = st.str_ar.get(s);
+            check_format(st, lhs_expr, s, rhs_ty);
+          }
           Some(ty::Ty::STRING)
         }
         ty::Data::Prim(ty::Prim::Number) => {
@@ -290,7 +292,22 @@ fn maybe_extra_checks(
       let ret = if is_special_case { ty } else { prune(&mut st.tys, ty) };
       Some(ret)
     }
+    StdFn::format => {
+      let &(s_expr, _) = params.get(&Id::str)?;
+      let &(_, ty) = params.get(&Id::vals)?;
+      let ExprData::Prim(Prim::String(s)) = ar[s_expr] else { return None };
+      let s = st.str_ar.get(s);
+      check_format(st, s_expr, s, ty);
+      None
+    }
     _ => None,
+  }
+}
+
+fn check_format(st: &mut st::St<'_>, expr: ExprMust, s: &str, ty: ty::Ty) {
+  match jsonnet_format_string::get(s) {
+    Ok(es) => log::debug!("TODO check {es:?} against {ty:?}"),
+    Err(e) => st.err(expr, error::Kind::FormatParseFail(e)),
   }
 }
 

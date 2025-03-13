@@ -3,6 +3,7 @@
 #![allow(missing_docs)]
 
 use always::always;
+use std::fmt;
 
 /// # Errors
 ///
@@ -103,6 +104,17 @@ fn push_string(out: &mut Vec<Elem>, bs: Vec<u8>) {
 pub enum ParseError {
   Truncated,
   UnrecognizedConversionType(u8),
+}
+
+impl fmt::Display for ParseError {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    match self {
+      ParseError::Truncated => f.write_str("unexpected end of string"),
+      ParseError::UnrecognizedConversionType(b) => {
+        write!(f, "unrecognized conversion type: '{}'", b.escape_ascii())
+      }
+    }
+  }
 }
 
 #[derive(Debug)]
