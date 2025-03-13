@@ -108,7 +108,7 @@ impl fmt::Display for ExprDisplay<'_> {
       ExprData::BinOp { lhs, op, rhs } => {
         write!(f, "{} {} {}", self.with(*lhs), op, self.with(*rhs))
       }
-      ExprData::UnOp { op, inner } => write!(f, "{}{}", op, self.with(*inner)),
+      ExprData::UnOp { op, inner } => write!(f, "{}({})", op, self.with(*inner)),
       ExprData::Fn { params, body } => {
         f.write_str("function(")?;
         for &(bind, default) in params {
