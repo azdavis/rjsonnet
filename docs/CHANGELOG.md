@@ -2,7 +2,7 @@
 
 Things under "main" are not released yet.
 
-## main
+## v0.9.5
 
 - Error on `==` where both sides are functions.
 - Error on comparison (`<`, `>`, etc) where the types cannot be compared.
