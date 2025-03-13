@@ -38,7 +38,7 @@ local xs = std.set([1, 2]);
 local ys = [2, 3];
 function()
   std.setInter(xs, ys)
-##                 ^^ err: incompatible types; expected `set[any]`; found `array[number]`
+##                 ^^ err: incompatible types; expected `set[any]`; found `tuple[number, number]`
 ",
   )
   .check();

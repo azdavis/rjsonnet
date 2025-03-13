@@ -3,15 +3,15 @@
 use crate::check::JsonnetInput;
 
 #[test]
-fn arr_num() {
+fn tup_num() {
   JsonnetInput::manifest(
-    r"
-[1, 2, 3]
-##      ^ hover: array[number]
-",
-    r"
-[1, 2, 3]
-",
+    r#"
+[1, "hi", false]
+##             ^ hover: tuple[number, string, false]
+"#,
+    r#"
+[1, "hi", false]
+"#,
   )
   .check();
 }

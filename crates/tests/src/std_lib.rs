@@ -50,20 +50,34 @@ std.get({ a: 1 }, "a", error "no")
 
 #[test]
 fn prune() {
-  JsonnetInput::eval_error(
+  JsonnetInput::manifest_or_fn(
     r#"
-local xs = [2, 4, null, 6, {}];
-##    ^^ type: array[null | number | {}]
-local ys = std.prune(xs);
-##    ^^ type: array[number]
-local sc1 = std.prune({});
-##    ^^^ type: {}
-local sc2 = std.prune(null);
-##    ^^^ type: null
+function(xs)
+##       ^^ type: array[null | number | {}]
+  assert std.isArray(xs) && std.all(std.map(function(x) x == null || std.isNumber(x) || (std.isObject(x) && std.length(x) == 0), xs));
+  local ys = std.prune(xs);
+##      ^^ type: array[number]
+  local sc1 = std.prune({});
+##      ^^^ type: {}
+  local sc2 = std.prune(null);
+##      ^^^ type: null
 
-[std.length(ys), sc1, sc2]
+  [std.length(ys), sc1, sc2]
 "#,
-    "not yet implemented: prune",
+  )
+  .check();
+}
+
+#[test]
+fn prune_tup() {
+  JsonnetInput::manifest_or_fn(
+    r#"
+function()
+  local xs = [1, 2, null, false, {}, 5, []];
+  local ys = std.prune(xs);
+##      ^^ type: tuple[number, number, false, number]
+  ys
+"#,
   )
   .check();
 }

@@ -8,6 +8,10 @@ use jsonnet_expr::{BinOp, Expr, ExprArena, ExprData, ExprMust, Id, Prim, UnOp, d
 use jsonnet_ty as ty;
 use rustc_hash::{FxHashMap, FxHashSet};
 
+/// TODO have this be more contextual if array literals as tuples always is annoying. e.g. a special
+/// `tuple([...])` function?
+const USE_TUPLES: bool = true;
+
 /// NOTE: don't return early from this except in the degenerate case where the `expr` was `None`.
 /// This is so we can insert the expr's type into the `St` at the end.
 #[expect(clippy::too_many_lines)]
@@ -67,20 +71,25 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
       ty::Ty::OBJECT
     }
     ExprData::Array(exprs) => {
-      let mut tys = ty::Union::new();
-      for &arg in exprs {
-        let ty = get(st, ar, arg);
-        tys.insert(ty);
+      if USE_TUPLES {
+        let tup = ty::Tuple { elems: exprs.iter().map(|&arg| get(st, ar, arg)).collect() };
+        st.tys.get(ty::Data::Tuple(tup))
+      } else {
+        let mut tys = ty::Union::new();
+        for &arg in exprs {
+          let ty = get(st, ar, arg);
+          tys.insert(ty);
+        }
+        // we say `[]` has type `array[never]`.
+        //
+        // having `[]` have type `set[any]` would be "right" as well (since any is the top and bottom
+        // type), but if we can avoid any, we should.
+        //
+        // we could also have it be type `set[never]`, since the empty array is sorted and thus a set.
+        // but this makes some errors more annoying.
+        let elem = st.tys.get(ty::Data::Union(tys));
+        st.tys.get(ty::Data::Array(ty::Array { elem, is_set: false }))
       }
-      // we say `[]` has type `array[never]`.
-      //
-      // having `[]` have type `set[any]` would be "right" as well (since any is the top and bottom
-      // type), but if we can avoid any, we should.
-      //
-      // we could also have it be type `set[never]`, since the empty array is sorted and thus a set.
-      // but this makes some errors more annoying.
-      let elem = st.tys.get(ty::Data::Union(tys));
-      st.tys.get(ty::Data::Array(ty::Array { elem, is_set: false }))
     }
     ExprData::Subscript { on, idx } => {
       let on_ty = get(st, ar, *on);
