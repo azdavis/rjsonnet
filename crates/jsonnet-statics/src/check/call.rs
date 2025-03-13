@@ -340,9 +340,7 @@ fn prune(tys: &mut ty::MutStore<'_>, ty: ty::Ty) -> ty::Ty {
         // recur
         let iter = obj.known.into_iter().filter_map(|(key, ty)| {
           let ty = prune(tys, ty);
-          let is_inhabited =
-            if let ty::Data::Union(parts) = tys.data(ty) { !parts.is_empty() } else { true };
-          is_inhabited.then_some((key, ty))
+          (ty != ty::Ty::NEVER).then_some((key, ty))
         });
         let obj = ty::Object { known: iter.collect(), has_unknown: obj.has_unknown };
         tys.get(ty::Data::Object(obj))
