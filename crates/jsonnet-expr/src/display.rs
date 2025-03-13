@@ -33,6 +33,7 @@ impl<'a> ExprDisplay<'a> {
 }
 
 impl fmt::Display for ExprDisplay<'_> {
+  #[expect(clippy::too_many_lines)]
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     let Some(e) = self.e else { return f.write_str("_") };
     match &self.expr_ar[e] {
@@ -67,7 +68,21 @@ impl fmt::Display for ExprDisplay<'_> {
         }
         f.write_str("]")
       }
-      ExprData::Subscript { on, idx } => write!(f, "{}[{}]", self.with(*on), self.with(*idx)),
+      ExprData::Subscript { on, idx } => {
+        let idx_s = idx.and_then(|x| {
+          if let ExprData::Prim(Prim::String(s)) = self.expr_ar[x] {
+            let s = self.str_ar.get(s);
+            jsonnet_ident::is(s.as_bytes()).then_some(s)
+          } else {
+            None
+          }
+        });
+        if let Some(idx_s) = idx_s {
+          write!(f, "{}.{}", self.with(*on), idx_s)
+        } else {
+          write!(f, "{}[{}]", self.with(*on), self.with(*idx))
+        }
+      }
       ExprData::Call { func, positional, named } => {
         self.with(*func).fmt(f)?;
         f.write_str("(")?;

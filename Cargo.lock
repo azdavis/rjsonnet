@@ -662,6 +662,7 @@ dependencies = [
  "always",
  "finite-float",
  "jsonnet-escape",
+ "jsonnet-ident",
  "jsonnet-std-sig",
  "la-arena",
  "paths",

@@ -20,6 +20,7 @@ rustc-hash.workspace = true
 
 finite-float.path = "../finite-float"
 jsonnet-escape.path = "../jsonnet-escape"
+jsonnet-ident.path = "../jsonnet-ident"
 
 [build-dependencies]
 proc-macro2.workspace = true
