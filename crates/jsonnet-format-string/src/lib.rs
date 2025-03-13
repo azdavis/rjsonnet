@@ -7,9 +7,9 @@ use always::always;
 /// # Errors
 ///
 /// On parse error.
-pub fn get(str: &str) -> Result<Vec<CodesElem>, ParseError> {
+pub fn get(str: &str) -> Result<Vec<Elem>, ParseError> {
   let mut cx = Cx { bs: str.as_bytes(), idx: 0 };
-  let mut out = Vec::<CodesElem>::new();
+  let mut out = Vec::<Elem>::new();
   let mut cur = Vec::<u8>::new();
   while let Ok(c) = cx.cur() {
     cx.bump();
@@ -80,19 +80,19 @@ pub fn get(str: &str) -> Result<Vec<CodesElem>, ParseError> {
     cx.bump();
     let code = Code { mkey, cflags, fw, prec, ctype };
     push_string(&mut out, cur);
-    out.push(CodesElem::Code(code));
+    out.push(Elem::Code(code));
     cur = Vec::new();
   }
   push_string(&mut out, cur);
   Ok(out)
 }
 
-fn push_string(out: &mut Vec<CodesElem>, bs: Vec<u8>) {
+fn push_string(out: &mut Vec<Elem>, bs: Vec<u8>) {
   if bs.is_empty() {
     return;
   }
   match String::from_utf8(bs) {
-    Ok(x) => out.push(CodesElem::String(x)),
+    Ok(x) => out.push(Elem::String(x)),
     Err(e) => {
       always!(false, "should get UTF-8 from str: {e}");
     }
@@ -106,7 +106,7 @@ pub enum ParseError {
 }
 
 #[derive(Debug)]
-pub enum CodesElem {
+pub enum Elem {
   Code(Code),
   String(String),
 }
@@ -120,7 +120,7 @@ pub struct Code {
   pub ctype: ConvType,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum FieldWidth {
   Star,
   Number(usize),
@@ -162,13 +162,13 @@ pub struct CFlags {
   pub plus: bool,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum Case {
   Lower,
   Upper,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum ConvType {
   D,
   O,
