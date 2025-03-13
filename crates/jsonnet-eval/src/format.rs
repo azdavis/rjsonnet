@@ -97,7 +97,6 @@ fn get_one(
       _ => todo!("type error"),
     },
     ConvType::S => crate::exec::str_conv(cx, val),
-    ConvType::Percent => todo!(),
   }
 }
 

@@ -75,7 +75,10 @@ pub fn get(str: &str) -> Result<Vec<Elem>, ParseError> {
       b'G' => ConvType::G(Case::Upper),
       b'c' => ConvType::C,
       b's' => ConvType::S,
-      b'%' => ConvType::Percent,
+      b'%' => {
+        cur.push(b'%');
+        continue;
+      }
       c => return Err(ParseError::UnrecognizedConversionType(c)),
     };
     cx.bump();
@@ -201,7 +204,6 @@ pub enum ConvType {
   G(Case),
   C,
   S,
-  Percent,
 }
 
 struct Cx<'a> {
