@@ -284,6 +284,15 @@ fn get_add(st: &mut st::St<'_>, expr: ExprMust, lhs_ty: ty::Ty, rhs_ty: ty::Ty) 
       }
       st.tys.get(ty::Data::Array(ty::Array::new(elem)))
     }
+    (ty::Data::Tuple(lhs), ty::Data::Tuple(rhs)) => {
+      let tup = ty::Tuple { elems: lhs.elems.iter().chain(rhs.elems.iter()).copied().collect() };
+      st.tys.get(ty::Data::Tuple(tup))
+    }
+    (ty::Data::Array(arr), ty::Data::Tuple(tup)) | (ty::Data::Tuple(tup), ty::Data::Array(arr)) => {
+      let un: ty::Union = std::iter::once(arr.elem).chain(tup.elems.iter().copied()).collect();
+      let elem = st.tys.get(ty::Data::Union(un));
+      st.tys.get(ty::Data::Array(ty::Array::new(elem)))
+    }
     // add object fields.
     (ty::Data::Object(lhs_obj), ty::Data::Object(rhs_obj)) => {
       let mut obj = lhs_obj.clone();
