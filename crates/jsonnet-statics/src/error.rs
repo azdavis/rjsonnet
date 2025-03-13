@@ -70,7 +70,8 @@ impl Error {
       | Kind::ExtraNamedArg(_)
       | Kind::Invalid(_, _)
       | Kind::AddSets
-      | Kind::Unreachable => diagnostic::Severity::Warning,
+      | Kind::Unreachable
+      | Kind::NoSuchTupleIdx(_, _) => diagnostic::Severity::Warning,
     }
   }
 
@@ -104,7 +105,8 @@ impl Error {
         | Unify::NotEnoughParams(_, _),
       )
       | Kind::AddSets
-      | Kind::Unreachable => {}
+      | Kind::Unreachable
+      | Kind::NoSuchTupleIdx(_, _) => {}
     }
   }
 }
@@ -148,6 +150,7 @@ pub(crate) enum Kind {
   Invalid(ty::Ty, Invalid),
   AddSets,
   Unreachable,
+  NoSuchTupleIdx(usize, usize),
 }
 
 #[derive(Debug)]
@@ -337,6 +340,16 @@ impl fmt::Display for Display<'_> {
       },
       Kind::AddSets => f.write_str("adding two sets will result in a non-set"),
       Kind::Unreachable => f.write_str("unreachable code"),
+      Kind::NoSuchTupleIdx(len, idx) => {
+        f.write_str("no such tuple index")?;
+        let ef = ExpectedFound {
+          expected: IdxInRange(*len),
+          extra: None::<u8>,
+          found: Backticks(idx),
+          style: self.style,
+        };
+        ef.fmt(f)
+      }
     }
   }
 }
@@ -429,5 +442,13 @@ struct UpTo(usize);
 impl fmt::Display for UpTo {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     write!(f, "up to {}", self.0)
+  }
+}
+
+struct IdxInRange(usize);
+
+impl fmt::Display for IdxInRange {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    write!(f, "an index in the range 0..{}", self.0)
   }
 }

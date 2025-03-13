@@ -367,17 +367,20 @@ fn get_subscript(
       arr.elem
     }
     ty::Data::Tuple(tup) => {
-      let idx = idx.and_then(|x| match ar[x] {
+      let idx_n = idx.and_then(|x| match ar[x] {
         ExprData::Prim(Prim::Number(n)) => flow::extract::get_uint(n.value()),
         _ => None,
       });
-      match idx {
+      match idx_n {
         // we do know what index we're asking for.
-        Some(idx) => match tup.elems.get(idx) {
+        Some(idx_n) => match tup.elems.get(idx_n) {
           // it's in range.
           Some(&ty) => ty,
           // it's not in range.
-          None => todo!("no such tuple index"),
+          None => {
+            st.err(idx.unwrap_or(expr), error::Kind::NoSuchTupleIdx(tup.elems.len(), idx_n));
+            ty::Ty::ANY
+          }
         },
         None => {
           // no need to do this unify in the Some case, since number literals are number.
