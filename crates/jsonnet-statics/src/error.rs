@@ -72,7 +72,8 @@ impl Error {
       | Kind::AddSets
       | Kind::Unreachable
       | Kind::NoSuchTupleIdx(_, _)
-      | Kind::FormatParseFail(_) => diagnostic::Severity::Warning,
+      | Kind::FormatParseFail(_)
+      | Kind::FormatWrongCount(_, _) => diagnostic::Severity::Warning,
     }
   }
 
@@ -109,7 +110,8 @@ impl Error {
       | Kind::AddSets
       | Kind::Unreachable
       | Kind::NoSuchTupleIdx(_, _)
-      | Kind::FormatParseFail(_) => {}
+      | Kind::FormatParseFail(_)
+      | Kind::FormatWrongCount(_, _) => {}
     }
   }
 }
@@ -156,6 +158,7 @@ pub(crate) enum Kind {
   Unreachable,
   NoSuchTupleIdx(usize, usize),
   FormatParseFail(jsonnet_format_string::ParseError),
+  FormatWrongCount(usize, usize),
 }
 
 #[derive(Debug)]
@@ -363,6 +366,11 @@ impl fmt::Display for Display<'_> {
       }
       Kind::FormatParseFail(e) => {
         write!(f, "invalid format string: {e}")
+      }
+      Kind::FormatWrongCount(want, got) => {
+        f.write_str("wrong number of format arguments")?;
+        let ef = ExpectedFound { expected: *want, extra: NONE, found: *got, style: self.style };
+        ef.fmt(f)
       }
     }
   }

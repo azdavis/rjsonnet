@@ -123,6 +123,17 @@ pub enum Elem {
   String(String),
 }
 
+impl Elem {
+  /// Returns the `Code` in this, if any.
+  #[must_use]
+  pub fn into_code(self) -> Option<Code> {
+    match self {
+      Elem::Code(code) => Some(code),
+      Elem::String(_) => None,
+    }
+  }
+}
+
 #[derive(Debug)]
 pub struct Code {
   pub mkey: Option<String>,

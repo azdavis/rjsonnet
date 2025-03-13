@@ -305,9 +305,31 @@ fn maybe_extra_checks(
 }
 
 fn check_format(st: &mut st::St<'_>, expr: ExprMust, s: &str, ty: ty::Ty) {
-  match jsonnet_format_string::get(s) {
-    Ok(es) => log::debug!("TODO check {es:?} against {ty:?}"),
-    Err(e) => st.err(expr, error::Kind::FormatParseFail(e)),
+  let codes: Vec<_> = match jsonnet_format_string::get(s) {
+    Ok(es) => es.into_iter().filter_map(jsonnet_format_string::Elem::into_code).collect(),
+    Err(e) => {
+      st.err(expr, error::Kind::FormatParseFail(e));
+      return;
+    }
+  };
+  match st.tys.data(ty) {
+    ty::Data::Prim(ty::Prim::Any)
+    | ty::Data::Array(_)
+    | ty::Data::Union(_)
+    | ty::Data::Fn(_)
+    | ty::Data::Object(_) => {
+      // TODO at least emit an error for fn, and handle formatting object
+    }
+    ty::Data::Prim(_) => {
+      if codes.len() != 1 {
+        st.err(expr, error::Kind::FormatWrongCount(codes.len(), 1));
+      }
+    }
+    ty::Data::Tuple(tup) => {
+      if codes.len() != tup.elems.len() {
+        st.err(expr, error::Kind::FormatWrongCount(codes.len(), tup.elems.len()));
+      }
+    }
   }
 }
 
