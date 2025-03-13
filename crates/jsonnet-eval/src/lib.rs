@@ -20,6 +20,7 @@ mod generated {
 pub mod error;
 
 mod exec;
+mod format;
 mod manifest;
 mod std_lib;
 mod util;
