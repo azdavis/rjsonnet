@@ -548,7 +548,7 @@ pub(crate) fn eq_val(expr: ExprMust, cx: &mut Cx<'_>, lhs: &Val, rhs: &Val) -> R
   }
 }
 
-fn str_conv(cx: &mut Cx<'_>, val: Val) -> Result<Str> {
+pub(crate) fn str_conv(cx: &mut Cx<'_>, val: Val) -> Result<Str> {
   if let Val::Prim(Prim::String(s)) = val {
     Ok(s)
   } else {
