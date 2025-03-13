@@ -214,11 +214,19 @@ They are:
 
 These are fairly self-explanatory. Notably, the values `true`, `false`, and `null` have their own types.
 
-`boolean` is the type that is the union of `true` and `false`. See docs for [union types](#union-types).
+`boolean` is the type that is the union of `true` and `false`. See docs for [union types](#unions).
 
 ### Arrays
 
 `array[T]` is the type of arrays where the elements have type `T`.
+
+### Arrays
+
+`tuple[T1, T2, ...]` is the type of tuples where the elements have types `T1`, `T2`, ...
+
+There can be any number of type arguments to `tuple`.
+
+`unit` is the empty tuple type, i.e. `[]`.
 
 ### Sets
 

@@ -115,6 +115,9 @@ impl fmt::Display for TyDisplay<'_> {
         f.write_str("]")
       }
       Data::Tuple(tup) => {
+        if tup.elems.is_empty() {
+          return f.write_str("unit");
+        }
         let [cur_level, new_level] = if let (Some(x), true) =
           (self.stuff.level, tup.elems.len() >= 2 && self.stuff.stores.is_complex(self.ty))
         {
