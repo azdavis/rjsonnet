@@ -175,7 +175,12 @@ fn maybe_extra_checks(
       let arr = array_ty(&mut st.tys, arr_ty)?;
       st.unify(arr_expr, ty::Ty::STRING_OR_ARRAY, arr.elem);
       st.unify(arr_expr, arr.elem, sep_ty);
-      Some(if arr.elem == ty::Ty::STRING { ty::Ty::STRING } else { arr.elem })
+      Some(if arr.elem == ty::Ty::STRING {
+        ty::Ty::STRING
+      } else {
+        let elem = array_ty(&mut st.tys, arr.elem)?.elem;
+        st.tys.get(ty::Data::Array(ty::Array::new(elem)))
+      })
     }
     StdFn::reverse => {
       let &(_, arr_ty) = params.get(&Id::arr)?;

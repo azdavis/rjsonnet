@@ -490,7 +490,7 @@ function(xs)
 ##                                         v type: number
   local ys = [(if x == null then "no" else x - 1) for x in xs];
 ##                ^ type: null | number
-##      vv type: array[number] | array[never]
+##      vv type: array[number]
   { zs: zs, ys: ys }
 ##              ^^ type: array[number | string]
 "#,
