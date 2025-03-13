@@ -6,8 +6,15 @@ Things under "main" are not released yet.
 
 - Error on `==` where both sides are functions.
 - Error on comparison (`<`, `>`, etc) where the types cannot be compared.
+- Add tuple types to the type system.
+- Improve go-to-def for some object field cases.
+- Parse (but do not allow) `tailstrict`.
 - Improve typing of:
+  - Subscripting on strings
+  - `%`
   - `std.flatMap`
+  - `std.format`
+  - `std.mod`
   - `std.objectFields`
   - `std.objectFieldsAll`
 
