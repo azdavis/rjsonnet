@@ -427,6 +427,10 @@ fn object_values_inner(tys: &ty::MutStore<'_>, ty: ty::Ty, ac: &mut ty::Union) {
 fn array_ty(tys: &mut ty::MutStore<'_>, arr_ty: ty::Ty) -> Option<ty::Array> {
   match tys.data(arr_ty) {
     ty::Data::Array(arr) => Some(*arr),
+    ty::Data::Tuple(tup) => {
+      let un: ty::Union = tup.elems.iter().copied().collect();
+      Some(ty::Array::new(tys.get(ty::Data::Union(un))))
+    }
     ty::Data::Union(parts) => {
       let parts = parts.clone();
       let mut elem = ty::Union::new();
