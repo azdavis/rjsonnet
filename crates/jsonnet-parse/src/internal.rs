@@ -37,10 +37,6 @@ fn expr_prec(p: &mut Parser<'_>, min_prec: Prec) -> Option<Exited> {
       p.bump();
       SK::ExprHole
     }
-    SK::MergeConflictMarker => {
-      p.bump();
-      SK::ExprMergeConflictMarker
-    }
     SK::NullKw => {
       p.bump();
       SK::ExprNull

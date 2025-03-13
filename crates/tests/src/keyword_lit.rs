@@ -23,7 +23,7 @@ fn redefine() {
     r"
 ##         v err: trailing token
 local true = 1;
-##    ^^^^ err: expected `;`
+##    ^^^^ err: expected `;`, found `true`
 2
 ",
   )

@@ -53,7 +53,13 @@ impl fmt::Display for Error {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     match &self.0.inner {
       ErrorKind::Trailing => f.write_str("trailing token"),
-      ErrorKind::Expected(e) => write!(f, "expected {e}"),
+      ErrorKind::Expected(e) => {
+        write!(f, "expected {e}")?;
+        if let Some(k) = self.0.kind {
+          write!(f, ", found {k}")?;
+        }
+        Ok(())
+      }
       ErrorKind::ExtraComma => f.write_str("extra `,`"),
     }
   }

@@ -2,7 +2,6 @@ Root = Expr
 
 Expr =
   ExprHole
-| ExprMergeConflictMarker
 | ExprNull
 | ExprTrue
 | ExprFalse
@@ -31,7 +30,6 @@ Expr =
 
 // not real exprs
 ExprHole = '...'
-ExprMergeConflictMarker = 'MergeConflictMarker'
 
 ExprNull = 'null'
 ExprTrue = 'true'
@@ -121,3 +119,6 @@ String =
 | 'DoubleQuotedVerbatimString'
 | 'SingleQuotedVerbatimString'
 | 'TextBlock'
+
+// not used in any expressions
+MergeConflictMarkerUNUSED = 'MergeConflictMarker'
