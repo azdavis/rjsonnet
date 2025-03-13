@@ -187,6 +187,7 @@ fn get_len_eq(scope: &Scope, ar: &ExprArena, ac: &mut Facts, call: ExprMust, n: 
   add_expr_fact(ar, ac, param, Fact::has_len(n));
 }
 
+/// Returns this as a usize if possible.
 #[expect(clippy::float_cmp, clippy::cast_possible_truncation, clippy::cast_sign_loss)]
 pub(crate) fn get_uint(n: f64) -> Option<usize> {
   if n >= 0.0 && n.trunc() == n { Some(n as usize) } else { None }

@@ -333,6 +333,8 @@ fn can_ord_cmp(tys: &ty::MutStore<'_>, lhs: ty::Ty, rhs: ty::Ty) -> bool {
       | (ty::Prim::String | ty::Prim::Number, ty::Prim::Any) => true,
     },
     (ty::Data::Array(lhs), ty::Data::Array(rhs)) => can_ord_cmp(tys, lhs.elem, rhs.elem),
+    (ty::Data::Tuple(tup), _) => tup.elems.iter().all(|&lhs| can_ord_cmp(tys, lhs, rhs)),
+    (_, ty::Data::Tuple(tup)) => tup.elems.iter().all(|&rhs| can_ord_cmp(tys, lhs, rhs)),
     (ty::Data::Union(parts), _) => parts.iter().all(|&lhs| can_ord_cmp(tys, lhs, rhs)),
     (_, ty::Data::Union(parts)) => parts.iter().all(|&rhs| can_ord_cmp(tys, lhs, rhs)),
   }
@@ -364,6 +366,28 @@ fn get_subscript(
       st.unify(idx_expr, ty::Ty::NUMBER, idx_ty);
       arr.elem
     }
+    ty::Data::Tuple(tup) => {
+      let idx = idx.and_then(|x| match ar[x] {
+        ExprData::Prim(Prim::Number(n)) => flow::extract::get_uint(n.value()),
+        _ => None,
+      });
+      match idx {
+        // we do know what index we're asking for.
+        Some(idx) => match tup.elems.get(idx) {
+          // it's in range.
+          Some(&ty) => ty,
+          // it's not in range.
+          None => todo!("no such tuple index"),
+        },
+        None => {
+          // no need to do this unify in the Some case, since number literals are number.
+          st.unify(idx_expr, ty::Ty::NUMBER, idx_ty);
+          // assume it's in range - if not, we'll raise an error during runtime.
+          let un: ty::Union = tup.elems.iter().copied().collect();
+          st.tys.get(ty::Data::Union(un))
+        }
+      }
+    }
     // object field get
     ty::Data::Object(obj) => {
       let idx = idx.and_then(|x| match ar[x] {
@@ -388,7 +412,7 @@ fn get_subscript(
         }
         // we don't know what field we're asking for.
         None => {
-          // no need to do this unify in the Some(s) case, since string literals are strings.
+          // no need to do this unify in the Some case, since string literals are strings.
           st.unify(idx_expr, ty::Ty::STRING, idx_ty);
           if obj.has_unknown {
             // all bets are off.
@@ -475,6 +499,7 @@ fn can_eq(st: &st::St<'_>, ty: ty::Ty) -> bool {
     ty::Data::Prim(_) | ty::Data::Object(_) => true,
     ty::Data::Fn(_) => false,
     ty::Data::Array(arr) => can_eq(st, arr.elem),
+    ty::Data::Tuple(tup) => tup.elems.iter().all(|&ty| can_eq(st, ty)),
     ty::Data::Union(tys) => tys.iter().all(|&ty| can_eq(st, ty)),
   }
 }

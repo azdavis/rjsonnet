@@ -1,6 +1,6 @@
 //! Logical operations with types.
 
-use crate::{Array, Data, Fn, MutStore, Object, Param, Prim, RegularFn, Ty, Union};
+use crate::{Array, Data, Fn, MutStore, Object, Param, Prim, RegularFn, Tuple, Ty, Union};
 use always::always;
 use std::cmp::Ordering;
 use std::collections::{BTreeMap, BTreeSet};
@@ -135,8 +135,18 @@ pub fn with_len(tys: &mut MutStore<'_>, ty: Ty, n: usize) -> Ty {
       // these do not have length
       Prim::True | Prim::False | Prim::Null | Prim::Number => Ty::NEVER,
     },
-    // no tuple types
-    Data::Array(_) => ty,
+    // turn into a tuple type where every element is the array's element type
+    Data::Array(arr) => {
+      let tup = Tuple { elems: vec![arr.elem; n] };
+      tys.get(Data::Tuple(tup))
+    }
+    Data::Tuple(tup) => {
+      if tup.elems.len() == n {
+        ty
+      } else {
+        Ty::NEVER
+      }
+    }
     Data::Object(obj) => match (obj.known.len().cmp(&n), obj.has_unknown) {
       // 1. there may be unknown fields
       // 2. already have no unknown fields

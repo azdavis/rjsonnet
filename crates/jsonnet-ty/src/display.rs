@@ -114,6 +114,28 @@ impl fmt::Display for TyDisplay<'_> {
         self.with(arr.elem, Prec::Min).fmt(f)?;
         f.write_str("]")
       }
+      Data::Tuple(tup) => {
+        let [cur_level, new_level] = if let (Some(x), true) =
+          (self.stuff.level, tup.elems.len() >= 2 && self.stuff.stores.is_complex(self.ty))
+        {
+          [Some(x), Some(x + 1)]
+        } else {
+          [None; 2]
+        };
+        let mut iter = tup.elems.iter().map(|&ty| self.with(ty, Prec::Min));
+        f.write_str("tuple[")?;
+        maybe_nl_indent(f, new_level)?;
+        if let Some(x) = iter.next() {
+          x.fmt(f)?;
+        }
+        for x in iter {
+          f.write_str(",")?;
+          field_sep(f, new_level)?;
+          x.fmt(f)?;
+        }
+        maybe_nl_indent(f, cur_level)?;
+        f.write_str("]")
+      }
       Data::Object(obj) => {
         let [cur_level, new_level] =
           if let (Some(x), true) = (self.stuff.level, self.stuff.stores.is_complex(self.ty)) {
@@ -308,6 +330,7 @@ impl Stores<'_> {
     let inner: u32 = match data {
       Data::Prim(_) => 0,
       Data::Array(arr) => self.complexity(arr.elem),
+      Data::Tuple(tup) => tup.elems.iter().map(|&ty| self.complexity(ty)).sum(),
       Data::Object(object) => {
         u32::from(object.has_unknown)
           + object.known.values().map(|&ty| self.complexity(ty)).sum::<u32>()
@@ -340,6 +363,13 @@ impl Stores<'_> {
 fn field_sep(f: &mut fmt::Formatter<'_>, level: Option<usize>) -> fmt::Result {
   match level {
     None => f.write_str(" "),
+    Some(level) => nl_indent(f, level),
+  }
+}
+
+fn maybe_nl_indent(f: &mut fmt::Formatter<'_>, level: Option<usize>) -> fmt::Result {
+  match level {
+    None => Ok(()),
     Some(level) => nl_indent(f, level),
   }
 }

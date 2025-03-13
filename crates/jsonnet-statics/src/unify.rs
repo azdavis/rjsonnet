@@ -69,6 +69,22 @@ pub(crate) fn get(st: &mut St<'_>, store: &ty::MutStore<'_>, want: ty::Ty, got: 
     ) => {
       get(st, store, want, got);
     }
+    (ty::Data::Tuple(want), ty::Data::Tuple(got)) => {
+      if want.elems.len() < got.elems.len() {
+        todo!("not enough tuple elems error")
+      }
+      for (&w, &g) in want.elems.iter().zip(got.elems.iter()) {
+        get(st, store, w, g);
+      }
+    }
+    // all tuples are arrays, but not all arrays are tuples. leave the want tuple, got array case
+    // unhandled; it'll fall through to _ at the end.
+    (ty::Data::Array(want), ty::Data::Tuple(got)) => {
+      // wanted array elem must be ALL of the got tuple elems. (like a union)
+      for &g in &got.elems {
+        get(st, store, want.elem, g);
+      }
+    }
     (ty::Data::Object(want), ty::Data::Object(got)) => {
       for (&name, &w) in &want.known {
         let Some(&g) = got.known.get(&name) else {

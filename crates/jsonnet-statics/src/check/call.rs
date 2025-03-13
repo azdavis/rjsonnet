@@ -43,7 +43,7 @@ pub(crate) fn get(
       st.tys.get(ret_ty)
     }
     ty::Data::Prim(ty::Prim::Any) | ty::Data::Fn(ty::Fn::Unknown) => ty::Ty::ANY,
-    ty::Data::Prim(_) | ty::Data::Array(_) | ty::Data::Object(_) => {
+    ty::Data::Prim(_) | ty::Data::Array(_) | ty::Data::Tuple(_) | ty::Data::Object(_) => {
       st.err(expr, error::Kind::Invalid(fn_ty, error::Invalid::Call));
       ty::Ty::ANY
     }
@@ -289,8 +289,8 @@ fn maybe_extra_checks(
   }
 }
 
-/// recursively remove nulls and (known) zero-length objects from the ty. we have no type-level
-/// representation of zero length arrays, so no attempt is made to remove those.
+/// recursively remove nulls, known zero-length objects, and known zero-length arrays (tuples) from
+/// the ty.
 fn prune(tys: &mut ty::MutStore<'_>, ty: ty::Ty) -> ty::Ty {
   match tys.data(ty) {
     ty::Data::Prim(prim) => match prim {
@@ -308,6 +308,16 @@ fn prune(tys: &mut ty::MutStore<'_>, ty: ty::Ty) -> ty::Ty {
       let elem = prune(tys, arr.elem);
       let arr = ty::Array::new(elem);
       tys.get(ty::Data::Array(arr))
+    }
+    ty::Data::Tuple(tup) => {
+      // remove empty arrays/tuples
+      if tup.elems.is_empty() {
+        ty::Ty::NEVER
+      } else {
+        let tup = tup.clone();
+        let tup = ty::Tuple { elems: tup.elems.into_iter().map(|ty| prune(tys, ty)).collect() };
+        tys.get(ty::Data::Tuple(tup))
+      }
     }
     ty::Data::Object(obj) => {
       // need unique access to tys
@@ -372,7 +382,7 @@ fn length_ok(tys: &ty::MutStore<'_>, ty: ty::Ty) -> bool {
       ty::Prim::Any | ty::Prim::String => true,
       ty::Prim::True | ty::Prim::False | ty::Prim::Null | ty::Prim::Number => false,
     },
-    ty::Data::Array(_) | ty::Data::Object(_) | ty::Data::Fn(_) => true,
+    ty::Data::Array(_) | ty::Data::Tuple(_) | ty::Data::Object(_) | ty::Data::Fn(_) => true,
     ty::Data::Union(parts) => parts.iter().all(|&ty| length_ok(tys, ty)),
   }
 }
@@ -389,7 +399,7 @@ fn object_values(
 
 fn object_values_inner(tys: &ty::MutStore<'_>, ty: ty::Ty, ac: &mut ty::Union) {
   match tys.data(ty) {
-    ty::Data::Prim(_) | ty::Data::Array(_) | ty::Data::Fn(_) => {}
+    ty::Data::Prim(_) | ty::Data::Array(_) | ty::Data::Tuple(_) | ty::Data::Fn(_) => {}
     ty::Data::Object(obj) => {
       if obj.has_unknown {
         ac.insert(ty::Ty::ANY);

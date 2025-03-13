@@ -24,6 +24,8 @@ pub enum Data {
   Prim(Prim),
   /// An array of elements, where each element has the given type.
   Array(Array),
+  /// An tuple of elements, where the length is known and each element has a given type.
+  Tuple(Tuple),
   /// An object, possibly with known and unknown fields.
   Object(Object),
   /// A function type.
@@ -41,6 +43,7 @@ impl Data {
   fn apply(&mut self, subst: &Subst) {
     match self {
       Data::Array(arr) => arr.apply(subst),
+      Data::Tuple(tup) => tup.apply(subst),
       Data::Object(object) => object.apply(subst),
       Data::Fn(f) => f.apply(subst),
       Data::Union(parts) => {
@@ -61,6 +64,7 @@ impl Data {
     match self {
       Data::Prim(_) => false,
       Data::Array(arr) => arr.has_local(),
+      Data::Tuple(tup) => tup.has_local(),
       Data::Object(object) => object.has_local(),
       Data::Fn(f) => f.has_local(),
       Data::Union(parts) => parts.iter().any(|x| x.is_local()),
@@ -145,6 +149,25 @@ impl Array {
 
   fn has_local(self) -> bool {
     self.elem.is_local()
+  }
+}
+
+/// A tuple type.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct Tuple {
+  /// The type of each element.
+  pub elems: Vec<Ty>,
+}
+
+impl Tuple {
+  fn apply(&mut self, subst: &Subst) {
+    for ty in &mut self.elems {
+      ty.apply(subst);
+    }
+  }
+
+  fn has_local(&self) -> bool {
+    self.elems.iter().any(|ty| ty.is_local())
   }
 }
 
@@ -449,9 +472,10 @@ impl<'a> MutStore<'a> {
       Data::Fn(Fn::Std(f)) => Ty::std_fn(f),
       Data::Fn(Fn::Unknown) => Ty::FUNCTION,
       // go directly to get inner.
-      Data::Array(_) | Data::Object(_) | Data::Fn(Fn::Regular(_) | Fn::StdParam(_)) => {
-        self.get_inner(data)
-      }
+      Data::Array(_)
+      | Data::Tuple(_)
+      | Data::Object(_)
+      | Data::Fn(Fn::Regular(_) | Fn::StdParam(_)) => self.get_inner(data),
       // the interesting case.
       Data::Union(work) => {
         let mut work: Vec<_> = work.into_iter().collect();
@@ -521,7 +545,7 @@ impl<'a> MutStore<'a> {
 
   fn known_fields(&mut self, ty: Ty, ac: &mut BTreeMap<Str, Ty>) -> bool {
     match self.data(ty) {
-      Data::Prim(_) | Data::Array(_) | Data::Fn(_) => false,
+      Data::Prim(_) | Data::Array(_) | Data::Tuple(_) | Data::Fn(_) => false,
       Data::Object(object) => {
         for (field, ty) in object.clone().known {
           let cur = ac.entry(field).or_insert(Ty::NEVER);
@@ -683,6 +707,10 @@ impl topo_sort::Visitor for TopoSortVisitor {
       // known to all already exist in the global store.
       Data::Prim(_) | Data::Fn(Fn::Std(_) | Fn::StdParam(_) | Fn::Unknown) => {}
       Data::Array(arr) => work.push(arr.elem),
+      Data::Tuple(tup) => {
+        let iter = tup.elems.iter().copied();
+        work.extend(iter);
+      }
       Data::Object(object) => {
         let iter = object.known.values().copied();
         work.extend(iter);
