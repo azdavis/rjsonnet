@@ -39,7 +39,7 @@ pub struct Parse {
 
 /// A parse error.
 #[derive(Debug)]
-pub struct Error(event_parse::rowan_sink::Error<ErrorKind>);
+pub struct Error(event_parse::rowan_sink::Error<SK, ErrorKind>);
 
 impl Error {
   /// The range of the error.
@@ -51,7 +51,7 @@ impl Error {
 
 impl fmt::Display for Error {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    match &self.0.kind {
+    match &self.0.inner {
       ErrorKind::Trailing => f.write_str("trailing token"),
       ErrorKind::Expected(e) => write!(f, "expected {e}"),
       ErrorKind::ExtraComma => f.write_str("extra `,`"),
