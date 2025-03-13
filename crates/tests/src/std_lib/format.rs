@@ -49,3 +49,15 @@ function()
   )
   .check();
 }
+
+#[test]
+fn wrong_ty() {
+  JsonnetInput::manifest_or_fn(
+    r#"
+function()
+  "hi there %d" % null
+##^^^^^^^^^^^^^ err: incompatible types; expected `number`; found `null`
+"#,
+  )
+  .check();
+}

@@ -3,6 +3,7 @@
 use crate::{error, flow, st};
 use always::always;
 use jsonnet_expr::{Expr, ExprArena, ExprData, ExprMust, Id, Prim, StdFn, Str};
+use jsonnet_format_string::{Code, ConvType};
 use jsonnet_ty as ty;
 use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
@@ -313,23 +314,43 @@ fn check_format(st: &mut st::St<'_>, expr: ExprMust, s: &str, ty: ty::Ty) {
     }
   };
   match st.tys.data(ty) {
-    ty::Data::Prim(ty::Prim::Any)
-    | ty::Data::Array(_)
-    | ty::Data::Union(_)
-    | ty::Data::Fn(_)
-    | ty::Data::Object(_) => {
-      // TODO at least emit an error for fn, and handle formatting object
-    }
-    ty::Data::Prim(_) => {
+    // TODO handle formatting object
+    ty::Data::Prim(ty::Prim::Any) | ty::Data::Array(_) | ty::Data::Object(_) => {}
+    ty::Data::Prim(_) | ty::Data::Fn(_) | ty::Data::Union(_) => {
       if codes.len() != 1 {
         st.err(expr, error::Kind::FormatWrongCount(codes.len(), 1));
       }
+      if let Some(code) = codes.first() {
+        check_format_code(st, expr, code, ty);
+      }
     }
     ty::Data::Tuple(tup) => {
+      let tup = tup.clone();
       if codes.len() != tup.elems.len() {
         st.err(expr, error::Kind::FormatWrongCount(codes.len(), tup.elems.len()));
       }
+      for (code, &ty) in codes.iter().zip(tup.elems.iter()) {
+        check_format_code(st, expr, code, ty);
+      }
     }
+  }
+}
+
+fn check_format_code(st: &mut st::St<'_>, expr: ExprMust, code: &Code, ty: ty::Ty) {
+  match code.ctype {
+    ConvType::D
+    | ConvType::O
+    | ConvType::X(_)
+    | ConvType::E(_)
+    | ConvType::F(_)
+    | ConvType::G(_) => {
+      st.unify(expr, ty::Ty::NUMBER, ty);
+    }
+    ConvType::C => {
+      st.unify(expr, ty::Ty::NUMBER_OR_STRING, ty);
+    }
+    // anything allowed (except maybe fn?)
+    ConvType::S => {}
   }
 }
 
