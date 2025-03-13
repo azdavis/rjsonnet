@@ -490,3 +490,20 @@ function(foo)
   )
   .check();
 }
+
+#[test]
+#[should_panic = "nothing at def site"]
+fn subscript_error() {
+  JsonnetInput::manifest_or_fn(
+    r#"
+function(foo)
+  assert std.isObject(foo);
+  local quz =
+    if foo.bar == 2 then error 'bad' else foo.bar;
+##  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ def: quz
+  quz
+##^^^ use: quz
+"#,
+  )
+  .check();
+}
