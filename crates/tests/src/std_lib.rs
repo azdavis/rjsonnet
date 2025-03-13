@@ -2,6 +2,8 @@
 
 use crate::check::JsonnetInput;
 
+mod format;
+
 #[test]
 fn type_num() {
   JsonnetInput::string(
