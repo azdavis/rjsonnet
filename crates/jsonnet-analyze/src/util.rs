@@ -122,8 +122,7 @@ impl SyntaxFileToCombine {
     let root = parse.root.clone().into_ast().and_then(|x| x.expr());
     let ds = jsonnet_desugar::get(dirs, fs, root);
     if log::log_enabled!(log::Level::Debug) {
-      let expr =
-        jsonnet_expr::display::expr(ds.top, &ds.arenas.str, &ds.arenas.expr, &ds.paths, None);
+      let expr = ds.display_top(None);
       log::debug!("desugar:\n{expr}");
     }
     Self {
