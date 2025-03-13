@@ -340,7 +340,7 @@ fn prune(tys: &mut ty::MutStore<'_>, ty: ty::Ty) -> ty::Ty {
         // recur
         let iter = obj.known.into_iter().filter_map(|(key, ty)| {
           let ty = prune(tys, ty);
-          (ty != ty::Ty::NEVER).then_some((key, ty))
+          if ty == ty::Ty::NEVER { None } else { Some((key, ty)) }
         });
         let obj = ty::Object { known: iter.collect(), has_unknown: obj.has_unknown };
         tys.get(ty::Data::Object(obj))
