@@ -319,9 +319,15 @@ fn prune(tys: &mut ty::MutStore<'_>, ty: ty::Ty) -> ty::Ty {
       if tup.elems.is_empty() {
         ty::Ty::NEVER
       } else {
+        let mut elems = Vec::<ty::Ty>::new();
         let tup = tup.clone();
-        let tup = ty::Tuple { elems: tup.elems.into_iter().map(|ty| prune(tys, ty)).collect() };
-        tys.get(ty::Data::Tuple(tup))
+        for ty in tup.elems {
+          let ty = prune(tys, ty);
+          if ty != ty::Ty::NEVER {
+            elems.push(ty);
+          }
+        }
+        tys.get(ty::Data::Tuple(ty::Tuple { elems }))
       }
     }
     ty::Data::Object(obj) => {
