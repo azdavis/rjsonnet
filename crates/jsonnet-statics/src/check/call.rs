@@ -1,9 +1,9 @@
 //! Checking function calls.
 
-use crate::{error, flow, st};
+use crate::{error, flow, st, suggestion};
 use always::always;
 use jsonnet_expr::{Expr, ExprArena, ExprData, ExprMust, Id, Prim, StdFn, Str};
-use jsonnet_format_string::{Code, ConvType};
+use jsonnet_format_string::ConvType;
 use jsonnet_ty as ty;
 use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
@@ -160,7 +160,6 @@ fn maybe_extra_checks(
       match st.tys.data(lhs_ty) {
         ty::Data::Prim(ty::Prim::String) => {
           if let ExprData::Prim(Prim::String(s)) = ar[lhs_expr] {
-            let s = st.str_ar.get(s);
             check_format(st, lhs_expr, s, rhs_ty);
           }
           Some(ty::Ty::STRING)
@@ -297,7 +296,6 @@ fn maybe_extra_checks(
       let &(s_expr, _) = params.get(&Id::str)?;
       let &(_, ty) = params.get(&Id::vals)?;
       let ExprData::Prim(Prim::String(s)) = ar[s_expr] else { return None };
-      let s = st.str_ar.get(s);
       check_format(st, s_expr, s, ty);
       None
     }
@@ -305,7 +303,8 @@ fn maybe_extra_checks(
   }
 }
 
-fn check_format(st: &mut st::St<'_>, expr: ExprMust, s: &str, ty: ty::Ty) {
+fn check_format(st: &mut st::St<'_>, expr: ExprMust, s: Str, ty: ty::Ty) {
+  let s = st.str_ar.get(s);
   let codes: Vec<_> = match jsonnet_format_string::get(s) {
     Ok(es) => es.into_iter().filter_map(jsonnet_format_string::Elem::into_code).collect(),
     Err(e) => {
@@ -315,13 +314,13 @@ fn check_format(st: &mut st::St<'_>, expr: ExprMust, s: &str, ty: ty::Ty) {
   };
   match st.tys.data(ty) {
     // TODO handle formatting object
-    ty::Data::Prim(ty::Prim::Any) | ty::Data::Array(_) | ty::Data::Object(_) => {}
+    ty::Data::Prim(ty::Prim::Any) | ty::Data::Array(_) => {}
     ty::Data::Prim(_) | ty::Data::Fn(_) | ty::Data::Union(_) => {
       if codes.len() != 1 {
         st.err(expr, error::Kind::FormatWrongCount(codes.len(), 1));
       }
       if let Some(code) = codes.first() {
-        check_format_code(st, expr, code, ty);
+        check_format_conv(st, expr, code.ctype, ty);
       }
     }
     ty::Data::Tuple(tup) => {
@@ -330,14 +329,34 @@ fn check_format(st: &mut st::St<'_>, expr: ExprMust, s: &str, ty: ty::Ty) {
         st.err(expr, error::Kind::FormatWrongCount(codes.len(), tup.elems.len()));
       }
       for (code, &ty) in codes.iter().zip(tup.elems.iter()) {
-        check_format_code(st, expr, code, ty);
+        check_format_conv(st, expr, code.ctype, ty);
+      }
+    }
+    ty::Data::Object(obj) => {
+      if obj.has_unknown {
+        return;
+      }
+      let obj = obj.clone();
+      for code in codes {
+        let Some(s) = &code.mkey else {
+          st.err(expr, error::Kind::FormatMissingMappingKey);
+          continue;
+        };
+        if let Some(s) = st.str_ar.try_str(s.as_str()) {
+          if let Some(&ty) = obj.known.get(&s) {
+            check_format_conv(st, expr, code.ctype, ty);
+            continue;
+          }
+        }
+        let suggest = suggestion::approx(s.as_str(), obj.known.keys().map(|&x| st.str_ar.get(x)));
+        st.err(expr, error::Kind::FormatNoSuchField(s.to_owned(), suggest));
       }
     }
   }
 }
 
-fn check_format_code(st: &mut st::St<'_>, expr: ExprMust, code: &Code, ty: ty::Ty) {
-  match code.ctype {
+fn check_format_conv(st: &mut st::St<'_>, expr: ExprMust, conv: ConvType, ty: ty::Ty) {
+  match conv {
     ConvType::D
     | ConvType::O
     | ConvType::X(_)

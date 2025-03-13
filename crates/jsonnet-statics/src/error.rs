@@ -73,7 +73,9 @@ impl Error {
       | Kind::Unreachable
       | Kind::NoSuchTupleIdx(_, _)
       | Kind::FormatParseFail(_)
-      | Kind::FormatWrongCount(_, _) => diagnostic::Severity::Warning,
+      | Kind::FormatWrongCount(_, _)
+      | Kind::FormatMissingMappingKey
+      | Kind::FormatNoSuchField(_, _) => diagnostic::Severity::Warning,
     }
   }
 
@@ -111,7 +113,9 @@ impl Error {
       | Kind::Unreachable
       | Kind::NoSuchTupleIdx(_, _)
       | Kind::FormatParseFail(_)
-      | Kind::FormatWrongCount(_, _) => {}
+      | Kind::FormatWrongCount(_, _)
+      | Kind::FormatMissingMappingKey
+      | Kind::FormatNoSuchField(_, _) => {}
     }
   }
 }
@@ -159,6 +163,8 @@ pub(crate) enum Kind {
   NoSuchTupleIdx(usize, usize),
   FormatParseFail(jsonnet_format_string::ParseError),
   FormatWrongCount(usize, usize),
+  FormatMissingMappingKey,
+  FormatNoSuchField(String, Option<String>),
 }
 
 #[derive(Debug)]
@@ -371,6 +377,18 @@ impl fmt::Display for Display<'_> {
         f.write_str("wrong number of format arguments")?;
         let ef = ExpectedFound { expected: *want, extra: NONE, found: *got, style: self.style };
         ef.fmt(f)
+      }
+      Kind::FormatMissingMappingKey => f.write_str("format specifier missing object field name"),
+      Kind::FormatNoSuchField(field, suggest) => {
+        write!(f, "no such field: `{field}`")?;
+        if let Some(suggest) = suggest {
+          match self.style {
+            Style::Short => f.write_str("; ")?,
+            Style::Long => f.write_str("\n ")?,
+          }
+          write!(f, "did you mean: `{suggest}`?")?;
+        }
+        Ok(())
       }
     }
   }

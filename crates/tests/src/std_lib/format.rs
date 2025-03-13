@@ -61,3 +61,27 @@ function()
   )
   .check();
 }
+
+#[test]
+fn obj_no_field() {
+  JsonnetInput::manifest_or_fn(
+    r#"
+function()
+  "hi there %(a)s" % { b: 1 }
+##^^^^^^^^^^^^^^^^ err: no such field: `a`
+"#,
+  )
+  .check();
+}
+
+#[test]
+fn obj_no_field_name() {
+  JsonnetInput::manifest_or_fn(
+    r#"
+function()
+  "hi there %s" % { b: 1 }
+##^^^^^^^^^^^^^ err: format specifier missing object field name
+"#,
+  )
+  .check();
+}

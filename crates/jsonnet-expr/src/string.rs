@@ -94,6 +94,16 @@ impl StrArena {
     Str(repr)
   }
 
+  /// does NOT insert the contents if it was not in the arena already, only gets
+  #[must_use]
+  pub fn try_str(&self, contents: &str) -> Option<Str> {
+    let repr = match contents.parse::<BuiltinStr>() {
+      Ok(bs) => StrRepr::Builtin(bs),
+      Err(_) => StrRepr::Idx(*self.data_to_idx.get(contents)?),
+    };
+    Some(Str(repr))
+  }
+
   pub fn id(&mut self, contents: Box<str>) -> Id {
     Id(IdRepr::Str(self.str(contents)))
   }
