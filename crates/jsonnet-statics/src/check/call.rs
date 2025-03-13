@@ -320,7 +320,7 @@ fn check_format(st: &mut st::St<'_>, expr: ExprMust, s: Str, ty: ty::Ty) {
         st.err(expr, error::Kind::FormatWrongCount(codes.len(), 1));
       }
       if let Some(code) = codes.first() {
-        check_format_conv(st, expr, code.ctype, ty);
+        st.unify(expr, format_conv_ty(code.ctype), ty);
       }
     }
     ty::Data::Tuple(tup) => {
@@ -329,7 +329,7 @@ fn check_format(st: &mut st::St<'_>, expr: ExprMust, s: Str, ty: ty::Ty) {
         st.err(expr, error::Kind::FormatWrongCount(codes.len(), tup.elems.len()));
       }
       for (code, &ty) in codes.iter().zip(tup.elems.iter()) {
-        check_format_conv(st, expr, code.ctype, ty);
+        st.unify(expr, format_conv_ty(code.ctype), ty);
       }
     }
     ty::Data::Object(obj) => {
@@ -344,7 +344,7 @@ fn check_format(st: &mut st::St<'_>, expr: ExprMust, s: Str, ty: ty::Ty) {
         };
         if let Some(s) = st.str_ar.try_str(s.as_str()) {
           if let Some(&ty) = obj.known.get(&s) {
-            check_format_conv(st, expr, code.ctype, ty);
+            st.unify(expr, format_conv_ty(code.ctype), ty);
             continue;
           }
         }
@@ -355,21 +355,17 @@ fn check_format(st: &mut st::St<'_>, expr: ExprMust, s: Str, ty: ty::Ty) {
   }
 }
 
-fn check_format_conv(st: &mut st::St<'_>, expr: ExprMust, conv: ConvType, ty: ty::Ty) {
+fn format_conv_ty(conv: ConvType) -> ty::Ty {
   match conv {
     ConvType::D
     | ConvType::O
     | ConvType::X(_)
     | ConvType::E(_)
     | ConvType::F(_)
-    | ConvType::G(_) => {
-      st.unify(expr, ty::Ty::NUMBER, ty);
-    }
-    ConvType::C => {
-      st.unify(expr, ty::Ty::NUMBER_OR_STRING, ty);
-    }
+    | ConvType::G(_) => ty::Ty::NUMBER,
+    ConvType::C => ty::Ty::NUMBER_OR_STRING,
     // anything allowed (except maybe fn?)
-    ConvType::S => {}
+    ConvType::S => ty::Ty::ANY,
   }
 }
 
