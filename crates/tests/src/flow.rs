@@ -477,7 +477,6 @@ function(x)
   .check();
 }
 
-/// NOTE array[never] is not great
 #[test]
 fn conditional_comprehension() {
   JsonnetInput::manifest_or_fn(
@@ -493,6 +492,21 @@ function(xs)
 ##      vv type: array[number]
   { zs: zs, ys: ys }
 ##              ^^ type: array[number | string]
+"#,
+  )
+  .check();
+}
+
+#[test]
+#[should_panic = "none of the lines were equal"]
+fn tuple() {
+  JsonnetInput::manifest_or_fn(
+    r#"
+function(xs)
+##       ^^ type: tuple[any, any, any]
+  assert std.isArray(xs) && std.length(xs) == 3;
+  xs;
+##^^ type: tuple[any, any, any]
 "#,
   )
   .check();
