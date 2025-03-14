@@ -223,10 +223,13 @@ These are fairly self-explanatory. Notably, the values `true`, `false`, and `nul
 ### Arrays
 
 `tuple[T1, T2, ...]` is the type of tuples where the elements have types `T1`, `T2`, ...
+There can be any number of elements and thus type arguments to `tuple`, just like how an object type can have any number of fields.
 
-There can be any number of type arguments to `tuple`.
+Array literals have a statically known length and thus have tuple type. For instance, `[1, null, "hi"]` has type `tuple[number, null, string]`.
 
-`unit` is the empty tuple type, i.e. `[]`.
+Tuple types decay to array types: a type `tuple[T1, T2, ...]` is compatible with an array type `array[T1 | T2 | ...]`. That is, the single array element type is the union of all the tuple element types.
+
+`unit` is the empty tuple type, i.e. `tuple[]`. It is the type of `[]`.
 
 ### Sets
 
