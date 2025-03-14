@@ -140,6 +140,10 @@ impl fmt::Display for TyDisplay<'_> {
           field_sep(f, new_level)?;
           x.fmt(f)?;
         }
+        // trailing comma iff multi line
+        if cur_level.is_some() {
+          f.write_str(",")?;
+        }
         maybe_nl_indent(f, cur_level)?;
         f.write_str("]")
       }
