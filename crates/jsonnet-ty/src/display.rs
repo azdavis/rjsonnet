@@ -125,7 +125,11 @@ impl fmt::Display for TyDisplay<'_> {
         } else {
           [None; 2]
         };
-        let mut iter = tup.elems.iter().map(|&ty| self.with(ty, Prec::Min));
+        let mut iter = tup.elems.iter().map(|&ty| TyDisplay {
+          ty,
+          prec: Prec::Min,
+          stuff: Stuff { level: new_level, ..self.stuff },
+        });
         f.write_str("tuple[")?;
         maybe_nl_indent(f, new_level)?;
         if let Some(x) = iter.next() {
