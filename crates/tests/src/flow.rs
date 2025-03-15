@@ -498,14 +498,13 @@ function(xs)
 }
 
 #[test]
-#[should_panic = "none of the lines were equal"]
 fn tuple() {
   JsonnetInput::manifest_or_fn(
     r#"
 function(xs)
 ##       ^^ type: tuple[any, any, any]
   assert std.isArray(xs) && std.length(xs) == 3;
-  xs;
+  xs
 ##^^ type: tuple[any, any, any]
 "#,
   )

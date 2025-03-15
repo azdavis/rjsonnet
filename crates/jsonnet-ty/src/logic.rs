@@ -1,5 +1,6 @@
 //! Logical operations with types.
 
+#![expect(clippy::too_many_lines)]
 use crate::{Array, Data, Fn, MutStore, Object, Param, Prim, RegularFn, Tuple, Ty, Union};
 use always::always;
 use std::cmp::Ordering;
@@ -31,6 +32,27 @@ pub fn and(tys: &mut MutStore<'_>, x: Ty, y: Ty) -> Ty {
       // NOTE: see discussion of object fields for why we do not return never even if the elem is of
       // type never.
       tys.get(Data::Array(Array { elem, is_set: x.is_set && y.is_set }))
+    }
+    (Data::Tuple(x), Data::Tuple(y)) => {
+      if x.elems.len() != y.elems.len() {
+        return Ty::NEVER;
+      }
+      let x = x.clone();
+      let y = y.clone();
+      let tup =
+        Tuple { elems: x.elems.into_iter().zip(y.elems).map(|(x, y)| and(tys, x, y)).collect() };
+      tys.get(Data::Tuple(tup))
+    }
+    (&Data::Array(arr), Data::Tuple(tup)) | (Data::Tuple(tup), &Data::Array(arr)) => {
+      let tup = tup.clone();
+      let elems = tup.elems.into_iter().map(|elem| {
+        let elem = and(tys, elem, arr.elem);
+        if elem == Ty::NEVER { None } else { Some(elem) }
+      });
+      match elems.collect::<Option<Vec<_>>>() {
+        None => Ty::NEVER,
+        Some(elems) => tys.get(Data::Tuple(Tuple { elems })),
+      }
     }
     (Data::Object(x), Data::Object(y)) => {
       if definitely_lacks(x, y) || definitely_lacks(y, x) {
@@ -216,6 +238,16 @@ pub fn minus(tys: &mut MutStore<'_>, mut x: Ty, y: Ty) -> Ty {
       // result type should be a set, but it's conservatively correct to just never have it be.
       tys.get(Data::Array(Array::new(elem)))
     }
+    (Data::Tuple(x_tup), Data::Tuple(y_tup)) => {
+      if x_tup.elems.len() != y_tup.elems.len() {
+        return x;
+      }
+      let x = x_tup.clone();
+      let y = y_tup.clone();
+      let tup =
+        Tuple { elems: x.elems.into_iter().zip(y.elems).map(|(x, y)| minus(tys, x, y)).collect() };
+      tys.get(Data::Tuple(tup))
+    }
     (Data::Object(x), Data::Object(y)) => {
       let mut known = x.known.clone();
       let y_known = y.known.clone();
@@ -225,10 +257,6 @@ pub fn minus(tys: &mut MutStore<'_>, mut x: Ty, y: Ty) -> Ty {
         *x = minus(tys, *x, y);
       }
       tys.get(Data::Object(Object { known, has_unknown }))
-    }
-    (Data::Fn(_), Data::Fn(_)) => {
-      // this might not be totally right, but this case should be rare anyway.
-      x
     }
     (Data::Union(xs), _) => {
       // (a || b) - y = (a - y) || (b - y)
