@@ -328,17 +328,12 @@ impl Param {
   const VALUE: Self = Self::required_any(Id::value_unutterable);
   const IDX: Self = Self::required_any(Id::idx_unutterable);
 
-  const UNUTTERABLE: [Self; 10] = [
+  const UNUTTERABLE: [Self; 5] = [
     Self::A,
     Self::B,
     Self::required_any(Id::c_unutterable),
     Self::required_any(Id::d_unutterable),
     Self::required_any(Id::e_unutterable),
-    Self::ACC,
-    Self::ELEM,
-    Self::KEY,
-    Self::VALUE,
-    Self::IDX,
   ];
 
   const fn required_any(id: Id) -> Self {
