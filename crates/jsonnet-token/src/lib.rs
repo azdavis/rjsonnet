@@ -257,7 +257,7 @@ pub const ALL: [Token; 51] = [
       },
       TokenPurpose {
         doc: indoc! {"
-          Begin a parameter or argument list in a function definition or call.
+          A parameter or argument list in a function definition or call.
         "},
         example: indoc! {r#"
           local foo(x, y) = if x then y;
@@ -432,7 +432,7 @@ pub const ALL: [Token; 51] = [
     purposes: &[
       TokenPurpose {
         doc: indoc! {"
-          Begin an array.
+          An array literal.
         "},
         example: indoc! {r#"
           assert std.length([1, 5, 7]) == 3;
@@ -441,7 +441,7 @@ pub const ALL: [Token; 51] = [
       },
       TokenPurpose {
         doc: indoc! {"
-          Begin an array subscript.
+          An array subscript.
         "},
         example: indoc! {r#"
           local xs = [1, 5, 7];
@@ -451,7 +451,7 @@ pub const ALL: [Token; 51] = [
       },
       TokenPurpose {
         doc: indoc! {"
-          Begin a computed object field.
+          A computed object field.
 
           When the expression in the `[...]` evaluates to `null`, the field is not added to the
           object, and the value is not evaluated.
@@ -514,7 +514,7 @@ pub const ALL: [Token; 51] = [
     text: "{",
     purposes: &[TokenPurpose {
       doc: indoc! {"
-        Begin an object or object comprehension.
+        An object or object comprehension.
       "},
       example: indoc! {r#"
         { a: 1, b: 2 }
@@ -590,7 +590,7 @@ pub const ALL: [Token; 51] = [
     text: "function",
     purposes: &[TokenPurpose {
       doc: indoc! {"
-        Begin a function expression.
+        A function expression.
       "},
       example: indoc! {r#"
         std.map(function(x) x + 1, [3, 5])
@@ -603,7 +603,7 @@ pub const ALL: [Token; 51] = [
     purposes: &[
       TokenPurpose {
         doc: indoc! {"
-          Begin an assert expression.
+          An assert expression. The assert must evaluate to `true`.
         "},
         example: indoc! {r#"
           assert 2 + 2 == 4;
@@ -671,9 +671,14 @@ pub const ALL: [Token; 51] = [
     text: "local",
     purposes: &[TokenPurpose {
       doc: indoc! {"
-        Create some bindings (usually just one).
+        Define one or more local variables.
 
-        If more than one binding is provided, they may refer to each other.
+        There must be at least one binding `<var> = <expr>`, but there may be more, separated by
+        `,`. The binding(s) end with a `;`, followed by an expression in which the variable(s) are
+        in scope.
+
+        The variables are also in scope in the right-hand side of each of the one or more bindings,
+        which is to say, the bindings may be recursive.
 
         You can also use syntax sugar with `local` when binding a function to a variable,
         instead of using the `function` keyword.
@@ -682,8 +687,10 @@ pub const ALL: [Token; 51] = [
         local three = 1 + 2;
         assert three + 4 == 7;
 
+        local one = 1, two = one + one;
+
         local f(a, b=1) = a + b;
-        assert f(2) == 3;
+        assert f(two) == 3;
       "#},
       outcome: Ok(()),
     }],
