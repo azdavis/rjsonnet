@@ -28,3 +28,22 @@ function(y)
   )
   .check();
 }
+
+#[test]
+fn tuple() {
+  JsonnetInput::manifest(
+    r#"
+local a = [1, "hi"];
+##    ^ type: tuple[number, string]
+local b = [null, false];
+##    ^ type: tuple[null, false]
+local c = a + b;
+##    ^ type: tuple[number, string, null, false]
+c
+"#,
+    r#"
+[1, "hi", null, false]
+"#,
+  )
+  .check();
+}
