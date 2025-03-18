@@ -85,3 +85,15 @@ function()
   )
   .check();
 }
+
+#[test]
+fn obj_no_field_suggest() {
+  JsonnetInput::manifest_or_fn(
+    r#"
+function()
+  "hi there %(apples)s" % { apple: 1 }
+##^^^^^^^^^^^^^^^^^^^^^ err: no such field: `apples`; did you mean: `apple`?
+"#,
+  )
+  .check();
+}
