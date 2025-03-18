@@ -250,3 +250,43 @@ fn self_local() {
   )
   .check();
 }
+
+#[test]
+fn forbid_extra() {
+  JsonnetInput::manifest_or_fn(
+    r#"
+local f(obj) =
+##    ^ type: (obj: { foo: number }) => number
+  assert std.isObject(obj);
+  assert std.isNumber(obj.foo);
+  assert std.length(obj) == 1;
+  obj.foo;
+
+function()
+  local arg = { foo: 1, bar: "hi" };
+
+  f(arg)
+##  ^^^ err: incompatible types; expected `{ foo: number }`; found `{ foo: number, bar: string }`
+  "#,
+  )
+  .check();
+}
+#[test]
+fn allow_unknown() {
+  JsonnetInput::manifest_or_fn(
+    r#"
+local f(obj) =
+##    ^ type: (obj: { foo: number }) => number
+  assert std.isObject(obj);
+  assert std.isNumber(obj.foo);
+  assert std.length(obj) == 1;
+  obj.foo;
+
+function(arg)
+  assert std.isObject(arg);
+
+  f(arg)
+"#,
+  )
+  .check();
+}
