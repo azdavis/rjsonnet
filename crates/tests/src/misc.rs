@@ -17,7 +17,7 @@ func(obj.field, 4)
   .check();
 }
 
-// this is a reduced case of a weird bug a while ago.
+/// this is a reduced case of a weird bug a while ago.
 #[test]
 fn same_fn_ty() {
   JsonnetInput::manifest(
