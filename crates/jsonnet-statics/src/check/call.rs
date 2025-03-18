@@ -313,7 +313,6 @@ fn check_format(st: &mut st::St<'_>, expr: ExprMust, s: Str, ty: ty::Ty) {
     }
   };
   match st.tys.data(ty) {
-    // TODO handle formatting object
     ty::Data::Prim(ty::Prim::Any) | ty::Data::Array(_) => {}
     ty::Data::Prim(_) | ty::Data::Fn(_) | ty::Data::Union(_) => {
       if codes.len() != 1 {
