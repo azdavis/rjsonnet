@@ -70,8 +70,8 @@ pub(crate) fn get(st: &mut St<'_>, store: &ty::MutStore<'_>, want: ty::Ty, got: 
       get(st, store, want, got);
     }
     (ty::Data::Tuple(want), ty::Data::Tuple(got)) => {
-      if want.elems.len() < got.elems.len() {
-        st.err(error::Unify::NotEnoughTupleElems(want.elems.len(), got.elems.len()));
+      if want.elems.len() != got.elems.len() {
+        st.err(error::Unify::WrongNumTupleElem(want.elems.len(), got.elems.len()));
         return;
       }
       for (&w, &g) in want.elems.iter().zip(got.elems.iter()) {

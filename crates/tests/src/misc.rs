@@ -127,3 +127,29 @@ fn call_non_fn() {
   )
   .check();
 }
+
+#[test]
+fn tuple_too_few() {
+  JsonnetInput::manifest_or_fn(
+    r#"
+function()
+  local f(xs) = assert std.isArray(xs) && std.length(xs) == 3; xs[0];
+  f([1, 2])
+##  ^^^^^^ err: wrong number of tuple elements; expected 3; found 2
+  "#,
+  )
+  .check();
+}
+
+#[test]
+fn tuple_too_many() {
+  JsonnetInput::manifest_or_fn(
+    r#"
+function()
+  local f(xs) = assert std.isArray(xs) && std.length(xs) == 3; xs[0];
+  f([1, 2, 3, 4, 5])
+##  ^^^^^^^^^^^^^^^ err: wrong number of tuple elements; expected 3; found 5
+  "#,
+  )
+  .check();
+}

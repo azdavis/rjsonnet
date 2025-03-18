@@ -107,7 +107,7 @@ impl Error {
         | Unify::NoSuchField(_, _)
         | Unify::MismatchedParamNames(_, _)
         | Unify::NotEnoughParams(_, _)
-        | Unify::NotEnoughTupleElems(_, _),
+        | Unify::WrongNumTupleElem(_, _),
       )
       | Kind::AddSets
       | Kind::Unreachable
@@ -125,7 +125,7 @@ impl Error {
 pub(crate) enum Unify {
   Incompatible(ty::Ty, ty::Ty),
   NoSuchField(Str, Option<String>),
-  NotEnoughTupleElems(usize, usize),
+  WrongNumTupleElem(usize, usize),
   NotEnoughParams(usize, usize),
   MismatchedParamNames(Id, Id),
   WantOptionalParamGotRequired(Id),
@@ -253,10 +253,9 @@ impl fmt::Display for Display<'_> {
           };
           ef.fmt(f)
         }
-        Unify::NotEnoughTupleElems(want, got) => {
-          f.write_str("not enough tuple elements")?;
-          let ef =
-            ExpectedFound { expected: AtLeast(*want), extra: NONE, found: *got, style: self.style };
+        Unify::WrongNumTupleElem(want, got) => {
+          f.write_str("wrong number of tuple elements")?;
+          let ef = ExpectedFound { expected: *want, extra: NONE, found: *got, style: self.style };
           ef.fmt(f)
         }
         Unify::MismatchedParamNames(want, got) => {
