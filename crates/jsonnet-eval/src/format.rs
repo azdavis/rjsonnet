@@ -67,7 +67,7 @@ fn get_one(
     ConvType::G(case) => {
       let Val::Prim(Prim::Number(val)) = val else { todo!("type error") };
       let val = val.value();
-      let exponent = if val == 0.0 { 0 } else { isize_f64(val.abs().log10().floor()) };
+      let exponent = if val == 0.0 { 0 } else { f64_to_isize(val.abs().log10().floor()) };
       if exponent < -4 || usize::try_from(exponent).is_ok_and(|e| e >= fpprec) {
         get_float_sci(val, zp, cflags.blank, cflags.plus, cflags.alt, cflags.alt, case, fpprec - 1)
       } else {
@@ -79,7 +79,7 @@ fn get_one(
           cflags.plus,
           cflags.alt,
           cflags.alt,
-          usize_isize(isize_usize(fpprec) - digits_before_pt),
+          isize_to_usize(usize_to_isize(fpprec) - digits_before_pt),
         )
       }
     }
@@ -150,18 +150,18 @@ fn abs_floor(n: f64) -> usize {
 }
 
 #[expect(clippy::cast_possible_truncation)]
-fn isize_f64(n: f64) -> isize {
+fn f64_to_isize(n: f64) -> isize {
   n as isize
 }
 
-fn usize_isize(n: isize) -> usize {
+fn isize_to_usize(n: isize) -> usize {
   match usize::try_from(n) {
     Ok(x) => x,
     Err(e) => todo!("convert: {e}"),
   }
 }
 
-fn isize_usize(n: usize) -> isize {
+fn usize_to_isize(n: usize) -> isize {
   match isize::try_from(n) {
     Ok(x) => x,
     Err(e) => todo!("convert: {e}"),
