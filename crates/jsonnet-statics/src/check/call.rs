@@ -336,9 +336,6 @@ fn check_format(st: &mut st::St<'_>, expr: ExprMust, s: Str, ty: ty::Ty) {
       }
     }
     ty::Data::Object(obj) => {
-      if obj.has_unknown {
-        return;
-      }
       let obj = obj.clone();
       for code in codes {
         let Some(s) = &code.mkey else {
@@ -350,6 +347,9 @@ fn check_format(st: &mut st::St<'_>, expr: ExprMust, s: Str, ty: ty::Ty) {
             st.unify(expr, format_conv_ty(code.ctype), ty);
             continue;
           }
+        }
+        if obj.has_unknown {
+          continue;
         }
         let suggest = suggestion::approx(s.as_str(), obj.known.keys().map(|&x| st.str_ar.get(x)));
         st.err(expr, error::Kind::FormatNoSuchField(s.to_owned(), suggest));
