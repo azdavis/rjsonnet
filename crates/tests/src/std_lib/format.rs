@@ -97,3 +97,16 @@ function()
   )
   .check();
 }
+
+#[test]
+fn no_check_array() {
+  JsonnetInput::manifest_or_fn(
+    r#"
+function()
+  local ar = [x + 1 for x in std.range(0, std.length(std.extVar("VAR")))];
+##      ^^ type: array[number]
+  "hi there %s %s %s" % ar
+"#,
+  )
+  .check();
+}
