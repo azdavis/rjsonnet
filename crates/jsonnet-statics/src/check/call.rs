@@ -365,7 +365,6 @@ fn format_conv_ty(conv: ConvType) -> ty::Ty {
     | ConvType::F(_)
     | ConvType::G(_) => ty::Ty::NUMBER,
     ConvType::C => ty::Ty::NUMBER_OR_STRING,
-    // anything allowed (except maybe fn?)
     ConvType::S => ty::Ty::ANY,
   }
 }
