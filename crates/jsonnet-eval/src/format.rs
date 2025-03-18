@@ -9,7 +9,7 @@
 
 use crate::{Cx, error::Result};
 use jsonnet_expr::{Expr, Prim, Str};
-use jsonnet_format_string::{Code, ConvType, Elem};
+use jsonnet_format_string::{Case, Code, ConvType, Elem};
 use jsonnet_val::jsonnet::{Env, Val};
 
 pub(crate) fn get(cx: &mut Cx<'_>, env: &Env, elems: &[Elem], val: &Val) -> Result<Str> {
@@ -49,10 +49,43 @@ fn get_one(
     }
     ConvType::X(case) => {
       let Val::Prim(Prim::Number(val)) = val else { todo!("type error") };
-      /*
-        render_hex(std.floor(val), zp, iprec, cflags.blank, cflags.plus, cflags.alt, code.caps)
-      */
-      todo!("render hex")
+      let val = val.value();
+      let val_floor = f64_to_isize(val.floor());
+      let mut n = val_floor.unsigned_abs();
+      let mut cs = Vec::<char>::new();
+      if n == 0 {
+        cs.push('0');
+      } else {
+        while n != 0 {
+          cs.push(digit_to_char(n % 16, case));
+          n /= 16;
+        }
+      }
+      let neg = val_floor < 0;
+      let zero_pad_len = std::cmp::max(
+        iprec,
+        zp - usize::from(neg || cflags.blank || cflags.plus) - (if cflags.alt { 2 } else { 0 }),
+      );
+      while cs.len() < zero_pad_len {
+        cs.push('0');
+      }
+      if cflags.alt {
+        let x = match case {
+          Case::Lower => 'x',
+          Case::Upper => 'X',
+        };
+        cs.push(x);
+        cs.push('0');
+      }
+      if neg {
+        cs.push('-');
+      } else if cflags.plus {
+        cs.push('+');
+      } else if cflags.blank {
+        cs.push(' ');
+      }
+      cs.reverse();
+      Ok(cx.str_ar.str(cs.into_iter().collect()))
     }
     ConvType::E(case) => {
       let Val::Prim(Prim::Number(val)) = val else { todo!("type error") };
@@ -119,7 +152,7 @@ fn get_float_sci(
   plus: bool,
   ensure_pt: bool,
   trailing: bool,
-  case: jsonnet_format_string::Case,
+  case: Case,
   prec: usize,
 ) -> Result<Str> {
   todo!()
@@ -165,5 +198,33 @@ fn usize_to_isize(n: usize) -> isize {
   match isize::try_from(n) {
     Ok(x) => x,
     Err(e) => todo!("convert: {e}"),
+  }
+}
+
+fn digit_to_char(n: usize, case: Case) -> char {
+  match (n, case) {
+    (0, _) => '0',
+    (1, _) => '1',
+    (2, _) => '2',
+    (3, _) => '3',
+    (4, _) => '4',
+    (5, _) => '5',
+    (6, _) => '6',
+    (7, _) => '7',
+    (8, _) => '8',
+    (9, _) => '9',
+    (10, Case::Lower) => 'a',
+    (10, Case::Upper) => 'A',
+    (11, Case::Lower) => 'b',
+    (11, Case::Upper) => 'B',
+    (12, Case::Lower) => 'c',
+    (12, Case::Upper) => 'C',
+    (13, Case::Lower) => 'd',
+    (13, Case::Upper) => 'D',
+    (14, Case::Lower) => 'e',
+    (14, Case::Upper) => 'E',
+    (15, Case::Lower) => 'f',
+    (15, Case::Upper) => 'F',
+    _ => panic!("not a digit: {n}"),
   }
 }
