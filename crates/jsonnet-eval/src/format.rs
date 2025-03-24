@@ -119,13 +119,8 @@ fn get_one(
     ConvType::C => match val {
       Val::Prim(Prim::Number(val)) => todo!("std.char(val)"),
       Val::Prim(Prim::String(val)) => {
-        /*
-        if std.length(val) == 1 then
-          val
-        else
-          error '%c expected 1-sized string got: ' + std.length(val)
-          */
-        todo!()
+        let len = cx.str_ar.get(val).chars().count();
+        if len == 1 { Ok(val) } else { todo!("%c expected 1-sized string got: {len}") }
       }
       _ => todo!("type error"),
     },
