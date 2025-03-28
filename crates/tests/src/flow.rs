@@ -510,3 +510,19 @@ function(xs)
   )
   .check();
 }
+
+#[test]
+#[should_panic = "none of the lines were equal"]
+fn obj_field_in_logic() {
+  JsonnetInput::manifest(
+    r#"
+local f(x) =
+  ('a' in x && x.a)
+  || ('a' in x && 'b' in x && !x.a);
+##                             ^ type: { a: any, b: any, ... }
+f({a: false, b: 0})
+"#,
+    "true",
+  )
+  .check();
+}
