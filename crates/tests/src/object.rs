@@ -290,3 +290,19 @@ function(arg)
   )
   .check();
 }
+
+/// TODO fix
+#[test]
+#[should_panic = "unreachable code"]
+fn for_comp_obj_values() {
+  JsonnetInput::manifest(
+    r#"
+local f(obj, field) =
+  std.all([std.isNumber(val[field]) for val in std.objectValues(obj)]);
+
+[f({}, 'e'), f({a: {e: 3}}, 'e'), f({a: {e: false}}, 'e')]
+"#,
+    r#"[true, true, false]"#,
+  )
+  .check();
+}
