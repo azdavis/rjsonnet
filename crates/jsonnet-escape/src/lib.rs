@@ -143,21 +143,17 @@ where
     give_up_on_text_block(st);
     return;
   }
-  st.bump_while(|b| {
-    out.byte(b);
-    b != b'\n'
-  });
-  st.bump();
   loop {
-    if st.eat_prefix(prefix) {
-      st.bump_while(|b| {
-        out.byte(b);
-        b != b'\n'
-      });
-    }
+    st.bump_while(|b| {
+      let not_nl = b != b'\n';
+      out.byte(b);
+      not_nl
+    });
     if st.cur().is_some_and(|b| b == b'\n') {
       st.bump();
-      continue;
+      if st.eat_prefix(prefix) {
+        continue;
+      }
     }
     st.bump_while(is_non_nl_ws);
     if !st.eat_prefix(b"|||") {
