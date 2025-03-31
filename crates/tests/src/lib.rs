@@ -29,3 +29,4 @@ mod union;
 mod unreachable;
 mod unused;
 mod website;
+mod text_block;

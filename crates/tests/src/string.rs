@@ -81,16 +81,3 @@ fn unclosed() {
   )
   .check();
 }
-
-#[test]
-fn text_block() {
-  JsonnetInput::string(
-    r"
-|||
-  hi there
-  buddy
-|||",
-    "hi there\nbuddy\n",
-  )
-  .check();
-}
