@@ -2,6 +2,10 @@
 
 Things under "main" are not released yet.
 
+## main
+
+- Support `|||-` text block syntax which removes the final newline.
+
 ## v0.9.5
 
 - Error on `==` where both sides are functions.

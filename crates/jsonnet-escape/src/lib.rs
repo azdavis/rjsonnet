@@ -129,6 +129,10 @@ pub fn text_block<O>(st: &mut St<'_>, out: &mut O)
 where
   O: Output,
 {
+  let remove_final_nl = st.cur().is_some_and(|b| b == b'-');
+  if remove_final_nl {
+    st.bump();
+  }
   st.bump_while(is_non_nl_ws);
   if st.cur().is_some_and(|b| b == b'\n') {
     st.bump();
@@ -143,14 +147,22 @@ where
     give_up_on_text_block(st);
     return;
   }
+  let mut pending_nl = false;
   loop {
     st.bump_while(|b| {
       let not_nl = b != b'\n';
-      out.byte(b);
+      if not_nl {
+        if pending_nl {
+          out.byte(b'\n');
+          pending_nl = false;
+        }
+        out.byte(b);
+      }
       not_nl
     });
     if st.cur().is_some_and(|b| b == b'\n') {
       st.bump();
+      pending_nl = true;
       if st.eat_prefix(prefix) {
         continue;
       }
@@ -161,6 +173,9 @@ where
       give_up_on_text_block(st);
     }
     break;
+  }
+  if pending_nl && !remove_final_nl {
+    out.byte(b'\n');
   }
 }
 

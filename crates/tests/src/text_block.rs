@@ -97,3 +97,34 @@ t
   )
   .check();
 }
+
+#[test]
+fn chomp() {
+  JsonnetInput::string(
+    r"
+|||-
+  foo bar
+  4
+|||
+",
+    "foo bar\n4",
+  )
+  .check();
+}
+
+#[test]
+fn chomp_indented() {
+  JsonnetInput::string(
+    r"
+local t =
+  |||-
+    hi there
+    buddy
+  |||;
+
+t
+",
+    "hi there\nbuddy",
+  )
+  .check();
+}
