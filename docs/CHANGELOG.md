@@ -2,9 +2,12 @@
 
 Things under "main" are not released yet.
 
-## main
+## v0.9.6
 
 - Support `|||-` text block syntax which removes the final newline.
+- Improve tuple types.
+- Handle blank lines in `|||` text blocks.
+- For Linux, build on Ubuntu 22 to get older glibc.
 
 ## v0.9.5
 
