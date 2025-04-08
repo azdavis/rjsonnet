@@ -943,7 +943,7 @@ impl lang_srv_state::State for St {
         match jsonnet_syntax::ast::ExprCall::cast(tmp.clone()) {
           Some(x) => break x,
           None => tmp = tmp.parent()?,
-        };
+        }
       }
     };
     let func_expr = {

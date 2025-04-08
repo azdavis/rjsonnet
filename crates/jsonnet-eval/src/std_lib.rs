@@ -93,7 +93,7 @@ pub(crate) fn get_call(
           for (elem_env, elem_expr) in arr.elems() {
             if !first {
               ret.push_str(sep.as_str());
-            };
+            }
             first = false;
             let val = exec::get(cx, elem_env, elem_expr)?;
             let Val::Prim(Prim::String(elem)) = val else {
@@ -112,7 +112,7 @@ pub(crate) fn get_call(
           for (elem_env, elem_expr) in arr.elems() {
             if !first {
               ret.append(&mut sep.clone());
-            };
+            }
             first = false;
             let val = exec::get(cx, elem_env, elem_expr)?;
             let Val::Array(mut elem) = val else {
