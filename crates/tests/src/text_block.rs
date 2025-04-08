@@ -30,7 +30,6 @@ fn smoke() {
 }
 
 #[test]
-#[should_panic = "must have a `|||` to end"]
 fn inner_blank() {
   JsonnetInput::string(
     r"
@@ -146,7 +145,6 @@ t
 }
 
 #[test]
-#[should_panic = "must have a `|||` to end"]
 fn trailing_newline() {
   JsonnetInput::string(
     r"
@@ -165,7 +163,6 @@ t
 }
 
 #[test]
-#[should_panic = "must have a `|||` to end"]
 fn chomp_trailing_newline() {
   JsonnetInput::string(
     r"

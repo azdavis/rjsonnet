@@ -149,6 +149,10 @@ where
   }
   let mut pending_nl = false;
   loop {
+    if st.cur().is_none() {
+      out.err(st.cur_idx(), Error::NoBarBarBarForTextBlockEnd);
+      break;
+    }
     st.bump_while(|b| {
       let not_nl = b != b'\n';
       if not_nl {
@@ -162,17 +166,18 @@ where
     });
     if st.cur().is_some_and(|b| b == b'\n') {
       st.bump();
+      if pending_nl {
+        out.byte(b'\n');
+      }
       pending_nl = true;
       if st.eat_prefix(prefix) {
         continue;
       }
     }
     st.bump_while(is_non_nl_ws);
-    if !st.eat_prefix(b"|||") {
-      out.err(st.cur_idx(), Error::NoBarBarBarForTextBlockEnd);
-      give_up_on_text_block(st);
+    if st.eat_prefix(b"|||") {
+      break;
     }
-    break;
   }
   if pending_nl && !remove_final_nl {
     out.byte(b'\n');
