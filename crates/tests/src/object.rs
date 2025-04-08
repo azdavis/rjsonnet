@@ -306,3 +306,26 @@ local f(obj, field) =
   )
   .check();
 }
+
+#[test]
+#[should_panic = "`super` must be used with `.`, `[]`, or `in`"]
+fn in_super() {
+  JsonnetInput::manifest(
+    r#"
+{
+  a: "hi",
+} + {
+  b: "a" in super,
+  c: "b" in super,
+}
+"#,
+    r#"
+{
+  "a": "hi",
+  "b": true,
+  "c": false
+}
+"#,
+  )
+  .check();
+}
