@@ -12,7 +12,7 @@ env:
   RUSTFLAGS: "-D warnings"
 jobs:
   test:
-    runs-on: ubuntu-22
+    runs-on: ubuntu-22.04
     steps:
       - name: Check out repo
         uses: actions/checkout@v4
@@ -32,10 +32,10 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: ubuntu-22
+          - os: ubuntu-22.04
             rust: x86_64-unknown-linux-gnu
             vscode: linux-x64
-          - os: ubuntu-22
+          - os: ubuntu-22.04
             rust: aarch64-unknown-linux-gnu
             vscode: linux-arm64
           - os: macos-latest
@@ -98,7 +98,7 @@ jobs:
           path: editors/vscode/vsix/jsonnet-${{ matrix.vscode }}.vsix
   release:
     needs: dist
-    runs-on: ubuntu-22
+    runs-on: ubuntu-22.04
     # need this to allow creating a release
     permissions:
       contents: write
