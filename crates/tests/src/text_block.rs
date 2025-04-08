@@ -30,6 +30,22 @@ fn smoke() {
 }
 
 #[test]
+#[should_panic = "must have a `|||` to end"]
+fn inner_blank() {
+  JsonnetInput::string(
+    r"
+|||
+  hi there
+
+  buddy
+|||
+",
+    "hi there\n\nbuddy\n",
+  )
+  .check();
+}
+
+#[test]
 fn indented() {
   JsonnetInput::string(
     r"
@@ -125,6 +141,44 @@ local t =
 t
 ",
     "hi there\nbuddy",
+  )
+  .check();
+}
+
+#[test]
+#[should_panic = "must have a `|||` to end"]
+fn trailing_newline() {
+  JsonnetInput::string(
+    r"
+local t =
+  |||
+    hi there
+    buddy
+
+  |||;
+
+t
+",
+    "hi there\nbuddy\n\n",
+  )
+  .check();
+}
+
+#[test]
+#[should_panic = "must have a `|||` to end"]
+fn chomp_trailing_newline() {
+  JsonnetInput::string(
+    r"
+local t =
+  |||-
+    hi there
+    buddy
+
+  |||;
+
+t
+",
+    "hi there\nbuddy\n",
   )
   .check();
 }
