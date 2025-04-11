@@ -55,3 +55,31 @@ local thingy = 4;
   )
   .check();
 }
+
+#[test]
+#[should_panic = "undefined variable: `foo`; did you mean: `foo`?"]
+fn not_in_scope_same() {
+  JsonnetInput::pre_eval_error(
+    r#"
+local f(foo) = foo + 1;
+local g() = foo + 2;
+##          ^^^ err: undefined variable: `foo`
+f(3) + g()
+  "#,
+  )
+  .check();
+}
+
+#[test]
+#[should_panic = "undefined variable: `goo`; did you mean: `foo`?"]
+fn not_in_scope_different() {
+  JsonnetInput::pre_eval_error(
+    r#"
+local f(foo) = foo + 1;
+local g(bar) = goo + 2;
+##             ^^^ err: undefined variable: `goo`
+f(3) + g(4)
+  "#,
+  )
+  .check();
+}

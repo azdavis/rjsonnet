@@ -43,3 +43,17 @@ function()
   )
   .check();
 }
+
+#[test]
+#[should_panic = "no diagnostics"]
+fn comp_not_array() {
+  JsonnetInput::manifest_or_fn(
+    r#"
+function(obj)
+  assert std.isObject(obj);
+  [x for x in obj]
+##            ^^^ err: expected `array[any]`; found `object`
+  "#,
+  )
+  .check();
+}
