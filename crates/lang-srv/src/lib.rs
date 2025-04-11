@@ -38,7 +38,10 @@ pub fn run<S: lang_srv_state::State>() {
     })
     .map(|x| x.uri.clone());
   #[expect(deprecated)]
-  let root_url = last_workspace_folder.or(init.root_uri).expect("root uri");
+  let Some(root_url) = last_workspace_folder.or(init.root_uri) else {
+    log::warn!("no workspace folder, exiting");
+    return;
+  };
 
   let root_dir = convert::clean_path_buf(&root_url).expect("root url should be a clean path buf");
   let st = S::new(root_dir, init.initialization_options);
