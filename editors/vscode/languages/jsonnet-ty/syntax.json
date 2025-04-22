@@ -69,7 +69,7 @@
     },
     "typeName": {
       "name": "entity.name.type.jsonnet-ty",
-      "match": "\\b(any|never|top|boolean|number|string|array|tuple|object|function|set)\\b"
+      "match": "\\b(any|never|top|boolean|number|string|array|tuple|unit|object|function|set)\\b"
     }
   }
 }
