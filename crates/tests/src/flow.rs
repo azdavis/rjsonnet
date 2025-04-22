@@ -526,3 +526,19 @@ f({a: false, b: 0})
   )
   .check();
 }
+
+#[test]
+#[should_panic = "none of the lines were equal"]
+fn prune_tuple() {
+  JsonnetInput::manifest(
+    r#"
+function(b)
+  assert std.isBoolean(b);
+  local ret = std.prune([if b then 3]);
+  ret
+##^^^ type: unit
+"#,
+    "true",
+  )
+  .check();
+}
