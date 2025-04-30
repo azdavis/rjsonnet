@@ -163,3 +163,23 @@ function(x, y, z)
   )
   .check();
 }
+
+#[test]
+#[should_panic = "no completions"]
+fn with_square_bracket() {
+  JsonnetInput::manifest_or_fn(
+    r#"
+local hm = {
+  foo: {
+    a: true,
+    b: 4,
+    c: "hi",
+  },
+};
+
+hm["foo"].a
+##        ^ completions: a: true; b: number; c: string
+"#,
+  )
+  .check();
+}

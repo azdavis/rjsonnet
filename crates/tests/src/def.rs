@@ -462,16 +462,63 @@ local f(x) = x + 1;
 }
 
 #[test]
-fn obj_plus() {
+#[should_panic = "nothing at def site"]
+fn obj_plus_known_rhs() {
   JsonnetInput::manifest(
     r#"
 local foo = {} + { quz: 3 };
-##          ^^^^^^^^^^^^^^^ def: quz
+##                      ^ def: quz
 foo.quz
 ##  ^^^ use: quz
 "#,
     r#"
 3
+"#,
+  )
+  .check();
+}
+
+#[test]
+#[should_panic = "nothing at def site"]
+fn obj_plus_known_lhs() {
+  JsonnetInput::manifest(
+    r#"
+local foo = { quz: 3 } + {};
+##                 ^ def: quz
+foo.quz
+##  ^^^ use: quz
+"#,
+    r#"
+3
+"#,
+  )
+  .check();
+}
+
+#[test]
+#[should_panic = "nothing at def site"]
+fn obj_plus_unknown_rhs() {
+  JsonnetInput::manifest_or_fn(
+    r#"
+function(obj)
+  local foo = obj + { quz: 3 };
+  ##                       ^ def: quz
+  foo.quz
+  ##  ^^^ use: quz
+"#,
+  )
+  .check();
+}
+
+#[test]
+fn obj_plus_unknown() {
+  JsonnetInput::manifest_or_fn(
+    r#"
+function(obj)
+  local foo = obj + { quz: 3 };
+  ##          ^^^^^^^^^^^^^^^^ def: bar
+  foo.bar
+  ##  ^^^ use: bar
 "#,
   )
   .check();

@@ -140,3 +140,15 @@ local ys = std.flatMap(function(x) if x == 3 then [] else [x, x - 1], [1, 3, 7, 
   )
   .check();
 }
+
+#[test]
+#[should_panic = "unreachable code"]
+fn object_values_comp() {
+  JsonnetInput::manifest_or_fn(
+    r#"
+function(foo)
+  [x.bar for x in std.objectValues(foo)]
+"#,
+  )
+  .check();
+}
