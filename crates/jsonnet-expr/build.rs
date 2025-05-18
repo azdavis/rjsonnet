@@ -68,8 +68,6 @@ fn main() {
     S::new("number"),
     S::new("object"),
     S::new("string"),
-    // needed for { key: string, value: T } for std.objectKeysValues
-    S::new("key"),
     // needed for std fn param defaults
     S::named("\n", "newline_char"),
     S::named(": ", "colon_space"),
@@ -97,7 +95,10 @@ fn main() {
   }
 
   // needed for { key: string, value: T } for std.objectKeysValues
+  let key = S::new("key");
   let value = S::new("value");
+  assert!(names.contains("key"));
+  assert!(contents.contains("key"));
   assert!(names.contains("value"));
   assert!(contents.contains("value"));
   drop(names);
@@ -188,7 +189,8 @@ fn main() {
   };
 
   let impl_str = {
-    let constants = strings().chain(std::iter::once(value)).map(|s| {
+    let tmp = strings().chain(std::iter::once(key)).chain(std::iter::once(value));
+    let constants = tmp.map(|s| {
       let name = ident(s.ident());
       q! { pub const #name: Self = Self::builtin(BuiltinStr::#name); }
     });

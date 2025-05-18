@@ -213,6 +213,8 @@ macro_rules! epsilon_eq {
 }
 
 const KEY_F: Param = opt("keyF", Ty::Fn1, ParamDefault::IdentityFn);
+const ON_EMPTY: Param = opt("onEmpty", Ty::Any, ParamDefault::Null);
+const ARR_ANY: Param = req("arr", Ty::ArrAny);
 const V_ANY_RET_BOOL: Sig = sig(&[req("v", Ty::Any)], Ty::Bool);
 const X_NUM_RET_NUM: Sig = sig(&[req("x", Ty::Num)], Ty::Num);
 const N_NUM_RET_NUM: Sig = sig(&[req("n", Ty::Num)], Ty::Num);
@@ -236,9 +238,10 @@ const FOLD: Sig =
   sig(&[req("func", Ty::FnAccElem), req("arr", Ty::ArrAny), req("init", Ty::Any)], Ty::Any);
 const ARR_KEY_F: Sig = sig(&[req("arr", Ty::ArrAny), KEY_F], Ty::ArrAny);
 const BINARY_SET_FN: Sig = sig(&[req("a", Ty::SetAny), req("b", Ty::SetAny), KEY_F], Ty::SetAny);
+const HASH: Sig = sig(&[req("s", Ty::Str)], Ty::Str);
 
 /// The std fns.
-pub const FNS: [Fn; 133] = [
+pub const FNS: [Fn; 147] = [
   Fn {
     name: S::new("native"),
     implemented: false,
@@ -558,6 +561,20 @@ pub const FNS: [Fn; 133] = [
       r#" std.objectKeysValuesAll({}) == [] "#,
       r#" std.objectKeysValuesAll({ a: 1, b: 2 }) == [{ key: "a", value: 1 }, { key: "b", value: 2 }] "#,
       r#" std.objectKeysValuesAll({ a:: 1, b: 2 }) == [{ key: "a", value: 1 }, { key: "b", value: 2 }] "#,
+    ]),
+  },
+  Fn {
+    name: S::new("objectRemoveKey"),
+    implemented: false,
+    sig: sig(&[req("obj", Ty::Obj), req("key", Ty::Str)], Ty::Obj),
+    total: true,
+    available_since: Some(21),
+    doc: indoc! {"
+      Returns the given object after removing the given key, if it was present.
+    "},
+    examples: Examples::new(&[
+      r#" std.objectRemoveKey({a: 2, b: 4}, "a") == {b: 4} "#,
+      r#" std.objectRemoveKey({a: 3}, "b") == {a: 3} "#,
     ]),
   },
   Fn {
@@ -1329,6 +1346,22 @@ pub const FNS: [Fn; 133] = [
     ]),
   },
   Fn {
+    name: S::new("trim"),
+    implemented: false,
+    sig: sig(&[req("str", Ty::Str)], Ty::Str),
+    total: true,
+    available_since: Some(21),
+    doc: indoc! {"
+      Returns the string with leading and trailing whitespaces removed.
+    "},
+    examples: Examples::new(&[
+      r#" std.trim("hi") == "hi" "#,
+      r#" std.trim("hello\t") == "hello" "#,
+      r#" std.trim("  hey\n\n") == "hey" "#,
+      r#" std.trim(" hello world  ") == "hello world" "#,
+    ]),
+  },
+  Fn {
     name: S::new("asciiUpper"),
     implemented: true,
     sig: STR_RET_STR,
@@ -2002,7 +2035,7 @@ pub const FNS: [Fn; 133] = [
   Fn {
     name: S::new("count"),
     implemented: false,
-    sig: sig(&[req("arr", Ty::ArrAny), req("x", Ty::Any)], Ty::Uint),
+    sig: sig(&[ARR_ANY, req("x", Ty::Any)], Ty::Uint),
     total: true,
     available_since: Some(10),
     doc: indoc! {"
@@ -2262,6 +2295,28 @@ pub const FNS: [Fn; 133] = [
     ]),
   },
   Fn {
+    name: S::new("deepJoin"),
+    implemented: false,
+    sig: sig(&[req("arr", Ty::StrOrArrAny)], Ty::Str),
+    total: true,
+    available_since: Some(10),
+    doc: indoc! {"
+      Concatenates an array containing strings and arrays to form a single string.
+
+      If `arr` is a string, it is returned unchanged.
+
+      If `arr` is an array, it is flattened and the string elements are concatenated together with
+      no separator.
+    "},
+    examples: Examples::new(&[
+      indoc! {r#"
+        std.deepJoin(["one ", ["two ", "three ", ["four "], []], "five ", ["six"]])
+          == "one two three four five six"
+      "#},
+      r#" std.deepJoin("hello") == "hello" "#,
+    ]),
+  },
+  Fn {
     name: S::new("lines"),
     implemented: false,
     sig: sig(&[req("arr", Ty::ArrStr)], Ty::Str),
@@ -2301,6 +2356,23 @@ pub const FNS: [Fn; 133] = [
       "},
       "std.flattenArrays([]) == []",
       "std.flattenArrays([[]]) == []",
+    ]),
+  },
+  Fn {
+    name: S::new("flattenDeepArray"),
+    implemented: false,
+    sig: sig(&[req("value", Ty::ArrAny)], Ty::ArrAny),
+    total: true,
+    available_since: Some(21),
+    doc: indoc! {"
+      Concatenates an array containing values and arrays into a single flattened array.
+    "},
+    examples: Examples::new(&[
+      r#" std.flattenDeepArray([2, [4, [6]]]) == [2, 4, 6] "#,
+      indoc! {r#"
+        std.flattenDeepArray([[1, 2], [], [3, [4]], [[5, 6, [null]], [7, 8]]])
+          == [1, 2, 3, 4, 5, 6, null, 7, 8]
+      "#},
     ]),
   },
   Fn {
@@ -2429,6 +2501,97 @@ pub const FNS: [Fn; 133] = [
       "std.avg([1, 3]) == 2",
       "std.avg([2, 4, 6, 5, 6, 7]) == 5",
       "std.avg([1, 2]) == 1.5",
+    ]),
+  },
+  Fn {
+    name: S::new("minArray"),
+    implemented: false,
+    sig: sig(&[ARR_ANY, KEY_F, ON_EMPTY], Ty::Any),
+    total: true,
+    available_since: Some(21),
+    doc: indoc! {"
+      Returns the minimum of all elements in `arr`.
+
+      If `keyF` is provided, it is called on each element of the array and should return a
+      comparator value, and in this case `maxArray` will return an element with the minimum
+      comparator value.
+
+      If `onEmpty` is provided, and `arr` is empty, then `maxArray` will return the provided
+      `onEmpty` value.
+
+      If `onEmpty` is not provided, then an empty `arr` will raise an error.
+    "},
+    examples: Examples::new(&[
+      r#" std.minArray([1, 4, 3]) == 1 "#,
+      r#" std.minArray([], onEmpty=2) == 2 "#,
+    ]),
+  },
+  Fn {
+    name: S::new("maxArray"),
+    implemented: false,
+    sig: sig(&[ARR_ANY, KEY_F, ON_EMPTY], Ty::Any),
+    total: true,
+    available_since: Some(21),
+    doc: indoc! {"
+      Returns the maximum of all elements in `arr`.
+
+      If `keyF` is provided, it is called on each element of the array and should return a
+      comparator value, and in this case `maxArray` will return an element with the maximum
+      comparator value.
+
+      If `onEmpty` is provided, and `arr` is empty, then `maxArray` will return the provided
+      `onEmpty` value.
+
+      If `onEmpty` is not provided, then an empty `arr` will raise an error.
+    "},
+    examples: Examples::new(&[
+      r#" std.maxArray([1, 4, 3]) == 4 "#,
+      r#" std.maxArray([], onEmpty=2) == 2 "#,
+    ]),
+  },
+  Fn {
+    name: S::new("contains"),
+    implemented: false,
+    sig: sig(&[req("arr", Ty::ArrAny), req("elem", Ty::Any)], Ty::Bool),
+    total: true,
+    available_since: Some(21),
+    doc: indoc! {"
+      Returns whether `arr` contains `elem`.
+    "},
+    examples: Examples::new(&[
+      r#" std.contains([7, 1, 5], 1) "#,
+      r#" std.contains([2, 3, 2, 4], 2) "#,
+      r#" !std.contains([4, 6], 5) "#,
+      r#" !std.contains([], 3) "#,
+    ]),
+  },
+  Fn {
+    name: S::new("remove"),
+    implemented: false,
+    sig: sig(&[ARR_ANY, req("elem", Ty::Any)], Ty::ArrAny),
+    total: true,
+    available_since: Some(21),
+    doc: indoc! {"
+      Removes the first occurrence of `elem` from `arr`.
+    "},
+    examples: Examples::new(&[
+      r#" std.remove([1, 2, 3], 2) == [1, 3] "#,
+      r#" std.remove([4, 2, 5, 2], 2) == [4, 5, 2] "#,
+      r#" std.remove([6, 7], 2) == [6, 7] "#,
+    ]),
+  },
+  Fn {
+    name: S::new("removeAt"),
+    implemented: false,
+    sig: sig(&[ARR_ANY, req("idx", Ty::Num)], Ty::ArrAny),
+    total: true,
+    available_since: Some(21),
+    doc: indoc! {"
+      Removes the element at the index `idx` from `arr`.
+    "},
+    examples: Examples::new(&[
+      r#" std.removeAt([1, 2, 3], 2) == [1, 2] "#,
+      r#" std.removeAt([4, 8, 3, 9], 1) == [4, 3, 9] "#,
     ]),
   },
   Fn {
@@ -2596,11 +2759,91 @@ pub const FNS: [Fn; 133] = [
     total: true,
     available_since: Some(10),
     doc: indoc! {"
-      Encodes the given value into an MD5 string.
+      Returns the MD5 hash of the string.
     "},
     examples: Examples::new(&[
       r#" std.md5("hello world") == "5eb63bbbe01eeed093cb22bb8f5acdc3" "#,
       r#" std.md5("") == "d41d8cd98f00b204e9800998ecf8427e" "#,
+    ]),
+  },
+  Fn {
+    name: S::new("sha1"),
+    implemented: false,
+    sig: HASH,
+    total: true,
+    available_since: Some(21),
+    doc: indoc! {"
+      Returns the SHA1 hash of the string.
+    "},
+    examples: Examples::new(&[
+      indoc! {r#"
+        std.sha1("hi")
+          == "c22b5f9178342609428d6f51b2c5af4c0bde6a42"
+      "#},
+      indoc! {r#"
+        std.sha1("bye")
+          == "78c9a53e2f28b543ea62c8266acfdf36d5c63e61"
+      "#},
+    ]),
+  },
+  Fn {
+    name: S::new("sha256"),
+    implemented: false,
+    sig: HASH,
+    total: true,
+    available_since: Some(21),
+    doc: indoc! {"
+      Returns the SHA256 hash of the string.
+    "},
+    examples: Examples::new(&[
+      indoc! {r#"
+        std.sha256("hi")
+          == "8f434346648f6b96df89dda901c5176b10a6d83961dd3c1ac88b59b2dc327aa4"
+      "#},
+      indoc! {r#"
+        std.sha256("bye")
+          == "b49f425a7e1f9cff3856329ada223f2f9d368f15a00cf48df16ca95986137fe8"
+      "#},
+    ]),
+  },
+  Fn {
+    name: S::new("sha3"),
+    implemented: false,
+    sig: HASH,
+    total: true,
+    available_since: Some(21),
+    doc: indoc! {"
+      Returns the SHA3 hash of the string.
+    "},
+    examples: Examples::new(&[
+      indoc! {r#"
+        std.sha3("hi")
+          == "154013cb8140c753f0ac358da6110fe237481b26c75c3ddc1b59eaf9dd7b46a0a3aeb2cef164b3c82d65b38a4e26ea9930b7b2cb3c01da4ba331c95e62ccb9c3"
+      "#},
+      indoc! {r#"
+        std.sha3("bye")
+          == "22a7f800888da03800c5078d7116eacc78b0c75ae07b06c36e99a619eed763bcbe753dc7eab6a3bb2295b4ab52f793ccefa86b21386df476b9bf02dde9c4f12f"
+      "#},
+    ]),
+  },
+  Fn {
+    name: S::new("sha512"),
+    implemented: false,
+    sig: HASH,
+    total: true,
+    available_since: Some(21),
+    doc: indoc! {"
+      Returns the SHA3 hash of the string.
+    "},
+    examples: Examples::new(&[
+      indoc! {r#"
+        std.sha512("hi")
+          == "150a14ed5bea6cc731cf86c41566ac427a8db48ef1b9fd626664b3bfbb99071fa4c922f33dde38719b8c8354e2b7ab9d77e0e67fc12843920a712e73d558e197"
+      "#},
+      indoc! {r#"
+        std.sha512("bye")
+          == "23c9dee78e969bb483fdae563d681af010b77748dfbd959422abb792fa454db8e3d9cb4e1a3224066b349465f09a710d025e856db19da25d55c3928abef17c8c"
+      "#},
     ]),
   },
   Fn {
@@ -2712,6 +2955,22 @@ pub const FNS: [Fn; 133] = [
       "std.equals(1 + 1, 2)",
       "std.equals('train' + 'ing', 'training')",
       "!std.equals(2 + 2, 5)",
+    ]),
+  },
+  Fn {
+    name: S::new("equalsIgnoreCase"),
+    implemented: false,
+    sig: sig(&[req("str1", Ty::Str), req("str2", Ty::Str)], Ty::Bool),
+    total: true,
+    available_since: Some(21),
+    doc: indoc! {"
+      Returns whether the strings are equal via case-insensitive comparison.
+    "},
+    examples: Examples::new(&[
+      r#" std.equalsIgnoreCase("hi", "hi") "#,
+      r#" std.equalsIgnoreCase("hello", "HeLLo") "#,
+      r#" std.equalsIgnoreCase("hey", "HEY") "#,
+      r#" !std.equalsIgnoreCase("hi", "bye") "#,
     ]),
   },
   Fn {

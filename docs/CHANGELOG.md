@@ -2,6 +2,25 @@
 
 Things under "main" are not released yet.
 
+## main
+
+Add types for the following functions:
+
+- `std.contains`
+- `std.deepJoin`
+- `std.equalsIgnoreCase`
+- `std.flattenDeepArray`
+- `std.maxArray`
+- `std.minArray`
+- `std.objectRemoveKey`
+- `std.remove`
+- `std.removeAt`
+- `std.sha1`
+- `std.sha256`
+- `std.sha3`
+- `std.sha512`
+- `std.trim`
+
 ## v0.9.6
 
 - Support `|||-` text block syntax which removes the final newline.
