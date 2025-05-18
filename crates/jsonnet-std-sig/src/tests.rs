@@ -22,4 +22,9 @@ fn ok() {
       );
     }
   }
+
+  for f in super::FIELDS {
+    assert!(ident.insert(f.name.ident()), "duplicate ident: {}", f.name.ident());
+    assert!(content.insert(f.name.content()), "duplicate content: {}", f.name.content());
+  }
 }
