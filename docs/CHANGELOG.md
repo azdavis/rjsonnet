@@ -2,7 +2,7 @@
 
 Things under "main" are not released yet.
 
-## main
+## v0.9.7
 
 Add types for the following functions:
 
