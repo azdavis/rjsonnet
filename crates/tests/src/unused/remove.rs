@@ -381,6 +381,7 @@ local bar = "oops";
     .add("f.jsonnet")
     .check();
 }
+
 #[test]
 #[should_panic = "should remove unused"]
 fn obj() {
