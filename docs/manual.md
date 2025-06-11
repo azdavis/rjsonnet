@@ -1,5 +1,17 @@
 # Manual
 
+## CLI
+
+rjsonnet is usually used via the language server extension, but there is also a CLI.
+
+The CLI takes in a list of filenames, and outputs warnings and errors (if any).
+
+### Removing unused variables
+
+The CLI can also remove unused `local` variables with the `--rm-unused <flavor>` option. `<flavor>` can be `all` or `imports`. When `all`, it will remove all; when `imports`, it will only remove `local`s whose RHS is an `import`, `importstr`, or `importbin` expression.
+
+There is also the `--rm-unused-comments` option to modify how comments nearby unused locals are treated. This may be `none` (default), `all`, `above`, or `below`. 'Nearby' means there are no intervening blank lines between the `local` and the comment.
+
 ## Config
 
 You can configure the extension with some options.
