@@ -234,69 +234,10 @@ impl fmt::Display for Display<'_> {
         let id = id.display(self.str_ar);
         write!(f, "extra named argument: `{id}`")
       }
-      Kind::Unify(u) => match u {
-        Unify::Incompatible(want, got) => {
-          f.write_str("incompatible types")?;
-          let ef = ExpectedFound {
-            expected: Backticks(want.display(Style::Short, self.store, None, self.str_ar)),
-            extra: NONE,
-            found: Backticks(got.display(Style::Short, self.store, None, self.str_ar)),
-            style: self.style,
-          };
-          ef.fmt(f)
-        }
-        Unify::NoSuchField(no_such, suggest) => {
-          write!(f, "no such field: `{}`", self.str_ar.get(*no_such))?;
-          if let Some(suggest) = suggest {
-            match self.style {
-              Style::Short => f.write_str("; ")?,
-              Style::Long => f.write_str("\n ")?,
-            }
-            write!(f, "did you mean: `{suggest}`?")?;
-          }
-          Ok(())
-        }
-        Unify::NotEnoughParams(want, got) => {
-          f.write_str("not enough parameters")?;
-          let ef = ExpectedFound {
-            expected: AtLeast(*want),
-            extra: NONE,
-            found: UpTo(*got),
-            style: self.style,
-          };
-          ef.fmt(f)
-        }
-        Unify::WrongNumTupleElem(want, got) => {
-          f.write_str("wrong number of tuple elements")?;
-          let ef = ExpectedFound { expected: *want, extra: NONE, found: *got, style: self.style };
-          ef.fmt(f)
-        }
-        Unify::MismatchedParamNames(want, got) => {
-          f.write_str("mismatched parameter names")?;
-          let ef = ExpectedFound {
-            expected: Backticks(want.display(self.str_ar)),
-            extra: NONE,
-            found: Backticks(got.display(self.str_ar)),
-            style: self.style,
-          };
-          ef.fmt(f)
-        }
-        Unify::WantOptionalParamGotRequired(id) => {
-          let id = id.display(self.str_ar);
-          write!(f, "mismatched parameter optionality: `{id}`")?;
-          let ef = ExpectedFound {
-            expected: "an optional parameter",
-            extra: NONE,
-            found: "a required parameter",
-            style: self.style,
-          };
-          ef.fmt(f)
-        }
-        Unify::ExtraRequiredParam(id) => {
-          let id = id.display(self.str_ar);
-          write!(f, "extra required parameter: `{id}`")
-        }
-      },
+      Kind::Unify(unify) => {
+        let d = UnifyDisplay { unify, style: self.style, store: self.store, str_ar: self.str_ar };
+        d.fmt(f)
+      }
       Kind::Invalid(ty, inv) => match inv {
         Invalid::OrdCmp(rhs) => {
           f.write_str("invalid comparison")?;
@@ -401,6 +342,81 @@ impl fmt::Display for Display<'_> {
           write!(f, "did you mean: `{suggest}`?")?;
         }
         Ok(())
+      }
+    }
+  }
+}
+
+struct UnifyDisplay<'a> {
+  unify: &'a Unify,
+  style: ty::display::Style,
+  store: &'a ty::GlobalStore,
+  str_ar: &'a jsonnet_expr::StrArena,
+}
+
+impl fmt::Display for UnifyDisplay<'_> {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    match self.unify {
+      Unify::Incompatible(want, got) => {
+        f.write_str("incompatible types")?;
+        let ef = ExpectedFound {
+          expected: Backticks(want.display(Style::Short, self.store, None, self.str_ar)),
+          extra: NONE,
+          found: Backticks(got.display(Style::Short, self.store, None, self.str_ar)),
+          style: self.style,
+        };
+        ef.fmt(f)
+      }
+      Unify::NoSuchField(no_such, suggest) => {
+        write!(f, "no such field: `{}`", self.str_ar.get(*no_such))?;
+        if let Some(suggest) = suggest {
+          match self.style {
+            Style::Short => f.write_str("; ")?,
+            Style::Long => f.write_str("\n ")?,
+          }
+          write!(f, "did you mean: `{suggest}`?")?;
+        }
+        Ok(())
+      }
+      Unify::NotEnoughParams(want, got) => {
+        f.write_str("not enough parameters")?;
+        let ef = ExpectedFound {
+          expected: AtLeast(*want),
+          extra: NONE,
+          found: UpTo(*got),
+          style: self.style,
+        };
+        ef.fmt(f)
+      }
+      Unify::WrongNumTupleElem(want, got) => {
+        f.write_str("wrong number of tuple elements")?;
+        let ef = ExpectedFound { expected: *want, extra: NONE, found: *got, style: self.style };
+        ef.fmt(f)
+      }
+      Unify::MismatchedParamNames(want, got) => {
+        f.write_str("mismatched parameter names")?;
+        let ef = ExpectedFound {
+          expected: Backticks(want.display(self.str_ar)),
+          extra: NONE,
+          found: Backticks(got.display(self.str_ar)),
+          style: self.style,
+        };
+        ef.fmt(f)
+      }
+      Unify::WantOptionalParamGotRequired(id) => {
+        let id = id.display(self.str_ar);
+        write!(f, "mismatched parameter optionality: `{id}`")?;
+        let ef = ExpectedFound {
+          expected: "an optional parameter",
+          extra: NONE,
+          found: "a required parameter",
+          style: self.style,
+        };
+        ef.fmt(f)
+      }
+      Unify::ExtraRequiredParam(id) => {
+        let id = id.display(self.str_ar);
+        write!(f, "extra required parameter: `{id}`")
       }
     }
   }
