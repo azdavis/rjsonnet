@@ -25,7 +25,7 @@ impl Error {
     store: &'a ty::GlobalStore,
     str_ar: &'a jsonnet_expr::StrArena,
   ) -> impl fmt::Display {
-    Display { style, kind: &self.kind, store, str_ar }
+    Display { kind: &self.kind, cx: DisplayCx { style, store, str_ar } }
   }
 
   /// Returns the expr this error is for.
@@ -184,20 +184,25 @@ pub(crate) enum Invalid {
   Add(ty::Ty),
 }
 
-struct Display<'a> {
-  kind: &'a Kind,
+#[derive(Debug, Clone, Copy)]
+struct DisplayCx<'a> {
   style: Style,
   store: &'a ty::GlobalStore,
   str_ar: &'a jsonnet_expr::StrArena,
+}
+
+struct Display<'a> {
+  kind: &'a Kind,
+  cx: DisplayCx<'a>,
 }
 
 impl fmt::Display for Display<'_> {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     match &self.kind {
       Kind::UndefinedVar(id, suggest) => {
-        write!(f, "undefined variable: `{}`", id.display(self.str_ar))?;
+        write!(f, "undefined variable: `{}`", id.display(self.cx.str_ar))?;
         if let Some(suggest) = suggest {
-          match self.style {
+          match self.cx.style {
             Style::Short => f.write_str("; ")?,
             Style::Long => f.write_str("\n      ")?,
           }
@@ -205,25 +210,25 @@ impl fmt::Display for Display<'_> {
         }
         Ok(())
       }
-      Kind::DuplicateField(s) => write!(f, "duplicate field: `{}`", self.str_ar.get(*s)),
+      Kind::DuplicateField(s) => write!(f, "duplicate field: `{}`", self.cx.str_ar.get(*s)),
       Kind::DuplicateNamedArg(id) => {
-        write!(f, "duplicate named argument: `{}`", id.display(self.str_ar))
+        write!(f, "duplicate named argument: `{}`", id.display(self.cx.str_ar))
       }
       Kind::DuplicateVar(id, _, _) => {
-        write!(f, "duplicate variable: `{}`", id.display(self.str_ar))
+        write!(f, "duplicate variable: `{}`", id.display(self.cx.str_ar))
       }
       Kind::UnusedVar(id, _) => {
-        write!(f, "unused variable: `{}`", id.display(self.str_ar))?;
-        match self.style {
+        write!(f, "unused variable: `{}`", id.display(self.cx.str_ar))?;
+        match self.cx.style {
           Style::Short => Ok(()),
           Style::Long => f.write_str("\n  note: prefix the var with `_` to silence this warning"),
         }
       }
       Kind::MissingArg(id, ty) => {
-        let id = id.display(self.str_ar);
-        let ty = ty.display(Style::Short, self.store, None, self.str_ar);
+        let id = id.display(self.cx.str_ar);
+        let ty = ty.display(Style::Short, self.cx.store, None, self.cx.str_ar);
         write!(f, "missing argument: `{id}`")?;
-        match self.style {
+        match self.cx.style {
           Style::Short => f.write_str(" ")?,
           Style::Long => f.write_str("\n       ")?,
         }
@@ -231,26 +236,26 @@ impl fmt::Display for Display<'_> {
       }
       Kind::ExtraPositionalArg(n) => write!(f, "extra positional argument: {n}"),
       Kind::ExtraNamedArg(id) => {
-        let id = id.display(self.str_ar);
+        let id = id.display(self.cx.str_ar);
         write!(f, "extra named argument: `{id}`")
       }
       Kind::Unify(unify) => {
-        let d = UnifyDisplay { unify, style: self.style, store: self.store, str_ar: self.str_ar };
+        let d = UnifyDisplay { unify, cx: self.cx };
         d.fmt(f)
       }
       Kind::Invalid(ty, inv) => match inv {
         Invalid::OrdCmp(rhs) => {
           f.write_str("invalid comparison")?;
-          match self.style {
+          match self.cx.style {
             Style::Short => {}
             Style::Long => f.write_str(", i.e. use of `<`, `>=`, etc")?,
           }
           let elr = ExpectedLeftRight {
             expected: "comparable types",
             extra: "i.e. both `number`, both `string`, etc",
-            left: Backticks(ty.display(Style::Short, self.store, None, self.str_ar)),
-            right: Backticks(rhs.display(Style::Short, self.store, None, self.str_ar)),
-            style: self.style,
+            left: Backticks(ty.display(Style::Short, self.cx.store, None, self.cx.str_ar)),
+            right: Backticks(rhs.display(Style::Short, self.cx.store, None, self.cx.str_ar)),
+            style: self.cx.style,
           };
           elr.fmt(f)
         }
@@ -259,9 +264,9 @@ impl fmt::Display for Display<'_> {
           let elr = ExpectedLeftRight {
             expected: "equatable types",
             extra: "i.e. anything exception `function`",
-            left: Backticks(ty.display(Style::Short, self.store, None, self.str_ar)),
-            right: Backticks(rhs.display(Style::Short, self.store, None, self.str_ar)),
-            style: self.style,
+            left: Backticks(ty.display(Style::Short, self.cx.store, None, self.cx.str_ar)),
+            right: Backticks(rhs.display(Style::Short, self.cx.store, None, self.cx.str_ar)),
+            style: self.cx.style,
           };
           elr.fmt(f)
         }
@@ -270,22 +275,22 @@ impl fmt::Display for Display<'_> {
           let ef = ExpectedFound {
             expected: "a callable type",
             extra: Some("e.g. `function`"),
-            found: Backticks(ty.display(Style::Short, self.store, None, self.str_ar)),
-            style: self.style,
+            found: Backticks(ty.display(Style::Short, self.cx.store, None, self.cx.str_ar)),
+            style: self.cx.style,
           };
           ef.fmt(f)
         }
         Invalid::Subscript => {
           f.write_str("invalid subscript")?;
-          match self.style {
+          match self.cx.style {
             Style::Short => {}
             Style::Long => f.write_str(", i.e. use of `[]` or `.`")?,
           }
           let ef = ExpectedFound {
             expected: "a type with fields or elements",
             extra: Some("i.e. `array[any]`, `object`, `string`"),
-            found: Backticks(ty.display(Style::Short, self.store, None, self.str_ar)),
-            style: self.style,
+            found: Backticks(ty.display(Style::Short, self.cx.store, None, self.cx.str_ar)),
+            style: self.cx.style,
           };
           ef.fmt(f)
         }
@@ -294,8 +299,8 @@ impl fmt::Display for Display<'_> {
           let ef = ExpectedFound {
             expected: "a type with length",
             extra: Some("e.g. `array[any]`, `object`, `string`, `function`"),
-            found: Backticks(ty.display(Style::Short, self.store, None, self.str_ar)),
-            style: self.style,
+            found: Backticks(ty.display(Style::Short, self.cx.store, None, self.cx.str_ar)),
+            style: self.cx.style,
           };
           ef.fmt(f)
         }
@@ -304,9 +309,9 @@ impl fmt::Display for Display<'_> {
           let elr = ExpectedLeftRight {
             expected: "addable types",
             extra: "e.g. `number`, `string`, `object`, `array[any]`",
-            left: Backticks(ty.display(Style::Short, self.store, None, self.str_ar)),
-            right: Backticks(rhs.display(Style::Short, self.store, None, self.str_ar)),
-            style: self.style,
+            left: Backticks(ty.display(Style::Short, self.cx.store, None, self.cx.str_ar)),
+            right: Backticks(rhs.display(Style::Short, self.cx.store, None, self.cx.str_ar)),
+            style: self.cx.style,
           };
           elr.fmt(f)
         }
@@ -319,7 +324,7 @@ impl fmt::Display for Display<'_> {
           expected: IdxInRange(*len),
           extra: NONE,
           found: Backticks(idx),
-          style: self.style,
+          style: self.cx.style,
         };
         ef.fmt(f)
       }
@@ -328,14 +333,14 @@ impl fmt::Display for Display<'_> {
       }
       Kind::FormatWrongCount(want, got) => {
         f.write_str("wrong number of format arguments")?;
-        let ef = ExpectedFound { expected: *want, extra: NONE, found: *got, style: self.style };
+        let ef = ExpectedFound { expected: *want, extra: NONE, found: *got, style: self.cx.style };
         ef.fmt(f)
       }
       Kind::FormatMissingMappingKey => f.write_str("format specifier missing object field name"),
       Kind::FormatNoSuchField(field, suggest) => {
         write!(f, "no such field: `{field}`")?;
         if let Some(suggest) = suggest {
-          match self.style {
+          match self.cx.style {
             Style::Short => f.write_str("; ")?,
             Style::Long => f.write_str("\n ")?,
           }
@@ -349,9 +354,7 @@ impl fmt::Display for Display<'_> {
 
 struct UnifyDisplay<'a> {
   unify: &'a Unify,
-  style: Style,
-  store: &'a ty::GlobalStore,
-  str_ar: &'a jsonnet_expr::StrArena,
+  cx: DisplayCx<'a>,
 }
 
 impl fmt::Display for UnifyDisplay<'_> {
@@ -360,17 +363,17 @@ impl fmt::Display for UnifyDisplay<'_> {
       Unify::Incompatible(want, got) => {
         f.write_str("incompatible types")?;
         let ef = ExpectedFound {
-          expected: Backticks(want.display(Style::Short, self.store, None, self.str_ar)),
+          expected: Backticks(want.display(Style::Short, self.cx.store, None, self.cx.str_ar)),
           extra: NONE,
-          found: Backticks(got.display(Style::Short, self.store, None, self.str_ar)),
-          style: self.style,
+          found: Backticks(got.display(Style::Short, self.cx.store, None, self.cx.str_ar)),
+          style: self.cx.style,
         };
         ef.fmt(f)
       }
       Unify::NoSuchField(no_such, suggest) => {
-        write!(f, "no such field: `{}`", self.str_ar.get(*no_such))?;
+        write!(f, "no such field: `{}`", self.cx.str_ar.get(*no_such))?;
         if let Some(suggest) = suggest {
-          match self.style {
+          match self.cx.style {
             Style::Short => f.write_str("; ")?,
             Style::Long => f.write_str("\n ")?,
           }
@@ -384,38 +387,38 @@ impl fmt::Display for UnifyDisplay<'_> {
           expected: AtLeast(*want),
           extra: NONE,
           found: UpTo(*got),
-          style: self.style,
+          style: self.cx.style,
         };
         ef.fmt(f)
       }
       Unify::WrongNumTupleElem(want, got) => {
         f.write_str("wrong number of tuple elements")?;
-        let ef = ExpectedFound { expected: *want, extra: NONE, found: *got, style: self.style };
+        let ef = ExpectedFound { expected: *want, extra: NONE, found: *got, style: self.cx.style };
         ef.fmt(f)
       }
       Unify::MismatchedParamNames(want, got) => {
         f.write_str("mismatched parameter names")?;
         let ef = ExpectedFound {
-          expected: Backticks(want.display(self.str_ar)),
+          expected: Backticks(want.display(self.cx.str_ar)),
           extra: NONE,
-          found: Backticks(got.display(self.str_ar)),
-          style: self.style,
+          found: Backticks(got.display(self.cx.str_ar)),
+          style: self.cx.style,
         };
         ef.fmt(f)
       }
       Unify::WantOptionalParamGotRequired(id) => {
-        let id = id.display(self.str_ar);
+        let id = id.display(self.cx.str_ar);
         write!(f, "mismatched parameter optionality: `{id}`")?;
         let ef = ExpectedFound {
           expected: "an optional parameter",
           extra: NONE,
           found: "a required parameter",
-          style: self.style,
+          style: self.cx.style,
         };
         ef.fmt(f)
       }
       Unify::ExtraRequiredParam(id) => {
-        let id = id.display(self.str_ar);
+        let id = id.display(self.cx.str_ar);
         write!(f, "extra required parameter: `{id}`")
       }
     }
