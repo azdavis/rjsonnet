@@ -83,16 +83,16 @@ impl Error {
   ///
   /// NOTE: no need to apply an expr subst because we run statics after combining the per-file
   /// syntax artifacts.
-  pub fn apply(&mut self, ty_subst: &ty::Subst) {
+  pub fn apply(&mut self, subst: &ty::Subst) {
     match &mut self.kind {
       Kind::MissingArg(_, ty)
       | Kind::Invalid(ty, Invalid::Call | Invalid::Length | Invalid::Subscript) => {
-        ty.apply(ty_subst);
+        ty.apply(subst);
       }
-      Kind::Unify(u) => u.apply(ty_subst),
+      Kind::Unify(u) => u.apply(subst),
       Kind::Invalid(a, Invalid::Add(b) | Invalid::Eq(b) | Invalid::OrdCmp(b)) => {
-        a.apply(ty_subst);
-        b.apply(ty_subst);
+        a.apply(subst);
+        b.apply(subst);
       }
       Kind::UndefinedVar(_, _)
       | Kind::DuplicateNamedArg(_)
@@ -137,11 +137,11 @@ impl Unify {
     Some(Self::NoSuchField(no_such, suggest))
   }
 
-  fn apply(&mut self, ty_subst: &ty::Subst) {
+  fn apply(&mut self, subst: &ty::Subst) {
     match self {
       Unify::Incompatible(a, b) => {
-        a.apply(ty_subst);
-        b.apply(ty_subst);
+        a.apply(subst);
+        b.apply(subst);
       }
       Unify::WantOptionalParamGotRequired(_)
       | Unify::ExtraRequiredParam(_)
