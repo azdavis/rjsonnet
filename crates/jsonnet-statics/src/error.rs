@@ -186,7 +186,7 @@ pub(crate) enum Invalid {
 
 struct Display<'a> {
   kind: &'a Kind,
-  style: ty::display::Style,
+  style: Style,
   store: &'a ty::GlobalStore,
   str_ar: &'a jsonnet_expr::StrArena,
 }
@@ -349,7 +349,7 @@ impl fmt::Display for Display<'_> {
 
 struct UnifyDisplay<'a> {
   unify: &'a Unify,
-  style: ty::display::Style,
+  style: Style,
   store: &'a ty::GlobalStore,
   str_ar: &'a jsonnet_expr::StrArena,
 }
