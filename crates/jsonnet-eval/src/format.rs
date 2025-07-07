@@ -33,19 +33,19 @@ fn get_one(
   name: &Name,
 ) -> Result<Str> {
   let cflags = &code.cflags;
-  let fpprec = prec.unwrap_or(6);
-  let iprec = prec.unwrap_or_default();
+  let fp_prec = prec.unwrap_or(6);
+  let i_prec = prec.unwrap_or_default();
   let zp = if cflags.zero && !cflags.left { fw } else { 0 };
   match code.ctype {
     ConvType::D => {
       let Val::Prim(Prim::Number(val)) = val else { todo!("type error") };
       let val = val.value();
-      get_int(cx, val <= -1.0, abs_floor(val), zp, iprec, cflags.blank, cflags.plus, 10, false)
+      get_int(cx, val <= -1.0, abs_floor(val), zp, i_prec, cflags.blank, cflags.plus, 10, false)
     }
     ConvType::O => {
       let Val::Prim(Prim::Number(val)) = val else { todo!("type error") };
       let val = val.value();
-      get_int(cx, val <= -1.0, abs_floor(val), zp, iprec, cflags.blank, cflags.plus, 8, cflags.alt)
+      get_int(cx, val <= -1.0, abs_floor(val), zp, i_prec, cflags.blank, cflags.plus, 8, cflags.alt)
     }
     ConvType::X(case) => {
       let Val::Prim(Prim::Number(val)) = val else { todo!("type error") };
@@ -63,7 +63,7 @@ fn get_one(
       }
       let neg = val_floor < 0;
       let zero_pad_len = std::cmp::max(
-        iprec,
+        i_prec,
         zp - usize::from(neg || cflags.blank || cflags.plus) - (if cflags.alt { 2 } else { 0 }),
       );
       while cs.len() < zero_pad_len {
@@ -90,19 +90,19 @@ fn get_one(
     ConvType::E(case) => {
       let Val::Prim(Prim::Number(val)) = val else { todo!("type error") };
       let val = val.value();
-      get_float_sci(val, zp, cflags.blank, cflags.plus, cflags.alt, true, case, fpprec)
+      get_float_sci(val, zp, cflags.blank, cflags.plus, cflags.alt, true, case, fp_prec)
     }
     ConvType::F(case) => {
       let Val::Prim(Prim::Number(val)) = val else { todo!("type error") };
       let val = val.value();
-      get_float_dec(val, zp, cflags.blank, cflags.plus, cflags.alt, true, fpprec)
+      get_float_dec(val, zp, cflags.blank, cflags.plus, cflags.alt, true, fp_prec)
     }
     ConvType::G(case) => {
       let Val::Prim(Prim::Number(val)) = val else { todo!("type error") };
       let val = val.value();
       let exponent = if val == 0.0 { 0 } else { f64_to_isize(val.abs().log10().floor()) };
-      if exponent < -4 || usize::try_from(exponent).is_ok_and(|e| e >= fpprec) {
-        get_float_sci(val, zp, cflags.blank, cflags.plus, cflags.alt, cflags.alt, case, fpprec - 1)
+      if exponent < -4 || usize::try_from(exponent).is_ok_and(|e| e >= fp_prec) {
+        get_float_sci(val, zp, cflags.blank, cflags.plus, cflags.alt, cflags.alt, case, fp_prec - 1)
       } else {
         let digits_before_pt = std::cmp::max(1isize, exponent + 1);
         get_float_dec(
@@ -112,7 +112,7 @@ fn get_one(
           cflags.plus,
           cflags.alt,
           cflags.alt,
-          isize_to_usize(usize_to_isize(fpprec) - digits_before_pt),
+          isize_to_usize(usize_to_isize(fp_prec) - digits_before_pt),
         )
       }
     }
@@ -135,7 +135,7 @@ fn get_float_dec(
   plus: bool,
   alt: bool,
   arg: bool,
-  fpprec: usize,
+  fp_prec: usize,
 ) -> Result<Str> {
   todo!()
 }
