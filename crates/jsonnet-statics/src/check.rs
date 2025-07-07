@@ -478,7 +478,9 @@ fn define_binds(
 
 fn undefine(st: &mut st::St<'_>, ar: &ExprArena, id: Id) {
   let Some(ed) = st.scope.undefine(id) else { return };
-  if !id.is_unutterable() && is_actually_unused(st, ar, ed) {
+  let should_emit =
+    !id.is_unutterable() && !id.starts_with_underscore(st.str_ar) && is_actually_unused(st, ar, ed);
+  if should_emit {
     st.err(ed.expr, error::Kind::UnusedVar(id, ed.kind));
   }
 }

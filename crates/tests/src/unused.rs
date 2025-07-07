@@ -180,3 +180,15 @@ fn object_comp_extra_local() {
   )
   .check();
 }
+
+#[test]
+fn underscore_ok() {
+  JsonnetInput::manifest(
+    r#"
+local _no = 1;
+2
+"#,
+    "2",
+  )
+  .check();
+}

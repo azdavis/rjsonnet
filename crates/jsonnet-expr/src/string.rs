@@ -156,6 +156,17 @@ impl Id {
     }
   }
 
+  #[must_use]
+  pub fn starts_with_underscore(&self, ar: &StrArena) -> bool {
+    match self.0 {
+      IdRepr::Str(s) => match s.0 {
+        StrRepr::Builtin(_) => false,
+        StrRepr::Idx(idx) => ar.get(Str(StrRepr::Idx(idx))).starts_with('_'),
+      },
+      IdRepr::Unutterable(_) => false,
+    }
+  }
+
   pub(crate) const fn builtin(bs: BuiltinStr) -> Self {
     Self(IdRepr::Str(Str(StrRepr::Builtin(bs))))
   }

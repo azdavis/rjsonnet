@@ -212,7 +212,13 @@ impl fmt::Display for Display<'_> {
       Kind::DuplicateVar(id, _, _) => {
         write!(f, "duplicate variable: `{}`", id.display(self.str_ar))
       }
-      Kind::UnusedVar(id, _) => write!(f, "unused variable: `{}`", id.display(self.str_ar)),
+      Kind::UnusedVar(id, _) => {
+        write!(f, "unused variable: `{}`", id.display(self.str_ar))?;
+        match self.style {
+          Style::Short => Ok(()),
+          Style::Long => f.write_str("\n  note: prefix the var with `_` to silence this warning"),
+        }
+      }
       Kind::MissingArg(id, ty) => {
         let id = id.display(self.str_ar);
         let ty = ty.display(Style::Short, self.store, None, self.str_ar);
