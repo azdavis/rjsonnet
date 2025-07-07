@@ -185,8 +185,8 @@ pub(crate) enum Invalid {
 }
 
 struct Display<'a> {
-  style: ty::display::Style,
   kind: &'a Kind,
+  style: ty::display::Style,
   store: &'a ty::GlobalStore,
   str_ar: &'a jsonnet_expr::StrArena,
 }
