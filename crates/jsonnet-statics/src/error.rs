@@ -89,8 +89,8 @@ impl Error {
       | Kind::Invalid(ty, Invalid::Call | Invalid::Length | Invalid::Subscript) => {
         ty.apply(ty_subst);
       }
-      Kind::Unify(Unify::Incompatible(a, b))
-      | Kind::Invalid(a, Invalid::Add(b) | Invalid::Eq(b) | Invalid::OrdCmp(b)) => {
+      Kind::Unify(u) => u.apply(ty_subst),
+      Kind::Invalid(a, Invalid::Add(b) | Invalid::Eq(b) | Invalid::OrdCmp(b)) => {
         a.apply(ty_subst);
         b.apply(ty_subst);
       }
@@ -101,14 +101,6 @@ impl Error {
       | Kind::ExtraNamedArg(_)
       | Kind::DuplicateField(_)
       | Kind::ExtraPositionalArg(_)
-      | Kind::Unify(
-        Unify::WantOptionalParamGotRequired(_)
-        | Unify::ExtraRequiredParam(_)
-        | Unify::NoSuchField(_, _)
-        | Unify::MismatchedParamNames(_, _)
-        | Unify::NotEnoughParams(_, _)
-        | Unify::WrongNumTupleElem(_, _),
-      )
       | Kind::AddSets
       | Kind::Unreachable
       | Kind::NoSuchTupleIdx(_, _)
@@ -143,6 +135,21 @@ impl Unify {
     }
     let suggest = suggestion::approx(str_ar.get(no_such), obj.known.keys().map(|&x| str_ar.get(x)));
     Some(Self::NoSuchField(no_such, suggest))
+  }
+
+  fn apply(&mut self, ty_subst: &ty::Subst) {
+    match self {
+      Unify::Incompatible(a, b) => {
+        a.apply(ty_subst);
+        b.apply(ty_subst);
+      }
+      Unify::WantOptionalParamGotRequired(_)
+      | Unify::ExtraRequiredParam(_)
+      | Unify::NoSuchField(_, _)
+      | Unify::MismatchedParamNames(_, _)
+      | Unify::NotEnoughParams(_, _)
+      | Unify::WrongNumTupleElem(_, _) => {}
+    }
   }
 }
 
