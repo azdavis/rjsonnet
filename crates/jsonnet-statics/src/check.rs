@@ -373,7 +373,10 @@ fn get_subscript(
     // degenerate case
     ty::Data::Prim(ty::Prim::Any) => ty::Ty::ANY,
     // string chars (but no char type)
-    ty::Data::Prim(ty::Prim::String) => ty::Ty::STRING,
+    ty::Data::Prim(ty::Prim::String) => {
+      st.unify(idx_expr, ty::Ty::NUMBER, idx_ty);
+      ty::Ty::STRING
+    }
     // invalid
     ty::Data::Prim(_) | ty::Data::Fn(_) => {
       st.err(on.unwrap_or(expr), error::Kind::Invalid(on_ty, error::Invalid::Subscript));
