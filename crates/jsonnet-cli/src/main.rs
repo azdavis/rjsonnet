@@ -83,7 +83,7 @@ enum RmComments {
 }
 
 impl std::str::FromStr for RmComments {
-  type Err = ParseRmCommentsError;
+  type Err = InvalidError;
 
   fn from_str(s: &str) -> Result<Self, Self::Err> {
     let ret = match s {
@@ -91,18 +91,9 @@ impl std::str::FromStr for RmComments {
       "all" => Self::All,
       "above" => Self::Above,
       "below" => Self::Below,
-      _ => return Err(ParseRmCommentsError),
+      _ => return Err(InvalidError),
     };
     Ok(ret)
-  }
-}
-
-#[derive(Debug)]
-struct ParseRmCommentsError;
-
-impl fmt::Display for ParseRmCommentsError {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    f.write_str("not a valid option for rm comments")
   }
 }
 
@@ -115,6 +106,15 @@ impl RmComments {
       RmComments::Below => (false, true),
     };
     jsonnet_analyze::remove::Comments { above, below }
+  }
+}
+
+#[derive(Debug)]
+struct InvalidError;
+
+impl fmt::Display for InvalidError {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    f.write_str("invalid option, see --help")
   }
 }
 
