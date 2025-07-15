@@ -1,6 +1,5 @@
 //! A CLI for static analysis.
 
-use jsonnet_analyze::{Init, St, remove};
 use lang_srv_state::State as _;
 use paths::FileSystem as _;
 use std::{fmt, process::ExitCode};
@@ -31,7 +30,7 @@ fn main() -> ExitCode {
 }
 
 struct Args {
-  rm_unused: Option<remove::Options>,
+  rm_unused: Option<jsonnet_analyze::remove::Options>,
   quiet: bool,
   root_dirs: Option<String>,
   files: Vec<std::ffi::OsString>,
@@ -64,7 +63,7 @@ fn get_args() -> Result<Option<Args>, pico_args::Error> {
   }
   let rm_unused = args.opt_value_from_str::<_, jsonnet_analyze::remove::Flavor>("--rm-unused")?;
   let rm_comments = args.opt_value_from_str::<_, RmComments>("--rm-unused-comments")?;
-  let rm_unused = rm_unused.map(|flavor| remove::Options {
+  let rm_unused = rm_unused.map(|flavor| jsonnet_analyze::remove::Options {
     flavor,
     comments: rm_comments.unwrap_or_default().into_analysis(),
   });
@@ -108,14 +107,14 @@ impl fmt::Display for ParseRmCommentsError {
 }
 
 impl RmComments {
-  fn into_analysis(self) -> remove::Comments {
+  fn into_analysis(self) -> jsonnet_analyze::remove::Comments {
     let (above, below) = match self {
       RmComments::None => (false, false),
       RmComments::All => (true, true),
       RmComments::Above => (true, false),
       RmComments::Below => (false, true),
     };
-    remove::Comments { above, below }
+    jsonnet_analyze::remove::Comments { above, below }
   }
 }
 
@@ -136,7 +135,8 @@ fn run(args: Args) -> usize {
     p
   });
   let root_dirs: Vec<_> = root_dirs.collect();
-  let mut st = St::init(pwd.clone(), Init { root_dirs, ..Default::default() });
+  let init = jsonnet_analyze::Init { root_dirs, ..Default::default() };
+  let mut st = jsonnet_analyze::St::init(pwd.clone(), init);
   let mut ret = 0usize;
   for arg in args.files {
     let Some(arg) = arg.to_str() else {
