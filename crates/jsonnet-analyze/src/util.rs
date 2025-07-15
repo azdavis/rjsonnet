@@ -22,6 +22,8 @@ pub struct Init {
   pub style: jsonnet_ty::display::Style,
   /// How to format files, if at all.
   pub format_engine: Option<FormatEngine>,
+  /// Whether to allow unused vars if they start with an underscore.
+  pub allow_unused_underscore: bool,
 }
 
 /// How to format files, if at all.
@@ -240,12 +242,14 @@ impl StaticsFileToCombine {
     syntax: SyntaxFile,
     artifacts: &GlobalArtifacts,
     file_tys: &paths::PathMap<jsonnet_ty::Ty>,
+    allow_unused_underscore: bool,
   ) -> Self {
     let st = jsonnet_statics::st::St::new(
       &artifacts.statics,
       file_tys,
       &artifacts.syntax.strings,
       syntax.artifacts.id_counts.clone(),
+      allow_unused_underscore,
     );
     let (statics, to_combine) = jsonnet_statics::get(st, &syntax.exprs.ar, syntax.exprs.top);
     Self { file: StaticsFile { syntax, statics }, to_combine }

@@ -34,6 +34,7 @@ struct Args {
   quiet: bool,
   root_dirs: Option<String>,
   files: Vec<std::ffi::OsString>,
+  allow_unused: AllowUnused,
 }
 
 fn get_args() -> Result<Option<Args>, pico_args::Error> {
@@ -51,6 +52,13 @@ fn get_args() -> Result<Option<Args>, pico_args::Error> {
     println!("  --rm-unused <flavor>");
     println!("    remove unused locals");
     println!("    <flavor> may be 'all' or 'imports'");
+    println!("  --allow-unused <flavor>");
+    println!("    when to allow unused locals");
+    println!("    <flavor> may be 'never' or 'with-underscore'");
+    println!("    defaults to 'with-underscore'");
+    println!("    when 'with-underscore', locals that begin with an underscore");
+    println!("    are not reported as unused");
+    println!("    when 'never', unused locals are always reported as unused");
     println!("  --rm-unused-comments <flavor>");
     println!("    remove comments near unused items");
     println!("    only has effect with --rm-unused");
@@ -63,6 +71,8 @@ fn get_args() -> Result<Option<Args>, pico_args::Error> {
   }
   let rm_unused = args.opt_value_from_str::<_, jsonnet_analyze::remove::Flavor>("--rm-unused")?;
   let rm_comments = args.opt_value_from_str::<_, RmComments>("--rm-unused-comments")?;
+  let allow_unused =
+    args.opt_value_from_str::<_, AllowUnused>("--allow-unused")?.unwrap_or_default();
   let rm_unused = rm_unused.map(|flavor| jsonnet_analyze::remove::Options {
     flavor,
     comments: rm_comments.unwrap_or_default().into_analysis(),
@@ -70,7 +80,7 @@ fn get_args() -> Result<Option<Args>, pico_args::Error> {
   let quiet = args.contains(["-q", "--quiet"]);
   let root_dirs: Option<String> = args.opt_value_from_str("--root-dirs")?;
   let files = args.finish();
-  Ok(Some(Args { rm_unused, quiet, root_dirs, files }))
+  Ok(Some(Args { rm_unused, quiet, root_dirs, files, allow_unused }))
 }
 
 #[derive(Debug, Default, Clone, Copy)]
@@ -109,6 +119,26 @@ impl RmComments {
   }
 }
 
+#[derive(Debug, Default, Clone, Copy)]
+enum AllowUnused {
+  Never,
+  #[default]
+  WithUnderscore,
+}
+
+impl std::str::FromStr for AllowUnused {
+  type Err = InvalidError;
+
+  fn from_str(s: &str) -> Result<Self, Self::Err> {
+    let ret = match s {
+      "never" => Self::Never,
+      "with-underscore" => Self::WithUnderscore,
+      _ => return Err(InvalidError),
+    };
+    Ok(ret)
+  }
+}
+
 #[derive(Debug)]
 struct InvalidError;
 
@@ -135,7 +165,14 @@ fn run(args: Args) -> usize {
     p
   });
   let root_dirs: Vec<_> = root_dirs.collect();
-  let init = jsonnet_analyze::Init { root_dirs, ..Default::default() };
+  let init = jsonnet_analyze::Init {
+    root_dirs,
+    allow_unused_underscore: match args.allow_unused {
+      AllowUnused::Never => false,
+      AllowUnused::WithUnderscore => true,
+    },
+    ..Default::default()
+  };
   let mut st = jsonnet_analyze::St::init(pwd.clone(), init);
   let mut ret = 0usize;
   for arg in args.files {

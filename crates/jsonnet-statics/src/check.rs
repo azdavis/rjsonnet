@@ -481,7 +481,7 @@ fn define_binds(
 
 fn undefine(st: &mut st::St<'_>, ar: &ExprArena, id: Id) {
   let Some(ed) = st.scope.undefine(id) else { return };
-  let is_silenced = id.starts_with_underscore(st.str_ar);
+  let is_silenced = st.allow_unused_underscore && id.starts_with_underscore(st.str_ar);
   let should_emit = !is_silenced && !id.is_unutterable() && is_actually_unused(st, ar, ed);
   if should_emit {
     st.err(ed.expr, error::Kind::UnusedVar(id, ed.kind));

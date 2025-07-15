@@ -28,6 +28,7 @@ struct WithFs {
   /// INVARIANT: this is exactly the set of files that do have errors that have been loaded into
   /// either `file_artifacts` or `file_exprs` on the [`St`] that contains this.
   has_errors: PathSet,
+  allow_unused_underscore: bool,
 }
 
 impl WithFs {
@@ -50,7 +51,12 @@ impl WithFs {
       Err(error) => return Err(PathIoError { path: path.to_owned().into_path_buf(), error }),
     };
     let res = res.combine(&mut self.artifacts);
-    let res = util::StaticsFileToCombine::new(res, &self.artifacts, &self.file_tys);
+    let res = util::StaticsFileToCombine::new(
+      res,
+      &self.artifacts,
+      &self.file_tys,
+      self.allow_unused_underscore,
+    );
     let res = res.combine(&mut self.artifacts);
     if res.is_clean() {
       self.has_errors.remove(&path_id);
@@ -177,9 +183,14 @@ impl WithFs {
       let syntax_files = syntax_files.into_iter().map(|res| res.combine(&mut self.artifacts));
       let syntax_files: Vec<_> = syntax_files.collect();
       // parallel
-      let statics_files = syntax_files
-        .into_par_iter()
-        .map(|res| util::StaticsFileToCombine::new(res, &self.artifacts, &self.file_tys));
+      let statics_files = syntax_files.into_par_iter().map(|res| {
+        util::StaticsFileToCombine::new(
+          res,
+          &self.artifacts,
+          &self.file_tys,
+          self.allow_unused_underscore,
+        )
+      });
       let statics_files: Vec<_> = statics_files.collect();
       always!(order.len() == statics_files.len());
       // sequential
@@ -302,6 +313,7 @@ impl St {
         artifacts: util::GlobalArtifacts::default(),
         file_tys: paths::PathMap::default(),
         has_errors: PathSet::default(),
+        allow_unused_underscore: init.allow_unused_underscore,
       },
       open_files: PathMap::default(),
       file_artifacts: PathMap::default(),
@@ -446,7 +458,12 @@ impl St {
       return None;
     }
     // NOTE: no need to check for import deps, as unused var errors are not affected by imports
-    let f = util::StaticsFileToCombine::new(f, &self.with_fs.artifacts, &self.with_fs.file_tys);
+    let f = util::StaticsFileToCombine::new(
+      f,
+      &self.with_fs.artifacts,
+      &self.with_fs.file_tys,
+      self.with_fs.allow_unused_underscore,
+    );
     let f = f.combine(&mut self.with_fs.artifacts);
     let root_syntax = f.syntax.artifacts.root.clone().syntax();
     let local_to_binds = {
@@ -535,7 +552,7 @@ impl St {
 
 impl lang_srv_state::State for St {
   fn new(root_dir: paths::CleanPathBuf, val: Option<serde_json::Value>) -> Self {
-    let mut init = util::Init::default();
+    let mut init = util::Init { allow_unused_underscore: true, ..Default::default() };
     let mut logger_env = env_logger::Env::default();
     if let Some(serde_json::Value::Object(obj)) = val {
       if let Some(filter) = obj.get("log_filter").and_then(serde_json::Value::as_str) {
@@ -611,7 +628,12 @@ impl lang_srv_state::State for St {
     let p = path.as_clean_path();
     let res = util::SyntaxFileToCombine::from_str(p, contents, &self.with_fs.root_dirs, fs);
     let res = res.combine(&mut self.with_fs.artifacts);
-    let res = util::StaticsFileToCombine::new(res, &self.with_fs.artifacts, &self.with_fs.file_tys);
+    let res = util::StaticsFileToCombine::new(
+      res,
+      &self.with_fs.artifacts,
+      &self.with_fs.file_tys,
+      self.with_fs.allow_unused_underscore,
+    );
     let res = res.combine(&mut self.with_fs.artifacts);
     let wa = &self.with_fs.artifacts;
     let diagnostics = res.diagnostics(self.style, &wa.statics, &wa.syntax.strings);

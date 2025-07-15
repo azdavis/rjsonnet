@@ -31,6 +31,8 @@ pub struct St<'a> {
   pub(crate) tys: ty::MutStore<'a>,
   /// The counter for canonical id exprs we've seen as def sites.
   pub(crate) id_counts: jsonnet_expr::Counter,
+  /// Whether to allow unused vars if they start with an underscore.
+  pub(crate) allow_unused_underscore: bool,
 }
 
 impl<'a> St<'a> {
@@ -41,6 +43,7 @@ impl<'a> St<'a> {
     other_files: &'a PathMap<ty::Ty>,
     str_ar: &'a jsonnet_expr::StrArena,
     id_counts: jsonnet_expr::Counter,
+    allow_unused_underscore: bool,
   ) -> Self {
     Self {
       statics: Statics::default(),
@@ -49,6 +52,7 @@ impl<'a> St<'a> {
       scope: Scope::default(),
       tys: ty::MutStore::new(tys),
       id_counts,
+      allow_unused_underscore,
     }
   }
 
