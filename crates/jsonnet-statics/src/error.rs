@@ -32,7 +32,7 @@ impl Error {
   #[must_use]
   pub fn expr_and_def(&self) -> (ExprMust, Option<def::ExprDefKind>) {
     let with_expr = match self.kind {
-      Kind::UnusedVar(_, k) => Some(k),
+      Kind::UnusedVar { def, .. } => Some(def),
       Kind::DuplicateVar(_, n, m) => Some(def::ExprDefKind::Multi(n, m)),
       _ => None,
     };
@@ -42,8 +42,9 @@ impl Error {
   /// Returns the unused local error in this, if any.
   #[must_use]
   pub fn into_unused_local(self) -> Option<(ExprMust, Id, usize)> {
-    if let Kind::UnusedVar(id, def::ExprDefKind::Multi(n, def::ExprDefKindMulti::LocalBind)) =
-      self.kind
+    if let Kind::UnusedVar { id, def, .. } = self.kind
+      && let def::ExprDefKind::Multi(n, m) = def
+      && let def::ExprDefKindMulti::LocalBind = m
     {
       Some((self.expr, id, n))
     } else {
@@ -63,7 +64,7 @@ impl Error {
       | Kind::DuplicateVar(_, _, _) => diagnostic::Severity::Error,
       // it may be possible to eval the jsonnet without handling these, so we consider them
       // warnings. e.g. if the call with the missing/extra argument etc doesn't get eval'd.
-      Kind::UnusedVar(_, _)
+      Kind::UnusedVar { .. }
       | Kind::Unify(_)
       | Kind::MissingArg(_, _)
       | Kind::ExtraPositionalArg(_)
@@ -97,7 +98,7 @@ impl Error {
       Kind::UndefinedVar(_, _)
       | Kind::DuplicateNamedArg(_)
       | Kind::DuplicateVar(_, _, _)
-      | Kind::UnusedVar(_, _)
+      | Kind::UnusedVar { .. }
       | Kind::ExtraNamedArg(_)
       | Kind::DuplicateField(_)
       | Kind::ExtraPositionalArg(_)
@@ -159,7 +160,7 @@ pub(crate) enum Kind {
   DuplicateField(Str),
   DuplicateNamedArg(Id),
   DuplicateVar(Id, usize, def::ExprDefKindMulti),
-  UnusedVar(Id, def::ExprDefKind),
+  UnusedVar { id: Id, def: def::ExprDefKind, can_silence: bool },
   MissingArg(Id, ty::Ty),
   ExtraPositionalArg(usize),
   ExtraNamedArg(Id),
@@ -217,11 +218,13 @@ impl fmt::Display for Display<'_> {
       Kind::DuplicateVar(id, _, _) => {
         write!(f, "duplicate variable: `{}`", id.display(self.cx.str_ar))
       }
-      Kind::UnusedVar(id, _) => {
+      Kind::UnusedVar { id, can_silence, .. } => {
         write!(f, "unused variable: `{}`", id.display(self.cx.str_ar))?;
-        match self.cx.style {
-          Style::Short => Ok(()),
-          Style::Long => f.write_str("\n  note: prefix the var with `_` to silence this warning"),
+        match (self.cx.style, can_silence) {
+          (Style::Short, _) | (_, false) => Ok(()),
+          (Style::Long, true) => {
+            f.write_str("\n  note: prefix the var with `_` to silence this warning")
+          }
         }
       }
       Kind::MissingArg(id, ty) => {
