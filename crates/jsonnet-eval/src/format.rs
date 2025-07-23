@@ -8,26 +8,26 @@
 )]
 
 use crate::{Cx, error::Result};
-use jsonnet_expr::{Expr, Prim, Str};
+use jsonnet_expr::{Prim, Str};
 use jsonnet_format_string::{Case, Code, ConvType, Elem};
-use jsonnet_val::jsonnet::{Env, Val};
+use jsonnet_val::json::Val;
 
-pub(crate) fn get(cx: &mut Cx<'_>, env: &Env, elems: &[Elem], val: &Val) -> Result<Str> {
+pub(crate) fn get(cx: &mut Cx<'_>, elems: &[Elem], val: &Val) -> Result<Str> {
   match val {
     Val::Object(obj) => todo!(),
     Val::Array(arr) => todo!(),
-    _ => todo!(),
+    Val::Prim(_) => todo!(),
   }
 }
 
-fn get_arr(cx: &mut Cx<'_>, elems: &[Elem], exprs: &[(&Env, Expr)]) -> Result<Str> {
+fn get_arr(cx: &mut Cx<'_>, elems: &[Elem], vals: &[Val]) -> Result<Str> {
   todo!()
 }
 
 fn get_one(
   cx: &mut Cx<'_>,
   code: &Code,
-  val: Val,
+  val: &Val,
   fw: usize,
   prec: Option<usize>,
   name: &Name,
@@ -119,12 +119,15 @@ fn get_one(
     ConvType::C => match val {
       Val::Prim(Prim::Number(val)) => todo!("std.char(val)"),
       Val::Prim(Prim::String(val)) => {
-        let len = cx.str_ar.get(val).chars().count();
-        if len == 1 { Ok(val) } else { todo!("%c expected 1-sized string got: {len}") }
+        let len = cx.str_ar.get(*val).chars().count();
+        if len == 1 { Ok(*val) } else { todo!("%c expected 1-sized string got: {len}") }
       }
       _ => todo!("type error"),
     },
-    ConvType::S => crate::exec::str_conv(cx, val),
+    ConvType::S => {
+      let string = val.display(cx.str_ar).to_string();
+      Ok(cx.str_ar.str(string.into_boxed_str()))
+    }
   }
 }
 
