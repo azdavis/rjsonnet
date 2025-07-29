@@ -103,7 +103,7 @@ fn push_string(out: &mut Vec<Elem>, bs: Vec<u8>) {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum ParseError {
   Truncated,
   UnrecognizedConversionType(u8),

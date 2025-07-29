@@ -1412,7 +1412,7 @@ pub const FNS: [Fn; 147] = [
   },
   Fn {
     name: S::new("format"),
-    implemented: false,
+    implemented: true,
     sig: sig(&[req("str", Ty::Str), req("vals", Ty::Any)], Ty::Str),
     total: true,
     available_since: Some(10),

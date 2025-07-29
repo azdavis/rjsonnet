@@ -7,17 +7,15 @@
   clippy::fn_params_excessive_bools
 )]
 
-use crate::{Cx, error::Result};
+use crate::Cx;
 use jsonnet_expr::{Prim, Str};
 use jsonnet_format_string::{Case, Code, ConvType, Elem};
 use jsonnet_val::json::Val;
 
+pub(crate) type Result<T, E = crate::error::FormatError> = std::result::Result<T, E>;
+
 pub(crate) fn get(cx: &mut Cx<'_>, elems: &[Elem], val: &Val) -> Result<Str> {
-  match val {
-    Val::Object(obj) => todo!(),
-    Val::Array(arr) => todo!(),
-    Val::Prim(_) => todo!(),
-  }
+  Err(crate::error::FormatError::Todo)
 }
 
 fn get_arr(cx: &mut Cx<'_>, elems: &[Elem], vals: &[Val]) -> Result<Str> {

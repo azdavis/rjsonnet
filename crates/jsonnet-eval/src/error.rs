@@ -49,6 +49,8 @@ pub enum Kind {
   IdxOutOfRange(usize),
   IdxNotUtf8Boundary(usize),
   EqFn,
+  FormatParseFail(jsonnet_format_string::ParseError),
+  FormatFail(FormatError),
 }
 
 impl From<arg::ErrorKind> for Kind {
@@ -102,6 +104,8 @@ impl fmt::Display for ErrorDisplay<'_> {
         Kind::IdxOutOfRange(n) => write!(f, "index out of range: {n}"),
         Kind::IdxNotUtf8Boundary(n) => write!(f, "index not on UTF-8 boundary: {n}"),
         Kind::EqFn => f.write_str("cannot test equality of functions"),
+        Kind::FormatParseFail(e) => write!(f, "invalid format string: {e}"),
+        Kind::FormatFail(e) => fmt::Display::fmt(e, f),
       },
       Error::ManifestFn => f.write_str("cannot manifest function"),
       Error::NoPath(p) => {
@@ -113,6 +117,19 @@ impl fmt::Display for ErrorDisplay<'_> {
         write!(f, "cannot manifest, has errors: {p}")
       }
       Error::NoExpr => write!(f, "no expr"),
+    }
+  }
+}
+
+#[derive(Debug, Clone)]
+pub enum FormatError {
+  Todo,
+}
+
+impl fmt::Display for FormatError {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    match self {
+      FormatError::Todo => f.write_str("not yet implemented"),
     }
   }
 }

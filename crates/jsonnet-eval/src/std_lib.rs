@@ -443,6 +443,24 @@ pub(crate) fn get_call(
       }
     }
 
+    StdFn::format => {
+      let args = fns::format::new(pos, named, expr)?;
+      let val = args.vals(cx, env)?;
+      let str = args.str(cx, env)?;
+      let str = cx.str_ar.get(str);
+      let elems: Vec<_> = match jsonnet_format_string::get(str) {
+        Ok(es) => es,
+        Err(e) => {
+          return Err(error::Error::Exec { expr, kind: error::Kind::FormatParseFail(e) });
+        }
+      };
+      let val = crate::manifest::get(cx, val)?;
+      match crate::format::get(cx, &elems, &val) {
+        Ok(x) => Ok(x.into()),
+        Err(e) => Err(error::Error::Exec { expr, kind: error::Kind::FormatFail(e) }),
+      }
+    }
+
     _ => Err(mk_todo(expr, func.as_static_str())),
   }
 }
