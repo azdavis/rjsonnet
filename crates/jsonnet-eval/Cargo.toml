@@ -21,7 +21,7 @@ serde_json.workspace = true
 cycle.path = "../cycle"
 finite-float.path = "../finite-float"
 jsonnet-expr.path = "../jsonnet-expr"
-jsonnet-format-string.path = "../jsonnet-format-string"
+jsonnet-format-parse.path = "../jsonnet-format-parse"
 jsonnet-val.path = "../jsonnet-val"
 
 [build-dependencies]

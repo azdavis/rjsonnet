@@ -9,7 +9,7 @@
 
 use crate::Cx;
 use jsonnet_expr::{Prim, Str};
-use jsonnet_format_string::{Case, Code, ConvType, Elem};
+use jsonnet_format_parse::{Case, Code, ConvType, Elem};
 use jsonnet_val::json::Val;
 
 pub(crate) type Result<T, E = crate::error::FormatError> = std::result::Result<T, E>;

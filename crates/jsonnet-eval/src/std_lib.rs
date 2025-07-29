@@ -448,7 +448,7 @@ pub(crate) fn get_call(
       let val = args.vals(cx, env)?;
       let str = args.str(cx, env)?;
       let str = cx.str_ar.get(str);
-      let elems: Vec<_> = match jsonnet_format_string::get(str) {
+      let elems: Vec<_> = match jsonnet_format_parse::get(str) {
         Ok(es) => es,
         Err(e) => {
           return Err(error::Error::Exec { expr, kind: error::Kind::FormatParseFail(e) });

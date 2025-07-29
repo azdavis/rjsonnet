@@ -612,7 +612,7 @@ dependencies = [
  "cycle",
  "finite-float",
  "jsonnet-expr",
- "jsonnet-format-string",
+ "jsonnet-format-parse",
  "jsonnet-std-sig",
  "jsonnet-val",
  "paths",
@@ -641,7 +641,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "jsonnet-format-string"
+name = "jsonnet-format-parse"
 version = "0.9.7"
 dependencies = [
  "always",
@@ -699,7 +699,7 @@ dependencies = [
  "drop_bomb",
  "finite-float",
  "jsonnet-expr",
- "jsonnet-format-string",
+ "jsonnet-format-parse",
  "jsonnet-ty",
  "log",
  "paths",

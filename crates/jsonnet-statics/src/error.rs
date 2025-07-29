@@ -169,7 +169,7 @@ pub(crate) enum Kind {
   AddSets,
   Unreachable,
   NoSuchTupleIdx(usize, usize),
-  FormatParseFail(jsonnet_format_string::ParseError),
+  FormatParseFail(jsonnet_format_parse::ParseError),
   FormatWrongCount(usize, usize),
   FormatMissingMappingKey,
   FormatNoSuchField(String, Option<String>),

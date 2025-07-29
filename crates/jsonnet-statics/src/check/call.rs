@@ -3,7 +3,7 @@
 use crate::{error, flow, st, suggestion};
 use always::always;
 use jsonnet_expr::{Expr, ExprArena, ExprData, ExprMust, Id, Prim, StdFn, Str};
-use jsonnet_format_string::ConvType;
+use jsonnet_format_parse::ConvType;
 use jsonnet_ty as ty;
 use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
@@ -307,8 +307,8 @@ fn maybe_extra_checks(
 
 fn check_format(st: &mut st::St<'_>, expr: ExprMust, s: Str, ty: ty::Ty) {
   let s = st.str_ar.get(s);
-  let codes: Vec<_> = match jsonnet_format_string::get(s) {
-    Ok(es) => es.into_iter().filter_map(jsonnet_format_string::Elem::into_code).collect(),
+  let codes: Vec<_> = match jsonnet_format_parse::get(s) {
+    Ok(es) => es.into_iter().filter_map(jsonnet_format_parse::Elem::into_code).collect(),
     Err(e) => {
       st.err(expr, error::Kind::FormatParseFail(e));
       return;

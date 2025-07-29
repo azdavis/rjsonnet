@@ -49,7 +49,7 @@ pub enum Kind {
   IdxOutOfRange(usize),
   IdxNotUtf8Boundary(usize),
   EqFn,
-  FormatParseFail(jsonnet_format_string::ParseError),
+  FormatParseFail(jsonnet_format_parse::ParseError),
   FormatFail(FormatError),
 }
 
