@@ -22,6 +22,7 @@ cycle.path = "../cycle"
 finite-float.path = "../finite-float"
 jsonnet-expr.path = "../jsonnet-expr"
 jsonnet-format-parse.path = "../jsonnet-format-parse"
+jsonnet-format-render.path = "../jsonnet-format-render"
 jsonnet-val.path = "../jsonnet-val"
 
 [build-dependencies]

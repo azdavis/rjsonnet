@@ -1,0 +1,18 @@
+[package]
+name = "jsonnet-format-render"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[lib]
+test = false
+doctest = false
+
+[dependencies]
+jsonnet-expr.path = "../jsonnet-expr"
+jsonnet-format-parse.path = "../jsonnet-format-parse"
+jsonnet-val.path = "../jsonnet-val"

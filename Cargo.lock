@@ -613,6 +613,7 @@ dependencies = [
  "finite-float",
  "jsonnet-expr",
  "jsonnet-format-parse",
+ "jsonnet-format-render",
  "jsonnet-std-sig",
  "jsonnet-val",
  "paths",
@@ -645,6 +646,15 @@ name = "jsonnet-format-parse"
 version = "0.9.7"
 dependencies = [
  "always",
+]
+
+[[package]]
+name = "jsonnet-format-render"
+version = "0.9.7"
+dependencies = [
+ "jsonnet-expr",
+ "jsonnet-format-parse",
+ "jsonnet-val",
 ]
 
 [[package]]

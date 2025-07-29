@@ -451,13 +451,13 @@ pub(crate) fn get_call(
       let elems: Vec<_> = match jsonnet_format_parse::get(str) {
         Ok(es) => es,
         Err(e) => {
-          return Err(error::Error::Exec { expr, kind: error::Kind::FormatParseFail(e) });
+          return Err(error::Error::Exec { expr, kind: error::Kind::FormatParse(e) });
         }
       };
       let val = crate::manifest::get(cx, val)?;
-      match crate::format::get(cx, &elems, &val) {
+      match jsonnet_format_render::get(cx.str_ar, &elems, &val) {
         Ok(x) => Ok(x.into()),
-        Err(e) => Err(error::Error::Exec { expr, kind: error::Kind::FormatFail(e) }),
+        Err(e) => Err(error::Error::Exec { expr, kind: error::Kind::FormatRender(e) }),
       }
     }
 

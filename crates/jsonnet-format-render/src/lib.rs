@@ -7,23 +7,29 @@
   clippy::fn_params_excessive_bools
 )]
 
-use crate::Cx;
-use jsonnet_expr::{Prim, Str};
+use jsonnet_expr::{Prim, Str, StrArena};
 use jsonnet_format_parse::{Case, Code, ConvType, Elem};
 use jsonnet_val::json::Val;
+use std::fmt;
 
-pub(crate) type Result<T, E = crate::error::FormatError> = std::result::Result<T, E>;
+/// std's result specialized to default to [`Error`].
+pub type Result<T, E = Error> = std::result::Result<T, E>;
 
-pub(crate) fn get(cx: &mut Cx<'_>, elems: &[Elem], val: &Val) -> Result<Str> {
-  Err(crate::error::FormatError::Todo)
+/// Render the val against the elems.
+///
+/// # Errors
+///
+/// When that failed.
+pub fn get(ar: &mut StrArena, elems: &[Elem], val: &Val) -> Result<Str> {
+  Err(Error::Todo)
 }
 
-fn get_arr(cx: &mut Cx<'_>, elems: &[Elem], vals: &[Val]) -> Result<Str> {
+fn get_arr(ar: &mut StrArena, elems: &[Elem], vals: &[Val]) -> Result<Str> {
   todo!()
 }
 
 fn get_one(
-  cx: &mut Cx<'_>,
+  ar: &mut StrArena,
   code: &Code,
   val: &Val,
   fw: usize,
@@ -38,12 +44,12 @@ fn get_one(
     ConvType::D => {
       let Val::Prim(Prim::Number(val)) = val else { todo!("type error") };
       let val = val.value();
-      get_int(cx, val <= -1.0, abs_floor(val), zp, i_prec, cflags.blank, cflags.plus, 10, false)
+      get_int(ar, val <= -1.0, abs_floor(val), zp, i_prec, cflags.blank, cflags.plus, 10, false)
     }
     ConvType::O => {
       let Val::Prim(Prim::Number(val)) = val else { todo!("type error") };
       let val = val.value();
-      get_int(cx, val <= -1.0, abs_floor(val), zp, i_prec, cflags.blank, cflags.plus, 8, cflags.alt)
+      get_int(ar, val <= -1.0, abs_floor(val), zp, i_prec, cflags.blank, cflags.plus, 8, cflags.alt)
     }
     ConvType::X(case) => {
       let Val::Prim(Prim::Number(val)) = val else { todo!("type error") };
@@ -83,7 +89,7 @@ fn get_one(
         cs.push(' ');
       }
       cs.reverse();
-      Ok(cx.str_ar.str(cs.into_iter().collect()))
+      Ok(ar.str(cs.into_iter().collect()))
     }
     ConvType::E(case) => {
       let Val::Prim(Prim::Number(val)) = val else { todo!("type error") };
@@ -117,14 +123,14 @@ fn get_one(
     ConvType::C => match val {
       Val::Prim(Prim::Number(val)) => todo!("std.char(val)"),
       Val::Prim(Prim::String(val)) => {
-        let len = cx.str_ar.get(*val).chars().count();
+        let len = ar.get(*val).chars().count();
         if len == 1 { Ok(*val) } else { todo!("%c expected 1-sized string got: {len}") }
       }
       _ => todo!("type error"),
     },
     ConvType::S => {
-      let string = val.display(cx.str_ar).to_string();
-      Ok(cx.str_ar.str(string.into_boxed_str()))
+      let string = val.display(ar).to_string();
+      Ok(ar.str(string.into_boxed_str()))
     }
   }
 }
@@ -160,7 +166,7 @@ enum Name {
 }
 
 fn get_int(
-  cx: &mut Cx<'_>,
+  ar: &mut StrArena,
   neg: bool,
   mag: usize,
   min_chars: usize,
@@ -222,5 +228,20 @@ fn digit_to_char(n: usize, case: Case) -> char {
     (15, Case::Lower) => 'f',
     (15, Case::Upper) => 'F',
     _ => panic!("not a digit: {n}"),
+  }
+}
+
+/// An error when formatting.
+#[derive(Debug, Clone)]
+pub enum Error {
+  /// Not yet implemented.
+  Todo,
+}
+
+impl fmt::Display for Error {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    match self {
+      Error::Todo => f.write_str("not yet implemented"),
+    }
   }
 }

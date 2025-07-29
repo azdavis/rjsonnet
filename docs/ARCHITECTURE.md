@@ -88,6 +88,10 @@ Rust code describing the tokens.
 
 Parsing for format strings used in `%` formatting, like in Python.
 
+### `crates/jsonnet-format-render`
+
+Render a parsed format string against a JSON value.
+
 ## Overall crates
 
 These tie everything else together.
