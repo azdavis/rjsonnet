@@ -487,7 +487,7 @@ pub const FNS: [Fn; 147] = [
   },
   Fn {
     name: S::new("objectKeysValues"),
-    implemented: false,
+    implemented: true,
     sig: OBJ_KEYS_VALUES,
     total: true,
     available_since: Some(20),

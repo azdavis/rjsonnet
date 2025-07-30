@@ -6,7 +6,7 @@ use crate::util;
 use crate::{Cx, exec, generated::fns, mk_todo};
 use always::always;
 use finite_float::Float;
-use jsonnet_expr::{Expr, ExprData, ExprMust, Id, Prim, StdFn, Str};
+use jsonnet_expr::{Expr, ExprData, ExprMust, Field, Id, Prim, StdFn, Str};
 use jsonnet_val::jsonnet::{Array, Env, Fn, Subst, Val, ValOrExpr};
 use rustc_hash::FxHashSet;
 
@@ -476,6 +476,25 @@ pub(crate) fn get_call(
       let mut ret = Array::default();
       for (_, env, expr) in o.sorted_visible_fields() {
         ret.push(env, expr);
+      }
+      Ok(ret.into())
+    }
+
+    StdFn::objectKeysValues => {
+      let args = fns::objectKeysValues::new(pos, named, expr)?;
+      let o = args.o(cx, env)?;
+      let exprs = path_exprs(cx, env)?;
+      let mut ret = Array::default();
+      for (key, env, expr) in o.sorted_visible_fields() {
+        let key_str = Some(exprs.ar.alloc(ExprData::Prim(Prim::String(Str::key))));
+        let val_str = Some(exprs.ar.alloc(ExprData::Prim(Prim::String(Str::value))));
+        let k = Some(exprs.ar.alloc(ExprData::Prim(Prim::String(key))));
+        let fields = vec![
+          Field { key: key_str, vis: jsonnet_expr::Vis::Default, val: k },
+          Field { key: val_str, vis: jsonnet_expr::Vis::Default, val: expr },
+        ];
+        let elem = exprs.ar.alloc(ExprData::Object { asserts: Vec::new(), fields });
+        ret.push(env, Some(elem));
       }
       Ok(ret.into())
     }
