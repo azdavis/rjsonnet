@@ -412,12 +412,9 @@ pub(crate) fn get_call(
       let args = fns::makeArray::new(pos, named, expr)?;
       let sz = args.sz(cx, env)?;
       let func = args.func(cx, env)?;
-      let Some(exprs) = cx.exprs.get_mut(&env.path()) else {
-        always!(false, "should have this paths's exprs");
-        return Err(Error::NoPath(env.path()));
-      };
-      let mut env = env.clone();
       let func_id = cx.str_ar.id_fresh_unutterable();
+      let exprs = path_exprs(cx, env)?;
+      let mut env = env.clone();
       env.insert(Subst { id: func_id, val: ValOrExpr::Val(Val::Fn(func)) });
       let func = Some(exprs.ar.alloc(ExprData::Id(func_id)));
       let elems = (0..sz).map(|idx| {
@@ -462,5 +459,14 @@ pub(crate) fn get_call(
     }
 
     _ => Err(mk_todo(expr, func.as_static_str())),
+  }
+}
+
+fn path_exprs<'a>(cx: &'a mut Cx<'_>, env: &Env) -> Result<&'a mut crate::Exprs> {
+  if let Some(exprs) = cx.exprs.get_mut(&env.path()) {
+    Ok(exprs)
+  } else {
+    always!(false, "should have this paths's exprs");
+    Err(Error::NoPath(env.path()))
   }
 }
