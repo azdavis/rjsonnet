@@ -269,6 +269,15 @@ pub(crate) fn get_call(
       Ok(exec::eq_val(expr, cx, &x, &y)?.into())
     }
 
+    StdFn::equalsIgnoreCase => {
+      let args = fns::equalsIgnoreCase::new(pos, named, expr)?;
+      let a = args.str1(cx, env)?;
+      let b = args.str2(cx, env)?;
+      let a = cx.str_ar.get(a);
+      let b = cx.str_ar.get(b);
+      Ok(a.eq_ignore_ascii_case(b).into())
+    }
+
     StdFn::assertEqual => {
       let args = fns::assertEqual::new(pos, named, expr)?;
       let a = args.a(cx, env)?;

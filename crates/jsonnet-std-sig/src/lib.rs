@@ -2949,7 +2949,7 @@ pub const FNS: [Fn; 147] = [
   },
   Fn {
     name: S::new("equalsIgnoreCase"),
-    implemented: false,
+    implemented: true,
     sig: sig(&[req("str1", Ty::Str), req("str2", Ty::Str)], Ty::Bool),
     total: true,
     available_since: Some(21),
