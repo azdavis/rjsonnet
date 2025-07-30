@@ -289,15 +289,13 @@ impl Object {
   }
 
   /// Returns all the fields sorted in string order.
-  ///
-  /// Ignore the visibility on the fields, it's meaningless.
   #[must_use]
   pub fn all_sorted_fields(&self, ar: &StrArena) -> Vec<(Str, Field)> {
     let mut fs = self.fields();
     let hidden = std::mem::take(&mut fs.hidden);
     let iter = self
       .visible(fs)
-      .map(|(str, env, expr)| (str, Field::Expr(Vis::Default, env, expr)))
+      .map(|(str, vis, env, expr)| (str, Field::Expr(vis, env, expr)))
       .chain(hidden);
     let mut ret: Vec<_> = iter.collect();
     // ok to sort unstable because there will not be duplicate keys
@@ -348,16 +346,17 @@ impl Object {
     for name in fs.hidden.keys() {
       fs.default.remove(name);
     }
-    self.visible(fs).collect()
+    self.visible(fs).map(|(name, _, env, expr)| (name, env, expr)).collect()
   }
 
-  fn visible(&self, fs: Fields<'_>) -> impl Iterator<Item = (Str, Env, Expr)> {
+  fn visible(&self, fs: Fields<'_>) -> impl Iterator<Item = (Str, Vis, Env, Expr)> {
     fs.visible.into_iter().chain(fs.default).map(|(name, (this, field))| {
       let mut env = self.set_this(&this.env);
       if let Some(subst) = &field.comp_subst {
         env.insert(subst.clone());
       }
-      (name, env, field.expr)
+      always!(field.vis != Vis::Hidden);
+      (name, field.vis, env, field.expr)
     })
   }
 
