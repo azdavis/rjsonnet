@@ -125,14 +125,13 @@ fn mk_get_params(index: usize, params: &[Param]) -> proc_macro2::TokenStream {
         },
       ),
       Ty::Str | Ty::StrInterned => (q!(Str), q! { util::get_str(ret, expr) }),
-      Ty::ArrAny | Ty::SetAny => (q!(Array), q! { util::get_arr(ret, expr) }),
-      Ty::ArrBool => todo!("conv param ArrBool"),
-      Ty::ArrNum => todo!("conv param ArrNum"),
-      Ty::ArrStr | Ty::SetStr => todo!("conv param ArrStr/SetStr"),
-      Ty::ArrKv => todo!("conv param ArrKv"),
-      Ty::Obj => (q! {Object}, q! { util::get_obj(ret, expr) }),
+      Ty::ArrAny | Ty::SetAny | Ty::ArrBool | Ty::ArrNum | Ty::ArrStr | Ty::SetStr | Ty::ArrKv => {
+        // can't do type conversions on the elements here because of laziness.
+        (q!(Array), q! { util::get_arr(ret, expr) })
+      }
+      Ty::Obj => (q!(Object), q! { util::get_obj(ret, expr) }),
       Ty::Fn1 | Ty::FnAccElem | Ty::FnKv | Ty::FnIdxElem => {
-        (q! {Fn}, q! { util::get_fn(ret, expr) })
+        (q!(Fn), q! { util::get_fn(ret, expr) })
       }
     };
     let to_eval = if let Some(x) = param.default {
