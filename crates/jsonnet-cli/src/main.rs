@@ -196,15 +196,14 @@ fn run(args: Args) -> usize {
       }
     };
     let (_, ds) = st.open(&fs, p.clone(), contents);
-    if let Some(options) = args.rm_unused {
-      if let Some(contents) = st.remove_unused(&fs, p.as_clean_path(), options) {
-        if let Err(e) = std::fs::write(p.as_path(), contents.as_bytes()) {
-          if !args.quiet {
-            println!("{arg}: couldn't write path: {e}");
-          }
-          ret += 1;
-        }
+    if let Some(options) = args.rm_unused
+      && let Some(contents) = st.remove_unused(&fs, p.as_clean_path(), options)
+      && let Err(e) = std::fs::write(p.as_path(), contents.as_bytes())
+    {
+      if !args.quiet {
+        println!("{arg}: couldn't write path: {e}");
       }
+      ret += 1;
     }
     st.close(p);
     ret += ds.len();

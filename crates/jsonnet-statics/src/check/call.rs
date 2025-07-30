@@ -342,11 +342,11 @@ fn check_format(st: &mut st::St<'_>, expr: ExprMust, s: Str, ty: ty::Ty) {
           st.err(expr, error::Kind::FormatMissingMappingKey);
           continue;
         };
-        if let Some(s) = st.str_ar.try_str(s.as_str()) {
-          if let Some(&ty) = obj.known.get(&s) {
-            st.unify(expr, format_conv_ty(code.ctype), ty);
-            continue;
-          }
+        if let Some(s) = st.str_ar.try_str(s.as_str())
+          && let Some(&ty) = obj.known.get(&s)
+        {
+          st.unify(expr, format_conv_ty(code.ctype), ty);
+          continue;
         }
         if obj.has_unknown {
           continue;

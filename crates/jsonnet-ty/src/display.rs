@@ -118,8 +118,9 @@ impl fmt::Display for TyDisplay<'_> {
         if tup.elems.is_empty() {
           return f.write_str("unit");
         }
-        let [cur_level, new_level] = if let (Some(x), true) =
-          (self.stuff.level, tup.elems.len() >= 2 && self.stuff.stores.is_complex(self.ty))
+        let [cur_level, new_level] = if let Some(x) = self.stuff.level
+          && tup.elems.len() >= 2
+          && self.stuff.stores.is_complex(self.ty)
         {
           [Some(x), Some(x + 1)]
         } else {
@@ -148,12 +149,13 @@ impl fmt::Display for TyDisplay<'_> {
         f.write_str("]")
       }
       Data::Object(obj) => {
-        let [cur_level, new_level] =
-          if let (Some(x), true) = (self.stuff.level, self.stuff.stores.is_complex(self.ty)) {
-            [Some(x), Some(x + 1)]
-          } else {
-            [None; 2]
-          };
+        let [cur_level, new_level] = if let Some(x) = self.stuff.level
+          && self.stuff.stores.is_complex(self.ty)
+        {
+          [Some(x), Some(x + 1)]
+        } else {
+          [None; 2]
+        };
         let mut iter = obj.known.iter().map(|(&key, ty)| FieldDisplay {
           key,
           ty: *ty,

@@ -532,10 +532,10 @@ impl St {
         let g = if has_nl { Gap::Newline } else { Gap::Space };
         gap = Some(gap.map_or(g, |x| x.and(g)));
       } else {
-        if (prev_alpha_numeric && this_alpha_numeric) || gap.is_some_and(Gap::is_newline) {
-          if let Some(gap) = gap {
-            ret.push(gap.as_char());
-          }
+        if ((prev_alpha_numeric && this_alpha_numeric) || gap.is_some_and(Gap::is_newline))
+          && let Some(gap) = gap
+        {
+          ret.push(gap.as_char());
         }
         ret.push_str(tok.text());
         gap = None;
