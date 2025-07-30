@@ -483,6 +483,14 @@ impl Array {
     self.parts.append(&mut other.parts);
   }
 
+  /// Pushes an element onto this.
+  ///
+  /// If a single `Env` is shared across many `Expr`s, it's preferable to create an `Array` via `new`
+  /// and then `append` it as opposed to repeatedly calling `push` with the cloned `Env`.
+  pub fn push(&mut self, env: Env, elem: Expr) {
+    self.parts.push(ArrayPart { env, elems: vec![elem] });
+  }
+
   /// Returns the length of this.
   #[must_use]
   pub fn len(&self) -> usize {

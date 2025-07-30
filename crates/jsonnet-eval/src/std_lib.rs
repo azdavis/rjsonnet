@@ -470,6 +470,16 @@ pub(crate) fn get_call(
       Ok(Array::new(Env::empty(env.path()), elems).into())
     }
 
+    StdFn::objectValues => {
+      let args = fns::objectValues::new(pos, named, expr)?;
+      let o = args.o(cx, env)?;
+      let mut ret = Array::default();
+      for (_, env, expr) in o.sorted_visible_fields() {
+        ret.push(env, expr);
+      }
+      Ok(ret.into())
+    }
+
     _ => Err(mk_todo(expr, func.as_static_str())),
   }
 }
