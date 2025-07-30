@@ -5,7 +5,7 @@ use crate::util;
 use crate::{Cx, exec, generated::fns, mk_todo};
 use always::always;
 use finite_float::Float;
-use jsonnet_expr::{Expr, ExprData, ExprMust, Field, Id, Prim, StdFn, Str};
+use jsonnet_expr::{Expr, ExprArena, ExprData, ExprMust, Field, Id, Prim, StdFn, Str};
 use jsonnet_val::jsonnet::{Array, Env, Fn, Subst, Val, ValOrExpr};
 use rustc_hash::FxHashSet;
 
@@ -487,14 +487,7 @@ pub(crate) fn get_call(
       let exprs = path_exprs(cx, env)?;
       let mut ret = Array::default();
       for (key, env, expr) in fields {
-        let key_str = Some(exprs.ar.alloc(ExprData::Prim(Prim::String(Str::key))));
-        let val_str = Some(exprs.ar.alloc(ExprData::Prim(Prim::String(Str::value))));
-        let k = Some(exprs.ar.alloc(ExprData::Prim(Prim::String(key))));
-        let fields = vec![
-          Field { key: key_str, vis: jsonnet_expr::Vis::Default, val: k },
-          Field { key: val_str, vis: jsonnet_expr::Vis::Default, val: expr },
-        ];
-        let elem = exprs.ar.alloc(ExprData::Object { asserts: Vec::new(), fields });
+        let elem = key_value_obj(&mut exprs.ar, key, expr);
         ret.push(env, Some(elem));
       }
       Ok(ret.into())
@@ -511,4 +504,15 @@ fn path_exprs<'a>(cx: &'a mut Cx<'_>, env: &Env) -> Result<&'a mut crate::Exprs>
     always!(false, "should have this paths's exprs");
     Err(Error::NoPath(env.path()))
   }
+}
+
+fn key_value_obj(ar: &mut ExprArena, key: Str, val: Expr) -> ExprMust {
+  let key_str = Some(ar.alloc(ExprData::Prim(Prim::String(Str::key))));
+  let val_str = Some(ar.alloc(ExprData::Prim(Prim::String(Str::value))));
+  let k = Some(ar.alloc(ExprData::Prim(Prim::String(key))));
+  let fields = vec![
+    Field { key: key_str, vis: jsonnet_expr::Vis::Default, val: k },
+    Field { key: val_str, vis: jsonnet_expr::Vis::Default, val },
+  ];
+  ar.alloc(ExprData::Object { asserts: Vec::new(), fields })
 }
