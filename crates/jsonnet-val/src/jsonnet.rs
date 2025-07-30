@@ -2,7 +2,7 @@
 
 use always::always;
 use cycle::Cycle;
-use jsonnet_expr::{Expr, Id, Prim, StdField, StdFn, Str, Vis};
+use jsonnet_expr::{Expr, Id, Prim, StdField, StdFn, Str, StrArena, Vis};
 use rustc_hash::{FxHashMap, FxHashSet};
 
 /// An environment, which stores a mapping of identifiers to unevaluated expressions.
@@ -273,6 +273,22 @@ impl Object {
   /// TODO should this be a generator?
   #[must_use]
   pub fn visible_fields(&self) -> Vec<(Str, Env, Expr)> {
+    let mut ret = self.fields();
+    // ok to sort unstable because there will not be duplicate keys
+    ret.sort_unstable_by_key(|&(name, _, _)| name);
+    ret
+  }
+
+  /// Returns the visible fields, sorted in order of the string keys.
+  #[must_use]
+  pub fn sorted_visible_fields(&self, ar: &StrArena) -> Vec<(Str, Env, Expr)> {
+    let mut ret = self.fields();
+    // ok to sort unstable because there will not be duplicate keys
+    ret.sort_unstable_by_key(|&(name, _, _)| ar.get(name));
+    ret
+  }
+
+  fn fields(&self) -> Vec<(Str, Env, Expr)> {
     let mut vis_visible = FxHashMap::<Str, (&RegularObjectKind, &ExprField)>::default();
     let mut vis_hidden = FxHashSet::<Str>::default();
     let mut vis_default = FxHashMap::<Str, (&RegularObjectKind, &ExprField)>::default();
@@ -316,10 +332,7 @@ impl Object {
       }
       (name, env, field.expr)
     });
-    let mut ret: Vec<_> = iter.collect();
-    // ok to sort unstable because there will not be duplicate keys
-    ret.sort_unstable_by_key(|&(name, _, _)| name);
-    ret
+    iter.collect()
   }
 
   /// Gets a field off an object.

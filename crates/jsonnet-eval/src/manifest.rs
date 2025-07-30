@@ -16,7 +16,7 @@ pub fn get(cx: &mut Cx<'_>, val: jsonnet::Val) -> error::Result<json::Val> {
     jsonnet::Val::Object(object) => {
       exec::ck_object_asserts(cx, &object)?;
       let mut val_fields = BTreeMap::<jsonnet_expr::Str, json::Val>::default();
-      for (name, env, expr) in object.visible_fields() {
+      for (name, env, expr) in object.sorted_visible_fields(cx.str_ar) {
         let val = get_(cx, &env, expr)?;
         always!(val_fields.insert(name, val).is_none());
       }

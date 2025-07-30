@@ -461,8 +461,7 @@ pub(crate) fn get_call(
     StdFn::objectFields => {
       let args = fns::objectFields::new(pos, named, expr)?;
       let o = args.o(cx, env)?;
-      let mut fields = o.visible_fields();
-      fields.sort_unstable_by_key(|(s, _, _)| cx.str_ar.get(*s));
+      let fields = o.sorted_visible_fields(cx.str_ar);
       let exprs = path_exprs(cx, env)?;
       let elems: Vec<_> = fields
         .into_iter()
@@ -474,8 +473,7 @@ pub(crate) fn get_call(
     StdFn::objectValues => {
       let args = fns::objectValues::new(pos, named, expr)?;
       let o = args.o(cx, env)?;
-      let mut fields = o.visible_fields();
-      fields.sort_unstable_by_key(|(s, _, _)| cx.str_ar.get(*s));
+      let fields = o.sorted_visible_fields(cx.str_ar);
       let mut ret = Array::default();
       for (_, env, expr) in fields {
         ret.push(env, expr);
@@ -486,8 +484,7 @@ pub(crate) fn get_call(
     StdFn::objectKeysValues => {
       let args = fns::objectKeysValues::new(pos, named, expr)?;
       let o = args.o(cx, env)?;
-      let mut fields = o.visible_fields();
-      fields.sort_unstable_by_key(|(s, _, _)| cx.str_ar.get(*s));
+      let fields = o.sorted_visible_fields(cx.str_ar);
       let exprs = path_exprs(cx, env)?;
       let mut ret = Array::default();
       for (key, env, expr) in fields {
