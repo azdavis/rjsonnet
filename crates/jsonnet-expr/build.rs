@@ -209,6 +209,10 @@ fn main() {
       let name = ident(f.name.ident());
       q! { Str::#name => Self::#name, }
     });
+    let as_builtin_str_arms = jsonnet_std_sig::FNS.iter().map(|f| {
+      let name = ident(f.name.ident());
+      q! { Self::#name => Str::#name, }
+    });
     let as_static_str_arms = jsonnet_std_sig::FNS.iter().map(|f| {
       let name = ident(f.name.ident());
       let content = f.name.content();
@@ -263,6 +267,14 @@ fn main() {
           }
         }
 
+        #[doc = "Returns the built-in `Str` for this."]
+        #[must_use]
+        pub const fn as_builtin_str(self) -> Str {
+          match self {
+            #(#as_builtin_str_arms)*
+          }
+        }
+
         #[doc = "Returns Markdown documentation for this."]
         #[must_use]
         pub const fn doc(self) -> &'static str {
@@ -312,6 +324,10 @@ fn main() {
       let doc = x.doc;
       q! { Self::#name => #doc, }
     });
+    let as_builtin_str_arms = jsonnet_std_sig::FIELDS.iter().map(|x| {
+      let name = ident(x.name.ident());
+      q! { Self::#name => Str::#name, }
+    });
     let from_str_ifs = jsonnet_std_sig::FIELDS.iter().map(|x| {
       let name = ident(x.name.ident());
       q! {
@@ -339,6 +355,14 @@ fn main() {
           match self {
             #(#field_doc_arms)*
             StdField::Fn(std_fn) => std_fn.doc(),
+          }
+        }
+
+        #[must_use]
+        pub fn as_builtin_str(&self) -> Str {
+          match self {
+            #(#as_builtin_str_arms)*
+            StdField::Fn(std_fn) => std_fn.as_builtin_str(),
           }
         }
       }
