@@ -56,9 +56,7 @@ pub(crate) fn get(st: &mut St<'_>, store: &ty::MutStore<'_>, want: ty::Ty, got: 
         st.err(error::Unify::Incompatible(want, got));
       }
     }
-    // all sets are arrays, but not all arrays are sets. so sets are a subtype of arrays, i guess.
-    // also, for both sets and arrays, the element type variable is invariant in the sense of
-    // subtyping sense.
+    // all sets are arrays, but not all arrays are sets.
     (
       &ty::Data::Array(ty::Array { elem: want, is_set: true }),
       &ty::Data::Array(ty::Array { elem: got, is_set: true }),
