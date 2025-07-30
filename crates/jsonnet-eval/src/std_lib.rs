@@ -173,6 +173,16 @@ pub(crate) fn get_call(
       util::mk_num(x.ln(), expr)
     }
 
+    StdFn::log2 => {
+      let x = fns::log2::new(pos, named, expr)?.x(cx, env)?;
+      util::mk_num(x.log2(), expr)
+    }
+
+    StdFn::log10 => {
+      let x = fns::log10::new(pos, named, expr)?.x(cx, env)?;
+      util::mk_num(x.log10(), expr)
+    }
+
     StdFn::abs => {
       let n = fns::abs::new(pos, named, expr)?.n(cx, env)?;
       util::mk_num(n.abs(), expr)

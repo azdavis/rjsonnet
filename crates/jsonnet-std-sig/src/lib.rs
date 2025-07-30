@@ -718,7 +718,7 @@ pub const FNS: [Fn; 147] = [
   },
   Fn {
     name: S::new("log2"),
-    implemented: false,
+    implemented: true,
     sig: X_NUM_RET_NUM,
     total: true,
     available_since: None,
@@ -729,7 +729,7 @@ pub const FNS: [Fn; 147] = [
   },
   Fn {
     name: S::new("log10"),
-    implemented: false,
+    implemented: true,
     sig: X_NUM_RET_NUM,
     total: true,
     available_since: None,
