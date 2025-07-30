@@ -520,7 +520,7 @@ pub const FNS: [Fn; 147] = [
   },
   Fn {
     name: S::new("objectFieldsAll"),
-    implemented: false,
+    implemented: true,
     sig: OBJ_FIELDS,
     total: true,
     available_since: Some(10),
