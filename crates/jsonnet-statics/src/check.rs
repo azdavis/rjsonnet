@@ -358,7 +358,7 @@ fn can_ord_cmp(tys: &ty::MutStore<'_>, lhs: ty::Ty, rhs: ty::Ty) -> bool {
   }
 }
 
-#[allow(clippy::single_match_else)]
+#[expect(clippy::single_match_else)]
 fn get_subscript(
   st: &mut st::St<'_>,
   ar: &ExprArena,

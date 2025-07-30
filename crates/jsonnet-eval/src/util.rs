@@ -1,6 +1,6 @@
 //! Helper utilities.
 
-#![allow(clippy::needless_pass_by_value)]
+#![expect(clippy::needless_pass_by_value)]
 
 use crate::error::{self, Result};
 use jsonnet_expr::{ExprMust, Prim, StrArena};

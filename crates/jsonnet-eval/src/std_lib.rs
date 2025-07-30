@@ -1,6 +1,5 @@
 //! The standard library for Jsonnet, implemented in Rust.
 
-#![allow(non_snake_case)]
 use crate::error::{self, Error, Result};
 use crate::util;
 use crate::{Cx, exec, generated::fns, mk_todo};

@@ -1,6 +1,6 @@
 //! Info about tokens, the primitive unit of syntax.
 
-#![allow(clippy::needless_raw_string_hashes)]
+#![expect(clippy::needless_raw_string_hashes)]
 
 #[cfg(test)]
 mod tests;

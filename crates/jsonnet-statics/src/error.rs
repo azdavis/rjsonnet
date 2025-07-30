@@ -1,6 +1,6 @@
 //! Static errors.
 
-#![allow(clippy::too_many_lines)]
+#![expect(clippy::too_many_lines)]
 
 use crate::suggestion;
 use jsonnet_expr::{ExprMust, Id, Str, def};

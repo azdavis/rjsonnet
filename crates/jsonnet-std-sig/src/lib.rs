@@ -2,7 +2,7 @@
 //!
 //! Based on [the original std lib docs](https://jsonnet.org/ref/stdlib.html).
 
-#![allow(clippy::needless_raw_string_hashes)]
+#![expect(clippy::needless_raw_string_hashes)]
 
 #[cfg(test)]
 mod tests;

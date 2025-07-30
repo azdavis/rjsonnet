@@ -206,7 +206,7 @@ pub struct Unescape {
 impl Unescape {
   /// Creates a new one of these.
   #[must_use]
-  #[allow(unsafe_code)]
+  #[expect(unsafe_code)]
   pub fn new(bs: &[u8]) -> &Self {
     let ptr = std::ptr::from_ref::<[u8]>(bs);
     let ptr = ptr as *const Unescape;

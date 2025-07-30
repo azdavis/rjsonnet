@@ -1,6 +1,6 @@
 //! Jsonnet expressions.
 
-#![allow(missing_docs)]
+#![expect(missing_docs)]
 
 mod generated {
   include!(concat!(env!("OUT_DIR"), "/generated.rs"));

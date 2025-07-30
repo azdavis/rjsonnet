@@ -1,6 +1,6 @@
 //! Format strings used in `std::format` (and thus also `std::mod` and `%`).
 
-#![allow(missing_docs)]
+#![expect(missing_docs)]
 
 use always::always;
 use std::fmt;
@@ -178,7 +178,7 @@ impl FieldWidth {
   }
 }
 
-#[allow(clippy::struct_excessive_bools)]
+#[expect(clippy::struct_excessive_bools)]
 #[derive(Debug, Clone, Copy)]
 pub struct CFlags {
   pub alt: bool,

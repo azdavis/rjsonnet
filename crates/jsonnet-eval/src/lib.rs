@@ -11,7 +11,7 @@
 //!   executed to produce values.
 //! - During execution, we may need to manifest a Jsonnet value to convert it to a string.
 
-#![allow(missing_docs, clippy::too_many_lines)]
+#![expect(missing_docs, clippy::too_many_lines)]
 
 mod generated {
   include!(concat!(env!("OUT_DIR"), "/generated.rs"));
