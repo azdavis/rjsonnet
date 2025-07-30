@@ -141,6 +141,7 @@ local ys = std.flatMap(function(x) if x == 3 then [] else [x, x - 1], [1, 3, 7, 
   .check();
 }
 
+// TODO fix
 #[test]
 #[should_panic = "unreachable code"]
 fn object_values_comp() {
