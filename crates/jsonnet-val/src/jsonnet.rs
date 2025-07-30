@@ -273,7 +273,7 @@ impl Object {
   /// TODO should this be a generator?
   #[must_use]
   pub fn visible_fields(&self) -> Vec<(Str, Env, Expr)> {
-    let mut ret = self.fields();
+    let mut ret = self.visible_fields_unstable();
     // ok to sort unstable because there will not be duplicate keys
     ret.sort_unstable_by_key(|&(name, _, _)| name);
     ret
@@ -282,57 +282,83 @@ impl Object {
   /// Returns the visible fields, sorted in order of the string keys.
   #[must_use]
   pub fn sorted_visible_fields(&self, ar: &StrArena) -> Vec<(Str, Env, Expr)> {
-    let mut ret = self.fields();
+    let mut ret = self.visible_fields_unstable();
     // ok to sort unstable because there will not be duplicate keys
     ret.sort_unstable_by_key(|&(name, _, _)| ar.get(name));
     ret
   }
 
-  fn fields(&self) -> Vec<(Str, Env, Expr)> {
-    let mut vis_visible = FxHashMap::<Str, (&RegularObjectKind, &ExprField)>::default();
-    let mut vis_hidden = FxHashSet::<Str>::default();
-    let mut vis_default = FxHashMap::<Str, (&RegularObjectKind, &ExprField)>::default();
+  /// Returns all the fields sorted in string order.
+  ///
+  /// Ignore the visibility on the fields, it's meaningless.
+  #[must_use]
+  pub fn all_sorted_fields(&self, ar: &StrArena) -> Vec<(Str, Field)> {
+    let mut fs = self.fields();
+    let hidden = std::mem::take(&mut fs.hidden);
+    let iter = self
+      .visible(fs)
+      .map(|(str, env, expr)| (str, Field::Expr(Vis::Default, env, expr)))
+      .chain(hidden);
+    let mut ret: Vec<_> = iter.collect();
+    // ok to sort unstable because there will not be duplicate keys
+    ret.sort_unstable_by_key(|&(name, _)| ar.get(name));
+    ret
+  }
+
+  fn fields(&self) -> Fields<'_> {
+    let mut ret = Fields::default();
     for this in self.ancestry_considering_superness() {
       let this = match &this.kind {
         ObjectKind::Regular(x) => x,
         ObjectKind::Std => {
-          for (name, _) in StdField::ALL {
-            if !vis_visible.contains_key(&name) {
-              vis_hidden.insert(name);
+          for (name, field) in StdField::ALL {
+            if !ret.visible.contains_key(&name) {
+              ret.hidden.entry(name).or_insert(Field::Std(field));
             }
           }
           continue;
         }
       };
       for (&name, field) in &this.fields {
-        if vis_visible.contains_key(&name) || vis_hidden.contains(&name) {
+        if ret.visible.contains_key(&name) || ret.hidden.contains_key(&name) {
           continue;
         }
         match field.vis {
           Vis::Default => {
-            vis_default.entry(name).or_insert((this, field));
+            ret.default.entry(name).or_insert((this, field));
           }
           Vis::Hidden => {
-            vis_hidden.insert(name);
+            ret.hidden.entry(name).or_insert(Field::Expr(
+              Vis::Hidden,
+              this.env.clone(),
+              field.expr,
+            ));
           }
           Vis::Visible => {
-            vis_visible.insert(name, (this, field));
+            ret.visible.insert(name, (this, field));
           }
         }
       }
     }
-    for name in vis_hidden {
-      vis_default.remove(&name);
+    ret
+  }
+
+  fn visible_fields_unstable(&self) -> Vec<(Str, Env, Expr)> {
+    let mut fs = self.fields();
+    for name in fs.hidden.keys() {
+      fs.default.remove(name);
     }
-    vis_visible.extend(vis_default);
-    let iter = vis_visible.into_iter().map(|(name, (this, field))| {
+    self.visible(fs).collect()
+  }
+
+  fn visible(&self, fs: Fields<'_>) -> impl Iterator<Item = (Str, Env, Expr)> {
+    fs.visible.into_iter().chain(fs.default).map(|(name, (this, field))| {
       let mut env = self.set_this(&this.env);
       if let Some(subst) = &field.comp_subst {
         env.insert(subst.clone());
       }
       (name, env, field.expr)
-    });
-    iter.collect()
+    })
   }
 
   /// Gets a field off an object.
@@ -358,6 +384,13 @@ impl Object {
     }
     top.parent = Some(Box::new(other));
   }
+}
+
+#[derive(Debug, Default)]
+struct Fields<'a> {
+  visible: FxHashMap<Str, (&'a RegularObjectKind, &'a ExprField)>,
+  hidden: FxHashMap<Str, Field>,
+  default: FxHashMap<Str, (&'a RegularObjectKind, &'a ExprField)>,
 }
 
 #[derive(Debug, Clone)]
