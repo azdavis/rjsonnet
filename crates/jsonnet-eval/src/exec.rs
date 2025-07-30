@@ -269,17 +269,21 @@ fn get_idx(val: &Val, expr: ExprMust) -> Result<usize> {
   }
 }
 
+fn get_std_field(cx: &mut Cx<'_>, env: &Env, field: StdField) -> Val {
+  match field {
+    StdField::thisFile => {
+      let path = cx.paths.get_path(env.path());
+      let s = path.as_path().to_string_lossy().into_owned().into_boxed_str();
+      Val::Prim(Prim::String(cx.str_ar.str(s)))
+    }
+    StdField::pi => Val::Prim(Prim::Number(Float::PI)),
+    StdField::Fn(f) => Val::Fn(Fn::Std(f)),
+  }
+}
+
 pub(crate) fn get_field(cx: &mut Cx<'_>, env: &Env, field: Field) -> Result<Val> {
   match field {
-    Field::Std(field) => match field {
-      StdField::thisFile => {
-        let path = cx.paths.get_path(env.path());
-        let s = path.as_path().to_string_lossy().into_owned().into_boxed_str();
-        Ok(Val::Prim(Prim::String(cx.str_ar.str(s))))
-      }
-      StdField::pi => Ok(Val::Prim(Prim::Number(Float::PI))),
-      StdField::Fn(f) => Ok(Val::Fn(Fn::Std(f))),
-    },
+    Field::Std(field) => Ok(get_std_field(cx, env, field)),
     Field::Expr(_, env, expr) => get(cx, &env, expr),
   }
 }
