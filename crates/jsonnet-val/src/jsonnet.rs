@@ -2,7 +2,7 @@
 
 use always::always;
 use cycle::Cycle;
-use jsonnet_expr::{Expr, Id, Prim, StdField, StdFn, Str, StrArena, Vis};
+use jsonnet_expr::{Expr, ExprArena, ExprData, Id, Prim, StdField, StdFn, Str, StrArena, Vis};
 use rustc_hash::{FxHashMap, FxHashSet};
 
 /// An environment, which stores a mapping of identifiers to unevaluated expressions.
@@ -488,6 +488,20 @@ impl Field {
       Field::Expr(vis, _, _) => vis.is_visible(),
     }
   }
+
+  /// Returns this as an (env, expr) pair.
+  pub fn into_expr(self, ar: &mut ExprArena, p: paths::PathId) -> (Env, Expr) {
+    match self {
+      Field::Std(field) => (Env::empty(p), Some(std_field_expr(ar, field))),
+      Field::Expr(_, env, e) => (env, e),
+    }
+  }
+}
+
+fn std_field_expr(ar: &mut ExprArena, field: StdField) -> jsonnet_expr::ExprMust {
+  let on = Some(ar.alloc(ExprData::Id(Id::std_unutterable)));
+  let idx = Some(ar.alloc(ExprData::Prim(Prim::String(field.as_builtin_str()))));
+  ar.alloc(ExprData::Subscript { on, idx })
 }
 
 /// A lazy array.

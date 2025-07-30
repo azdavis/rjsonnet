@@ -499,7 +499,7 @@ pub(crate) fn get_call(
       let exprs = path_exprs(cx, env)?;
       let mut ret = Array::default();
       for (_, field) in fields {
-        let (env, expr) = field_expr(&mut exprs.ar, env, field);
+        let (env, expr) = field.into_expr(&mut exprs.ar, env.path());
         ret.push(env, expr);
       }
       Ok(ret.into())
@@ -525,7 +525,7 @@ pub(crate) fn get_call(
       let exprs = path_exprs(cx, env)?;
       let mut ret = Array::default();
       for (key, field) in fields {
-        let (env, expr) = field_expr(&mut exprs.ar, env, field);
+        let (env, expr) = field.into_expr(&mut exprs.ar, env.path());
         let elem = key_value_obj(&mut exprs.ar, key, expr);
         ret.push(env, Some(elem));
       }
@@ -554,15 +554,4 @@ fn key_value_obj(ar: &mut ExprArena, key: Str, val: Expr) -> ExprMust {
     jsonnet_expr::Field { key: val_str, vis: jsonnet_expr::Vis::Default, val },
   ];
   ar.alloc(ExprData::Object { asserts: Vec::new(), fields })
-}
-
-fn field_expr(ar: &mut ExprArena, env: &Env, field: jsonnet_val::jsonnet::Field) -> (Env, Expr) {
-  match field {
-    jsonnet_val::jsonnet::Field::Std(field) => {
-      let on = Some(ar.alloc(ExprData::Id(Id::std_unutterable)));
-      let idx = Some(ar.alloc(ExprData::Prim(Prim::String(field.as_builtin_str()))));
-      (Env::empty(env.path()), Some(ar.alloc(ExprData::Subscript { on, idx })))
-    }
-    jsonnet_val::jsonnet::Field::Expr(_, env, e) => (env, e),
-  }
 }
