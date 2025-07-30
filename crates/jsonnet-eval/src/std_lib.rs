@@ -247,6 +247,16 @@ pub(crate) fn get_call(
       util::mk_num(a.hypot(b), expr)
     }
 
+    StdFn::deg2rad => {
+      let x = fns::deg2rad::new(pos, named, expr)?.x(cx, env)?;
+      util::mk_num(x.to_radians(), expr)
+    }
+
+    StdFn::rad2deg => {
+      let x = fns::rad2deg::new(pos, named, expr)?.x(cx, env)?;
+      util::mk_num(x.to_degrees(), expr)
+    }
+
     StdFn::round => {
       let x = fns::round::new(pos, named, expr)?.x(cx, env)?;
       util::mk_num(x.round(), expr)

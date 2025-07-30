@@ -926,7 +926,7 @@ pub const FNS: [Fn; 147] = [
   },
   Fn {
     name: S::new("deg2rad"),
-    implemented: false,
+    implemented: true,
     sig: X_NUM_RET_NUM,
     total: true,
     available_since: None,
@@ -937,12 +937,12 @@ pub const FNS: [Fn; 147] = [
       "std.deg2rad(0) == 0",
       epsilon_eq!("deg2rad", "std.pi / 4", 45),
       epsilon_eq!("deg2rad", "std.pi / 2", 90),
-      epsilon_eq!("deg2rad", 3, 172),
+      epsilon_eq!("deg2rad", 3, 171.887),
     ]),
   },
   Fn {
     name: S::new("rad2deg"),
-    implemented: false,
+    implemented: true,
     sig: X_NUM_RET_NUM,
     total: true,
     available_since: None,
@@ -951,9 +951,9 @@ pub const FNS: [Fn; 147] = [
     "},
     examples: Examples::new(&[
       "std.rad2deg(0) == 0",
-      epsilon_eq!("rad2deg", 45, "std.pi / 4",),
-      epsilon_eq!("rad2deg", 90, "std.pi / 2",),
-      epsilon_eq!("rad2deg", 172, 3,),
+      epsilon_eq!("rad2deg", 45, "std.pi / 4"),
+      epsilon_eq!("rad2deg", 90, "std.pi / 2"),
+      epsilon_eq!("rad2deg", 171.887, 3),
     ]),
   },
   Fn {
