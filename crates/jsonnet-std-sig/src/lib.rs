@@ -596,6 +596,8 @@ pub const FNS: [Fn; 147] = [
       r#" std.prune([1, [], 2, {}, 3, null]) == [1, 2, 3] "#,
       r#" std.prune({ a: 3 }) == {a: 3} "#,
       r#" std.prune({ w: 0, x: "", y: [], z: null }) == {w: 0, x: ""} "#,
+      r#" std.prune([]) == [] "#,
+      r#" std.prune({}) == {} "#,
       r#" std.prune(null) == null "#,
     ]),
   },
