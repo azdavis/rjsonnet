@@ -5,7 +5,7 @@ use crate::util;
 use crate::{Cx, exec, generated::fns, mk_todo};
 use always::always;
 use finite_float::Float;
-use jsonnet_expr::{Expr, ExprArena, ExprData, ExprMust, Field, Id, Prim, StdFn, Str};
+use jsonnet_expr::{Expr, ExprArena, ExprData, ExprMust, Id, Prim, StdFn, Str};
 use jsonnet_val::jsonnet::{Array, Env, Fn, Subst, Val, ValOrExpr};
 use rustc_hash::FxHashSet;
 
@@ -523,8 +523,8 @@ fn key_value_obj(ar: &mut ExprArena, key: Str, val: Expr) -> ExprMust {
   let val_str = Some(ar.alloc(ExprData::Prim(Prim::String(Str::value))));
   let k = Some(ar.alloc(ExprData::Prim(Prim::String(key))));
   let fields = vec![
-    Field { key: key_str, vis: jsonnet_expr::Vis::Default, val: k },
-    Field { key: val_str, vis: jsonnet_expr::Vis::Default, val },
+    jsonnet_expr::Field { key: key_str, vis: jsonnet_expr::Vis::Default, val: k },
+    jsonnet_expr::Field { key: val_str, vis: jsonnet_expr::Vis::Default, val },
   ];
   ar.alloc(ExprData::Object { asserts: Vec::new(), fields })
 }
