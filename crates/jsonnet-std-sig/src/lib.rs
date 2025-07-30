@@ -893,7 +893,7 @@ pub const FNS: [Fn; 147] = [
   },
   Fn {
     name: S::new("atan2"),
-    implemented: false,
+    implemented: true,
     sig: sig(&[req("y", Ty::Num), req("x", Ty::Num)], Ty::Num),
     total: true,
     available_since: None,

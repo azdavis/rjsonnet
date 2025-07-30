@@ -233,6 +233,13 @@ pub(crate) fn get_call(
       util::mk_num(x.atan(), expr)
     }
 
+    StdFn::atan2 => {
+      let args = fns::atan2::new(pos, named, expr)?;
+      let y = args.y(cx, env)?;
+      let x = args.x(cx, env)?;
+      util::mk_num(y.atan2(x), expr)
+    }
+
     StdFn::round => {
       let x = fns::round::new(pos, named, expr)?.x(cx, env)?;
       util::mk_num(x.round(), expr)
