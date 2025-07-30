@@ -461,9 +461,10 @@ pub(crate) fn get_call(
     StdFn::objectFields => {
       let args = fns::objectFields::new(pos, named, expr)?;
       let o = args.o(cx, env)?;
+      let mut fields = o.visible_fields();
+      fields.sort_unstable_by_key(|(s, _, _)| cx.str_ar.get(*s));
       let exprs = path_exprs(cx, env)?;
-      let elems: Vec<_> = o
-        .visible_fields()
+      let elems: Vec<_> = fields
         .into_iter()
         .map(|(s, _, _)| Some(exprs.ar.alloc(ExprData::Prim(Prim::String(s)))))
         .collect();
@@ -473,8 +474,10 @@ pub(crate) fn get_call(
     StdFn::objectValues => {
       let args = fns::objectValues::new(pos, named, expr)?;
       let o = args.o(cx, env)?;
+      let mut fields = o.visible_fields();
+      fields.sort_unstable_by_key(|(s, _, _)| cx.str_ar.get(*s));
       let mut ret = Array::default();
-      for (_, env, expr) in o.visible_fields() {
+      for (_, env, expr) in fields {
         ret.push(env, expr);
       }
       Ok(ret.into())
@@ -483,9 +486,11 @@ pub(crate) fn get_call(
     StdFn::objectKeysValues => {
       let args = fns::objectKeysValues::new(pos, named, expr)?;
       let o = args.o(cx, env)?;
+      let mut fields = o.visible_fields();
+      fields.sort_unstable_by_key(|(s, _, _)| cx.str_ar.get(*s));
       let exprs = path_exprs(cx, env)?;
       let mut ret = Array::default();
-      for (key, env, expr) in o.visible_fields() {
+      for (key, env, expr) in fields {
         let key_str = Some(exprs.ar.alloc(ExprData::Prim(Prim::String(Str::key))));
         let val_str = Some(exprs.ar.alloc(ExprData::Prim(Prim::String(Str::value))));
         let k = Some(exprs.ar.alloc(ExprData::Prim(Prim::String(key))));
