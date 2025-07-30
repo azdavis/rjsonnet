@@ -465,11 +465,9 @@ pub(crate) fn get_call(
       let args = fns::makeArray::new(pos, named, expr)?;
       let sz = args.sz(cx, env)?;
       let func = args.func(cx, env)?;
-      let func_id = cx.str_ar.id_fresh_unutterable();
-      let exprs = path_exprs(cx, env)?;
       let mut env = env.clone();
-      env.insert(Subst { id: func_id, val: ValOrExpr::Val(Val::Fn(func)) });
-      let func = Some(exprs.ar.alloc(ExprData::Id(func_id)));
+      let func = Some(insert_func(cx, &mut env, func)?);
+      let exprs = path_exprs(cx, env.path())?;
       let elems = (0..sz).map(|idx| {
         let idx = ExprData::Prim(Prim::Number(Float::from(idx)));
         let idx = Some(exprs.ar.alloc(idx));
@@ -515,7 +513,7 @@ pub(crate) fn get_call(
       let args = fns::objectFields::new(pos, named, expr)?;
       let o = args.o(cx, env)?;
       let fields = o.sorted_visible_fields(cx.str_ar);
-      let exprs = path_exprs(cx, env)?;
+      let exprs = path_exprs(cx, env.path())?;
       let elems: Vec<_> = fields
         .into_iter()
         .map(|(s, _, _)| Some(exprs.ar.alloc(ExprData::Prim(Prim::String(s)))))
@@ -527,7 +525,7 @@ pub(crate) fn get_call(
       let args = fns::objectFieldsAll::new(pos, named, expr)?;
       let o = args.o(cx, env)?;
       let fields = o.all_sorted_fields(cx.str_ar);
-      let exprs = path_exprs(cx, env)?;
+      let exprs = path_exprs(cx, env.path())?;
       let elems: Vec<_> = fields
         .into_iter()
         .map(|(s, _)| Some(exprs.ar.alloc(ExprData::Prim(Prim::String(s)))))
@@ -550,7 +548,7 @@ pub(crate) fn get_call(
       let args = fns::objectValuesAll::new(pos, named, expr)?;
       let o = args.o(cx, env)?;
       let fields = o.all_sorted_fields(cx.str_ar);
-      let exprs = path_exprs(cx, env)?;
+      let exprs = path_exprs(cx, env.path())?;
       let mut ret = Array::default();
       for (_, field) in fields {
         let (env, expr) = field.into_expr(&mut exprs.ar, env.path());
@@ -563,7 +561,7 @@ pub(crate) fn get_call(
       let args = fns::objectKeysValues::new(pos, named, expr)?;
       let o = args.o(cx, env)?;
       let fields = o.sorted_visible_fields(cx.str_ar);
-      let exprs = path_exprs(cx, env)?;
+      let exprs = path_exprs(cx, env.path())?;
       let mut ret = Array::default();
       for (key, env, expr) in fields {
         let elem = key_value_obj(&mut exprs.ar, key, expr);
@@ -576,7 +574,7 @@ pub(crate) fn get_call(
       let args = fns::objectKeysValuesAll::new(pos, named, expr)?;
       let o = args.o(cx, env)?;
       let fields = o.all_sorted_fields(cx.str_ar);
-      let exprs = path_exprs(cx, env)?;
+      let exprs = path_exprs(cx, env.path())?;
       let mut ret = Array::default();
       for (key, field) in fields {
         let (env, expr) = field.into_expr(&mut exprs.ar, env.path());
@@ -590,7 +588,7 @@ pub(crate) fn get_call(
       let args = fns::objectRemoveKey::new(pos, named, expr)?;
       let mut obj = args.obj(cx, env)?;
       let key = args.key(cx, env)?;
-      let exprs = path_exprs(cx, env)?;
+      let exprs = path_exprs(cx, env.path())?;
       obj.remove_key_and_asserts(key, &mut exprs.ar, env.path());
       Ok(obj.into())
     }
@@ -599,12 +597,12 @@ pub(crate) fn get_call(
   }
 }
 
-fn path_exprs<'a>(cx: &'a mut Cx<'_>, env: &Env) -> Result<&'a mut crate::Exprs> {
-  if let Some(exprs) = cx.exprs.get_mut(&env.path()) {
+fn path_exprs<'a>(cx: &'a mut Cx<'_>, path: paths::PathId) -> Result<&'a mut crate::Exprs> {
+  if let Some(exprs) = cx.exprs.get_mut(&path) {
     Ok(exprs)
   } else {
     always!(false, "should have this paths's exprs");
-    Err(Error::NoPath(env.path()))
+    Err(Error::NoPath(path))
   }
 }
 
@@ -617,4 +615,11 @@ fn key_value_obj(ar: &mut ExprArena, key: Str, val: Expr) -> ExprMust {
     jsonnet_expr::Field { key: val_str, vis: jsonnet_expr::Vis::Default, val },
   ];
   ar.alloc(ExprData::Object { asserts: Vec::new(), fields })
+}
+
+fn insert_func(cx: &mut Cx<'_>, env: &mut Env, func: Fn) -> Result<ExprMust> {
+  let func_id = cx.str_ar.id_fresh_unutterable();
+  let exprs = path_exprs(cx, env.path())?;
+  env.insert(Subst { id: func_id, val: ValOrExpr::Val(Val::Fn(func)) });
+  Ok(exprs.ar.alloc(ExprData::Id(func_id)))
 }
