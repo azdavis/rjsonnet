@@ -518,6 +518,20 @@ pub(crate) fn get_call(
       Ok(ret.into())
     }
 
+    StdFn::objectKeysValuesAll => {
+      let args = fns::objectKeysValuesAll::new(pos, named, expr)?;
+      let o = args.o(cx, env)?;
+      let fields = o.all_sorted_fields(cx.str_ar);
+      let exprs = path_exprs(cx, env)?;
+      let mut ret = Array::default();
+      for (key, field) in fields {
+        let (env, expr) = field_expr(&mut exprs.ar, env, field);
+        let elem = key_value_obj(&mut exprs.ar, key, expr);
+        ret.push(env, Some(elem));
+      }
+      Ok(ret.into())
+    }
+
     _ => Err(mk_todo(expr, func.as_static_str())),
   }
 }
