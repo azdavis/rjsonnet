@@ -1093,7 +1093,7 @@ pub const FNS: [Fn; 147] = [
   },
   Fn {
     name: S::new("assertEqual"),
-    implemented: false,
+    implemented: true,
     sig: sig(&[req("a", Ty::Any), req("b", Ty::Any)], Ty::True),
     total: true,
     available_since: Some(10),
@@ -1102,7 +1102,7 @@ pub const FNS: [Fn; 147] = [
 
       Returns `true` if so, else throws an error message.
     "},
-    examples: Examples::new(&["std.assertEqual(2 + 2, 4)", "std.assertEqual(12 - 34, -22))"]),
+    examples: Examples::new(&["std.assertEqual(2 + 2, 4)", "std.assertEqual(12 - 34, -22)"]),
   },
   Fn {
     name: S::new("toString"),

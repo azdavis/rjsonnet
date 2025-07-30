@@ -269,6 +269,17 @@ pub(crate) fn get_call(
       Ok(exec::eq_val(expr, cx, &x, &y)?.into())
     }
 
+    StdFn::assertEqual => {
+      let args = fns::assertEqual::new(pos, named, expr)?;
+      let a = args.a(cx, env)?;
+      let b = args.b(cx, env)?;
+      if exec::eq_val(expr, cx, &a, &b)? {
+        Ok(true.into())
+      } else {
+        Err(error::Error::Exec { expr, kind: error::Kind::User(Str::ASSERTION_FAILED) })
+      }
+    }
+
     StdFn::isEven => {
       let x = fns::isEven::new(pos, named, expr)?.x(cx, env)?;
       Ok((x.abs() % 2.0 == 0.0).into())
