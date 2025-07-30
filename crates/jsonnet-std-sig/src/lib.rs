@@ -876,7 +876,6 @@ pub const FNS: [Fn; 147] = [
     available_since: None,
     doc: indoc! {"
       Returns the arccosine of its argument.
-      ```
     "},
     examples: Examples::new(&[epsilon_eq!("acos", 1.57, 0), epsilon_eq!("acos", 1.04, 0.5)]),
   },
@@ -1886,19 +1885,8 @@ pub const FNS: [Fn; 147] = [
     total: true,
     available_since: Some(10),
     doc: indoc! {r#"
-      Given an array of values,
-
-      ```
-      std.manifestYamlStream(
-        value,
-        indent_array_in_object=false,
-        c_document_end=false,
-        quote_keys=true,
-      )
-      ```
-
-      emits a YAML "stream", which is a sequence of documents separated by `---` and ending with
-      `...`.
+      Given an array of values, emits a YAML "stream", which is a sequence of documents separated
+      by `---` and ending with `...`.
 
       The `indent_array_in_object` and `quote_keys` params are the same as in `std.manifestYamlDoc`.
 
