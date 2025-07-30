@@ -523,8 +523,8 @@ pub(crate) fn eq_val(expr: ExprMust, cx: &mut Cx<'_>, lhs: &Val, rhs: &Val) -> R
     (Val::Object(lhs), Val::Object(rhs)) => {
       ck_object_asserts(cx, lhs)?;
       ck_object_asserts(cx, rhs)?;
-      let lhs_fields = lhs.sorted_visible_fields();
-      let rhs_fields = rhs.sorted_visible_fields();
+      let lhs_fields = lhs.visible_fields();
+      let rhs_fields = rhs.visible_fields();
       if lhs_fields.len() != rhs_fields.len() {
         return Ok(false);
       }

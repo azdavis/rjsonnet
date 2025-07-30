@@ -264,11 +264,15 @@ impl Object {
     iter.map(|(this, expr)| (self.set_this(&this.env), expr))
   }
 
-  /// Returns the visible fields, sorted in some stable order.
+  /// Returns the visible fields.
+  ///
+  /// The fields will be sorted in some stable order, i.e. calls to this method on the same object
+  /// will return the same result each time. However, that order is likely not the lexicographic
+  /// ordering of the string keys.
   ///
   /// TODO should this be a generator?
   #[must_use]
-  pub fn sorted_visible_fields(&self) -> Vec<(Str, Env, Expr)> {
+  pub fn visible_fields(&self) -> Vec<(Str, Env, Expr)> {
     let mut vis_visible = FxHashMap::<Str, (&RegularObjectKind, &ExprField)>::default();
     let mut vis_hidden = FxHashSet::<Str>::default();
     let mut vis_default = FxHashMap::<Str, (&RegularObjectKind, &ExprField)>::default();
@@ -313,6 +317,7 @@ impl Object {
       (name, env, field.expr)
     });
     let mut ret: Vec<_> = iter.collect();
+    // ok to sort unstable because there will not be duplicate keys
     ret.sort_unstable_by_key(|&(name, _, _)| name);
     ret
   }

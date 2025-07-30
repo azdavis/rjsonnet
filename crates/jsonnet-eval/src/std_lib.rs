@@ -74,7 +74,7 @@ pub(crate) fn get_call(
           // we want "number of codepoints", NOT byte length.
           Prim::String(s) => cx.str_ar.get(s).chars().count(),
         },
-        Val::Object(obj) => obj.sorted_visible_fields().len(),
+        Val::Object(obj) => obj.visible_fields().len(),
         Val::Array(arr) => arr.len(),
         Val::Fn(Fn::Regular(func)) => func.params.iter().filter(|(_, d)| d.is_none()).count(),
         Val::Fn(Fn::Std(func)) => func.required_params_count(),
@@ -463,7 +463,7 @@ pub(crate) fn get_call(
       let o = args.o(cx, env)?;
       let exprs = path_exprs(cx, env)?;
       let elems: Vec<_> = o
-        .sorted_visible_fields()
+        .visible_fields()
         .into_iter()
         .map(|(s, _, _)| Some(exprs.ar.alloc(ExprData::Prim(Prim::String(s)))))
         .collect();
@@ -474,7 +474,7 @@ pub(crate) fn get_call(
       let args = fns::objectValues::new(pos, named, expr)?;
       let o = args.o(cx, env)?;
       let mut ret = Array::default();
-      for (_, env, expr) in o.sorted_visible_fields() {
+      for (_, env, expr) in o.visible_fields() {
         ret.push(env, expr);
       }
       Ok(ret.into())
@@ -485,7 +485,7 @@ pub(crate) fn get_call(
       let o = args.o(cx, env)?;
       let exprs = path_exprs(cx, env)?;
       let mut ret = Array::default();
-      for (key, env, expr) in o.sorted_visible_fields() {
+      for (key, env, expr) in o.visible_fields() {
         let key_str = Some(exprs.ar.alloc(ExprData::Prim(Prim::String(Str::key))));
         let val_str = Some(exprs.ar.alloc(ExprData::Prim(Prim::String(Str::value))));
         let k = Some(exprs.ar.alloc(ExprData::Prim(Prim::String(key))));
