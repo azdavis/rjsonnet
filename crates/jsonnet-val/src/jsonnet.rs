@@ -260,7 +260,9 @@ impl Object {
         ObjectKind::Regular(this) => Some(this),
         ObjectKind::Std => None,
       })
-      .flat_map(|this| this.asserts.iter().map(move |&expr| (this, expr)));
+      .flat_map(|this| {
+        this.asserts.iter().flat_map(|x| x.asserts.iter()).map(move |&expr| (this, expr))
+      });
     iter.map(|(this, expr)| (self.set_this(&this.env), expr))
   }
 
@@ -269,8 +271,6 @@ impl Object {
   /// The fields will be sorted in some stable order, i.e. calls to this method on the same object
   /// will return the same result each time. However, that order is likely not the lexicographic
   /// ordering of the string keys.
-  ///
-  /// TODO should this be a generator?
   #[must_use]
   pub fn visible_fields(&self) -> Vec<(Str, Env, Expr)> {
     let mut ret = self.visible_fields_unstable();
@@ -401,10 +401,16 @@ enum ObjectKind {
 
 #[derive(Debug, Clone)]
 struct RegularObjectKind {
-  id: uniq::Uniq,
   env: Env,
-  asserts: Vec<Expr>,
+  asserts: Option<Asserts>,
   fields: ExprFields,
+}
+
+#[derive(Debug, Clone)]
+struct Asserts {
+  id: uniq::Uniq,
+  /// INVARIANT: non-empty.
+  asserts: Vec<Expr>,
 }
 
 /// A maker of objects.
@@ -421,8 +427,9 @@ impl ObjectMk {
   /// Returns a new regular (non-std) object.
   #[must_use]
   pub fn mk(&mut self, env: Env, asserts: Vec<Expr>, fields: ExprFields) -> Object {
-    let id = self.id_mk.mk();
-    let kind = ObjectKind::Regular(RegularObjectKind { id, env, asserts, fields });
+    let asserts =
+      if asserts.is_empty() { None } else { Some(Asserts { id: self.id_mk.mk(), asserts }) };
+    let kind = ObjectKind::Regular(RegularObjectKind { env, asserts, fields });
     Object { parent: None, kind, is_super: false }
   }
 
@@ -433,7 +440,10 @@ impl ObjectMk {
   pub fn start_checking_asserts(&mut self, object: &Object) -> bool {
     match &object.kind {
       ObjectKind::Std => false,
-      ObjectKind::Regular(obj) => self.checking_asserts.insert(obj.id),
+      ObjectKind::Regular(obj) => match &obj.asserts {
+        None => false,
+        Some(a) => self.checking_asserts.insert(a.id),
+      },
     }
   }
 
@@ -441,7 +451,10 @@ impl ObjectMk {
   pub fn finish_checking_asserts(&mut self, object: &Object) {
     let ret = match &object.kind {
       ObjectKind::Std => false,
-      ObjectKind::Regular(obj) => self.checking_asserts.remove(&obj.id),
+      ObjectKind::Regular(obj) => match &obj.asserts {
+        None => false,
+        Some(a) => self.checking_asserts.remove(&a.id),
+      },
     };
     always!(ret, "should only finish checking asserts once started");
   }
