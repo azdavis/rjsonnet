@@ -458,6 +458,18 @@ pub(crate) fn get_call(
       }
     }
 
+    StdFn::objectFields => {
+      let args = fns::objectFields::new(pos, named, expr)?;
+      let o = args.o(cx, env)?;
+      let exprs = path_exprs(cx, env)?;
+      let elems: Vec<_> = o
+        .sorted_visible_fields()
+        .into_iter()
+        .map(|(s, _, _)| Some(exprs.ar.alloc(ExprData::Prim(Prim::String(s)))))
+        .collect();
+      Ok(Array::new(Env::empty(env.path()), elems).into())
+    }
+
     _ => Err(mk_todo(expr, func.as_static_str())),
   }
 }
