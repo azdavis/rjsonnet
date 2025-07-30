@@ -152,3 +152,27 @@ function(foo)
   )
   .check();
 }
+
+#[test]
+fn map_with_key_override_vis() {
+  JsonnetInput::manifest(
+    r#"
+local f(a, b) = std.length(a) + b;
+local vis = {foo::: 3};
+local hid = {foo:: 2};
+{
+  x: hid + vis,
+  y: hid + std.mapWithKey(f, vis),
+}
+"#,
+    r#"
+{
+  "x": {
+    "foo": 3
+  },
+  "y": {}
+}
+"#,
+  )
+  .check();
+}

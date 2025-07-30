@@ -603,7 +603,7 @@ pub const FNS: [Fn; 147] = [
   },
   Fn {
     name: S::new("mapWithKey"),
-    implemented: false,
+    implemented: true,
     sig: sig(&[req("func", Ty::FnKv), req("obj", Ty::Obj)], Ty::Obj),
     total: true,
     available_since: Some(10),

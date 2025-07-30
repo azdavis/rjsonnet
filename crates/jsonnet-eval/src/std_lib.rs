@@ -5,8 +5,8 @@ use crate::util;
 use crate::{Cx, exec, generated::fns, mk_todo};
 use always::always;
 use finite_float::Float;
-use jsonnet_expr::{Expr, ExprArena, ExprData, ExprMust, Id, Prim, StdFn, Str};
-use jsonnet_val::jsonnet::{Array, Env, Fn, Subst, Val, ValOrExpr};
+use jsonnet_expr::{Expr, ExprArena, ExprData, ExprMust, Id, Prim, StdFn, Str, Vis};
+use jsonnet_val::jsonnet::{Array, Env, ExprField, ExprFields, Fn, Subst, Val, ValOrExpr};
 use rustc_hash::FxHashSet;
 
 pub(crate) fn get_call(
@@ -591,6 +591,31 @@ pub(crate) fn get_call(
       let exprs = path_exprs(cx, env.path())?;
       obj.remove_key_and_asserts(key, &mut exprs.ar, env.path());
       Ok(obj.into())
+    }
+
+    StdFn::mapWithKey => {
+      let args = fns::mapWithKey::new(pos, named, expr)?;
+      let func = args.func(cx, env)?;
+      let obj = args.obj(cx, env)?;
+      exec::ck_object_asserts(cx, &obj)?;
+      let mut ret = cx.obj_mk.mk(Env::empty(env.path()), Vec::new(), ExprFields::new());
+      for (key, mut arg_env, val) in obj.visible_fields() {
+        let func = Some(insert_func(cx, &mut arg_env, func.clone())?);
+        let exprs = path_exprs(cx, arg_env.path())?;
+        let key_expr = Some(exprs.ar.alloc(ExprData::Prim(Prim::String(key))));
+        let expr = Some(exprs.ar.alloc(ExprData::Call {
+          func,
+          positional: vec![key_expr, val],
+          named: Vec::new(),
+        }));
+        // use default vis
+        let field = ExprField { vis: Vis::Default, expr, comp_subst: None };
+        let fields = ExprFields::from([(key, field)]);
+        let obj = cx.obj_mk.mk(arg_env, Vec::new(), fields);
+        // inefficient. makes each field its own one-field object in a + chain
+        ret.set_parent_to(obj);
+      }
+      Ok(ret.into())
     }
 
     _ => Err(mk_todo(expr, func.as_static_str())),
