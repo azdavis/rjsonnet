@@ -67,7 +67,7 @@ pub(crate) fn get(cx: &mut Cx<'_>, env: &Env, expr: Expr) -> Result<Val> {
         let Some(field) = object.get_field(name) else {
           return Err(error::Error::Exec { expr, kind: error::Kind::NoSuchField(name) });
         };
-        get_field(cx, env, field)
+        get_field(cx, env.path(), field)
       }
       Val::Array(array) => {
         let idx = get(cx, env, idx)?;
@@ -269,10 +269,10 @@ fn get_idx(val: &Val, expr: ExprMust) -> Result<usize> {
   }
 }
 
-fn get_std_field(cx: &mut Cx<'_>, env: &Env, field: StdField) -> Val {
+fn get_std_field(cx: &mut Cx<'_>, path: paths::PathId, field: StdField) -> Val {
   match field {
     StdField::thisFile => {
-      let path = cx.paths.get_path(env.path());
+      let path = cx.paths.get_path(path);
       let s = path.as_path().to_string_lossy().into_owned().into_boxed_str();
       Val::Prim(Prim::String(cx.str_ar.str(s)))
     }
@@ -281,9 +281,9 @@ fn get_std_field(cx: &mut Cx<'_>, env: &Env, field: StdField) -> Val {
   }
 }
 
-pub(crate) fn get_field(cx: &mut Cx<'_>, env: &Env, field: Field) -> Result<Val> {
+pub(crate) fn get_field(cx: &mut Cx<'_>, path: paths::PathId, field: Field) -> Result<Val> {
   match field {
-    Field::Std(field) => Ok(get_std_field(cx, env, field)),
+    Field::Std(field) => Ok(get_std_field(cx, path, field)),
     Field::Expr(_, env, expr) => get(cx, &env, expr),
   }
 }

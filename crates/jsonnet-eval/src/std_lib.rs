@@ -433,7 +433,7 @@ pub(crate) fn get_call(
       let Some(field) = obj.get_field(field) else { return args.default(cx, env) };
       if field.is_visible() || inc_hidden {
         exec::ck_object_asserts(cx, &obj)?;
-        exec::get_field(cx, env, field)
+        exec::get_field(cx, env.path(), field)
       } else {
         args.default(cx, env)
       }
