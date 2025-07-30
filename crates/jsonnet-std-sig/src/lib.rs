@@ -565,7 +565,7 @@ pub const FNS: [Fn; 147] = [
   },
   Fn {
     name: S::new("objectRemoveKey"),
-    implemented: false,
+    implemented: true,
     sig: sig(&[req("obj", Ty::Obj), req("key", Ty::Str)], Ty::Obj),
     total: true,
     available_since: Some(21),

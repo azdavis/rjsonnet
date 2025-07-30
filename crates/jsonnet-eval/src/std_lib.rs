@@ -532,6 +532,15 @@ pub(crate) fn get_call(
       Ok(ret.into())
     }
 
+    StdFn::objectRemoveKey => {
+      let args = fns::objectRemoveKey::new(pos, named, expr)?;
+      let mut obj = args.obj(cx, env)?;
+      let key = args.key(cx, env)?;
+      let exprs = path_exprs(cx, env)?;
+      obj.remove_key_and_asserts(key, &mut exprs.ar, env.path());
+      Ok(obj.into())
+    }
+
     _ => Err(mk_todo(expr, func.as_static_str())),
   }
 }

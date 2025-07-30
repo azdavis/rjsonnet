@@ -384,6 +384,31 @@ impl Object {
     }
     top.parent = Some(Box::new(other));
   }
+
+  /// Removes the named key and all object asserts.
+  ///
+  /// ## Impl note
+  ///
+  /// This may need to create intermediate objects if this contains a `std` in its inheritance
+  /// chain. Thus the extra arguments.
+  pub fn remove_key_and_asserts(&mut self, name: Str, ar: &mut ExprArena, path: paths::PathId) {
+    let mut cur = self;
+    loop {
+      if let ObjectKind::Std = cur.kind {
+        cur.kind = ObjectKind::Regular(RegularObjectKind::std(ar, path));
+      }
+      let ObjectKind::Regular(obj) = &mut cur.kind else {
+        always!(false, "just converted std into regular object");
+        break;
+      };
+      obj.asserts = None;
+      obj.fields.remove(&name);
+      match &mut cur.parent {
+        None => break,
+        Some(x) => cur = x,
+      }
+    }
+  }
 }
 
 #[derive(Debug, Default)]
@@ -404,6 +429,16 @@ struct RegularObjectKind {
   env: Env,
   asserts: Option<Asserts>,
   fields: ExprFields,
+}
+
+impl RegularObjectKind {
+  /// Returns a regular object with the same semantics as `std`.
+  fn std(ar: &mut ExprArena, path: paths::PathId) -> Self {
+    let fields = StdField::ALL.into_iter().map(|(k, v)| {
+      (k, ExprField { vis: Vis::Hidden, expr: Some(std_field_expr(ar, v)), comp_subst: None })
+    });
+    Self { env: Env::empty(path), asserts: None, fields: fields.collect() }
+  }
 }
 
 #[derive(Debug, Clone)]
