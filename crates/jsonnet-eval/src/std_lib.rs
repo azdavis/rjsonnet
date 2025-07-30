@@ -240,6 +240,13 @@ pub(crate) fn get_call(
       util::mk_num(y.atan2(x), expr)
     }
 
+    StdFn::hypot => {
+      let args = fns::hypot::new(pos, named, expr)?;
+      let a = args.a(cx, env)?;
+      let b = args.b(cx, env)?;
+      util::mk_num(a.hypot(b), expr)
+    }
+
     StdFn::round => {
       let x = fns::round::new(pos, named, expr)?.x(cx, env)?;
       util::mk_num(x.round(), expr)

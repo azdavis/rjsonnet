@@ -910,7 +910,7 @@ pub const FNS: [Fn; 147] = [
   },
   Fn {
     name: S::new("hypot"),
-    implemented: false,
+    implemented: true,
     sig: A_B_NUM,
     total: true,
     available_since: None,
