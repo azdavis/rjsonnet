@@ -78,7 +78,7 @@ pub(crate) fn get_call(
         Val::Fn(Fn::Regular(func)) => func.params.iter().filter(|(_, d)| d.is_none()).count(),
         Val::Fn(Fn::Std(func)) => func.required_params_count(),
       };
-      Ok(Float::from(ret).into())
+      Ok(Float::from(always::convert::usize_to_u32(ret)).into())
     }
 
     StdFn::join => {
@@ -352,8 +352,8 @@ pub(crate) fn get_call(
     StdFn::substr => {
       let args = fns::substr::new(pos, named, expr)?;
       let str = args.str(cx, env)?;
-      let from = args.from(cx, env)?;
-      let len = args.len(cx, env)?;
+      let from = always::convert::u32_to_usize(args.from(cx, env)?);
+      let len = always::convert::u32_to_usize(args.len(cx, env)?);
       let str = cx.str_ar.get(str);
       if from >= str.len() {
         return Err(error::Error::Exec { expr, kind: error::Kind::IdxOutOfRange(from) });

@@ -66,9 +66,9 @@ pub(crate) fn mk_str(sa: &mut StrArena, s: String) -> Val {
 }
 
 #[expect(clippy::float_cmp, clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-pub(crate) fn get_uint(n: f64, expr: ExprMust) -> Result<usize> {
+pub(crate) fn get_uint(n: f64, expr: ExprMust) -> Result<u32> {
   if n >= 0.0 && n.trunc() == n {
-    Ok(n as usize)
+    Ok(n as u32)
   } else {
     Err(error::Error::Exec { expr, kind: error::Kind::IncompatibleTypes })
   }

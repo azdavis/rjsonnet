@@ -118,7 +118,7 @@ fn mk_get_params(index: usize, params: &[Param]) -> proc_macro2::TokenStream {
       Ty::True | Ty::Bool => (q!(bool), q! { util::get_bool(ret, expr) }),
       Ty::Num => (q!(f64), q! { util::get_num(ret, expr) }),
       Ty::Uint => (
-        q!(usize),
+        q!(u32),
         q! {
           let ret = util::get_num(ret, expr)?;
           util::get_uint(ret, expr)

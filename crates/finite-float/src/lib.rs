@@ -83,10 +83,9 @@ impl TryFrom<f64> for Float {
   }
 }
 
-impl From<usize> for Float {
-  fn from(value: usize) -> Self {
-    #[expect(clippy::cast_precision_loss)]
-    Self(value as f64)
+impl From<u32> for Float {
+  fn from(value: u32) -> Self {
+    Self(value.into())
   }
 }
 
