@@ -618,7 +618,410 @@ pub(crate) fn get_call(
       Ok(ret.into())
     }
 
-    _ => Err(mk_todo(expr, func.as_static_str())),
+    StdFn::prune => {
+      // TODO impl `prune`
+      Err(mk_todo(expr, "prune"))
+    }
+
+    StdFn::exponent => {
+      // TODO impl `exponent`
+      Err(mk_todo(expr, "exponent"))
+    }
+
+    StdFn::mantissa => {
+      // TODO impl `mantissa`
+      Err(mk_todo(expr, "mantissa"))
+    }
+
+    StdFn::mod_ => {
+      // TODO impl `mod_`
+      Err(mk_todo(expr, "mod_"))
+    }
+
+    StdFn::toString => {
+      // TODO impl `toString`
+      Err(mk_todo(expr, "toString"))
+    }
+
+    StdFn::codepoint => {
+      // TODO impl `codepoint`
+      Err(mk_todo(expr, "codepoint"))
+    }
+
+    StdFn::char => {
+      // TODO impl `char`
+      Err(mk_todo(expr, "char"))
+    }
+
+    StdFn::findSubstr => {
+      // TODO impl `findSubstr`
+      Err(mk_todo(expr, "findSubstr"))
+    }
+
+    StdFn::split => {
+      // TODO impl `split`
+      Err(mk_todo(expr, "split"))
+    }
+
+    StdFn::splitLimit => {
+      // TODO impl `splitLimit`
+      Err(mk_todo(expr, "splitLimit"))
+    }
+
+    StdFn::splitLimitR => {
+      // TODO impl `splitLimitR`
+      Err(mk_todo(expr, "splitLimitR"))
+    }
+
+    StdFn::trim => {
+      // TODO impl `trim`
+      Err(mk_todo(expr, "trim"))
+    }
+
+    StdFn::stringChars => {
+      // TODO impl `stringChars`
+      Err(mk_todo(expr, "stringChars"))
+    }
+
+    StdFn::escapeStringBash => {
+      // TODO impl `escapeStringBash`
+      Err(mk_todo(expr, "escapeStringBash"))
+    }
+
+    StdFn::escapeStringDollars => {
+      // TODO impl `escapeStringDollars`
+      Err(mk_todo(expr, "escapeStringDollars"))
+    }
+
+    StdFn::escapeStringJson => {
+      // TODO impl `escapeStringJson`
+      Err(mk_todo(expr, "escapeStringJson"))
+    }
+
+    StdFn::escapeStringPython => {
+      // TODO impl `escapeStringPython`
+      Err(mk_todo(expr, "escapeStringPython"))
+    }
+
+    StdFn::escapeStringXml => {
+      // TODO impl `escapeStringXml`
+      Err(mk_todo(expr, "escapeStringXml"))
+    }
+
+    StdFn::parseInt => {
+      // TODO impl `parseInt`
+      Err(mk_todo(expr, "parseInt"))
+    }
+
+    StdFn::parseOctal => {
+      // TODO impl `parseOctal`
+      Err(mk_todo(expr, "parseOctal"))
+    }
+
+    StdFn::parseHex => {
+      // TODO impl `parseHex`
+      Err(mk_todo(expr, "parseHex"))
+    }
+
+    StdFn::parseJson => {
+      // TODO impl `parseJson`
+      Err(mk_todo(expr, "parseJson"))
+    }
+
+    StdFn::parseYaml => {
+      // TODO impl `parseYaml`
+      Err(mk_todo(expr, "parseYaml"))
+    }
+
+    StdFn::encodeUTF8 => {
+      // TODO impl `encodeUTF8`
+      Err(mk_todo(expr, "encodeUTF8"))
+    }
+
+    StdFn::decodeUTF8 => {
+      // TODO impl `decodeUTF8`
+      Err(mk_todo(expr, "decodeUTF8"))
+    }
+
+    StdFn::manifestIni => {
+      // TODO impl `manifestIni`
+      Err(mk_todo(expr, "manifestIni"))
+    }
+
+    StdFn::manifestPython => {
+      // TODO impl `manifestPython`
+      Err(mk_todo(expr, "manifestPython"))
+    }
+
+    StdFn::manifestPythonVars => {
+      // TODO impl `manifestPythonVars`
+      Err(mk_todo(expr, "manifestPythonVars"))
+    }
+
+    StdFn::manifestJsonEx => {
+      // TODO impl `manifestJsonEx`
+      Err(mk_todo(expr, "manifestJsonEx"))
+    }
+
+    StdFn::manifestJson => {
+      // TODO impl `manifestJson`
+      Err(mk_todo(expr, "manifestJson"))
+    }
+
+    StdFn::manifestJsonMinified => {
+      // TODO impl `manifestJsonMinified`
+      Err(mk_todo(expr, "manifestJsonMinified"))
+    }
+
+    StdFn::manifestYamlDoc => {
+      // TODO impl `manifestYamlDoc`
+      Err(mk_todo(expr, "manifestYamlDoc"))
+    }
+
+    StdFn::manifestYamlStream => {
+      // TODO impl `manifestYamlStream`
+      Err(mk_todo(expr, "manifestYamlStream"))
+    }
+
+    StdFn::manifestXmlJsonml => {
+      // TODO impl `manifestXmlJsonml`
+      Err(mk_todo(expr, "manifestXmlJsonml"))
+    }
+
+    StdFn::manifestTomlEx => {
+      // TODO impl `manifestTomlEx`
+      Err(mk_todo(expr, "manifestTomlEx"))
+    }
+
+    StdFn::member => {
+      // TODO impl `member`
+      Err(mk_todo(expr, "member"))
+    }
+
+    StdFn::count => {
+      // TODO impl `count`
+      Err(mk_todo(expr, "count"))
+    }
+
+    StdFn::find => {
+      // TODO impl `find`
+      Err(mk_todo(expr, "find"))
+    }
+
+    StdFn::map => {
+      // TODO impl `map`
+      Err(mk_todo(expr, "map"))
+    }
+
+    StdFn::mapWithIndex => {
+      // TODO impl `mapWithIndex`
+      Err(mk_todo(expr, "mapWithIndex"))
+    }
+
+    StdFn::filterMap => {
+      // TODO impl `filterMap`
+      Err(mk_todo(expr, "filterMap"))
+    }
+
+    StdFn::flatMap => {
+      // TODO impl `flatMap`
+      Err(mk_todo(expr, "flatMap"))
+    }
+
+    StdFn::filter => {
+      // TODO impl `filter`
+      Err(mk_todo(expr, "filter"))
+    }
+
+    StdFn::foldl => {
+      // TODO impl `foldl`
+      Err(mk_todo(expr, "foldl"))
+    }
+
+    StdFn::foldr => {
+      // TODO impl `foldr`
+      Err(mk_todo(expr, "foldr"))
+    }
+
+    StdFn::range => {
+      // TODO impl `range`
+      Err(mk_todo(expr, "range"))
+    }
+
+    StdFn::repeat => {
+      // TODO impl `repeat`
+      Err(mk_todo(expr, "repeat"))
+    }
+
+    StdFn::slice => {
+      // TODO impl `slice`
+      Err(mk_todo(expr, "slice"))
+    }
+
+    StdFn::deepJoin => {
+      // TODO impl `deepJoin`
+      Err(mk_todo(expr, "deepJoin"))
+    }
+
+    StdFn::lines => {
+      // TODO impl `lines`
+      Err(mk_todo(expr, "lines"))
+    }
+
+    StdFn::flattenArrays => {
+      // TODO impl `flattenArrays`
+      Err(mk_todo(expr, "flattenArrays"))
+    }
+
+    StdFn::flattenDeepArray => {
+      // TODO impl `flattenDeepArray`
+      Err(mk_todo(expr, "flattenDeepArray"))
+    }
+
+    StdFn::reverse => {
+      // TODO impl `reverse`
+      Err(mk_todo(expr, "reverse"))
+    }
+
+    StdFn::sort => {
+      // TODO impl `sort`
+      Err(mk_todo(expr, "sort"))
+    }
+
+    StdFn::uniq => {
+      // TODO impl `uniq`
+      Err(mk_todo(expr, "uniq"))
+    }
+
+    StdFn::all => {
+      // TODO impl `all`
+      Err(mk_todo(expr, "all"))
+    }
+
+    StdFn::any => {
+      // TODO impl `any`
+      Err(mk_todo(expr, "any"))
+    }
+
+    StdFn::sum => {
+      // TODO impl `sum`
+      Err(mk_todo(expr, "sum"))
+    }
+
+    StdFn::avg => {
+      // TODO impl `avg`
+      Err(mk_todo(expr, "avg"))
+    }
+
+    StdFn::minArray => {
+      // TODO impl `minArray`
+      Err(mk_todo(expr, "minArray"))
+    }
+
+    StdFn::maxArray => {
+      // TODO impl `maxArray`
+      Err(mk_todo(expr, "maxArray"))
+    }
+
+    StdFn::contains => {
+      // TODO impl `contains`
+      Err(mk_todo(expr, "contains"))
+    }
+
+    StdFn::remove => {
+      // TODO impl `remove`
+      Err(mk_todo(expr, "remove"))
+    }
+
+    StdFn::removeAt => {
+      // TODO impl `removeAt`
+      Err(mk_todo(expr, "removeAt"))
+    }
+
+    StdFn::set => {
+      // TODO impl `set`
+      Err(mk_todo(expr, "set"))
+    }
+
+    StdFn::setInter => {
+      // TODO impl `setInter`
+      Err(mk_todo(expr, "setInter"))
+    }
+
+    StdFn::setUnion => {
+      // TODO impl `setUnion`
+      Err(mk_todo(expr, "setUnion"))
+    }
+
+    StdFn::setDiff => {
+      // TODO impl `setDiff`
+      Err(mk_todo(expr, "setDiff"))
+    }
+
+    StdFn::setMember => {
+      // TODO impl `setMember`
+      Err(mk_todo(expr, "setMember"))
+    }
+
+    StdFn::base64 => {
+      // TODO impl `base64`
+      Err(mk_todo(expr, "base64"))
+    }
+
+    StdFn::base64DecodeBytes => {
+      // TODO impl `base64DecodeBytes`
+      Err(mk_todo(expr, "base64DecodeBytes"))
+    }
+
+    StdFn::base64Decode => {
+      // TODO impl `base64Decode`
+      Err(mk_todo(expr, "base64Decode"))
+    }
+
+    StdFn::md5 => {
+      // TODO impl `md5`
+      Err(mk_todo(expr, "md5"))
+    }
+
+    StdFn::sha1 => {
+      // TODO impl `sha1`
+      Err(mk_todo(expr, "sha1"))
+    }
+
+    StdFn::sha256 => {
+      // TODO impl `sha256`
+      Err(mk_todo(expr, "sha256"))
+    }
+
+    StdFn::sha3 => {
+      // TODO impl `sha3`
+      Err(mk_todo(expr, "sha3"))
+    }
+
+    StdFn::sha512 => {
+      // TODO impl `sha512`
+      Err(mk_todo(expr, "sha512"))
+    }
+
+    StdFn::mergePatch => {
+      // TODO impl `mergePatch`
+      Err(mk_todo(expr, "mergePatch"))
+    }
+
+    StdFn::trace => {
+      // TODO impl `trace`
+      Err(mk_todo(expr, "trace"))
+    }
+
+    StdFn::native => {
+      // TODO impl `native`
+      Err(mk_todo(expr, "native"))
+    }
+
+    StdFn::extVar => {
+      // TODO impl `extVar`
+      Err(mk_todo(expr, "extVar"))
+    }
   }
 }
 
