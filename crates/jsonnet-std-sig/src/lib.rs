@@ -579,7 +579,7 @@ pub const FNS: [Fn; 147] = [
   },
   Fn {
     name: S::new("prune"),
-    implemented: false,
+    implemented: true,
     sig: sig(&[req("a", Ty::Any)], Ty::Any),
     total: true,
     available_since: Some(10),

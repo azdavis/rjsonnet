@@ -619,8 +619,11 @@ pub(crate) fn get_call(
     }
 
     StdFn::prune => {
-      // TODO impl `prune`
-      Err(mk_todo(expr, "prune"))
+      let args = fns::prune::new(pos, named, expr)?;
+      let arg = args.a(cx, env)?;
+      let ret = prune(cx, env.path(), arg.clone())?;
+      // unwrap_or is for prune(null), prune({}), prune([])
+      Ok(ret.unwrap_or(arg))
     }
 
     StdFn::exponent => {
@@ -1051,4 +1054,46 @@ fn lift_val(cx: &mut Cx<'_>, env: &mut Env, val: Val) -> Result<ExprMust> {
   let exprs = path_exprs(cx, env.path())?;
   env.insert(Subst { id: func_id, val: ValOrExpr::Val(val) });
   Ok(exprs.ar.alloc(ExprData::Id(func_id)))
+}
+
+fn prune(cx: &mut Cx<'_>, path: paths::PathId, val: Val) -> Result<Option<Val>> {
+  match val {
+    Val::Prim(prim) => match prim {
+      Prim::Null => Ok(None),
+      Prim::Bool(_) | Prim::String(_) | Prim::Number(_) => Ok(Some(Val::Prim(prim))),
+    },
+    Val::Object(object) => {
+      let fields = object.sorted_visible_fields(cx.str_ar);
+      if fields.is_empty() {
+        return Ok(None);
+      }
+      let mut new_env = Env::empty(path);
+      let mut new_fields = ExprFields::new();
+      for (key, env, field) in fields {
+        let val = exec::get(cx, &env, field)?;
+        let Some(val) = prune(cx, path, val)? else { continue };
+        let expr = Some(lift_val(cx, &mut new_env, val)?);
+        let new_field = ExprField { vis: Vis::Default, expr, comp_subst: None };
+        new_fields.insert(key, new_field);
+      }
+      let new_obj = cx.obj_mk.mk(new_env, Vec::new(), new_fields);
+      Ok(Some(Val::Object(new_obj)))
+    }
+    Val::Array(array) => {
+      if array.is_empty() {
+        return Ok(None);
+      }
+      let mut new_env = Env::empty(path);
+      let mut new_elems = Vec::new();
+      for (env, elem) in array.elems() {
+        let val = exec::get(cx, env, elem)?;
+        let Some(val) = prune(cx, path, val)? else { continue };
+        let new_elem = Some(lift_val(cx, &mut new_env, val)?);
+        new_elems.push(new_elem);
+      }
+      let new_array = Array::new(new_env, new_elems);
+      Ok(Some(Val::Array(new_array)))
+    }
+    Val::Fn(f) => Ok(Some(Val::Fn(f))),
+  }
 }

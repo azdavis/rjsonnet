@@ -284,11 +284,13 @@ fn maybe_extra_checks(
       //
       // - std.prune(null) == null
       // - std.prune({}) == {}
+      // - std.prune([]) == []
       //
-      // in both cases, the input type is the output type (not pruned).
+      // in these cases, the input type is the output type (not pruned).
       let is_special_case = match st.tys.data(ty) {
         ty::Data::Prim(ty::Prim::Null) => true,
         ty::Data::Object(obj) => !obj.has_unknown && obj.known.is_empty(),
+        ty::Data::Tuple(tup) => tup.elems.is_empty(),
         _ => false,
       };
       let ret = if is_special_case { ty } else { prune(&mut st.tys, ty) };
