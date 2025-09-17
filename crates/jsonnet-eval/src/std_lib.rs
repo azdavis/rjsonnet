@@ -466,7 +466,7 @@ pub(crate) fn get_call(
       let sz = args.sz(cx, env)?;
       let func = args.func(cx, env)?;
       let mut env = env.clone();
-      let func = Some(insert_func(cx, &mut env, func)?);
+      let func = Some(lift_val(cx, &mut env, Val::Fn(func))?);
       let exprs = path_exprs(cx, env.path())?;
       let elems = (0..sz).map(|idx| {
         let idx = ExprData::Prim(Prim::Number(Float::from(idx)));
@@ -600,7 +600,7 @@ pub(crate) fn get_call(
       exec::ck_object_asserts(cx, &obj)?;
       let mut ret = cx.obj_mk.mk(Env::empty(env.path()), Vec::new(), ExprFields::new());
       for (key, mut arg_env, val) in obj.visible_fields() {
-        let func = Some(insert_func(cx, &mut arg_env, func.clone())?);
+        let func = Some(lift_val(cx, &mut arg_env, Val::Fn(func.clone()))?);
         let exprs = path_exprs(cx, arg_env.path())?;
         let key_expr = Some(exprs.ar.alloc(ExprData::Prim(Prim::String(key))));
         let expr = Some(exprs.ar.alloc(ExprData::Call {
@@ -1045,9 +1045,10 @@ fn key_value_obj(ar: &mut ExprArena, key: Str, val: Expr) -> ExprMust {
   ar.alloc(ExprData::Object { asserts: Vec::new(), fields })
 }
 
-fn insert_func(cx: &mut Cx<'_>, env: &mut Env, func: Fn) -> Result<ExprMust> {
+/// Mutates `env` and returns an expr that evaluates to `val` in that `env`.
+fn lift_val(cx: &mut Cx<'_>, env: &mut Env, val: Val) -> Result<ExprMust> {
   let func_id = cx.str_ar.id_fresh_unutterable();
   let exprs = path_exprs(cx, env.path())?;
-  env.insert(Subst { id: func_id, val: ValOrExpr::Val(Val::Fn(func)) });
+  env.insert(Subst { id: func_id, val: ValOrExpr::Val(val) });
   Ok(exprs.ar.alloc(ExprData::Id(func_id)))
 }
