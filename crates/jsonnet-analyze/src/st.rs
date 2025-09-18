@@ -555,11 +555,11 @@ impl lang_srv_state::State for St {
     let mut init = util::Init { allow_unused_underscore: true, ..Default::default() };
     let mut logger_env = env_logger::Env::default();
     if let Some(serde_json::Value::Object(obj)) = val {
-      if let Some(filter) = obj.get("log_filter").and_then(serde_json::Value::as_str) {
-        if !filter.is_empty() {
-          logger_env = logger_env.default_filter_or(filter.to_owned());
-          init.debug = true;
-        }
+      if let Some(filter) = obj.get("log_filter").and_then(serde_json::Value::as_str)
+        && !filter.is_empty()
+      {
+        logger_env = logger_env.default_filter_or(filter.to_owned());
+        init.debug = true;
       }
 
       init.root_dirs = obj

@@ -104,10 +104,10 @@ pub(crate) fn get(st: &mut st::St<'_>, ar: &ExprArena, expr: Expr) -> ty::Ty {
       let mut named_args = FxHashMap::<Id, (Expr, ty::Ty)>::default();
       for &(id, arg) in named {
         let arg_ty = get(st, ar, arg);
-        if named_args.insert(id, (arg, arg_ty)).is_some() {
-          if let Some(arg) = arg {
-            st.err(arg, error::Kind::DuplicateNamedArg(id));
-          }
+        if named_args.insert(id, (arg, arg_ty)).is_some()
+          && let Some(arg) = arg
+        {
+          st.err(arg, error::Kind::DuplicateNamedArg(id));
         }
       }
       call::get(st, ar, expr, *func, fn_ty, &pos_args, &named_args)

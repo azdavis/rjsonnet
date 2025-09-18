@@ -8,7 +8,11 @@ impl Examples {
   /// The min number of examples for a non-empty one.
   pub const MIN: usize = 2;
 
-  /// Returns a new examples. Requires the length be at least MIN.
+  /// Returns a new examples.
+  ///
+  /// # Panics
+  ///
+  /// If the length is not at least [`Self::MIN`].
   #[must_use]
   pub const fn new(xs: &'static [&'static str]) -> Self {
     assert!(xs.len() >= Self::MIN);
