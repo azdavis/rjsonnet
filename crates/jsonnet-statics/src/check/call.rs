@@ -174,12 +174,13 @@ fn maybe_extra_checks(
     StdFn::join => {
       let &(_, sep_ty) = params.get(&Id::sep)?;
       let &(arr_expr, arr_ty) = params.get(&Id::arr)?;
-      let arr = array_ty(&mut st.tys, arr_ty)?;
-      st.unify(arr_expr, ty::Ty::STRING_OR_ARRAY, arr.elem);
-      Some(if arr.elem == ty::Ty::STRING {
+      Some(if sep_ty == ty::Ty::STRING {
         st.unify(arr_expr, ty::Ty::STRING, sep_ty);
+        st.unify(arr_expr, ty::Ty::ARRAY_STRING, arr_ty);
         ty::Ty::STRING
       } else {
+        let arr = array_ty(&mut st.tys, arr_ty)?;
+        st.unify(arr_expr, ty::Ty::ARRAY, arr.elem);
         let elem = array_ty(&mut st.tys, arr.elem)?.elem;
         let ret = st.tys.get(ty::Data::Array(ty::Array::new(elem)));
         st.unify(arr_expr, ret, sep_ty);

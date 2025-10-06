@@ -6,6 +6,7 @@ Things under "main" are not released yet.
 
 - Allow prefixing a var with `_` to silence the unused variable warning.
 - Improve typechecking for string subscripts.
+- Improve types for `std.join`.
 
 ## v0.9.7
 

@@ -184,7 +184,6 @@ fn join() {
     r#"
 local s(x) = assert std.isString(x); x;
 local f(x) = s(std.join(",", x));
-##             ^^^^^^^^^^^^^^^^ err: incompatible types; expected `string`; found `array[any]`
 f(['a', 'b'])
 "#,
     r#"
