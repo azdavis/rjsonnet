@@ -183,8 +183,8 @@ fn join() {
   JsonnetInput::manifest(
     r#"
 local s(x) = assert std.isString(x); x;
-local f(x) = s(std.join(",", x));
-f(['a', 'b'])
+local f(xs) = s(std.join(",", xs));
+f(["a", "b"])
 "#,
     r#"
 "a,b"
