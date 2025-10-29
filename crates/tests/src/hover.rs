@@ -1,6 +1,6 @@
 //! Testing that hovering contains certain info.
 
-use crate::check::JsonnetInput;
+use crate::check::{Input, JsonnetInput};
 
 #[test]
 fn tup_num() {
@@ -404,4 +404,34 @@ one + one
     "2",
   )
   .check();
+}
+
+#[test]
+#[should_panic = "æ°´"]
+fn cjk() {
+  Input::default()
+    .with_jsonnet(
+      "a.jsonnet",
+      JsonnetInput::manifest(
+        r#"
+{ "水": 1 + 2 }
+"#,
+        r#"
+{ "水": 3 }
+"#,
+      ),
+    )
+    .with_jsonnet(
+      "b.jsonnet",
+      JsonnetInput::manifest(
+        r#"
+local a = import "a.jsonnet";
+##        ^ hover: { "水": number }
+a["水"]
+"#,
+        "3",
+      ),
+    )
+    .add("b.jsonnet")
+    .check();
 }
