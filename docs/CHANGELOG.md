@@ -2,7 +2,7 @@
 
 Things under "main" are not released yet.
 
-## main
+## v0.9.9
 
 - Improve display of non-ASCII strings.
 
