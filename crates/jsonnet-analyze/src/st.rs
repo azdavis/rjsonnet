@@ -840,10 +840,10 @@ impl lang_srv_state::State for St {
       };
       let name = wa.syntax.strings.get(name);
       let ty = ty.display(self.style, &wa.statics, None, &wa.syntax.strings);
-      let (text_edit, additional_text_edits) = if jsonnet_ident::is(name.as_bytes()) {
+      let (text_edit, additional_text_edits) = if jsonnet_ident::is(name) {
         (None, None)
       } else {
-        let unescape = jsonnet_escape::Unescape::new(name.as_bytes());
+        let unescape = jsonnet_escape::Unescape::new(name);
         let main_edit = lang_srv_state::TextEdit {
           text: format!("[{unescape}]"),
           range: text_pos::RangeUtf16::zero(pos),

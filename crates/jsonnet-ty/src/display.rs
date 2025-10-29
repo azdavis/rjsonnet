@@ -290,11 +290,10 @@ struct FieldDisplay<'a> {
 impl fmt::Display for FieldDisplay<'_> {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     let key = self.stuff.str_ar.get(self.key);
-    let key_bs = key.as_bytes();
-    if jsonnet_ident::is(key_bs) {
+    if jsonnet_ident::is(key) {
       key.fmt(f)?;
     } else {
-      jsonnet_escape::Unescape::new(key_bs).fmt(f)?;
+      jsonnet_escape::Unescape::new(key).fmt(f)?;
     }
     f.write_str(": ")?;
     TyDisplay { ty: self.ty, prec: Prec::Min, stuff: self.stuff }.fmt(f)

@@ -1,6 +1,7 @@
 //! Displaying various things.
 
 use super::{BinOp, Expr, ExprArena, ExprData, ImportKind, Prim, StrArena, UnOp, Vis};
+use always::always;
 use std::fmt;
 
 /// Displays an expression, sort of. Mostly for debugging. (We already derive Debug.)
@@ -72,7 +73,7 @@ impl fmt::Display for ExprDisplay<'_> {
         let idx_s = idx.and_then(|x| {
           if let ExprData::Prim(Prim::String(s)) = self.expr_ar[x] {
             let s = self.str_ar.get(s);
-            jsonnet_ident::is(s.as_bytes()).then_some(s)
+            jsonnet_ident::is(s).then_some(s)
           } else {
             None
           }
@@ -128,6 +129,13 @@ impl fmt::Display for ExprDisplay<'_> {
           p = p.strip_prefix(r.as_path()).unwrap_or(p);
         }
         let p = p.as_os_str().as_encoded_bytes();
+        let p = match str::from_utf8(p) {
+          Ok(x) => x,
+          Err(e) => {
+            always!(false, "import path didn't roundtrip back to utf-8: {e}");
+            "<utf-8-error>"
+          }
+        };
         let p = jsonnet_escape::Unescape::new(p);
         write!(f, "{kind} {p}")
       }
@@ -213,8 +221,8 @@ impl fmt::Display for PrimDisplay<'_> {
       Prim::Null => f.write_str("null"),
       Prim::Bool(b) => b.fmt(f),
       Prim::String(s) => {
-        let bs = self.ar.get(*s).as_bytes();
-        jsonnet_escape::Unescape::new(bs).fmt(f)
+        let s = self.ar.get(*s);
+        jsonnet_escape::Unescape::new(s).fmt(f)
       }
       Prim::Number(n) => n.fmt(f),
     }

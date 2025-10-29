@@ -14,7 +14,8 @@ pub fn is_continue(b: u8) -> bool {
 
 /// Returns whether this is an ident.
 #[must_use]
-pub fn is(bs: &[u8]) -> bool {
-  bs.split_first()
+pub fn is(s: &str) -> bool {
+  s.as_bytes()
+    .split_first()
     .is_some_and(|(&fst, rest)| is_start(fst) && rest.iter().copied().all(is_continue))
 }

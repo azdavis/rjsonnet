@@ -200,18 +200,18 @@ fn give_up_on_text_block(st: &mut St<'_>) {
 #[derive(Debug)]
 #[repr(transparent)]
 pub struct Unescape {
-  bs: [u8],
+  s: str,
 }
 
 impl Unescape {
   /// Creates a new one of these.
   #[must_use]
   #[expect(unsafe_code)]
-  pub fn new(bs: &[u8]) -> &Self {
-    let ptr = std::ptr::from_ref::<[u8]>(bs);
+  pub fn new(s: &str) -> &Self {
+    let ptr = s as *const str;
     let ptr = ptr as *const Unescape;
-    // SAFETY: Unescape transparently wraps [u8],
-    // and &*bs is &[u8].
+    // SAFETY: Unescape transparently wraps str,
+    // and &*s is &str.
     unsafe { &*ptr }
   }
 }
@@ -219,7 +219,7 @@ impl Unescape {
 impl fmt::Display for Unescape {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     f.write_str("\"")?;
-    for &b in &self.bs {
+    for b in self.s.bytes() {
       match b {
         b'"' => f.write_str("\\\"")?,
         b'\\' => f.write_str("\\\\")?,

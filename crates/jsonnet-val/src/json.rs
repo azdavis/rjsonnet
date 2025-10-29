@@ -95,8 +95,8 @@ struct KvDisplay<'a> {
 
 impl fmt::Display for KvDisplay<'_> {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    let bs = self.ar.get(self.k).as_bytes();
-    jsonnet_escape::Unescape::new(bs).fmt(f)?;
+    let s = self.ar.get(self.k);
+    jsonnet_escape::Unescape::new(s).fmt(f)?;
     f.write_str(": ")?;
     ValDisplay { val: self.v, ar: self.ar, indent: self.indent }.fmt(f)
   }
