@@ -407,7 +407,6 @@ one + one
 }
 
 #[test]
-#[should_panic = "æ°´"]
 fn cjk() {
   Input::default()
     .with_jsonnet(

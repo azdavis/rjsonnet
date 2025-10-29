@@ -216,20 +216,28 @@ impl Unescape {
   }
 }
 
+#[expect(clippy::disallowed_methods)]
+mod chars {
+  pub(crate) const B: char = char::from_u32(0x8).expect("ASCII");
+  pub(crate) const F: char = char::from_u32(0xC).expect("ASCII");
+  pub(crate) const N: char = char::from_u32(0xA).expect("ASCII");
+  pub(crate) const R: char = char::from_u32(0xD).expect("ASCII");
+  pub(crate) const T: char = char::from_u32(0x9).expect("ASCII");
+}
+
 impl fmt::Display for Unescape {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     f.write_str("\"")?;
-    for b in self.s.bytes() {
-      match b {
-        b'"' => f.write_str("\\\"")?,
-        b'\\' => f.write_str("\\\\")?,
-        8 => f.write_str("\\b")?,
-        12 => f.write_str("\\f")?,
-        10 => f.write_str("\\n")?,
-        13 => f.write_str("\\r")?,
-        9 => f.write_str("\\t")?,
-        // NOTE: no effort to try to output \uXXXX
-        _ => f.write_char(b as char)?,
+    for c in self.s.chars() {
+      match c {
+        '"' => f.write_str("\\\"")?,
+        '\\' => f.write_str("\\\\")?,
+        chars::B => f.write_str("\\b")?,
+        chars::F => f.write_str("\\f")?,
+        chars::N => f.write_str("\\n")?,
+        chars::R => f.write_str("\\r")?,
+        chars::T => f.write_str("\\t")?,
+        _ => f.write_char(c)?,
       }
     }
     f.write_str("\"")

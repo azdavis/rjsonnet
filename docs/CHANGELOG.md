@@ -2,6 +2,10 @@
 
 Things under "main" are not released yet.
 
+## main
+
+- Improve display of non-ASCII strings.
+
 ## v0.9.8
 
 - Allow prefixing a var with `_` to silence the unused variable warning.
