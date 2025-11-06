@@ -90,9 +90,9 @@ impl<'a> St<'a> {
     }
   }
 
-  pub(crate) fn finish(self) -> (Statics, ty::LocalStore) {
+  pub(crate) fn finish(self) -> Finish {
     self.scope.finish();
-    (self.statics, self.tys.into_local())
+    Finish { statics: self.statics, local_tys: self.tys.into_local() }
   }
 
   pub(crate) fn import_ty(&self, path: paths::PathId) -> ty::Ty {
@@ -103,4 +103,13 @@ impl<'a> St<'a> {
       ty::Ty::ANY
     }
   }
+}
+
+/// A finished run.
+#[derive(Debug)]
+pub struct Finish {
+  /// The statics.
+  pub statics: Statics,
+  /// The local tys, ready for substituting.
+  pub local_tys: ty::LocalStore,
 }

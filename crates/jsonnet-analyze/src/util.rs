@@ -251,8 +251,8 @@ impl StaticsFileToCombine {
       syntax.artifacts.id_counts.clone(),
       allow_unused_underscore,
     );
-    let (statics, to_combine) = jsonnet_statics::get(st, &syntax.exprs.ar, syntax.exprs.top);
-    Self { file: StaticsFile { syntax, statics }, to_combine }
+    let finish = jsonnet_statics::get(st, &syntax.exprs.ar, syntax.exprs.top);
+    Self { file: StaticsFile { syntax, statics: finish.statics }, to_combine: finish.local_tys }
   }
 
   pub(crate) fn combine(self, artifacts: &mut GlobalArtifacts) -> StaticsFile {
