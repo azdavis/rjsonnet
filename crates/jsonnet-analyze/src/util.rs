@@ -181,6 +181,7 @@ impl SyntaxFileToCombine {
 
 #[derive(Debug)]
 pub(crate) struct StaticsFile {
+  pub(crate) path_id: paths::PathId,
   pub(crate) syntax: SyntaxFile,
   pub(crate) statics: jsonnet_statics::st::Statics,
 }
@@ -239,6 +240,7 @@ pub(crate) struct StaticsFileToCombine {
 
 impl StaticsFileToCombine {
   pub(crate) fn new(
+    path_id: paths::PathId,
     syntax: SyntaxFile,
     artifacts: &GlobalArtifacts,
     file_tys: &paths::PathMap<jsonnet_ty::Ty>,
@@ -252,7 +254,10 @@ impl StaticsFileToCombine {
       allow_unused_underscore,
     );
     let finish = jsonnet_statics::get(st, &syntax.exprs.ar, syntax.exprs.top);
-    Self { file: StaticsFile { syntax, statics: finish.statics }, to_combine: finish.local_tys }
+    Self {
+      file: StaticsFile { path_id, syntax, statics: finish.statics },
+      to_combine: finish.local_tys,
+    }
   }
 
   pub(crate) fn combine(self, artifacts: &mut GlobalArtifacts) -> StaticsFile {

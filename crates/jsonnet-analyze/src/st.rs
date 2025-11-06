@@ -52,6 +52,7 @@ impl WithFs {
     };
     let res = res.combine(&mut self.artifacts);
     let res = util::StaticsFileToCombine::new(
+      path_id,
       res,
       &self.artifacts,
       &self.file_tys,
@@ -176,15 +177,15 @@ impl WithFs {
         let res = util::SyntaxFileToCombine::from_fs(path, &self.root_dirs, fs).ok()?;
         Some((path_id, res))
       });
-      // unzip so we don't have to carry around the path_id unchanged in the next few
-      // transformations, in which order will be preserved.
-      let (order, syntax_files): (Vec<_>, Vec<_>) = syntax_files.unzip();
+      let syntax_files: Vec<_> = syntax_files.collect();
       // sequential
-      let syntax_files = syntax_files.into_iter().map(|res| res.combine(&mut self.artifacts));
+      let syntax_files =
+        syntax_files.into_iter().map(|(path_id, res)| (path_id, res.combine(&mut self.artifacts)));
       let syntax_files: Vec<_> = syntax_files.collect();
       // parallel
-      let statics_files = syntax_files.into_par_iter().map(|res| {
+      let statics_files = syntax_files.into_par_iter().map(|(path_id, res)| {
         util::StaticsFileToCombine::new(
+          path_id,
           res,
           &self.artifacts,
           &self.file_tys,
@@ -192,13 +193,12 @@ impl WithFs {
         )
       });
       let statics_files: Vec<_> = statics_files.collect();
-      always!(order.len() == statics_files.len());
       // sequential
-      let new_file_tys = order.into_iter().zip(statics_files).filter_map(|(path_id, res)| {
+      let new_file_tys = statics_files.into_iter().filter_map(|res| {
         let res = res.combine(&mut self.artifacts);
         let top_expr = res.syntax.exprs.top?;
         let &top_ty = res.statics.expr_tys.get(&top_expr)?;
-        Some((path_id, top_ty))
+        Some((res.path_id, top_ty))
       });
       self.file_tys.extend(new_file_tys);
     }
@@ -459,6 +459,7 @@ impl St {
     }
     // NOTE: no need to check for import deps, as unused var errors are not affected by imports
     let f = util::StaticsFileToCombine::new(
+      path_id,
       f,
       &self.with_fs.artifacts,
       &self.with_fs.file_tys,
@@ -629,6 +630,7 @@ impl lang_srv_state::State for St {
     let res = util::SyntaxFileToCombine::from_str(p, contents, &self.with_fs.root_dirs, fs);
     let res = res.combine(&mut self.with_fs.artifacts);
     let res = util::StaticsFileToCombine::new(
+      path_id,
       res,
       &self.with_fs.artifacts,
       &self.with_fs.file_tys,
