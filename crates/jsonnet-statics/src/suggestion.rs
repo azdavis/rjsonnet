@@ -21,7 +21,7 @@ pub(crate) fn approx<'a, I>(target: &str, candidates: I) -> Option<String>
 where
   I: Iterator<Item = &'a str>,
 {
-  let mut candidates: Vec<_> = candidates
+  let (_, s) = candidates
     .filter_map(|c| {
       let n = strsim::normalized_damerau_levenshtein(target, c);
       // arbitrary-ish threshold
@@ -29,9 +29,8 @@ where
         return None;
       }
       let n = finite_float::Float::always_from_f64(n);
-      Some((std::cmp::Reverse(n), c))
+      Some((n, c))
     })
-    .collect();
-  candidates.sort_unstable();
-  candidates.first().map(|&(_, c)| c.to_owned())
+    .min()?;
+  Some(s.to_owned())
 }
