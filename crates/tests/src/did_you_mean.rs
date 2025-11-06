@@ -21,6 +21,7 @@ fn user_written_field() {
 local obj = {
   foo: 1,
   bar: 3,
+  cab: 4,
   quz: 6
 };
 
