@@ -24,7 +24,7 @@ struct WithFs {
   root_dir: paths::CleanPathBuf,
   root_dirs: Vec<paths::CleanPathBuf>,
   artifacts: util::GlobalArtifacts,
-  file_tys: paths::PathMap<jsonnet_ty::Ty>,
+  file_tys: PathMap<jsonnet_ty::Ty>,
   /// INVARIANT: this is exactly the set of files that do have errors that have been loaded into
   /// either `file_artifacts` or `file_exprs` on the [`St`] that contains this.
   has_errors: PathSet,
@@ -137,7 +137,7 @@ impl WithFs {
     let mut work = topo_sort::Work::<PathId>::default();
     work.push(root_path_id);
     let mut visitor =
-      TopoSortVisitor { with_fs: self, fs, root_path_id, root_contents, ret: Vec::new() };
+      DependencyVisitor { with_fs: self, fs, root_path_id, root_contents, ret: Vec::new() };
     let got = work.run(&mut visitor);
     let mut ret = visitor.finish();
     let done = got.done;
@@ -205,7 +205,7 @@ impl WithFs {
   }
 }
 
-struct TopoSortVisitor<'a, F> {
+struct DependencyVisitor<'a, F> {
   with_fs: &'a mut WithFs,
   fs: &'a F,
   root_path_id: PathId,
@@ -213,13 +213,13 @@ struct TopoSortVisitor<'a, F> {
   ret: Vec<PathSet>,
 }
 
-impl<F> TopoSortVisitor<'_, F> {
+impl<F> DependencyVisitor<'_, F> {
   fn finish(self) -> Vec<PathSet> {
     self.ret
   }
 }
 
-impl<F> topo_sort::Visitor for TopoSortVisitor<'_, F>
+impl<F> topo_sort::Visitor for DependencyVisitor<'_, F>
 where
   F: Sync + paths::FileSystem,
 {
@@ -311,7 +311,7 @@ impl St {
         root_dir,
         root_dirs: init.root_dirs,
         artifacts: util::GlobalArtifacts::default(),
-        file_tys: paths::PathMap::default(),
+        file_tys: PathMap::default(),
         has_errors: PathSet::default(),
         allow_unused_underscore: init.allow_unused_underscore,
       },
