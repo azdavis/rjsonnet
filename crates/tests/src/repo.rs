@@ -377,7 +377,7 @@ fn cargo_toml() {
     let mut workspace = true;
     let mut ps = Vec::<&str>::new();
     for line in lines {
-      if line.starts_with('[') || line.ends_with("# @ignore") {
+      if line.starts_with('[') || line.starts_with('#') || line.ends_with("# @ignore") {
         break;
       }
       if line.is_empty() {
