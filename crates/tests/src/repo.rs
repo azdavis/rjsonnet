@@ -127,6 +127,7 @@ fn licenses() {
     "MIT/Apache-2.0",
     "Unicode-3.0",
     "Unlicense OR MIT",
+    "Unlicense/MIT",
   ];
   let mut allowed: FxHashMap<_, _> = allowed.iter().map(|&x| (x, false)).collect();
   let packages = METADATA.get("packages").unwrap().as_array().unwrap();

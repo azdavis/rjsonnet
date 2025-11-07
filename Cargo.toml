@@ -31,6 +31,7 @@ rustc-hash = "2.1.0"
 serde_json = "1.0.108"
 strsim = "0.11.1"
 text-size = "1.1.1"
+walkdir = "2.5.0"
 # language util
 always.git = "https://github.com/azdavis/language-util.git"
 apply-changes.git = "https://github.com/azdavis/language-util.git"

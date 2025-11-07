@@ -52,6 +52,17 @@ fn go<S: lang_srv_state::State>(
     });
     Ok(mk_res::<lsp_types::request::GotoDefinition>(id, result))
   })?;
+  req = try_req::<lsp_types::request::References, _, _>(req, |id, params| {
+    let (path, pos) = convert::text_doc_position(&params.text_document_position)?;
+    let result = srv.st.find_all_references(&srv.fs, path, pos).map(|locs| {
+      let iter = locs.into_iter().filter_map(|(path_id, range)| {
+        let uri = convert::url(srv.st.paths().get_path(path_id))?;
+        Some(lsp_types::Location { uri, range: convert::lsp_range(range) })
+      });
+      iter.collect()
+    });
+    Ok(mk_res::<lsp_types::request::References>(id, result))
+  })?;
   req = try_req::<lsp_types::request::Formatting, _, _>(req, |id, params| {
     let url = params.text_document.uri;
     let path = convert::clean_path_buf(&url)?;

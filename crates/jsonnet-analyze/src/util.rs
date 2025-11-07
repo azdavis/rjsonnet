@@ -244,6 +244,7 @@ impl StaticsFile {
 pub(crate) struct StaticsFileToCombine {
   file: StaticsFile,
   to_combine: jsonnet_ty::LocalStore,
+  usages: jsonnet_statics::st::LocalUsages,
 }
 
 impl StaticsFileToCombine {
@@ -265,6 +266,7 @@ impl StaticsFileToCombine {
     Self {
       file: StaticsFile { path_id, syntax, statics: finish.statics },
       to_combine: finish.local_tys,
+      usages: finish.usages,
     }
   }
 

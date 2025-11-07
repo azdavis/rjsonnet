@@ -4,6 +4,7 @@ use crate::{error, scope::Scope, unify};
 use jsonnet_expr::{ExprMust, Id, def};
 use jsonnet_ty as ty;
 use paths::PathMap;
+use rustc_hash::{FxHashMap, FxHashSet};
 
 /// Results after doing statics on one file.
 #[derive(Debug, Default)]
@@ -16,11 +17,16 @@ pub struct Statics {
   pub expr_tys: ty::Exprs,
 }
 
+/// Local usages.
+pub type LocalUsages = FxHashMap<def::Def, FxHashSet<ExprMust>>;
+
 /// The state when checking statics.
 #[derive(Debug)]
 pub struct St<'a> {
   /// The in-progress results for this file.
   statics: Statics,
+  /// The usages.
+  usages: LocalUsages,
   /// The types of other files.
   other_files: &'a PathMap<ty::Ty>,
   /// The strings.
@@ -47,6 +53,7 @@ impl<'a> St<'a> {
   ) -> Self {
     Self {
       statics: Statics::default(),
+      usages: FxHashMap::default(),
       other_files,
       str_ar,
       scope: Scope::default(),
@@ -64,6 +71,7 @@ impl<'a> St<'a> {
     // NOTE: we CANNOT assert insert returns None here, because we reuse expr indices sometimes
     // when desugaring.
     self.statics.defs.insert(expr, def);
+    self.usages.entry(def).or_default().insert(expr);
   }
 
   pub(crate) fn define_self_super(&mut self) {
@@ -92,7 +100,7 @@ impl<'a> St<'a> {
 
   pub(crate) fn finish(self) -> Finish {
     self.scope.finish();
-    Finish { statics: self.statics, local_tys: self.tys.into_local() }
+    Finish { statics: self.statics, local_tys: self.tys.into_local(), usages: self.usages }
   }
 
   pub(crate) fn import_ty(&self, path: paths::PathId) -> ty::Ty {
@@ -112,4 +120,6 @@ pub struct Finish {
   pub statics: Statics,
   /// The local tys, ready for substituting.
   pub local_tys: ty::LocalStore,
+  /// The usages.
+  pub usages: LocalUsages,
 }

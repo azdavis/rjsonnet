@@ -25,6 +25,7 @@ pub(crate) fn get() -> lsp_types::ServerCapabilities {
       retrigger_characters: Some(vec![",".to_owned()]),
       work_done_progress_options: lsp_types::WorkDoneProgressOptions { work_done_progress: None },
     }),
+    references_provider: Some(lsp_types::OneOf::Left(true)),
     ..Default::default()
   }
 }

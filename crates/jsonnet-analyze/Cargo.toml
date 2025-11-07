@@ -14,6 +14,8 @@ doctest = false
 
 [dependencies]
 always.workspace = true
+# TODO make a trait for this and depend on it elsewhere?
+walkdir.workspace = true
 apply-changes.workspace = true
 diagnostic.workspace = true
 env_logger.workspace = true

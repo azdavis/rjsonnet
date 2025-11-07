@@ -917,6 +917,58 @@ impl lang_srv_state::State for St {
     Some((real.path_id, range))
   }
 
+  fn find_all_references<F>(
+    &mut self,
+    fs: &F,
+    path: paths::CleanPathBuf,
+    pos: text_pos::PositionUtf16,
+  ) -> Option<Vec<(PathId, text_pos::RangeUtf16)>>
+  where
+    F: Sync + paths::FileSystem,
+  {
+    log::warn!("TODO find all references for {:?}:{}", path.as_path().display(), pos);
+    let path_id = self.path_id(path);
+    // let arts = self.get_file_artifacts(fs, path_id).ok()?;
+    // let real = {
+    //   let ts = arts.syntax.pos_db.text_size_utf16(pos)?;
+    //   let root = arts.syntax.root.clone().into_ast()?;
+    //   let tok = jsonnet_syntax::node_token(root.syntax(), ts)?;
+    //   let node = jsonnet_syntax::token_parent(&tok)?;
+    //   let ptr = jsonnet_syntax::ast::SyntaxNodePtr::new(&node);
+    //   let expr = arts.syntax.pointers.get_idx(ptr);
+    //   let ce = const_eval::get(self, fs, path_id, expr);
+    //   let Some(const_eval::ConstEval::Real(real)) = ce else { return None };
+    //   real
+    // };
+
+    let entries = walkdir::WalkDir::new(self.with_fs.root_dir.as_path());
+    let iter = entries.into_iter().filter_map(|entry| {
+      let Ok(entry) = entry else { return None };
+      if !entry.file_type().is_file() {
+        return None;
+      }
+      let contents = fs.read_to_string(entry.path()).ok()?;
+      let path = paths::CleanPathBuf::new(entry.path())?;
+      let parent = util::path_parent_must(path.as_clean_path());
+      let imports = util::approximate_code_imports(contents.as_str());
+      let dirs = jsonnet_resolve_import::NonEmptyDirs::new(parent, &self.with_fs.root_dirs);
+      let found_import = imports.into_iter().any(|import| {
+        let import = std::path::Path::new(import.as_str());
+        let import = jsonnet_resolve_import::get(import, dirs.iter(), &util::FsAdapter(fs));
+        let Some(import) = import else { return false };
+        let import = self.with_fs.artifacts.syntax.paths.get_id_owned(import);
+        import == path_id
+      });
+      if found_import {
+        let entry_path_id = self.path_id(path.clone());
+        return Some(entry_path_id);
+      }
+      None
+    });
+    let direct_dependents: Vec<_> = iter.collect();
+    None
+  }
+
   fn format<F>(
     &mut self,
     _: &F,

@@ -75,6 +75,16 @@ pub trait State {
   where
     F: Sync + paths::FileSystem;
 
+  /// Find all references to the position.
+  fn find_all_references<F>(
+    &mut self,
+    fs: &F,
+    path: paths::CleanPathBuf,
+    pos: text_pos::PositionUtf16,
+  ) -> Option<Vec<(paths::PathId, text_pos::RangeUtf16)>>
+  where
+    F: Sync + paths::FileSystem;
+
   /// Format a whole path.
   fn format<F>(
     &mut self,
