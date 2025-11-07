@@ -879,7 +879,7 @@ impl lang_srv_state::State for St {
   {
     let path_id = self.path_id(path);
     let arts = self.get_file_artifacts(fs, path_id).ok()?;
-    let ce = {
+    let real = {
       let ts = arts.syntax.pos_db.text_size_utf16(pos)?;
       let root = arts.syntax.root.clone().into_ast()?;
       let tok = jsonnet_syntax::node_token(root.syntax(), ts)?;
@@ -887,10 +887,10 @@ impl lang_srv_state::State for St {
       let ptr = jsonnet_syntax::ast::SyntaxNodePtr::new(&node);
       let expr = arts.syntax.pointers.get_idx(ptr);
       let ce = const_eval::get(self, fs, path_id, expr);
-      let Some(const_eval::ConstEval::Real(ce)) = ce else { return None };
-      ce
+      let Some(const_eval::ConstEval::Real(real)) = ce else { return None };
+      real
     };
-    let arts = self.get_file_artifacts(fs, ce.path_id).ok()?;
+    let arts = self.get_file_artifacts(fs, real.path_id).ok()?;
     // HACK: this makes go-to-def for array and object comprehensions work better. there are a few
     // reasons I can think of:
     //
@@ -910,11 +910,11 @@ impl lang_srv_state::State for St {
     // stuff that isn't involved in comprehensions or local binds at all, but that seems unlikely.
     let for_comprehension_hack =
       jsonnet_expr::def::ExprDefKind::Multi(0, jsonnet_expr::def::ExprDefKindMulti::LocalBind);
-    let kind = ce.kind.or(Some(for_comprehension_hack));
+    let kind = real.kind.or(Some(for_comprehension_hack));
     let tr =
-      util::expr_range(&arts.syntax.pointers, &arts.syntax.root.clone().syntax(), ce.expr, kind);
+      util::expr_range(&arts.syntax.pointers, &arts.syntax.root.clone().syntax(), real.expr, kind);
     let range = arts.syntax.pos_db.range_utf16(tr)?;
-    Some((ce.path_id, range))
+    Some((real.path_id, range))
   }
 
   fn format<F>(

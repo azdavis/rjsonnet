@@ -1,6 +1,6 @@
 //! Try to "evaluate" without actually evaluating, using statically-known information.
 
-use crate::st::St;
+use crate::{st::St, util::Real};
 use jsonnet_expr::def::{self, Def};
 use jsonnet_expr::{Expr, ExprData, ExprMust, Prim};
 use paths::PathId;
@@ -12,14 +12,6 @@ pub(crate) enum ConstEval {
   Real(Real),
   /// The std lib, perhaps narrowed down by selecting a field off of it.
   Std(Option<jsonnet_expr::StdField>),
-}
-
-/// Somewhere in "real", user-written code.
-#[derive(Debug)]
-pub(crate) struct Real {
-  pub(crate) path_id: PathId,
-  pub(crate) expr: ExprMust,
-  pub(crate) kind: Option<def::ExprDefKind>,
 }
 
 impl From<Real> for ConstEval {

@@ -7,6 +7,14 @@ use jsonnet_syntax::{ast::AstNode as _, kind::SyntaxKind as SK};
 use std::fmt;
 use token::Triviable as _;
 
+/// Somewhere in "real", user-written code.
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub(crate) struct Real {
+  pub(crate) path_id: paths::PathId,
+  pub(crate) expr: jsonnet_expr::ExprMust,
+  pub(crate) kind: Option<def::ExprDefKind>,
+}
+
 /// Options for initialization.
 #[derive(Debug, Default)]
 pub struct Init {
